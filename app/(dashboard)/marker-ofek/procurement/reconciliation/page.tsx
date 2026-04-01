@@ -176,7 +176,7 @@ export default function ProcurementReconciliationPage() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-lg">
               <ShieldCheck className="size-5 text-cyan-600" aria-hidden />
-              Audit Table — התאמות חודשיות
+              טבלת התאמות וביקורת
             </CardTitle>
             <CardDescription>
               השוואת חשבוניות ספק מול הזמנות רכש וקבלות סחורה (Delivery Notes).

@@ -98,6 +98,14 @@ type CatalogItem = {
   defaultPrice: number | null
 }
 
+type CatalogQueryRow = {
+  id: string
+  sku: string
+  description: string
+  unit: string | null
+  default_price: number | null
+}
+
 type SupplierPriceRow = {
   supplierId: string
   supplierName: string
@@ -333,35 +341,21 @@ export default function NewPurchaseOrderFromBoqPage() {
         const supabase = createSupabaseBrowserClient()
         const { data, error } = await supabase
           .from("items_catalog")
-          .select("id, sku, description, unit, default_price, additional_attributes")
+          .select("id, sku, description, unit, default_price")
           .order("description", { ascending: true })
           .limit(700)
         if (error) throw error
         if (cancelled) return
-        const rows = (data ?? []) as {
-          id: string
-          sku: string
-          description: string
-          unit: string | null
-          default_price: number | null
-          additional_attributes?: Record<string, unknown>
-        }[]
+        const rows = (data ?? []) as CatalogQueryRow[]
         setCatalogItems(
-          rows.map((r) => {
-            const supplierSkuRaw =
-              (r.additional_attributes?.supplier_sku as string | undefined) ??
-              (r.additional_attributes?.supplierSku as string | undefined) ??
-              ""
-            return {
-              id: r.id,
-              sku: String(r.sku ?? ""),
-              description: String(r.description ?? ""),
-              supplierSku: String(supplierSkuRaw ?? ""),
-              unit: r.unit ?? null,
-              defaultPrice:
-                r.default_price == null ? null : Number(r.default_price),
-            }
-          })
+          rows.map((r) => ({
+            id: r.id,
+            sku: String(r.sku ?? ""),
+            description: String(r.description ?? ""),
+            supplierSku: "",
+            unit: r.unit ?? null,
+            defaultPrice: r.default_price == null ? null : Number(r.default_price),
+          }))
         )
       } catch (e) {
         if (!cancelled) {
@@ -550,7 +544,7 @@ export default function NewPurchaseOrderFromBoqPage() {
           default_price: 0,
           is_inventory: true,
         })
-        .select("id, sku, description, unit, default_price, additional_attributes")
+        .select("id, sku, description, unit, default_price")
         .single()
       if (error || !data?.id) {
         toast.error(error?.message ?? "שמירת פריט נכשלה")
@@ -562,17 +556,12 @@ export default function NewPurchaseOrderFromBoqPage() {
         description: string
         unit: string | null
         default_price: number | null
-        additional_attributes?: Record<string, unknown>
       }
       const created: CatalogItem = {
         id: row.id,
         sku: row.sku,
         description: row.description,
-        supplierSku: String(
-          row.additional_attributes?.supplier_sku ??
-            row.additional_attributes?.supplierSku ??
-            ""
-        ),
+        supplierSku: "",
         unit: row.unit ?? null,
         defaultPrice:
           row.default_price == null ? null : Number(row.default_price),

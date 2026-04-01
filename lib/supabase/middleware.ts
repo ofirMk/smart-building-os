@@ -110,7 +110,7 @@ export async function updateSession(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = isAdminOrManagerRole(role)
       ? "/portal"
-      : "/dashboard"
+      : "/marker-ofek"
     redirectUrl.search = ""
     const redirectResponse = NextResponse.redirect(redirectUrl)
     applyCookies(supabaseResponse, redirectResponse)

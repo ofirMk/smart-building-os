@@ -170,6 +170,7 @@ export default function NewInvoiceAiPage() {
   } | null>(null)
   const [awaitingConfirmation, setAwaitingConfirmation] = React.useState(false)
   const [openingSource, setOpeningSource] = React.useState(false)
+  const [scanError, setScanError] = React.useState<string | null>(null)
 
   React.useLayoutEffect(() => {
     const stored = readInvoiceAiScanFromSession()
@@ -245,6 +246,7 @@ export default function NewInvoiceAiPage() {
     })
 
     clearInvoiceAiScanSession()
+    setScanError(null)
     setParsed(null)
     setInvoiceId(null)
     setSourceFile(null)
@@ -269,6 +271,7 @@ export default function NewInvoiceAiPage() {
 
       if (!res.success) {
         resetScan()
+        setScanError(res.error)
         toast.error(res.error)
         return
       }
@@ -291,13 +294,16 @@ export default function NewInvoiceAiPage() {
       setSourceFile(res.sourceFile)
       setSyncSummary(res.syncSummary)
       setAwaitingConfirmation(res.requiresConfirmation)
+      setScanError(null)
       toast.success("הבדיקה הושלמה. יש לאשר שמירה למסד הנתונים.")
     } catch (e) {
       if (getScanEpoch() !== epochAtStart) {
         return
       }
       abortScan()
-      toast.error(formatError(e))
+      const err = formatError(e)
+      setScanError(err)
+      toast.error(err)
     } finally {
       if (getScanEpoch() === epochAtStart) {
         resetScan()
@@ -312,6 +318,7 @@ export default function NewInvoiceAiPage() {
     }
     startScanSimulation("invoice")
     const epochAtStart = getScanEpoch()
+    setScanError(null)
     try {
       const fd = new FormData()
       fd.set("file", invoiceFile)
@@ -325,6 +332,7 @@ export default function NewInvoiceAiPage() {
       )
       if (getScanEpoch() !== epochAtStart) return
       if (!res.success) {
+        setScanError(res.error)
         toast.error(res.error)
         return
       }
@@ -334,6 +342,7 @@ export default function NewInvoiceAiPage() {
       setSourceFile(res.sourceFile)
       setSyncSummary(res.syncSummary)
       setAwaitingConfirmation(false)
+      setScanError(null)
       setInvoiceFile(null)
       setFileInputKey((k) => k + 1)
       const projectName =
@@ -345,7 +354,9 @@ export default function NewInvoiceAiPage() {
         `החשבונית נשמרה: עודכנו ${res.syncSummary.updatedSkus} מק\"טים בגיליון הפריטים ושויכו לפרויקט ${projectName}`
       )
     } catch (e) {
-      toast.error(formatError(e))
+      const err = formatError(e)
+      setScanError(err)
+      toast.error(err)
     } finally {
       if (getScanEpoch() === epochAtStart) resetScan()
     }
@@ -522,6 +533,12 @@ export default function NewInvoiceAiPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {scanError ? (
+            <Alert variant="warning">
+              <AlertTitle>שגיאה בסריקת AI</AlertTitle>
+              <AlertDescription>{scanError}</AlertDescription>
+            </Alert>
+          ) : null}
           <form
             className="flex flex-col gap-4 sm:flex-row sm:items-end"
             onSubmit={(e) => {

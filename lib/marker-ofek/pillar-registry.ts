@@ -66,7 +66,7 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
     navItems: [
       { title: "קטלוג פריטים", href: "/marker-ofek/items", icon: Tags },
       { title: "הגדרות חברה", href: "/marker-ofek/settings", icon: Settings },
-      { title: "מפת המערכת (Roadmap)", href: "/marker-ofek/system-map", icon: Map },
+      { title: "מפת המערכת", href: "/marker-ofek/system-map", icon: Map },
     ],
     quickActions: [
       { title: "קטלוג פריטים", href: "/marker-ofek/items" },
@@ -84,7 +84,7 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
     defaultOpen: false,
     navItems: [
       {
-        title: "קליטת חומרי מכרז (AI)",
+        title: "קליטת חומרי מכרז (בינה מלאכותית)",
         href: "/marker-ofek/pre-construction/tender-intake",
         icon: FileScan,
       },
@@ -173,12 +173,12 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
         icon: Truck,
       },
       {
-        title: "חשבוניות ספק ו-AI",
+        title: "חשבוניות ספק ובינה מלאכותית",
         href: "/marker-ofek/procurement/invoices/new",
         icon: Receipt,
       },
       {
-        title: "Audit התאמות חודשי",
+        title: "בקרת התאמות חודשית",
         href: "/marker-ofek/procurement/reconciliation",
         icon: Scale,
       },
@@ -211,7 +211,7 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
         href: "/marker-ofek/procurement/invoices/new",
       },
       {
-        title: "Audit התאמות",
+        title: "בקרת התאמות",
         href: "/marker-ofek/procurement/reconciliation",
       },
     ],

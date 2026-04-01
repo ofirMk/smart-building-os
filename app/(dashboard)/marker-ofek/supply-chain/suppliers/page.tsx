@@ -420,7 +420,7 @@ export default function SupplyChainSuppliersPage() {
 
         <Card className="border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Supplier Dashboard (Child)</CardTitle>
+            <CardTitle className="text-lg">פרטי ספק</CardTitle>
             <CardDescription>
               מחירון ספק, היסטוריית הזמנות/חשבוניות וניתוח סטיות מול מחירי PO.
             </CardDescription>

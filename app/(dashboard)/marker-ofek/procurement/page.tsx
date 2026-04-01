@@ -278,7 +278,7 @@ export default function MarkerOfekProcurementPage() {
               )}
             >
               <BadgeCheck className="size-4" aria-hidden />
-              Audit Table חודשי
+              טבלת התאמות וביקורת
             </Link>
             <Link
               href="/marker-ofek/procurement/aging"

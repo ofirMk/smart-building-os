@@ -529,7 +529,7 @@ export default function MarkerOfekAiImportPage() {
       return
     }
     if (!docMeta.supplier_name?.trim()) {
-      toast.error("חסר שם ספק במטא-דאטה — לא ניתן לשמור Shadow Catalog")
+      toast.error("חסר שם ספק במטא-דאטה — לא ניתן לשמור קטלוג צללים")
       return
     }
     if (!profitCenterId.trim()) {

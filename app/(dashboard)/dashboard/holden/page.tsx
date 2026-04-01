@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { type LucideIcon, Building2, Percent, PlugZap, Ticket } from "lucide-react"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
 import {
   Card,
@@ -17,6 +19,15 @@ import {
 import { getBuildingsWithCounts } from "@/lib/buildings"
 
 export default async function HoldenCommandCenterPage() {
+  const cookieStore = await cookies()
+  const selectedCompany = cookieStore.get("selected_company")?.value
+  if (!selectedCompany) {
+    redirect("/")
+  }
+  if (selectedCompany === "marker_ofek") {
+    redirect("/dashboard")
+  }
+
   const [rpc, secondary, buildingsResult] = await Promise.all([
     getDashboardRpcMetrics(),
     getSecondaryDashboardStats(),
@@ -32,13 +43,13 @@ export default async function HoldenCommandCenterPage() {
     <div dir="rtl" lang="he" className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-12 pt-2">
       <header className="space-y-2 text-start">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">
-          Holden Building Management
+          הולדן גרופ - ניהול מבנים
         </p>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Holden Command Center
+          מרכז הפיקוד של הולדן
         </h1>
         <p className="text-sm text-muted-foreground">
-          מרכז תפעול נכסים ודיירים — מופרד ממערכות הקבלנות של Marker Ofek.
+          מרכז תפעול נכסים ודיירים — מופרד ממערכות הקבלנות של מרקר אופק.
         </p>
       </header>
 

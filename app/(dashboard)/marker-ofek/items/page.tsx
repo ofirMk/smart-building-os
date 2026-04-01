@@ -102,7 +102,8 @@ export default function MarkerOfekItemsCatalogPage() {
     setError(null)
     try {
       const supabase = createSupabaseBrowserClient()
-      const { data, error: qErr } = await supabase
+      const db = supabase.schema("public")
+      const { data, error: qErr } = await db
         .from("items_catalog")
         .select(ITEMS_CATALOG_COLUMNS)
         .order("sku", { ascending: true })
@@ -128,8 +129,9 @@ export default function MarkerOfekItemsCatalogPage() {
     setError(null)
     try {
       const supabase = createSupabaseBrowserClient()
+      const db = supabase.schema("public")
       const from = rowsRef.current.length
-      const { data, error: qErr } = await supabase
+      const { data, error: qErr } = await db
         .from("items_catalog")
         .select(ITEMS_CATALOG_COLUMNS)
         .order("sku", { ascending: true })
@@ -166,7 +168,8 @@ export default function MarkerOfekItemsCatalogPage() {
       setLoadingHistory(true)
       try {
         const supabase = createSupabaseBrowserClient()
-        const { data, error: qErr } = await supabase
+        const db = supabase.schema("public")
+        const { data, error: qErr } = await db
           .from("supplier_items")
           .select(
             "id, supplier_sku, unit_price, discount_pct, last_updated, entities ( name )"
@@ -208,7 +211,8 @@ export default function MarkerOfekItemsCatalogPage() {
     setSaving(true)
     try {
       const supabase = createSupabaseBrowserClient()
-      const { data, error: insErr } = await supabase
+      const db = supabase.schema("public")
+      const { data, error: insErr } = await db
         .from("items_catalog")
         .insert({
           sku,
@@ -422,7 +426,7 @@ export default function MarkerOfekItemsCatalogPage() {
             </div>
           ) : rows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              אין פריטים בקטלוג. הוסיפו מק״ט פנימי חדש.
+              לא נמצאו פריטים בקטלוג. הוסיפו מק״ט פנימי חדש.
             </p>
           ) : (
             <div className="space-y-4">
@@ -475,6 +479,9 @@ export default function MarkerOfekItemsCatalogPage() {
                   </TableBody>
                 </Table>
               </div>
+              {filteredRows.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground">לא נמצאו פריטים</p>
+              ) : null}
               {hasMore ? (
                 <div className="flex justify-center">
                   <Button

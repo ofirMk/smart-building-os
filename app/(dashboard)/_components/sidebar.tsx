@@ -77,7 +77,7 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
   {
     label: "ראשי",
     items: [
-      { title: "מרכז מודולים", href: "/dashboard", icon: LayoutDashboard },
+      { title: "מרכז מודולים", href: "/marker-ofek", icon: LayoutDashboard },
     ],
   },
   {
@@ -144,12 +144,12 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
         icon: Truck,
       },
       {
-        title: "חשבוניות ספק AI",
+        title: "חשבוניות ספק בבינה מלאכותית",
         href: "/marker-ofek/procurement/invoices/new",
         icon: Bot,
       },
       {
-        title: "Audit התאמות חודשי",
+        title: "בקרת התאמות חודשית",
         href: "/marker-ofek/procurement/reconciliation",
         icon: ShieldCheck,
       },
@@ -191,8 +191,8 @@ export const FACILITY_MANAGEMENT_NAV_SECTIONS: SidebarNavSection[] = [
   {
     label: "דיירים ושירות",
     items: [
-      { title: "צ'אט AI", href: "/chat", icon: MessageSquare },
-      { title: "מרכז הכרזות", href: "/announcements", icon: Megaphone },
+      { title: "צ'אט בינה מלאכותית", href: "/chat", icon: MessageSquare },
+      { title: "דוחות ונתונים", href: "/announcements", icon: Megaphone },
       { title: "מתקנים", href: "/amenities", icon: CalendarDays },
     ],
   },

@@ -101,12 +101,12 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Truck,
       },
       {
-        title: "חשבוניות ספק ו-AI",
+        title: "חשבוניות ספק ובינה מלאכותית",
         href: "/marker-ofek/procurement/invoices/new",
         icon: Receipt,
       },
       {
-        title: "Audit התאמות חודשי",
+        title: "בקרת התאמות חודשית",
         href: "/marker-ofek/procurement/reconciliation",
         icon: ShieldCheck,
       },

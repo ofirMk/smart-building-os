@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils"
 const titles: Record<string, string> = {
   "/": "לוח בקרה",
   "/dashboard": "לוח בקרה",
-  "/dashboard/holden": "Holden Command Center",
+  "/dashboard/holden": "מרכז הפיקוד של הולדן",
   "/facility": "לוח בקרה",
-  "/announcements": "מרכז הכרזות",
+  "/announcements": "דוחות ונתונים",
   "/buildings": "בניינים",
   "/tenants": "ניהול דיירים",
   "/vendors": "ניהול קבלנים",
@@ -73,9 +73,10 @@ export function DashboardShell({
   )
 
   return (
-    <SidebarProvider>
+    <SidebarProvider dir="rtl">
       <AppSidebar userEmail={userEmail} userRole={userRole} />
       <SidebarInset
+        dir="rtl"
         className={cn(
           "relative z-0 min-w-0 flex-1 overflow-x-hidden",
           "lg:pr-[calc(16rem+0.75rem)] lg:peer-data-[state=collapsed]:pr-[calc(var(--sidebar-width-icon)+1.25rem)]",

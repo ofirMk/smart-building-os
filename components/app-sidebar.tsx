@@ -211,7 +211,7 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
     }
   }, [])
 
-  const brandHref = isMarkerOfek ? "/dashboard" : "/dashboard/holden"
+  const brandHref = isMarkerOfek ? "/marker-ofek" : "/dashboard/holden"
   const brandTitle = isMarkerOfek
     ? "מרקר אופק יזמות וביצוע"
     : "הולדן ניהול מבנים ומתחמים"
@@ -222,16 +222,16 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
   return (
     <Sidebar
       side="right"
-      collapsible="icon"
+      collapsible="offcanvas"
       variant="inset"
       className="print:hidden"
     >
       <SidebarHeader className="space-y-4 pb-4 pt-1">
         <div className="space-y-2.5 px-1 group-data-[collapsible=icon]:hidden">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-700 dark:text-violet-300">
             החלפת חברה
           </p>
-          <details className="group/company-switcher rounded-2xl border border-border/70 bg-black/[0.02] p-1.5 dark:bg-white/[0.03]">
+          <details className="group/company-switcher rounded-2xl border border-violet-400/45 bg-violet-500/8 p-1.5 shadow-sm dark:border-violet-400/35 dark:bg-violet-500/10">
             <summary
               className={cn(
                 "flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-start text-sm font-semibold transition-colors",
@@ -258,9 +258,12 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
               />
             </summary>
             <div className="mt-1 space-y-1 rounded-xl bg-background/90 p-1 dark:bg-zinc-900/60">
-              <Link
-                href="/dashboard"
-                onClick={closeMobileNav}
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileNav()
+                  window.location.assign("/company/select/marker_ofek")
+                }}
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
                   isMarkerOfek
@@ -270,10 +273,13 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
               >
                 <span>מרקר אופק - ביצוע</span>
                 <Gauge className="size-4" aria-hidden />
-              </Link>
-              <Link
-                href="/dashboard/holden"
-                onClick={closeMobileNav}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileNav()
+                  window.location.assign("/company/select/holden_group")
+                }}
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
                   isFacility && !isMarkerOfek
@@ -283,15 +289,18 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
               >
                 <span>הולדן גרופ - ניהול מבנים</span>
                 <Building2 className="size-4" aria-hidden />
-              </Link>
-              <Link
-                href="/dashboard/holden"
-                onClick={closeMobileNav}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileNav()
+                  window.location.assign("/company/select/none")
+                }}
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted"
               >
                 <span>חזרה לבחירת חברה</span>
                 <ArrowRightLeft className="size-3.5" aria-hidden />
-              </Link>
+              </button>
             </div>
           </details>
         </div>
@@ -382,8 +391,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                   </p>
                   <p className="mt-1 inline-flex max-w-full rounded-md border border-red-400/90 bg-red-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-red-100">
                     {roleFetchError
-                      ? `[Debug Role Error: ${roleFetchError}]`
-                      : `[Debug Role: ${effectiveRole}${fetchedRole === undefined ? " (ssr)" : ""}]`}
+                      ? "[תפקיד: מנהל מערכת]"
+                      : "[תפקיד: מנהל מערכת]"}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     מחובר למערכת

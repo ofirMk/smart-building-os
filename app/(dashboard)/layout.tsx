@@ -1,6 +1,5 @@
 import { AiAssistant } from "@/components/dashboard/AiAssistant"
 import { DashboardShell } from "@/components/dashboard-shell"
-import { PageTransition } from "@/components/PageTransition"
 import type { AppUserRole } from "@/lib/auth/user-role"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
@@ -35,7 +34,7 @@ export default async function DashboardLayout({
   return (
     <>
       <DashboardShell userEmail={userEmail} userRole={userRole}>
-        <PageTransition>{children}</PageTransition>
+        {children}
       </DashboardShell>
       <AiAssistant />
     </>

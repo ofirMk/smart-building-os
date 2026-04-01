@@ -71,7 +71,7 @@ export function F1UnifiedSearchModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent dir="rtl" className="sm:max-w-2xl" showCloseButton>
         <DialogHeader>
-          <DialogTitle>F1 Command Center - חיפוש קטלוג</DialogTitle>
+          <DialogTitle>מרכז המודולים F1 - חיפוש קטלוג</DialogTitle>
           <DialogDescription>הקלד לחיפוש פריט... [ESC ליציאה]</DialogDescription>
         </DialogHeader>
 
