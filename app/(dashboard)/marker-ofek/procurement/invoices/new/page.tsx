@@ -345,13 +345,14 @@ export default function NewInvoiceAiPage() {
       setScanError(null)
       setInvoiceFile(null)
       setFileInputKey((k) => k + 1)
+      const updatedSkus = res.syncSummary?.updatedSkus ?? 0
       const projectName =
         (skipMatching
           ? projects.find((p) => p.id === projectId)?.name
           : projects.find((p) => p.id === (selectedPo?.project_id ?? ""))?.name) ||
         "הפרויקט שנבחר"
       toast.success(
-        `החשבונית נשמרה: עודכנו ${res.syncSummary.updatedSkus} מק\"טים בגיליון הפריטים ושויכו לפרויקט ${projectName}`
+        `החשבונית נשמרה: עודכנו ${updatedSkus} מק\"טים בגיליון הפריטים ושויכו לפרויקט ${projectName}`
       )
     } catch (e) {
       const err = formatError(e)

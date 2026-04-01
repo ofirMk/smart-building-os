@@ -176,12 +176,11 @@ export async function processInvoiceAI(
   }
 ): Promise<ProcessInvoiceAiResult> {
   try {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY?.trim()
+  const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
     return {
       success: false,
-      error:
-        "מפתח AI חסר - אנא הגדר NEXT_PUBLIC_GEMINI_API_KEY בקובץ ה-env",
+      error: "מפתח AI חסר - אנא הגדר GEMINI_API_KEY בקובץ ה-env",
     }
   }
 

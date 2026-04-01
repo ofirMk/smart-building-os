@@ -15,9 +15,11 @@ export default function RootPage() {
       // שמירה מקומית כדי שהמערכת תזכור את הבחירה
       localStorage.setItem("selected_company", company);
       
-      // ניתוב נקי - במקרה של מרקר אופק הולכים למרכז הפיקוד
-      // במקרה של הולדן הולכים לנתיב הייעודי
-      const targetPath = company === "marker-ofek" ? "/marker-ofek" : "/dashboard/holden";
+      // מעבר דרך נתיב server שמגדיר Cookie (selected_company)
+      const targetPath =
+        company === "marker-ofek"
+          ? "/company/select/marker_ofek"
+          : "/company/select/holden_group";
       window.location.assign(targetPath);
     }
   };
