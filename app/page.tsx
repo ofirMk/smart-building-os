@@ -10,20 +10,6 @@ export default function RootPage() {
     setMounted(true);
   }, []);
 
-  const handleSelection = (company: "marker-ofek" | "holden") => {
-    if (typeof window !== "undefined") {
-      // שמירה מקומית כדי שהמערכת תזכור את הבחירה
-      localStorage.setItem("selected_company", company);
-      
-      // מעבר דרך נתיב server שמגדיר Cookie (selected_company)
-      const targetPath =
-        company === "marker-ofek"
-          ? "/company/select/marker_ofek"
-          : "/company/select/holden_group";
-      window.location.assign(targetPath);
-    }
-  };
-
   // בזמן שהשרת טוען, נציג מסך שחור נקי כדי למנוע קפיצות (Flickering)
   if (!mounted) return <div className="min-h-svh bg-[#0a0a0a]" />;
 
@@ -36,8 +22,13 @@ export default function RootPage() {
 
       <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
         {/* כרטיס מרקר אופק */}
-        <button
-          onClick={() => handleSelection("marker-ofek")}
+        <a
+          href="/marker-ofek"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("selected_company", "marker-ofek");
+            }
+          }}
           className="flex flex-col items-center gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-12 transition-all hover:border-violet-500/50 hover:bg-violet-500/10 active:scale-[0.98]"
         >
           <div className="flex size-16 items-center justify-center rounded-2xl bg-violet-600 shadow-[0_0_20px_rgba(124,58,237,0.3)]">
@@ -45,11 +36,16 @@ export default function RootPage() {
           </div>
           <div className="text-2xl font-bold text-zinc-100">מרקר אופק</div>
           <p className="text-center text-sm text-zinc-500">ניהול פרויקטים, רכש וביצוע תשתיות חשמל</p>
-        </button>
+        </a>
 
         {/* כרטיס הולדן גרופ */}
-        <button
-          onClick={() => handleSelection("holden")}
+        <a
+          href="/company/select/holden_group"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("selected_company", "holden");
+            }
+          }}
           className="flex flex-col items-center gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-12 transition-all hover:border-blue-500/50 hover:bg-blue-500/10 active:scale-[0.98]"
         >
           <div className="flex size-16 items-center justify-center rounded-2xl bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.3)]">
@@ -57,7 +53,7 @@ export default function RootPage() {
           </div>
           <div className="text-2xl font-bold text-zinc-100">הולדן גרופ</div>
           <p className="text-center text-sm text-zinc-500">ניהול מבנים, אחזקה ושירות דיירים</p>
-        </button>
+        </a>
       </div>
     </div>
   );

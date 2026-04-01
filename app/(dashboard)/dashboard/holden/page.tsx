@@ -25,7 +25,7 @@ export default async function HoldenCommandCenterPage() {
     redirect("/")
   }
   if (selectedCompany === "marker_ofek") {
-    redirect("/dashboard")
+    redirect("/marker-ofek")
   }
 
   const [rpc, secondary, buildingsResult] = await Promise.all([
