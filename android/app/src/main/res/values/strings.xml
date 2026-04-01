@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">מרקר אופק</string>
+    <string name="title_activity_main">מרקר אופק</string>
+    <string name="package_name">com.markerofek.app</string>
+    <string name="custom_url_scheme">com.markerofek.app</string>
+</resources>

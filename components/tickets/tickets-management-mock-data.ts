@@ -1,0 +1,59 @@
+import type { TicketManagementTableRow } from "@/types/tickets-management"
+
+/** נתוני גיבוי ל־UI כשטעינת Supabase נכשלת */
+export const MOCK_TICKETS: TicketManagementTableRow[] = [
+  {
+    sourceId: "mock-1",
+    id: "T-2025-1042",
+    location: "בניין א׳, דירה 42",
+    categoryHe: "אינסטלציה",
+    urgency: "high",
+    status: "open",
+    openedAtLabel: "18.3.2025, 09:12",
+  },
+  {
+    sourceId: "mock-2",
+    id: "T-2025-1038",
+    location: "בניין ב׳, דירה 7",
+    categoryHe: "חשמל",
+    urgency: "medium",
+    status: "in_progress",
+    openedAtLabel: "17.3.2025, 14:40",
+  },
+  {
+    sourceId: "mock-3",
+    id: "T-2025-1031",
+    location: "בניין ג׳, דירה 15",
+    categoryHe: "מיזוג אוויר",
+    urgency: "low",
+    status: "open",
+    openedAtLabel: "16.3.2025, 11:05",
+  },
+  {
+    sourceId: "mock-4",
+    id: "T-2025-1029",
+    location: "בניין א׳, לובי",
+    categoryHe: "כללי",
+    urgency: "medium",
+    status: "resolved",
+    openedAtLabel: "15.3.2025, 08:22",
+  },
+  {
+    sourceId: "mock-5",
+    id: "T-2025-1026",
+    location: "חניון תת-קרקעי, עמדה 12",
+    categoryHe: "תאורה",
+    urgency: "low",
+    status: "open",
+    openedAtLabel: "14.3.2025, 19:50",
+  },
+  {
+    sourceId: "mock-6",
+    id: "T-2025-1024",
+    location: "בניין ד׳, דירה 3",
+    categoryHe: "אינסטלציה",
+    urgency: "high",
+    status: "in_progress",
+    openedAtLabel: "14.3.2025, 07:15",
+  },
+]

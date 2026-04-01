@@ -1,0 +1,12 @@
+{
+  "name": "ניהול מבנים",
+  "short_name": "ניהול מבנים",
+  "description": "מערכת ניהול נכסים ודיירים",
+  "lang": "he",
+  "dir": "rtl",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a"
+}

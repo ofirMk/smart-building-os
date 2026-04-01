@@ -1,0 +1,12 @@
+{
+  "name": "הולדן גרופ",
+  "short_name": "הולדן גרופ",
+  "description": "פורטל ניהול קבוצת הולדן",
+  "lang": "he",
+  "dir": "rtl",
+  "display": "standalone",
+  "start_url": "/admin",
+  "scope": "/",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a"
+}
