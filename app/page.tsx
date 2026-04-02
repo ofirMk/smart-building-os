@@ -1,59 +1,62 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
+
+type CompanyCookie = "marker_ofek" | "holden_group" | "none";
+
+function setSelectedCompanyCookie(company: CompanyCookie) {
+  if (typeof document === "undefined") return;
+  const maxAge = company === "none" ? 0 : 60 * 60 * 24 * 180;
+  document.cookie = `selected_company=${company}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+}
 
 export default function RootPage() {
-  const [mounted, setMounted] = useState(false);
-
-  // מונע שגיאות שרת - הקוד ירוץ רק כשהדף נחת בדפדפן
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // בזמן שהשרת טוען, נציג מסך שחור נקי כדי למנוע קפיצות (Flickering)
-  if (!mounted) return <div className="min-h-svh bg-[#0a0a0a]" />;
-
   return (
-    <div dir="rtl" className="flex min-h-svh flex-col items-center justify-center bg-[#0a0a0a] p-6 text-white font-sans">
-      <div className="mb-12 text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">ברוך הבא, אופיר</h1>
-        <p className="text-zinc-500">בחר חברה כדי להיכנס למרכז הפיקוד</p>
-      </div>
+    <div
+      dir="rtl"
+      className="min-h-svh bg-[#09090b] px-6 py-10 text-white font-sans md:px-10"
+    >
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
+        <header className="space-y-3 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-100 md:text-6xl">
+            קבוצת הולדן
+          </h1>
+          <p className="text-base text-zinc-400 md:text-lg">פורטל כניסה למערכות הקבוצה</p>
+        </header>
 
-      <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
-        {/* כרטיס מרקר אופק */}
-        <a
-          href="/marker-ofek"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              localStorage.setItem("selected_company", "marker-ofek");
-            }
-          }}
-          className="flex flex-col items-center gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-12 transition-all hover:border-violet-500/50 hover:bg-violet-500/10 active:scale-[0.98]"
-        >
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-violet-600 shadow-[0_0_20px_rgba(124,58,237,0.3)]">
-            <span className="text-2xl font-bold">M</span>
-          </div>
-          <div className="text-2xl font-bold text-zinc-100">מרקר אופק</div>
-          <p className="text-center text-sm text-zinc-500">ניהול פרויקטים, רכש וביצוע תשתיות חשמל</p>
-        </a>
+        <section className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <a
+            href="/marker-ofek"
+            onClick={() => setSelectedCompanyCookie("marker_ofek")}
+            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:bg-violet-500/10 hover:shadow-xl hover:shadow-violet-500/10"
+          >
+            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">מרקר אופק</div>
+          </a>
 
-        {/* כרטיס הולדן גרופ */}
-        <a
-          href="/company/select/holden_group"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              localStorage.setItem("selected_company", "holden");
-            }
-          }}
-          className="flex flex-col items-center gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-12 transition-all hover:border-blue-500/50 hover:bg-blue-500/10 active:scale-[0.98]"
-        >
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-            <span className="text-2xl font-bold">H</span>
-          </div>
-          <div className="text-2xl font-bold text-zinc-100">הולדן גרופ</div>
-          <p className="text-center text-sm text-zinc-500">ניהול מבנים, אחזקה ושירות דיירים</p>
-        </a>
+          <a
+            href="/dashboard/holden"
+            onClick={() => setSelectedCompanyCookie("holden_group")}
+            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-xl hover:shadow-cyan-500/10"
+          >
+            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">הולדן ניהול מבנים</div>
+          </a>
+
+          <a
+            href="/hh-panels"
+            onClick={() => setSelectedCompanyCookie("none")}
+            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:bg-blue-500/10 hover:shadow-xl hover:shadow-blue-500/10"
+          >
+            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">ח.ח. לוחות חשמל</div>
+          </a>
+
+          <a
+            href="/hq"
+            onClick={() => setSelectedCompanyCookie("none")}
+            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-500/10 hover:shadow-xl hover:shadow-amber-500/10"
+          >
+            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">הנהלת הקבוצה</div>
+          </a>
+        </section>
       </div>
     </div>
   );

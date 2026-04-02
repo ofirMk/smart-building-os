@@ -77,6 +77,14 @@ function avatarLetterFromEmail(email: string | null): string {
   return /[a-z]/i.test(first) ? first.toUpperCase() : first
 }
 
+type CompanyCookie = "marker_ofek" | "holden_group" | "none"
+
+function setSelectedCompanyCookie(company: CompanyCookie) {
+  if (typeof document === "undefined") return
+  const maxAge = company === "none" ? 0 : 60 * 60 * 24 * 180
+  document.cookie = `selected_company=${company}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
+}
+
 type AppSidebarProps = {
   userEmail: string | null
   userRole: AppUserRole
@@ -92,6 +100,15 @@ function SidebarNavLinkRow({
   closeMobileNav: () => void
 }) {
   const Icon = item.icon
+  const isPrimaryHardRoute =
+    item.href === "/" ||
+    item.href === "/marker-ofek" ||
+    item.href === "/dashboard/holden" ||
+    item.href === "/hh-panels" ||
+    item.href === "/hq"
+  const isModulesCenterLink =
+    (item.title === "מרכז מודולים" || item.title === "מרכז המודולים") &&
+    item.href === "/marker-ofek"
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -105,15 +122,37 @@ function SidebarNavLinkRow({
           "data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:shadow-sm"
         )}
         render={
-          <Link
-            href={item.href}
-            onClick={closeMobileNav}
-            dir="rtl"
-            className="flex w-full items-center justify-start gap-2 text-start"
-          >
-            <Icon />
-            <span className="truncate">{item.title}</span>
-          </Link>
+          isModulesCenterLink ? (
+            <a
+              href="/marker-ofek"
+              onClick={closeMobileNav}
+              dir="rtl"
+              className="flex w-full items-center justify-start gap-2 text-start"
+            >
+              <Icon />
+              <span className="truncate">מרכז המודולים</span>
+            </a>
+          ) : isPrimaryHardRoute ? (
+            <a
+              href={item.href}
+              onClick={closeMobileNav}
+              dir="rtl"
+              className="flex w-full items-center justify-start gap-2 text-start"
+            >
+              <Icon />
+              <span className="truncate">{item.title}</span>
+            </a>
+          ) : (
+            <Link
+              href={item.href}
+              onClick={closeMobileNav}
+              dir="rtl"
+              className="flex w-full items-center justify-start gap-2 text-start"
+            >
+              <Icon />
+              <span className="truncate">{item.title}</span>
+            </Link>
+          )
         }
       />
     </SidebarMenuItem>
@@ -262,7 +301,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 type="button"
                 onClick={() => {
                   closeMobileNav()
-                  window.location.assign("/company/select/marker_ofek")
+                  setSelectedCompanyCookie("marker_ofek")
+                  window.location.assign("/marker-ofek")
                 }}
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
@@ -278,7 +318,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 type="button"
                 onClick={() => {
                   closeMobileNav()
-                  window.location.assign("/company/select/holden_group")
+                  setSelectedCompanyCookie("holden_group")
+                  window.location.assign("/dashboard/holden")
                 }}
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
@@ -294,7 +335,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 type="button"
                 onClick={() => {
                   closeMobileNav()
-                  window.location.assign("/company/select/none")
+                  setSelectedCompanyCookie("none")
+                  window.location.assign("/")
                 }}
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted"
               >
@@ -305,7 +347,7 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
           </details>
         </div>
 
-        <Link
+        <a
           href={brandHref}
           onClick={closeMobileNav}
           className="flex items-center gap-3 rounded-2xl px-2 py-2 outline-none transition-all duration-300 ease-in-out hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-violet-500/30 dark:hover:bg-white/[0.04]"
@@ -330,7 +372,7 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
               {brandSubtitle}
             </span>
           </div>
-        </Link>
+        </a>
         {guyWelcome ? (
           <p
             className="mt-2 px-2 text-xs font-medium text-emerald-600 group-data-[collapsible=icon]:hidden dark:text-emerald-400"
