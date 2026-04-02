@@ -1,7 +1,6 @@
 "use client"
 
 import { motion } from "framer-motion"
-import Link from "next/link"
 import { Briefcase, Building, HardHat, Zap } from "lucide-react"
 
 const container = {
@@ -87,7 +86,7 @@ export default function HoldenPortalPage() {
                 }}
                 whileTap={{ scale: 0.985 }}
               >
-                <Link
+                <a
                   href={card.href}
                   className="group flex h-full min-h-[168px] flex-col justify-between rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-7 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-[border-color,box-shadow] duration-300 hover:border-cyan-400/40 hover:shadow-[0_0_52px_-14px_rgba(34,211,238,0.4)]"
                 >
@@ -99,7 +98,7 @@ export default function HoldenPortalPage() {
                   <span className="text-start text-lg font-semibold leading-snug tracking-tight text-zinc-50 md:text-xl">
                     {card.title}
                   </span>
-                </Link>
+                </a>
               </motion.div>
             </motion.div>
           ))}

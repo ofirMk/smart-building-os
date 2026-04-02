@@ -19,7 +19,7 @@ function clientSafeFetchErrorMessage(err: unknown): string {
   return `${err.name}: ${err.message}${err.stack ? `\n${err.stack}` : ""}`
 }
 
-const GEMINI_REST_MODEL = "gemini-2.5-flash"
+const GEMINI_REST_MODEL = "gemini-1.5-flash"
 
 /** פלט מובנה לקליטה עתידית ב-ERP; רקע: lib/marker-ofek/erp-evolution-insights.ts */
 const EXTRACTOR_PROMPT = `You are an expert Israeli procurement analyst. Extract data from this invoice/quote/delivery note for an ERP system.
@@ -314,7 +314,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json(
         {
           error:
-            "חסר GEMINI_API_KEY בשרת — הגדירו מפתח ב-.env.local כדי להפעיל ניתוח AI",
+            "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות.",
         },
         { status: 503 }
       )
@@ -371,7 +371,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const buf = Buffer.from(await file.arrayBuffer())
     const base64String = toPureBase64(buf.toString("base64"))
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_REST_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`
+    const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_REST_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`
 
     const body = {
       contents: [

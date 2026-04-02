@@ -459,6 +459,37 @@ export type MarkerOfekItemsCatalogInsert = {
   is_inventory?: boolean
 }
 
+/** public.inventory_transactions */
+export type MarkerOfekInventoryTransactionRow = {
+  id: string
+  project_id: string
+  item_catalog_id: string
+  contract_item_id: string | null
+  transaction_type: "incoming" | "outgoing" | "adjustment"
+  quantity: number
+  unit: string | null
+  notes: string | null
+  created_at: string
+}
+
+/** app-model helper (camelCase) */
+export type InventoryTransactionModel = {
+  id: string
+  /** prisma-like alias: itemId */
+  itemId: string
+  projectId: string
+  itemCatalogId: string
+  /** prisma-like alias: contractItemId */
+  contractItemId?: string | null
+  /** prisma-like alias: type */
+  type: "incoming" | "outgoing" | "adjustment"
+  transactionType: "incoming" | "outgoing" | "adjustment"
+  quantity: number
+  unit?: string | null
+  notes?: string | null
+  createdAt: string
+}
+
 export type MarkerOfekPurchaseOrderInsert = {
   project_id: string
   supplier_id: string

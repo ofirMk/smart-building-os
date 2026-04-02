@@ -16,6 +16,7 @@ import {
   ScanText,
   ShoppingCart,
   Truck,
+  Warehouse,
 } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button-variants"
@@ -329,6 +330,26 @@ export default function MarkerOfekProcurementPage() {
             >
               <Truck className="size-4" aria-hidden />
               תעודת משלוח חדשה
+            </Link>
+            <Link
+              href="/marker-ofek/procurement/warehouse-outgoing"
+              className={cn(
+                buttonVariants({ size: "lg", variant: "outline" }),
+                "w-full shrink-0 gap-2 border-teal-500/45 text-white hover:bg-teal-500/12 sm:w-auto"
+              )}
+            >
+              <Warehouse className="size-4" aria-hidden />
+              הוצאת מחסן
+            </Link>
+            <Link
+              href="/marker-ofek/procurement/reconciliation/inventory-progress"
+              className={cn(
+                buttonVariants({ size: "lg", variant: "outline" }),
+                "w-full shrink-0 gap-2 border-orange-500/50 text-orange-950 hover:bg-orange-500/10 dark:text-orange-100 sm:w-auto"
+              )}
+            >
+              <AlertTriangle className="size-4" aria-hidden />
+              Reconciliation מחסן/ביצוע
             </Link>
             <Link
               href="/marker-ofek/procurement/purchase-orders/new"

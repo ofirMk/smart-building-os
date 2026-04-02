@@ -13,7 +13,7 @@ import type {
   SingleDocumentAiExtraction,
 } from "@/lib/marker-ofek/tender-intake-types"
 
-const GEMINI_MODEL = "gemini-2.5-flash"
+const GEMINI_MODEL = "gemini-1.5-flash"
 export const MAX_TENDER_FILE_BYTES = 15 * 1024 * 1024
 
 const SINGLE_DOC_PROMPT = `You are an expert Israeli construction / tender document analyst. Analyze this engineering drawing, specification, or bill of quantities (PDF page or image).
@@ -33,7 +33,7 @@ Focus on:
    - "drawing_general" — architectural / structural / general plan
    If unclear, use "unknown".
 4) **Floors** mentioned in titles or notes (e.g. "קומה 3", "B-1", "גג", "מרתף") as a string array floors_mentioned.
-5) **Tags**: short Hebrew or English keywords (discipline, systems).
+5) **Tags**: short Hebrew keywords (discipline, systems). Use English only when no Hebrew equivalent exists in the source.
 6) **vertical_hints**: short Hebrew phrases about vertical composition if inferable from this doc only (e.g. "חניון תת-קרקעי", "קומות מגורים").
 
 Return ONLY valid JSON (no markdown fences):
@@ -55,6 +55,7 @@ Tasks:
 1) Pick the best consensus for **summary_he** (one Hebrew sentence describing the building).
 2) Build **segments** ordered from **roof to basement** (order_from_top: 0 = top/roof, increment downward). Use segment_type: roof | parking | ground | residential | commercial | basement | mechanical | other.
 3) Each segment needs: id (slug), label_he (Hebrew), order_from_top, optional floor_range, optional notes.
+4) Keep all narrative output in Hebrew (summary_he, label_he, notes).
 
 Return ONLY valid JSON:
 {
@@ -157,7 +158,7 @@ export async function analyzeSingleTenderDocumentFromBuffer(
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
     throw new Error(
-      "חסר GEMINI_API_KEY — הגדירו מפתח ב-.env.local לניתוח AI (כמו קליטת חשבוניות)"
+      "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות."
     )
   }
   if (buffer.length === 0) throw new Error("קובץ ריק")
@@ -233,7 +234,7 @@ export async function synthesizeBuildingStructure(
 ): Promise<BuildingStructureRawData> {
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
-    throw new Error("חסר GEMINI_API_KEY")
+    throw new Error("שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות.")
   }
 
   const payload = extractions.map((e) => ({

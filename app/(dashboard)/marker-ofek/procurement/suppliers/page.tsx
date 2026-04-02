@@ -72,13 +72,23 @@ export default function ProcurementSuppliersMasterPage() {
       setError(null)
       try {
         const supabase = createSupabaseBrowserClient()
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .schema("public")
-          .from("entities")
+          .from("suppliers")
           .select("id, name, legal_id, contact_info")
-          .eq("type", "supplier")
           .eq("is_deleted", false)
           .order("name", { ascending: true })
+        // Backward-compatible fallback when the dedicated suppliers table
+        // does not expose is_deleted yet in some environments.
+        if (error?.message?.toLowerCase().includes("is_deleted")) {
+          const retry = await supabase
+            .schema("public")
+            .from("suppliers")
+            .select("id, name, legal_id, contact_info")
+            .order("name", { ascending: true })
+          data = retry.data
+          error = retry.error
+        }
         if (error) throw error
         if (cancelled) return
         const rows = (data ?? []) as SupplierRow[]

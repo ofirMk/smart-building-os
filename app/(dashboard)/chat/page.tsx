@@ -46,7 +46,7 @@ export default function ChatPage() {
   React.useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+    el.scrollTo({ top: el.scrollHeight, behavior: "auto" })
   }, [messages, status])
 
   React.useEffect(() => {

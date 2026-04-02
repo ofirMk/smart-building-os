@@ -1,6 +1,6 @@
 /**
  * Gemini extraction for approved partial-bill PDFs (baseline for next bill).
- * Server-only — uses GEMINI_API_KEY.
+ * Uses GEMINI_API_KEY.
  */
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
@@ -10,7 +10,7 @@ import {
 import { extractModelJsonPayload } from "@/lib/ocr-invoice/parse-model-json"
 import type { PartialBillBaselineAIExtract } from "@/types/marker-ofek"
 
-const GEMINI_MODEL = "gemini-2.5-flash"
+const GEMINI_MODEL = "gemini-1.5-flash"
 
 export const MAX_BASELINE_PDF_BYTES = 20 * 1024 * 1024
 
@@ -59,12 +59,74 @@ Rules:
 - **total_item_price**: מחיר מחוזה (ILS). **unit_price**: per-unit; compute from total ÷ quantity when needed.
 - **cumulative_execution_percent**: אחוז ביצוע מחוזה מצטבר. **previous_cumulative_quantity**: executed quantity to date if printed (optional if percent is primary).
 - bill_month: as printed (e.g. "01/2026"). Use 0 for unknown numeric fields only when absent.
+- Keep all free-text output values in Hebrew when inferable from the document.
 
 Parse Hebrew number formats (commas, ₪) into plain numbers. Omit only rows that are completely illegible — do not omit rows merely because the table continues on another page.`
 
+export type BaselineScanContext = {
+  projectName?: string | null
+  currentAccountNumber?: number | null
+  previousAccountNumber?: number | null
+  previousItems?: unknown[]
+}
+
+function buildBaselinePrompt(context?: BaselineScanContext): string {
+  const previousItems = Array.isArray(context?.previousItems)
+    ? context!.previousItems!
+    : []
+
+  // Keep context bounded to avoid overloading model input.
+  const compactItems = previousItems.slice(0, 250)
+  const projectLabel = String(context?.projectName ?? "").trim() || "לא ידוע"
+  const currentNumber = Number(context?.currentAccountNumber ?? 0)
+  const prevNumber = Number(context?.previousAccountNumber ?? 0)
+  const currentAccountLabel =
+    Number.isFinite(currentNumber) && currentNumber > 0
+      ? `#${currentNumber}`
+      : "[מספר החשבון הנוכחי]"
+  const previousAccountLabel =
+    Number.isFinite(prevNumber) && prevNumber > 0
+      ? `#${prevNumber}`
+      : "[מספר חשבון קודם]"
+
+  return `### תפקיד: מנהל חשבונות בכיר בפרויקט תשתיות (מרקר אופק)
+אתה סורק כעת חשבון חלקי מספר ${currentAccountLabel} עבור פרויקט "${projectLabel}".
+
+### מידע היסטורי (מבסיס הנתונים):
+להלן הנתונים המאושרים מחשבון קודם ${previousAccountLabel}:
+${JSON.stringify(compactItems)}
+
+### המשימה שלך:
+1. חלץ מהקובץ המצורף את "ביצוע נוכחי" (בכמות או באחוז) לכל סעיף.
+2. השווה את הביצוע החדש מול "אחוז קודם" שסופק למעלה.
+3. חשב את ה"מצטבר החדש": (אחוז קודם + ביצוע נוכחי).
+4. אם ה"מצטבר החדש" עולה על 100%, סמן את השורה בסטטוס "OVER_BUDGET".
+
+### פורמט פלט (JSON בלבד):
+{
+  "items": [
+    {
+      "item_id": "מספר סעיף",
+      "description": "תיאור",
+      "previous_percent": מספר,
+      "current_performance": מספר,
+      "total_accumulated": מספר,
+      "alert": "OVER_BUDGET או null"
+    }
+  ]
+}
+
+IMPORTANT:
+- After producing the logic fields above, also return the mandatory system schema exactly as defined below, because saving to DB depends on it.
+- Return ONLY valid JSON (no markdown, no commentary).
+
+${BASELINE_PROMPT}`
+}
+
 async function generateFromPdfBase64(
   apiKey: string,
-  base64: string
+  base64: string,
+  context?: BaselineScanContext
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({
@@ -72,7 +134,7 @@ async function generateFromPdfBase64(
     systemInstruction: BASELINE_SYSTEM_INSTRUCTION,
   })
   const result = await model.generateContent([
-    BASELINE_PROMPT,
+    buildBaselinePrompt(context),
     {
       inlineData: {
         mimeType: "application/pdf",
@@ -86,12 +148,13 @@ async function generateFromPdfBase64(
 }
 
 export async function extractPartialBillBaselineFromPdfBuffer(
-  buffer: Buffer
+  buffer: Buffer,
+  context?: BaselineScanContext
 ): Promise<PartialBillBaselineAIExtract> {
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
     throw new Error(
-      "חסר GEMINI_API_KEY — הגדירו מפתח ב-.env.local לניתוח AI"
+      "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות."
     )
   }
   if (buffer.length === 0) throw new Error("קובץ ריק")
@@ -104,7 +167,7 @@ export async function extractPartialBillBaselineFromPdfBuffer(
   const base64String = buffer.toString("base64")
   let text: string
   try {
-    text = await generateFromPdfBase64(apiKey, base64String)
+    text = await generateFromPdfBase64(apiKey, base64String, context)
   } catch (e) {
     console.error(
       "[extractPartialBillBaselineFromPdfBuffer] Gemini generate failed",

@@ -6,7 +6,7 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const GEMINI_MODEL = "gemini-2.5-flash"
+const GEMINI_MODEL = "gemini-1.5-flash"
 const START_DATE = "2025-01-01"
 
 type ExtractedInvoice = {
@@ -104,7 +104,9 @@ async function analyzeInvoiceWithGemini(
     { "description": "string", "quantity": number, "unit_price": number, "supplier_sku": "string|null", "unit": "string|null" }
   ]
 }
-Rules: focus on supplier tax invoice (חשבונית מס), normalize numbers, items must be detailed lines.`
+Rules: focus on supplier tax invoice (חשבונית מס), normalize numbers, items must be detailed lines.
+All textual values should be in Hebrew when inferable from the source document.
+Also ensure the response is strict JSON suitable for "טבלת התאמות וביקורת".`
 
   const result = await model.generateContent([
     { text: prompt },
@@ -186,7 +188,12 @@ export async function POST(req: NextRequest) {
 
     const googleToken = await getGoogleAccessToken()
     const geminiApiKey = process.env.GEMINI_API_KEY?.trim()
-    if (!geminiApiKey) return jsonError("Missing GEMINI_API_KEY", 500)
+    if (!geminiApiKey) {
+      return jsonError(
+        "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות.",
+        500
+      )
+    }
 
     const supabase = createSupabaseServiceRoleClient()
     const stats = {

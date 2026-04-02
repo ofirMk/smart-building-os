@@ -16,9 +16,9 @@ const TENDER_PRICING_PATH = "/marker-ofek/pre-construction/tender-pricing"
 const STORAGE_BUCKET =
   process.env.TENDER_DOCUMENTS_STORAGE_BUCKET?.trim() || "tender_documents"
 
-const GEMINI_BOQ_MODEL = "gemini-2.5-flash"
+const GEMINI_BOQ_MODEL = "gemini-1.5-flash"
 
-const BOQ_EXTRACTION_PROMPT = `You are an expert Chief Estimator in Israel. Extract the Bill of Quantities (BoQ) from this document. Ignore headers, cover pages, and summary totals. Return ONLY a valid JSON Array of objects. Each object MUST have these exact keys: 'section' (string, the chapter/category name), 'item_number' (string), 'description' (string, the detailed task), 'unit' (string), and 'quantity' (number). If a value is missing, use null.`
+const BOQ_EXTRACTION_PROMPT = `You are an expert Chief Estimator in Israel. Extract the Bill of Quantities (BoQ) from this document. Ignore headers, cover pages, and summary totals. Return ONLY a valid JSON Array of objects. Each object MUST have these exact keys: 'section' (string, the chapter/category name), 'item_number' (string), 'description' (string, the detailed task), 'unit' (string), and 'quantity' (number). If a value is missing, use null. Prefer Hebrew for all textual fields when inferable from the source.`
 
 function safeStorageFileName(name: string): string {
   const t = name.trim().replace(/[^\w.\u0590-\u05FF-]+/g, "_")
@@ -74,7 +74,7 @@ function mapRowToInsert(tenderId: string, raw: unknown) {
 const INSERT_CHUNK = 300
 
 /**
- * מעלה את הקובץ ל-bucket `tender_documents`, שולח ל-Gemini 2.5 Flash, ומבצע batch insert ל־`tender_boq_items` (service role).
+ * מעלה את הקובץ ל-bucket `tender_documents`, שולח ל-Gemini 1.5 Flash, ומבצע batch insert ל־`tender_boq_items` (service role).
  */
 export async function processBoQFileAI(
   tenderId: string,
@@ -89,7 +89,11 @@ export async function processBoQFileAI(
 
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
-    return { success: false, error: "חסר GEMINI_API_KEY" }
+    return {
+      success: false,
+      error:
+        "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות.",
+    }
   }
 
   const file = formData.get("file")
@@ -176,7 +180,7 @@ export async function processBoQFileAI(
     revalidatePath(TENDER_PRICING_PATH)
     return { success: true, inserted }
   } catch (e) {
-    console.error("[tender-boq] processBoQFileAI:", e)
+    console.error("[tender-boq] שגיאה בתהליך עיבוד כתב כמויות:", e)
     return { success: false, error: formatError(e) }
   }
 }

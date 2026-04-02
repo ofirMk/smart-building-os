@@ -179,7 +179,7 @@ export default function ProcurementReconciliationPage() {
               טבלת התאמות וביקורת
             </CardTitle>
             <CardDescription>
-              השוואת חשבוניות ספק מול הזמנות רכש וקבלות סחורה (Delivery Notes).
+              השוואת חשבוניות ספק מול הזמנות רכש וקבלות סחורה.
             </CardDescription>
           </div>
           <div className="w-full max-w-[220px] space-y-1">
@@ -214,9 +214,9 @@ export default function ProcurementReconciliationPage() {
                   <TableRow>
                     <TableHead className="text-start">חודש</TableHead>
                     <TableHead className="text-start">סה״כ חשבוניות</TableHead>
-                    <TableHead className="text-start">סה״כ PO</TableHead>
+                    <TableHead className="text-start">סה״כ הזמנות רכש</TableHead>
                     <TableHead className="text-start">סה״כ תעודות משלוח</TableHead>
-                    <TableHead className="text-start">פער חשבוניות-PO</TableHead>
+                    <TableHead className="text-start">פער חשבוניות-הזמנות רכש</TableHead>
                     <TableHead className="text-start">פער חשבוניות-משלוחים</TableHead>
                   </TableRow>
                 </TableHeader>

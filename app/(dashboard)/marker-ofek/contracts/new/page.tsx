@@ -250,7 +250,7 @@ export default function NewMarkerOfekContractPage() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           boqCardRef.current?.scrollIntoView({
-            behavior: "smooth",
+            behavior: "auto",
             block: "start",
           })
         })

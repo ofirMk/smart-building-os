@@ -4,6 +4,8 @@ import Link from "next/link"
 import * as React from "react"
 import {
   ArrowRight,
+  Check,
+  CirclePlus,
   FileDown,
   FileScan,
   Loader2,
@@ -27,6 +29,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { AiProgressBar } from "@/components/shared/ai-progress-bar"
 import { SupplierNameLink } from "@/components/marker-ofek/supplier-name-link"
 import { Input } from "@/components/ui/input"
@@ -75,6 +85,8 @@ const OPEN_PO = ["approved", "sent", "partial_receipt"] as const
 
 const INVOICE_AI_SCAN_STORAGE_KEY =
   "marker-ofek:procurement:invoice-ai:lastScan"
+const AI_SCAN_COMMUNICATION_ERROR =
+  "שגיאת תקשורת עם מנוע ה-AI. אנא בדוק את יתרת החשבון או הגדרות המודל."
 
 function readInvoiceAiScanFromSession(): {
   parsed: InvoiceAiParsed
@@ -132,9 +144,18 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
 
+function projectSequentialTag(internalProjectCode: string): string {
+  const m = internalProjectCode.match(/(\d+)\s*$/)
+  if (!m) return `#${internalProjectCode}`
+  return `#${Number(m[1])}`
+}
+
 export default function NewInvoiceAiPage() {
+  const isDevelopment = process.env.NODE_ENV === "development"
   const [pos, setPos] = React.useState<PoOption[]>([])
-  const [projects, setProjects] = React.useState<Array<{ id: string; name: string }>>([])
+  const [projects, setProjects] = React.useState<
+    Array<{ id: string; name: string; internal_project_code: string }>
+  >([])
   const [loadingPos, setLoadingPos] = React.useState(true)
   const [poId, setPoId] = React.useState("")
   const [skipMatching, setSkipMatching] = React.useState(true)
@@ -171,6 +192,13 @@ export default function NewInvoiceAiPage() {
   const [awaitingConfirmation, setAwaitingConfirmation] = React.useState(false)
   const [openingSource, setOpeningSource] = React.useState(false)
   const [scanError, setScanError] = React.useState<string | null>(null)
+  const [quickProjectOpen, setQuickProjectOpen] = React.useState(false)
+  const [quickProjectName, setQuickProjectName] = React.useState("")
+  const [creatingProject, setCreatingProject] = React.useState(false)
+  const [debugGeminiKeyStatus, setDebugGeminiKeyStatus] = React.useState<
+    "Exists" | "Missing"
+  >("Missing")
+  const projectSelectTriggerRef = React.useRef<HTMLButtonElement | null>(null)
 
   React.useLayoutEffect(() => {
     const stored = readInvoiceAiScanFromSession()
@@ -208,11 +236,17 @@ export default function NewInvoiceAiPage() {
         const projectsRes = await supabase
           .schema("public")
           .from("projects")
-          .select("id, name")
+          .select("id, name, internal_project_code")
           .eq("is_deleted", false)
           .order("name", { ascending: true })
         if (!cancelled && !projectsRes.error) {
-          setProjects((projectsRes.data as Array<{ id: string; name: string }>) ?? [])
+          setProjects(
+            (projectsRes.data as Array<{
+              id: string
+              name: string
+              internal_project_code: string
+            }>) ?? []
+          )
         }
       } catch (e) {
         if (!cancelled) toast.error(formatError(e))
@@ -224,6 +258,61 @@ export default function NewInvoiceAiPage() {
       cancelled = true
     }
   }, [])
+
+  React.useEffect(() => {
+    if (!isDevelopment) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch("/api/check-gemini", { cache: "no-store" })
+        if (!cancelled) {
+          setDebugGeminiKeyStatus(res.status === 503 ? "Missing" : "Exists")
+        }
+      } catch {
+        if (!cancelled) setDebugGeminiKeyStatus("Missing")
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isDevelopment])
+
+  React.useEffect(() => {
+    function onPageKeyDown(event: KeyboardEvent) {
+      if (event.key === "F1") {
+        const active = document.activeElement as HTMLElement | null
+        const isProjectSelectFocused =
+          active?.id === "inv-project" ||
+          projectSelectTriggerRef.current?.contains(active ?? null)
+        if (isProjectSelectFocused && skipMatching) {
+          event.preventDefault()
+          setQuickProjectOpen(true)
+        }
+        return
+      }
+
+      if (event.key === "Escape" && quickProjectOpen) {
+        event.preventDefault()
+        setQuickProjectOpen(false)
+        requestAnimationFrame(() => {
+          projectSelectTriggerRef.current?.focus()
+        })
+        return
+      }
+
+      if (
+        quickProjectOpen &&
+        (event.metaKey || event.ctrlKey) &&
+        event.key === "Enter"
+      ) {
+        event.preventDefault()
+        void createQuickProject()
+      }
+    }
+
+    window.addEventListener("keydown", onPageKeyDown)
+    return () => window.removeEventListener("keydown", onPageKeyDown)
+  }, [quickProjectOpen, skipMatching, quickProjectName, creatingProject])
 
   const selectedPo = React.useMemo(
     () => pos.find((p) => p.id === poId) ?? null,
@@ -271,13 +360,13 @@ export default function NewInvoiceAiPage() {
 
       if (!res.success) {
         resetScan()
-        setScanError(res.error)
-        toast.error(res.error)
+        const err = res.error || AI_SCAN_COMMUNICATION_ERROR
+        setScanError(err)
+        toast.error(err)
         return
       }
 
       completeScan()
-      await new Promise((r) => setTimeout(r, 500))
 
       if (getScanEpoch() !== epochAtStart) {
         resetScan()
@@ -332,8 +421,9 @@ export default function NewInvoiceAiPage() {
       )
       if (getScanEpoch() !== epochAtStart) return
       if (!res.success) {
-        setScanError(res.error)
-        toast.error(res.error)
+        const err = "שגיאת AI: " + (res.error || "בדוק חיבור שרת")
+        setScanError(err)
+        toast.error(err)
         return
       }
       writeInvoiceAiScanToSession(res.parsed, res.invoiceId, res.sourceFile)
@@ -345,14 +435,10 @@ export default function NewInvoiceAiPage() {
       setScanError(null)
       setInvoiceFile(null)
       setFileInputKey((k) => k + 1)
-      const updatedSkus = res.syncSummary?.updatedSkus ?? 0
-      const projectName =
-        (skipMatching
-          ? projects.find((p) => p.id === projectId)?.name
-          : projects.find((p) => p.id === (selectedPo?.project_id ?? ""))?.name) ||
-        "הפרויקט שנבחר"
+      const newItemsAdded = res.syncSummary?.newItemsAdded ?? 0
+      const supplierAction = res.syncSummary?.supplierActionLabel ?? "עודכן"
       toast.success(
-        `החשבונית נשמרה: עודכנו ${updatedSkus} מק\"טים בגיליון הפריטים ושויכו לפרויקט ${projectName}`
+        `הצלחה! ספק ${supplierAction}, ${newItemsAdded} מק"טים חדשים נוצרו, והחשבונית נשמרה במערכת.`
       )
     } catch (e) {
       const err = formatError(e)
@@ -397,6 +483,56 @@ export default function NewInvoiceAiPage() {
       toast.error(formatError(e))
     } finally {
       setOpeningSource(false)
+    }
+  }
+
+  async function createQuickProject() {
+    const name = quickProjectName.trim()
+    if (!name) {
+      toast.error("יש להזין שם פרויקט")
+      return
+    }
+    if (creatingProject) return
+    setCreatingProject(true)
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data, error } = await supabase
+        .schema("public")
+        .from("projects")
+        .insert({
+          name,
+          client_name: null,
+          tender_id: null,
+          internal_project_code: "",
+          address: null,
+          status: "planning",
+        })
+        .select("id, name, internal_project_code")
+        .single()
+      if (error) throw error
+
+      const created = data as {
+        id: string
+        name: string
+        internal_project_code: string
+      }
+      setProjects((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "he"))
+      )
+      setProjectId(created.id)
+      setSkipMatching(true)
+      setQuickProjectName("")
+      setQuickProjectOpen(false)
+      toast.success(
+        `הפרויקט נוצר ונבחר: ${projectSequentialTag(created.internal_project_code)} - ${created.name}`
+      )
+      requestAnimationFrame(() => {
+        projectSelectTriggerRef.current?.focus()
+      })
+    } catch (e) {
+      toast.error(formatError(e))
+    } finally {
+      setCreatingProject(false)
     }
   }
 
@@ -464,8 +600,23 @@ export default function NewInvoiceAiPage() {
               <Label htmlFor="inv-project" className="mb-2 block">
                 פרויקט לשיוך החשבונית
               </Label>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  לחץ F1 להקמה מהירה של פרויקט חדש
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setQuickProjectOpen(true)}
+                >
+                  <CirclePlus className="size-4" aria-hidden />
+                  פרויקט מהיר
+                </Button>
+              </div>
               <Select
-                value={projectId || undefined}
+                value={projectId || ""}
                 onValueChange={(v) => {
                   setProjectId(v ?? "")
                   clearInvoiceAiScanSession()
@@ -476,13 +627,27 @@ export default function NewInvoiceAiPage() {
                   setAwaitingConfirmation(false)
                 }}
               >
-                <SelectTrigger id="inv-project" className="w-full">
+                <SelectTrigger
+                  id="inv-project"
+                  className="w-full"
+                  ref={projectSelectTriggerRef}
+                  onKeyDown={(e) => {
+                    if (e.key !== "F1") return
+                    e.preventDefault()
+                    setQuickProjectOpen(true)
+                  }}
+                >
                   <SelectValue placeholder="בחרו פרויקט" />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name}
+                      <span className="inline-flex w-full items-center justify-between gap-2">
+                        <span>{`${projectSequentialTag(p.internal_project_code)} - ${p.name}`}</span>
+                        {projectId === p.id ? (
+                          <Check className="size-4 text-emerald-500" aria-hidden />
+                        ) : null}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -576,6 +741,11 @@ export default function NewInvoiceAiPage() {
               סרוק חשבונית
             </Button>
           </form>
+          {isDevelopment ? (
+            <p className="text-xs text-muted-foreground">
+              DEBUG: GEMINI_API_KEY: {debugGeminiKeyStatus}
+            </p>
+          ) : null}
 
           <div role="status" aria-live="polite" aria-busy={isScanning}>
             <AiProgressBar
@@ -793,6 +963,68 @@ export default function NewInvoiceAiPage() {
           </Card>
         </>
       ) : null}
+
+      <Dialog open={quickProjectOpen} onOpenChange={setQuickProjectOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>הקמה מהירה של פרויקט</DialogTitle>
+            <DialogDescription>
+              הזינו שם פרויקט. המספר הסידורי ייווצר אוטומטית במסד הנתונים.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quick-project-name">שם פרויקט</Label>
+              <Input
+                id="quick-project-name"
+                value={quickProjectName}
+                onChange={(e) => setQuickProjectName(e.target.value)}
+                placeholder="לדוגמה: פרויקט הדגל"
+                autoFocus
+                disabled={creatingProject}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quick-project-seq">מספר סידורי</Label>
+              <Input
+                id="quick-project-seq"
+                value="נוצר אוטומטית בעת שמירה"
+                readOnly
+                disabled
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              קיצורים: ESC לסגירה, Ctrl/Cmd+Enter לשמירה מהירה.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setQuickProjectOpen(false)
+                requestAnimationFrame(() => {
+                  projectSelectTriggerRef.current?.focus()
+                })
+              }}
+              disabled={creatingProject}
+            >
+              ביטול
+            </Button>
+            <Button
+              type="button"
+              className="gap-2"
+              onClick={() => void createQuickProject()}
+              disabled={creatingProject}
+            >
+              {creatingProject ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : null}
+              שמירה ובחירה
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

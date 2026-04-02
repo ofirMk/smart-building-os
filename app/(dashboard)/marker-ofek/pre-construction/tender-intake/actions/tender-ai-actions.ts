@@ -4,7 +4,7 @@
  * ניתוח מסמכי מכרז ב-Google Gemini (@google/generative-ai).
  *
  * דרישות סביבה: GEMINI_API_KEY (ראו .env.example)
- * מודל: gemini-2.5-flash (@google/generative-ai)
+ * מודל: gemini-1.5-flash (@google/generative-ai)
  */
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
@@ -51,7 +51,8 @@ Rules:
 - document_date: ISO date only if you can infer a single date; else null.
 - document_type: classify strictly as one of the six literals above (use null only if impossible).
 - status: map Hebrew stamps/text to: to_execution (לביצוע / execution), for_review (לעיון / review), for_tender (למכרז / tender). If unclear, use "for_review".
-- floors_data: vertical structure mentioned (e.g. roof, floors, basement levels). Use short English or Hebrew strings as found. Empty array if none.
+- floors_data: vertical structure mentioned (e.g. roof, floors, basement levels). Use short Hebrew strings when possible. Empty array if none.
+- Prefer Hebrew values for free-text fields (project_name, consultant_name, floors_data) whenever the source allows it.
 
 If a field cannot be determined, use null or [] as appropriate.
 
@@ -215,7 +216,11 @@ export async function processTenderDocumentAI(
   if (!apiKey) {
     await markDocumentAiFailed(documentId)
     revalidatePath(TENDER_INTAKE_PATH)
-    return { success: false, error: "חסר GEMINI_API_KEY" }
+    return {
+      success: false,
+      error:
+        "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות.",
+    }
   }
 
   const supabase = await createSupabaseServerAuthClient()
@@ -244,7 +249,7 @@ export async function processTenderDocumentAI(
     }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
     const base64Data = buf.toString("base64")
     const mimeForPart = mime === "image/jpg" ? "image/jpeg" : mime
 
@@ -362,7 +367,7 @@ export async function processTenderDocumentAI(
     revalidatePath("/marker-ofek/pre-construction/tender-intake")
     return { success: true }
   } catch (e) {
-    console.error("[tender-ai] Fatal Error in processTenderDocumentAI:", e)
+    console.error("[tender-ai] שגיאה קריטית בתהליך ניתוח מסמך מכרז:", e)
     const err = formatError(e)
     await markDocumentAiFailed(documentId)
     revalidatePath(TENDER_INTAKE_PATH)

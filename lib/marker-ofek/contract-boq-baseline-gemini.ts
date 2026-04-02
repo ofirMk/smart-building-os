@@ -1,6 +1,6 @@
 /**
  * Gemini: מסמך PDF (חשבון חלקי / כתב כמויות) → שורות BoQ + בסיס כספי.
- * Server-only — GEMINI_API_KEY
+ * Uses GEMINI_API_KEY
  */
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
@@ -11,7 +11,7 @@ import type { PartialBillBaselineAIExtract } from "@/types/marker-ofek"
 
 export { MAX_BASELINE_PDF_BYTES }
 
-const GEMINI_MODEL = "gemini-2.5-flash"
+const GEMINI_MODEL = "gemini-1.5-flash"
 
 const BOQ_SYSTEM_INSTRUCTION = `You are a strict Quantity Surveyor (כמת) parsing an Israeli construction bill (חשבון חלקי / כתב כמויות).
 
@@ -65,6 +65,7 @@ Per line rules:
 - **unit_price**: מחיר ליחידה; if only total and quantity exist, set unit_price = total_item_price / contract_quantity (when quantity > 0).
 - **cumulative_execution_percent**: אחוז ביצוע מחוזה מצטבר עד חשבון זה (0–100). If the PDF gives cumulative quantity instead, derive percent = (executed_qty / contract_quantity) * 100.
 - Legacy compatibility: you may also include **previous_cumulative_quantity** (quantity executed); if percent is given, prefer filling cumulative_execution_percent.
+- Keep all free-text output values in Hebrew when inferable from the document.
 
 Financial summary fields: use document numbers; cumulative_work_value = cumulative work before indexation where applicable; total_approved = net payable on this bill.
 
@@ -76,7 +77,7 @@ export async function extractContractBoqAndBaselineFromPdfBuffer(
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
     throw new Error(
-      "חסר GEMINI_API_KEY — הגדירו מפתח ב-.env.local לניתוח AI"
+      "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות."
     )
   }
   if (buffer.length === 0) throw new Error("קובץ ריק")

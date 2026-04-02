@@ -12,6 +12,7 @@ import {
 import {
   BarChart3,
   FileText,
+  FileSpreadsheet,
   FolderOpen,
   Loader2,
   MessageCircleQuestion,
@@ -20,6 +21,7 @@ import {
   Upload,
 } from "lucide-react"
 import { toast } from "sonner"
+import * as XLSX from "xlsx-js-style"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -152,7 +154,36 @@ function formatBaselineCell(
   }
 }
 
-function BaselineBillDataPreview({ data }: { data: PartialBillBaselineAIExtract }) {
+function asRowNumber(value: unknown): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function makeFileSafePart(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+}
+
+function BaselineBillDataPreview({
+  data,
+  projectName,
+}: {
+  data: PartialBillBaselineAIExtract
+  projectName: string
+}) {
   const indexFmt = new Intl.NumberFormat("he-IL", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -163,6 +194,220 @@ function BaselineBillDataPreview({ data }: { data: PartialBillBaselineAIExtract 
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
+
+  const exportRows = React.useMemo(() => {
+    return data.items.map((row) => {
+      const previousPercent = asRowNumber(
+        (row as { previous_percent?: unknown }).previous_percent ??
+          row.cumulative_execution_percent
+      )
+      const currentPerformance = asRowNumber(
+        (row as { current_performance?: unknown }).current_performance
+      )
+      const totalAccumulated = asRowNumber(
+        (row as { total_accumulated?: unknown }).total_accumulated ??
+          previousPercent + currentPerformance
+      )
+      const isOverBudget =
+        totalAccumulated > 100 ||
+        String((row as { alert?: unknown }).alert ?? "")
+          .trim()
+          .toUpperCase() === "OVER_BUDGET"
+
+      return {
+        itemId:
+          String((row as { item_id?: unknown }).item_id ?? "").trim() ||
+          row.section_number ||
+          "—",
+        description: row.description || "",
+        previousPercent,
+        currentPerformance,
+        totalAccumulated,
+        status: isOverBudget ? "OVER_BUDGET" : "OK",
+      }
+    })
+  }, [data.items])
+
+  function exportToExcel() {
+    const headers = [
+      "Item ID",
+      "Description",
+      "Previous %",
+      "Current %",
+      "Total %",
+      "Status",
+    ]
+
+    const rows = exportRows.map((row) => [
+      row.itemId,
+      row.description,
+      row.previousPercent / 100,
+      row.currentPerformance / 100,
+      row.totalAccumulated / 100,
+      row.status,
+    ])
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows])
+
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFFFF" } },
+      fill: { fgColor: { rgb: "1F2937" } },
+      alignment: { horizontal: "center", vertical: "center" },
+    }
+    for (let c = 0; c < headers.length; c++) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c })
+      const cell = worksheet[addr]
+      if (cell) cell.s = headerStyle
+    }
+
+    const totalPercentColumnIndex = 4 // E
+    for (let r = 1; r < rows.length + 1; r++) {
+      const addr = XLSX.utils.encode_cell({ r, c: totalPercentColumnIndex })
+      const cell = worksheet[addr]
+      if (!cell) continue
+      cell.s = {
+        ...(cell.s ?? ({} as object)),
+        font: {
+          ...((cell.s as { font?: Record<string, unknown> } | undefined)?.font ??
+            {}),
+          bold: true,
+        },
+        alignment: { horizontal: "center" },
+      }
+    }
+
+    // אחידות פורמט לאחוזים: Previous / Current / Total
+    for (let r = 1; r < rows.length + 1; r++) {
+      for (const c of [2, 3, 4]) {
+        const addr = XLSX.utils.encode_cell({ r, c })
+        const cell = worksheet[addr]
+        if (!cell) continue
+        cell.s = {
+          ...(cell.s ?? ({} as object)),
+          numFmt: "0.00%",
+          alignment: { horizontal: "center" },
+        }
+      }
+    }
+
+    for (let r = 1; r < rows.length + 1; r++) {
+      const status = String(rows[r - 1]?.[5] ?? "")
+      if (status !== "OVER_BUDGET") continue
+      for (let c = 0; c < headers.length; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c })
+        const cell = worksheet[addr]
+        if (!cell) continue
+        const isStatusCol = c === 5
+        cell.s = {
+          ...(cell.s ?? ({} as object)),
+          fill: { fgColor: { rgb: isStatusCol ? "991B1B" : "FEE2E2" } },
+          font: {
+            ...((cell.s as { font?: Record<string, unknown> } | undefined)
+              ?.font ?? {}),
+            color: { rgb: isStatusCol ? "FFFFFF" : "991B1B" },
+            bold: isStatusCol ? true : undefined,
+          },
+          alignment: isStatusCol ? { horizontal: "center" } : cell.s?.alignment,
+        }
+      }
+    }
+
+    worksheet["!cols"] = [
+      { wch: 14 },
+      { wch: 48 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 16 },
+    ]
+    worksheet["!autofilter"] = {
+      ref: `A1:F${rows.length + 1}`,
+    }
+    worksheet["!rows"] = [{ hpt: 22 }]
+    worksheet["!freeze"] = {
+      xSplit: 0,
+      ySplit: 1,
+      topLeftCell: "A2",
+      activePane: "bottomLeft",
+      state: "frozen",
+    }
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Tracking")
+
+    const now = new Date()
+    const day = String(now.getDate()).padStart(2, "0")
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    const year = String(now.getFullYear())
+    const projectLabel = makeFileSafePart(projectName || "project")
+    const accountNo =
+      Number.isFinite(Number(data.bill_number)) && Number(data.bill_number) > 0
+        ? Math.round(Number(data.bill_number))
+        : "unknown"
+    const filename = `${projectLabel}-חשבון-${accountNo}-${day}-${month}-${year}.xlsx`
+
+    XLSX.writeFile(workbook, filename, { compression: true })
+    toast.success("הקובץ יוצא לאקסל בהצלחה")
+  }
+
+  function exportToPDF() {
+    const printableRows = exportRows
+      .map(
+        (row) => `
+          <tr class="${row.status === "OVER_BUDGET" ? "warn-row" : ""}">
+            <td>${escapeHtml(row.itemId)}</td>
+            <td>${escapeHtml(row.description)}</td>
+            <td>${row.previousPercent}%</td>
+            <td>${row.currentPerformance}%</td>
+            <td>${row.totalAccumulated}%${row.status === "OVER_BUDGET" ? ' <strong>(חריגה)</strong>' : ""}</td>
+          </tr>
+        `
+      )
+      .join("")
+
+    const html = `
+      <!doctype html>
+      <html lang="he" dir="rtl">
+        <head>
+          <meta charset="utf-8" />
+          <title>דוח חשבון חלקי</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { font-size: 20px; margin-bottom: 12px; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { border: 1px solid #d1d5db; padding: 8px; text-align: right; }
+            th { background: #f3f4f6; }
+            .warn-row { background: #fee2e2; color: #991b1b; font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <h1>דוח חשבון חלקי ${data.bill_number ? `#${data.bill_number}` : ""}</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>סעיף</th>
+                <th>תיאור</th>
+                <th>אחוז קודם</th>
+                <th>ביצוע נוכחי</th>
+                <th>מצטבר סופי</th>
+              </tr>
+            </thead>
+            <tbody>${printableRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `
+
+    const win = window.open("", "_blank", "noopener,noreferrer,width=1024,height=768")
+    if (!win) {
+      toast.error("לא ניתן לפתוח חלון להפקת PDF")
+      return
+    }
+    win.document.open()
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    win.print()
+  }
 
   return (
     <div
@@ -186,36 +431,98 @@ function BaselineBillDataPreview({ data }: { data: PartialBillBaselineAIExtract 
         ))}
       </div>
       {data.items && data.items.length > 0 ? (
-        <div className="mt-4 max-h-64 overflow-auto rounded-lg border border-border/60 bg-card/60 p-3 text-xs">
+        <div className="mt-4 max-h-72 overflow-auto rounded-lg border border-border/60 bg-card/60 p-3 text-xs">
           <p className="mb-2 font-semibold text-foreground">
             שורות סעיפים (items) — {data.items.length}
           </p>
-          <ul className="space-y-2">
-            {data.items.slice(0, 40).map((row, i) => (
-              <li
-                key={`${row.section_number}-${i}`}
-                className="border-b border-border/40 pb-2 last:border-0"
-              >
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {row.section_number || "—"}
-                </span>{" "}
-                — {row.description.slice(0, 120)}
-                <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                  כמות: {row.contract_quantity} · מחיר יח׳:{" "}
-                  {ils.format(row.unit_price)}
-                  {" · "}
-                  מחיר מחוזה: {ils.format(row.total_item_price ?? 0)}
-                  {" · "}
-                  ביצוע מחוזה:{" "}
-                  {typeof row.cumulative_execution_percent === "number"
-                    ? `${row.cumulative_execution_percent}%`
-                    : "—"}
-                  {" · "}
-                  מצטבר כמות: {row.previous_cumulative_quantity}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="mb-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={exportToExcel}
+              className="inline-flex items-center gap-2 rounded bg-green-700 px-4 py-2 text-white transition-colors hover:bg-green-800"
+            >
+              <FileSpreadsheet className="size-5" aria-hidden />
+              ייצוא לאקסל
+            </button>
+            <button
+              type="button"
+              onClick={exportToPDF}
+              className="inline-flex items-center gap-2 rounded bg-red-700 px-4 py-2 text-white transition-colors hover:bg-red-800"
+            >
+              <FileText className="size-5" aria-hidden />
+              ייצוא ל-PDF
+            </button>
+          </div>
+          <table className="w-full border-collapse text-start text-xs">
+            <thead>
+              <tr className="border-b border-border/50 text-muted-foreground">
+                <th className="px-3 py-2 font-medium">סעיף</th>
+                <th className="px-3 py-2 font-medium">תיאור</th>
+                <th className="px-3 py-2 font-medium">אחוז קודם</th>
+                <th className="px-3 py-2 font-medium">ביצוע נוכחי</th>
+                <th className="px-3 py-2 font-medium">מצטבר סופי</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.slice(0, 40).map((row, i) => {
+                const previousPercent = asRowNumber(
+                  (row as { previous_percent?: unknown }).previous_percent ??
+                    row.cumulative_execution_percent
+                )
+                const currentPerformance = asRowNumber(
+                  (row as { current_performance?: unknown }).current_performance
+                )
+                const totalAccumulated = asRowNumber(
+                  (row as { total_accumulated?: unknown }).total_accumulated ??
+                    previousPercent + currentPerformance
+                )
+                const isOverBudget =
+                  totalAccumulated > 100 ||
+                  String((row as { alert?: unknown }).alert ?? "")
+                    .trim()
+                    .toUpperCase() === "OVER_BUDGET"
+
+                return (
+                  <tr
+                    key={`${row.section_number}-${i}`}
+                    className={`border-b border-border/40 ${isOverBudget ? "bg-red-500/10" : "bg-card/30"}`}
+                  >
+                    <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                      {row.section_number || "—"}
+                    </td>
+                    <td className="max-w-[20rem] px-3 py-2 font-medium">
+                      {row.description.slice(0, 140)}
+                    </td>
+                    <td className="bg-muted/35 px-3 py-2 text-muted-foreground tabular-nums">
+                      {previousPercent.toLocaleString("he-IL", {
+                        maximumFractionDigits: 2,
+                      })}
+                      %
+                    </td>
+                    <td className="px-3 py-2 font-bold text-blue-600 tabular-nums">
+                      {currentPerformance.toLocaleString("he-IL", {
+                        maximumFractionDigits: 2,
+                      })}
+                      %
+                    </td>
+                    <td
+                      className={`px-3 py-2 font-black tabular-nums ${isOverBudget ? "text-red-600" : "text-emerald-600"}`}
+                    >
+                      {totalAccumulated.toLocaleString("he-IL", {
+                        maximumFractionDigits: 2,
+                      })}
+                      %
+                      {isOverBudget ? (
+                        <span className="ms-2 inline-flex items-center text-[11px] font-semibold text-red-700">
+                          חריגה
+                        </span>
+                      ) : null}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
           {data.items.length > 40 ? (
             <p className="mt-2 text-muted-foreground">
               … ועוד {data.items.length - 40} שורות
@@ -595,7 +902,10 @@ export function MarkerOfekProjectHubClient({
 
               {baselinePreview ? (
                 <div className="space-y-3">
-                  <BaselineBillDataPreview data={baselinePreview} />
+                  <BaselineBillDataPreview
+                    data={baselinePreview}
+                    projectName={project.name}
+                  />
                   {!selectedContractId.trim() ? (
                     <p className="text-xs text-muted-foreground">
                       בחרו חוזה מהרשימה כדי להפעיל שמירה.

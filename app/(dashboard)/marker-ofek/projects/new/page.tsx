@@ -31,6 +31,8 @@ import type { MarkerOfekTenderRow } from "@/types/marker-ofek"
 
 /** ערך ב-Select ל«ללא מכרז» — לא UUID; מנורמל ל-null בשרת */
 const TENDER_NONE_VALUE = "none"
+const CREATED_PROJECT_STORAGE_KEY =
+  "marker-ofek:projects:newly-created-id"
 
 function tenderLabel(t: MarkerOfekTenderRow): string {
   const name = t.project_name_from_ai?.trim()
@@ -70,6 +72,17 @@ export default function NewMarkerOfekProjectPage() {
     }
   }, [])
 
+  React.useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return
+      event.preventDefault()
+      router.push("/marker-ofek/procurement/invoices/new")
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [router])
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
@@ -85,7 +98,12 @@ export default function NewMarkerOfekProjectPage() {
         return
       }
       toast.success("הפרויקט נוצר")
-      router.push(`/marker-ofek/projects/${result.projectId}`)
+      try {
+        localStorage.setItem(CREATED_PROJECT_STORAGE_KEY, result.projectId)
+      } catch {
+        // ignore storage errors
+      }
+      router.push("/marker-ofek/procurement/invoices/new")
     } catch (err) {
       toast.error(formatError(err))
     } finally {
@@ -109,6 +127,9 @@ export default function NewMarkerOfekProjectPage() {
           <CardDescription>
             שם פרויקט ושם לקוח. שיוך למכרז זוכה אופציונלי (מסלול קליטת מכרזים).
           </CardDescription>
+          <p className="text-xs text-muted-foreground">
+            לחץ ESC לחזרה למסך החשבונית הקודם.
+          </p>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="space-y-4 pt-6">

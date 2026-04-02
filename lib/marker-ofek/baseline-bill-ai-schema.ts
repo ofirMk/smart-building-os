@@ -9,6 +9,7 @@ function roundMoney(n: number): number {
  * וגם בפורמט מחוזה (total_item_price + cumulative_execution_percent).
  */
 const baselineBillLineItemRawSchema = z.object({
+  item_id: z.union([z.string(), z.number()]).optional(),
   section_number: z.coerce.string(),
   description: z.coerce.string(),
   unit: z.union([z.string(), z.number()]).optional(),
@@ -17,6 +18,10 @@ const baselineBillLineItemRawSchema = z.object({
   unit_price: z.coerce.number().optional(),
   previous_cumulative_quantity: z.coerce.number().optional(),
   cumulative_execution_percent: z.coerce.number().optional(),
+  previous_percent: z.coerce.number().optional(),
+  current_performance: z.coerce.number().optional(),
+  total_accumulated: z.coerce.number().optional(),
+  alert: z.union([z.string(), z.null()]).optional(),
 })
 
 export const baselineBillLineItemSchema = baselineBillLineItemRawSchema.transform(
@@ -74,7 +79,28 @@ export const baselineBillLineItemSchema = baselineBillLineItemRawSchema.transfor
         ? ""
         : String(raw.unit).trim()
 
+    const previousPercent = Number.isFinite(raw.previous_percent)
+      ? Number(raw.previous_percent)
+      : Number.isFinite(cumPct)
+        ? Number(cumPct)
+        : 0
+    const currentPerformance = Number.isFinite(raw.current_performance)
+      ? Number(raw.current_performance)
+      : 0
+    const totalAccumulated = Number.isFinite(raw.total_accumulated)
+      ? Number(raw.total_accumulated)
+      : roundMoney(previousPercent + currentPerformance)
+    const normalizedAlert =
+      String(raw.alert ?? "").trim().toUpperCase() === "OVER_BUDGET" ||
+      totalAccumulated > 100
+        ? "OVER_BUDGET"
+        : null
+
     return {
+      item_id:
+        raw.item_id === undefined || raw.item_id === null
+          ? null
+          : String(raw.item_id).trim() || null,
       section_number: String(raw.section_number ?? "").trim(),
       description: String(raw.description ?? "").trim(),
       unit: unitStr,
@@ -83,6 +109,10 @@ export const baselineBillLineItemSchema = baselineBillLineItemRawSchema.transfor
       unit_price: unitP,
       previous_cumulative_quantity: prevQty,
       cumulative_execution_percent: cumPct,
+      previous_percent: previousPercent,
+      current_performance: currentPerformance,
+      total_accumulated: totalAccumulated,
+      alert: normalizedAlert,
     }
   }
 )

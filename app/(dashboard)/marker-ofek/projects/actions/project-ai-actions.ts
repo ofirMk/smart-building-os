@@ -9,6 +9,7 @@ import {
 } from "@/lib/marker-ofek/contract-boq-baseline-gemini"
 import { encodeBoqMilestoneStoredName } from "@/lib/marker-ofek/milestone-name-codec"
 import {
+  type BaselineScanContext,
   extractPartialBillBaselineFromPdfBuffer,
   MAX_BASELINE_PDF_BYTES,
 } from "@/lib/marker-ofek/project-baseline-bill-gemini"
@@ -33,6 +34,60 @@ function clampPct(n: number): number {
 
 function logSupabaseError(ctx: string, err: { message?: string; code?: string } | null | undefined) {
   console.error(`[project-ai-actions] ${ctx}`, err?.message, err?.code)
+}
+
+async function getPreviousAccountData(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
+  projectId: string,
+  currentAccountNum: number
+): Promise<
+  | "אין נתונים קודמים מאושרים."
+  | Array<{ id: string; desc: string; prevTotalPercent: number }>
+> {
+  const previousAccountNum = Math.max(0, currentAccountNum - 1)
+  if (previousAccountNum <= 0) return "אין נתונים קודמים מאושרים."
+
+  const previousAccountRes = await supabase
+    .from("partial_accounts")
+    .select("snapshot_payload")
+    .eq("project_id", projectId)
+    .eq("account_number", previousAccountNum)
+    .eq("status", "approved")
+    .limit(1)
+    .maybeSingle()
+
+  if (previousAccountRes.error || !previousAccountRes.data) {
+    return "אין נתונים קודמים מאושרים."
+  }
+
+  const snapshot = (
+    previousAccountRes.data as { snapshot_payload?: Record<string, unknown> | null }
+  ).snapshot_payload
+  const rows = Array.isArray(snapshot?.items) ? snapshot.items : []
+  if (!rows.length) return "אין נתונים קודמים מאושרים."
+
+  return rows.map((item, idx) => {
+    const row =
+      item && typeof item === "object" && !Array.isArray(item)
+        ? (item as Record<string, unknown>)
+        : {}
+    return {
+      id: String(
+        row.section_number ??
+          row.item_id ??
+          row.manualId ??
+          row.id ??
+          `line-${idx + 1}`
+      ).trim(),
+      desc: String(row.description ?? row.desc ?? "").trim(),
+      prevTotalPercent: Number(
+        row.cumulative_execution_percent ??
+          row.totalAccumulatedPercent ??
+          row.prevTotalPercent ??
+          0
+      ),
+    }
+  })
 }
 
 type MilestoneBuildResult = {
@@ -202,8 +257,45 @@ export async function importBaselineBillAI(
       return { ok: false, error: "יש להעלות קובץ PDF בלבד" }
     }
 
+    const supabase = await createSupabaseServerAuthClient()
+
+    const previousContext: BaselineScanContext = {}
+
+    const { data: projectRow } = await supabase
+      .from("projects")
+      .select("name")
+      .eq("id", projectId)
+      .maybeSingle()
+    previousContext.projectName = String(
+      (projectRow as { name?: string } | null)?.name ?? ""
+    ).trim()
+
+    const currentAccountNumRaw =
+      formData.get("current_account_number")?.toString().trim() ??
+      formData.get("account_number")?.toString().trim() ??
+      ""
+    const parsedCurrentAccountNum = Number(currentAccountNumRaw)
+    previousContext.currentAccountNumber =
+      Number.isFinite(parsedCurrentAccountNum) && parsedCurrentAccountNum > 0
+        ? parsedCurrentAccountNum
+        : 1
+
+    const previousItemsOrMessage = await getPreviousAccountData(
+      supabase,
+      projectId,
+      previousContext.currentAccountNumber
+    )
+    if (Array.isArray(previousItemsOrMessage)) {
+      previousContext.previousItems = previousItemsOrMessage
+      previousContext.previousAccountNumber =
+        previousContext.currentAccountNumber - 1
+    }
+
     const buf = Buffer.from(await file.arrayBuffer())
-    const data = await extractPartialBillBaselineFromPdfBuffer(buf)
+    const data = await extractPartialBillBaselineFromPdfBuffer(
+      buf,
+      previousContext
+    )
     return { ok: true, data }
   } catch (e) {
     console.error("[importBaselineBillAI]", e)

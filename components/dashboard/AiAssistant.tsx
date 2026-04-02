@@ -51,7 +51,7 @@ export function AiAssistant() {
   React.useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+    el.scrollTo({ top: el.scrollHeight, behavior: "auto" })
   }, [messages, status, open])
 
   React.useEffect(() => {
