@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, LayoutList, Smartphone } from "lucide-react"
 
 import { MarkerOfekProjectHubClient } from "./project-hub-client"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
@@ -84,6 +84,30 @@ export async function MarkerOfekProjectHubSection({ id }: { id: string }) {
         <p className="text-sm text-muted-foreground">
           {row.internal_project_code}
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-start gap-2">
+        <Link
+          href={`/marker-ofek/execution/gantt/${id}`}
+          className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500"
+        >
+          <LayoutList className="size-4" aria-hidden />
+          צפייה בגנט פרויקט
+        </Link>
+        <Link
+          href={`/marker-ofek/execution/gantt/${id}`}
+          className="inline-flex items-center gap-2 rounded-lg border border-fuchsia-400/40 bg-fuchsia-500/10 px-4 py-2 text-sm font-medium text-fuchsia-200 transition-colors hover:bg-fuchsia-500/20"
+        >
+          <LayoutList className="size-4" aria-hidden />
+          Generate from Contract/BOQ
+        </Link>
+        <Link
+          href={`/marker-ofek/execution/gantt/${id}/field`}
+          className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20"
+        >
+          <Smartphone className="size-4" aria-hidden />
+          תצוגת שטח להיום
+        </Link>
       </div>
 
       <MarkerOfekProjectHubClient

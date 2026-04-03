@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Table2,
   Truck,
+  LayoutList,
 } from "lucide-react"
 
 export type MarkerOfekSidebarNavItem = {
@@ -49,8 +50,8 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
     ],
   },
   {
-    id: "projects-execution",
-    label: "פרויקטים וביצוע",
+    id: "projects",
+    label: "פרויקטים",
     defaultOpen: true,
     items: [
       {
@@ -64,9 +65,26 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: FileSignature,
       },
       {
+        title: "ניהול גנט",
+        href: "/marker-ofek/execution/gantt",
+        icon: LayoutList,
+      },
+    ],
+  },
+  {
+    id: "execution",
+    label: "ביצוע",
+    defaultOpen: true,
+    items: [
+      {
         title: "חשבונות חלקיים",
         href: "/marker-ofek/execution/progress-reports",
         icon: BarChart3,
+      },
+      {
+        title: "לו\"ז וביצוע",
+        href: "/marker-ofek/execution/gantt",
+        icon: LayoutList,
       },
       {
         title: "יומני עבודה",

@@ -1,11 +1,15 @@
 "use client"
 
 import { useMemo } from "react"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ChevronLeft } from "lucide-react"
 
 import { CommentNotificationBell } from "@/components/dashboard/comment-notification-bell"
 import { AppSidebar } from "@/components/app-sidebar"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
+import { GlobalProjectSearch } from "@/components/marker-ofek/global-project-search"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   SidebarInset,
   SidebarProvider,
@@ -47,6 +51,48 @@ function titleForPath(pathname: string) {
   return match ? titles[match] : "בניין חכם"
 }
 
+type Crumb = { label: string; href: string | null }
+
+function buildHebrewCrumbs(pathname: string): Crumb[] {
+  if (!pathname.startsWith("/marker-ofek")) {
+    return [{ label: titleForPath(pathname), href: null }]
+  }
+  const labelMap: Record<string, string> = {
+    "pre-construction": "קדם ביצוע",
+    projects: "פרויקטים",
+    contracts: "חוזים",
+    execution: "ביצוע",
+    gantt: "גנט",
+    procurement: "רכש",
+    invoices: "חשבוניות",
+    reconciliation: "בקרת התאמות",
+    "delivery-notes": "תעודות משלוח",
+    items: "פריטים",
+    "supply-chain": "שרשרת אספקה",
+    "daily-logs": "יומני עבודה",
+    "progress-reports": "חשבונות חלקיים",
+  }
+  const segments = pathname.split("/").filter(Boolean)
+  const crumbs: Crumb[] = [{ label: "מרקר אופק", href: "/marker-ofek" }]
+  let acc = ""
+  for (const segment of segments.slice(1)) {
+    acc += `/${segment}`
+    const isIdLike = /^[0-9a-f-]{8,}$/i.test(segment)
+    if (isIdLike) {
+      crumbs.push({ label: "פרויקט", href: null })
+      continue
+    }
+    crumbs.push({
+      label: labelMap[segment] ?? segment.replace(/-/g, " "),
+      href: `/marker-ofek${acc}`,
+    })
+  }
+  if (crumbs.length === 1) {
+    crumbs[0] = { label: "לוח בקרה", href: "/marker-ofek" }
+  }
+  return crumbs
+}
+
 export function DashboardShell({
   children,
   userEmail,
@@ -71,6 +117,7 @@ export function DashboardShell({
       "תפעול נכסים ברמה הגבוהה ביותר וחוויית דיירים",
     [userEmail]
   )
+  const crumbs = useMemo(() => buildHebrewCrumbs(pathname), [pathname])
 
   return (
     <SidebarProvider dir="rtl">
@@ -79,43 +126,60 @@ export function DashboardShell({
         dir="rtl"
         className={cn(
           "relative z-0 min-w-0 flex-1 overflow-x-hidden",
-          "lg:pr-[calc(16rem+0.75rem)] lg:peer-data-[state=collapsed]:pr-[calc(var(--sidebar-width-icon)+1.25rem)]",
           "print:pe-0 print:lg:pe-0"
         )}
       >
         <header
           className={cn(
-            "sticky top-0 z-20 flex h-[3.75rem] shrink-0 items-center gap-4 px-5 backdrop-blur-2xl print:hidden md:px-8",
-            "bg-white/55 supports-[backdrop-filter]:bg-white/45 dark:bg-zinc-950/55 dark:supports-[backdrop-filter]:bg-zinc-950/40",
-            "shadow-[0_8px_32px_-20px_rgba(15,23,42,0.12)] dark:shadow-[0_12px_40px_-20px_rgba(0,0,0,0.35)]"
+            "sticky top-0 z-20 flex min-h-[3.75rem] shrink-0 items-center gap-3 px-4 py-1.5 backdrop-blur print:hidden md:px-6",
+            "border-b border-zinc-300/90 bg-white/88 supports-[backdrop-filter]:bg-white/76",
+            "dark:border-zinc-700/80 dark:bg-zinc-900/72 dark:supports-[backdrop-filter]:bg-zinc-900/64"
           )}
         >
           <SidebarTrigger
             className={cn(
-              "size-10 shrink-0 rounded-full transition-all duration-300 ease-in-out",
-              "bg-white/60 text-foreground shadow-[0_4px_20px_-6px_rgba(15,23,42,0.15)] hover:bg-white/90",
-              "dark:bg-white/10 dark:hover:bg-white/15 dark:shadow-[0_4px_24px_-6px_rgba(0,0,0,0.4)]"
+              "size-8 shrink-0 rounded-sm transition-all duration-300 ease-in-out",
+              "border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100",
+              "dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:shadow-[0_4px_24px_-6px_rgba(0,0,0,0.4)]"
             )}
           />
           <div className="flex min-w-0 flex-1 flex-col text-start">
-            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-600/90 dark:text-violet-400/90">
+            <div className="mb-0.5 flex items-center gap-1 overflow-x-auto text-[10px] text-zinc-500 dark:text-neutral-400">
+              {crumbs.map((crumb, idx) => (
+                <span key={`${crumb.label}-${idx}`} className="inline-flex items-center gap-1 whitespace-nowrap">
+                  {idx > 0 ? <ChevronLeft className="size-3" aria-hidden /> : null}
+                  {crumb.href && idx < crumbs.length - 1 ? (
+                    <Link href={crumb.href} className="hover:text-violet-600 dark:hover:text-violet-300">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className={idx === crumbs.length - 1 ? "font-semibold text-neutral-700 dark:text-neutral-200" : ""}>
+                      {crumb.label}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-violet-400/90">
               {headerBrand}
             </p>
-            <h1 className="truncate text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+            <h1 className="truncate text-base font-bold tracking-tight text-zinc-900 dark:text-neutral-50">
               {title}
             </h1>
-            <p className="hidden text-xs font-normal text-neutral-500 dark:text-neutral-400 sm:block">
+            <p className="hidden text-[11px] font-normal text-zinc-500 dark:text-neutral-400 sm:block">
               {headerSubtitle}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-0.5">
+          {isMarkerOfekExecutiveContext(pathname) ? <GlobalProjectSearch /> : null}
+          <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle />
             <FullscreenToggle />
             {userRole === "admin" ? (
               <CommentNotificationBell className="text-neutral-500 transition-colors duration-300 ease-in-out hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100" />
             ) : null}
           </div>
         </header>
-        <div className="flex min-h-0 flex-1 flex-col gap-6 p-5 print:p-0 md:p-8 md:pb-12">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1680px] flex-1 flex-col gap-4 bg-transparent p-3 print:p-0 md:p-5 md:pb-8">
           {children}
         </div>
       </SidebarInset>

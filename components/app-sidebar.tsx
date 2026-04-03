@@ -116,10 +116,10 @@ function SidebarNavLinkRow({
         tooltip={item.title}
         size="default"
         className={cn(
-          "gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
+          "gap-2 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
           "[&_svg]:size-4 [&_svg]:shrink-0",
-          "hover:bg-sidebar-accent/90 hover:text-sidebar-accent-foreground hover:shadow-sm",
-          "data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:shadow-sm"
+          "hover:bg-white/10 hover:text-zinc-100",
+          "data-active:bg-white/12 data-active:text-zinc-50"
         )}
         render={
           isModulesCenterLink ? (
@@ -267,14 +267,14 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
     >
       <SidebarHeader className="space-y-4 pb-4 pt-1">
         <div className="space-y-2.5 px-1 group-data-[collapsible=icon]:hidden">
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-700 dark:text-violet-300">
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-300">
             החלפת חברה
           </p>
-          <details className="group/company-switcher rounded-2xl border border-violet-400/45 bg-violet-500/8 p-1.5 shadow-sm dark:border-violet-400/35 dark:bg-violet-500/10">
+          <details className="group/company-switcher rounded-sm border border-zinc-600/80 bg-zinc-700/30 p-1.5 shadow-sm">
             <summary
               className={cn(
-                "flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-start text-sm font-semibold transition-colors",
-                "hover:bg-white/70 dark:hover:bg-white/10"
+                "flex cursor-pointer list-none items-center justify-between rounded-sm px-3 py-2 text-start text-sm font-semibold transition-colors",
+                "hover:bg-white/10"
               )}
             >
               <span className="inline-flex items-center gap-2">
@@ -296,7 +296,7 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 aria-hidden
               />
             </summary>
-            <div className="mt-1 space-y-1 rounded-xl bg-background/90 p-1 dark:bg-zinc-900/60">
+              <div className="mt-1 space-y-1 rounded-sm bg-zinc-900/55 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -307,8 +307,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
                   isMarkerOfek
-                    ? "bg-violet-500/10 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300"
-                    : "hover:bg-muted"
+                    ? "bg-zinc-600/50 text-zinc-100"
+                    : "hover:bg-white/10"
                 )}
               >
                 <span>מרקר אופק - ביצוע</span>
@@ -324,8 +324,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
                   isFacility && !isMarkerOfek
-                    ? "bg-cyan-500/10 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                    : "hover:bg-muted"
+                    ? "bg-zinc-600/50 text-zinc-100"
+                    : "hover:bg-white/10"
                 )}
               >
                 <span>הולדן גרופ - ניהול מבנים</span>
@@ -338,7 +338,7 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                   setSelectedCompanyCookie("none")
                   window.location.assign("/")
                 }}
-                className="flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted"
+                className="flex items-center justify-between rounded-sm px-3 py-2 text-xs text-zinc-300 transition-colors hover:bg-white/10"
               >
                 <span>חזרה לבחירת חברה</span>
                 <ArrowRightLeft className="size-3.5" aria-hidden />
@@ -350,12 +350,12 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
         <a
           href={brandHref}
           onClick={closeMobileNav}
-          className="flex items-center gap-3 rounded-2xl px-2 py-2 outline-none transition-all duration-300 ease-in-out hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-violet-500/30 dark:hover:bg-white/[0.04]"
+          className="flex items-center gap-3 rounded-sm px-2 py-2 outline-none transition-all duration-300 ease-in-out hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-zinc-400/30"
         >
           <div
             className={cn(
-              "flex size-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_8px_24px_-8px_rgba(109,40,217,0.45)] transition-transform duration-300 ease-in-out hover:scale-[1.02]",
-              "bg-gradient-to-br from-violet-600 to-violet-800 dark:from-violet-500 dark:to-violet-700"
+              "flex size-11 shrink-0 items-center justify-center rounded-sm text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-in-out hover:scale-[1.02]",
+              "bg-gradient-to-br from-zinc-500 to-zinc-700"
             )}
           >
             {isMarkerOfek ? (
@@ -365,10 +365,10 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-bold tracking-tight text-neutral-900 dark:text-white">
+            <span className="truncate text-sm font-bold tracking-tight text-zinc-100">
               {brandTitle}
             </span>
-            <span className="truncate text-xs font-normal text-neutral-500 dark:text-neutral-400">
+            <span className="truncate text-xs font-normal text-zinc-300">
               {brandSubtitle}
             </span>
           </div>
@@ -417,8 +417,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-start outline-none transition-all duration-300 ease-in-out",
-                  "hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-violet-500/25 data-[popup-open]:bg-black/[0.04] dark:hover:bg-white/[0.05] dark:data-[popup-open]:bg-white/[0.05]"
+                  "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-start outline-none transition-all duration-300 ease-in-out",
+                  "hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-zinc-400/25 data-[popup-open]:bg-white/[0.08]"
                 )}
                 title={userEmail ?? "חשבון משתמש"}
               >

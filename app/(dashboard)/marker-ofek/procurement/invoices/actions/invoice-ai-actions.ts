@@ -19,7 +19,6 @@ const STORAGE_BUCKET =
 
 const SECURITY_KEY_ERROR =
   "שגיאת אבטחה: המפתח הסודי אינו נגיש. אנא ודא שהגדרות השרת תקינות."
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 const INVOICE_AI_PROMPT = `Extract supplier_name, supplier_tax_id, invoice_number, invoice_date, total_amount, and an array of 'items' (description, quantity, unit_price, total_price). Return strictly as a JSON object.
 
@@ -443,21 +442,22 @@ export async function processInvoiceAI(
   }
 ): Promise<ProcessInvoiceAiResult> {
   try {
-  const apiKey = process.env.GEMINI_API_KEY?.trim()
-  if (!apiKey) {
-    return {
-      success: false,
-      error: SECURITY_KEY_ERROR,
+    const apiKey = process.env.GEMINI_API_KEY?.trim()
+    if (!apiKey) {
+      return {
+        success: false,
+        error: SECURITY_KEY_ERROR,
+      }
     }
-  }
+    const genAI = new GoogleGenerativeAI(apiKey)
 
-  const file = formData.get("file")
-  if (!(file instanceof File) || file.size === 0) {
-    return { success: false, error: "לא נבחר קובץ" }
-  }
-  if (!isAllowedInvoiceFile(file)) {
-    return { success: false, error: "נתמכים PDF או תמונה (png, jpg, webp)" }
-  }
+    const file = formData.get("file")
+    if (!(file instanceof File) || file.size === 0) {
+      return { success: false, error: "לא נבחר קובץ" }
+    }
+    if (!isAllowedInvoiceFile(file)) {
+      return { success: false, error: "נתמכים PDF או תמונה (png, jpg, webp)" }
+    }
 
   const poIdTrim = poId?.trim() || ""
   const previewOnly = Boolean(options?.previewOnly)

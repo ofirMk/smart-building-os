@@ -139,7 +139,7 @@ function SidebarProvider({
           } as React.CSSProperties
         }
         className={cn(
-          "group/sidebar-wrapper flex min-h-svh w-full bg-neutral-50 dark:bg-neutral-950",
+          "group/sidebar-wrapper flex min-h-svh w-full bg-zinc-50 dark:bg-zinc-900",
           className
         )}
         {...props}
@@ -257,11 +257,12 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
           className={cn(
-            "flex size-full flex-col rounded-2xl text-foreground backdrop-blur-2xl",
-            "bg-white/72 shadow-[0_16px_56px_-16px_rgba(15,23,42,0.18),0_8px_24px_-12px_rgba(15,23,42,0.08)]",
-            "ring-1 ring-black/[0.05] dark:bg-zinc-900/72 dark:ring-white/[0.07]",
+            "flex size-full flex-col rounded-sm text-zinc-100 backdrop-blur-2xl",
+            "bg-[linear-gradient(180deg,rgba(63,63,70,0.96)_0%,rgba(39,39,42,0.96)_100%)]",
+            "shadow-[0_16px_56px_-16px_rgba(0,0,0,0.3),0_8px_24px_-12px_rgba(0,0,0,0.24)]",
+            "ring-1 ring-zinc-600/80 dark:ring-zinc-600",
             "dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.55),0_10px_30px_-14px_rgba(0,0,0,0.35)]",
-            "group-data-[variant=floating]:rounded-2xl"
+            "group-data-[variant=floating]:rounded-sm"
           )}
         >
           {children}
@@ -328,10 +329,10 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       data-slot="sidebar-inset"
       className={cn(
         "relative flex w-full flex-1 flex-col bg-transparent lg:peer-data-[variant=inset]:m-3 lg:peer-data-[variant=inset]:me-0",
-        "lg:peer-data-[variant=inset]:rounded-[1.75rem] lg:peer-data-[variant=inset]:bg-white/55 lg:peer-data-[variant=inset]:backdrop-blur-xl",
-        "lg:peer-data-[variant=inset]:shadow-[0_24px_64px_-28px_rgba(15,23,42,0.12),inset_0_1px_0_0_rgba(255,255,255,0.65)]",
-        "lg:peer-data-[variant=inset]:ring-1 lg:peer-data-[variant=inset]:ring-black/[0.04]",
-        "dark:lg:peer-data-[variant=inset]:bg-zinc-900/40 dark:lg:peer-data-[variant=inset]:shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)] dark:lg:peer-data-[variant=inset]:ring-white/[0.06]",
+        "lg:peer-data-[variant=inset]:rounded-sm lg:peer-data-[variant=inset]:bg-white/92 lg:peer-data-[variant=inset]:backdrop-blur-xl",
+        "lg:peer-data-[variant=inset]:shadow-[0_20px_56px_-28px_rgba(15,23,42,0.12),inset_0_1px_0_0_rgba(255,255,255,0.75)]",
+        "lg:peer-data-[variant=inset]:ring-1 lg:peer-data-[variant=inset]:ring-zinc-300",
+        "dark:lg:peer-data-[variant=inset]:bg-zinc-900/88 dark:lg:peer-data-[variant=inset]:shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)] dark:lg:peer-data-[variant=inset]:ring-zinc-700/90",
         "lg:peer-data-[variant=inset]:peer-data-[state=collapsed]:me-3",
         className
       )}

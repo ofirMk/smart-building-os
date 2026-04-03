@@ -21,6 +21,7 @@ import {
   MessageSquare,
   ShieldCheck,
   PackageSearch,
+  LayoutList,
   ReceiptText,
   ShoppingCart,
   Settings,
@@ -96,7 +97,7 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
     ],
   },
   {
-    label: "פרויקטים וביצוע",
+    label: "פרויקטים",
     items: [
       {
         title: "מרכז פרויקטים",
@@ -109,6 +110,21 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
         icon: FileSignature,
       },
       {
+        title: "ניהול גנט",
+        href: "/marker-ofek/execution/gantt",
+        icon: LayoutList,
+      },
+    ],
+  },
+  {
+    label: "ביצוע",
+    items: [
+      {
+        title: "לו\"ז וביצוע",
+        href: "/marker-ofek/execution/gantt",
+        icon: LayoutList,
+      },
+      {
         title: "חשבונות חלקיים",
         href: "/marker-ofek/execution/progress-reports",
         icon: BarChart,
@@ -117,6 +133,11 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
         title: "יומני עבודה",
         href: "/marker-ofek/execution/daily-logs",
         icon: ClipboardList,
+      },
+      {
+        title: "משאבים ולוח שנה",
+        href: "/marker-ofek/execution/resources",
+        icon: Users,
       },
     ],
   },

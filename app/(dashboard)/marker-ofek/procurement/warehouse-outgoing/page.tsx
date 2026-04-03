@@ -174,7 +174,6 @@ export default function WarehouseOutgoingPage() {
         contractItemId: contractItemId || undefined,
         quantity,
         notes,
-        actionBy: "אופיר דיין",
       })
 
       toast.success("הנפקה בוצעה בהצלחה!")
@@ -193,20 +192,20 @@ export default function WarehouseOutgoingPage() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto" dir="rtl">
-      <div className="flex items-center gap-3 mb-8 border-b pb-4 border-slate-200">
-        <PackageOpen size={32} className="text-blue-600" />
-        <h1 className="text-2xl font-black text-slate-800">הנפקת ציוד לפרויקט - מרקר אופק</h1>
+    <div className="mx-auto max-w-5xl bg-zinc-50 p-4 font-sans text-[13px] text-zinc-900" dir="rtl">
+      <div className="mb-4 flex items-center gap-3 border-b border-zinc-300 pb-2">
+        <PackageOpen size={24} className="text-zinc-700" />
+        <h1 className="text-xl font-black text-zinc-900">הנפקת ציוד לפרויקט - מרקר אופק</h1>
       </div>
 
       <form
         id="outgoing-form"
         action={handleSubmit}
-        className="bg-white rounded-2xl shadow-xl p-8 border border-slate-100 space-y-6"
+        className="space-y-4 rounded-sm border border-zinc-300 bg-white p-4"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-bold mb-2 text-slate-700">פרויקט יעד</label>
+            <label className="mb-1 block text-[12px] font-bold text-zinc-900">פרויקט יעד</label>
             <select
               name="projectId"
               required
@@ -220,7 +219,7 @@ export default function WarehouseOutgoingPage() {
                 setContractSearch("")
                 void loadByProject(nextProject)
               }}
-              className="w-full p-3 rounded-lg border bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
             >
               <option value="">בחר פרויקט...</option>
               {projects.map((project) => (
@@ -231,28 +230,28 @@ export default function WarehouseOutgoingPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold mb-2 text-slate-700">כמות להנפקה</label>
+            <label className="mb-1 block text-[12px] font-bold text-zinc-900">כמות להנפקה</label>
             <input
               name="quantity"
               type="number"
               min="0.001"
               step="0.001"
               required
-              className="w-full p-3 rounded-lg border bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right font-mono text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="0.000"
             />
           </div>
         </div>
 
         <div className="relative">
-          <label className="block text-sm font-bold mb-2 text-slate-700">חפש פריט במלאי (מק״ט / שם)</label>
-          <div className="relative mb-2">
-            <Search className="absolute right-3 top-3 text-slate-400" size={18} />
+          <label className="mb-1 block text-[12px] font-bold text-zinc-900">חפש פריט במלאי (מק״ט / שם)</label>
+          <div className="relative mb-1.5">
+            <Search className="absolute right-2 top-2.5 text-zinc-500" size={16} />
             <input
               type="text"
               value={itemSearch}
               onChange={(e) => setItemSearch(e.target.value)}
-              className="w-full pr-10 p-3 rounded-lg border bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 pr-8 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="הקלד שם פריט..."
             />
           </div>
@@ -261,7 +260,7 @@ export default function WarehouseOutgoingPage() {
             required
             value={selectedItemId}
             onChange={(e) => setSelectedItemId(e.target.value)}
-            className="w-full p-3 rounded-lg border bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right"
+            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
           >
             <option value="">בחר פריט מלאי...</option>
             {filteredInventoryItems.map((item) => (
@@ -272,18 +271,18 @@ export default function WarehouseOutgoingPage() {
           </select>
         </div>
 
-        <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
-          <label className="flex items-center gap-2 text-sm font-bold mb-3 text-blue-800">
+        <div className="rounded-sm border border-zinc-300 bg-zinc-100 p-3">
+          <label className="mb-2 flex items-center gap-2 text-[12px] font-bold text-zinc-900">
             <ClipboardList size={18} />
             שיוך לסעיף בחוזה (לצורך התאמת ביצוע)
           </label>
-          <div className="relative mb-2">
-            <Search className="absolute right-3 top-3 text-slate-400" size={18} />
+          <div className="relative mb-1.5">
+            <Search className="absolute right-2 top-2.5 text-zinc-500" size={16} />
             <input
               type="text"
               value={contractSearch}
               onChange={(e) => setContractSearch(e.target.value)}
-              className="w-full pr-10 p-3 rounded-lg border border-blue-200 bg-white outline-none focus:ring-2 focus:ring-blue-500 text-right"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 pr-8 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="חיפוש סעיף (קוד / תיאור)..."
             />
           </div>
@@ -291,7 +290,7 @@ export default function WarehouseOutgoingPage() {
             name="contractItemId"
             value={selectedContractItemId}
             onChange={(e) => setSelectedContractItemId(e.target.value)}
-            className="w-full p-3 rounded-lg border border-blue-200 bg-white outline-none focus:ring-2 focus:ring-blue-500 text-right"
+            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
           >
             <option value="">בחר סעיף מכתב הכמויות (אופציונלי)...</option>
             {filteredContractItems.map((item) => {
@@ -309,11 +308,11 @@ export default function WarehouseOutgoingPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold mb-2 text-slate-700">הערות</label>
+          <label className="mb-1 block text-[12px] font-bold text-zinc-900">הערות</label>
           <input
             name="notes"
             type="text"
-            className="w-full p-3 rounded-lg border bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right"
+            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
             placeholder="לדוגמה: יציקה קומה 2"
           />
         </div>
@@ -321,34 +320,34 @@ export default function WarehouseOutgoingPage() {
         <button
           type="submit"
           disabled={submitting || loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:bg-slate-400"
+          className="flex w-full items-center justify-center gap-2 rounded-sm bg-zinc-900 py-2.5 font-black text-zinc-100 transition-all hover:bg-zinc-700 disabled:bg-zinc-400"
         >
           {submitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
           {submitting ? "מעבד הנפקה..." : "אשר הנפקה ועדכן מלאי"}
         </button>
       </form>
 
-      <div className="mt-8 bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">הנפקות אחרונות</h2>
+      <div className="mt-4 overflow-hidden rounded-sm border border-zinc-300 bg-white">
+        <div className="border-b border-zinc-300 px-4 py-2">
+          <h2 className="text-base font-bold text-zinc-900">הנפקות אחרונות</h2>
         </div>
         {loading ? (
-          <div className="px-6 py-8 text-slate-500 flex items-center gap-2">
+          <div className="flex items-center gap-2 px-4 py-5 text-zinc-500">
             <Loader2 className="animate-spin" size={16} />
             טוען נתונים...
           </div>
         ) : transactions.length === 0 ? (
-          <div className="px-6 py-8 text-slate-500">אין תנועות הוצאה להצגה.</div>
+          <div className="px-4 py-5 text-zinc-500">אין תנועות הוצאה להצגה.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-700">
+            <table className="w-full text-[13px]">
+              <thead className="bg-zinc-100 text-zinc-900">
                 <tr>
-                  <th className="text-right px-4 py-3 font-bold">תאריך</th>
-                  <th className="text-right px-4 py-3 font-bold">פריט</th>
-                  <th className="text-right px-4 py-3 font-bold">סעיף חוזה</th>
-                  <th className="text-right px-4 py-3 font-bold">כמות</th>
-                  <th className="text-right px-4 py-3 font-bold">הערות</th>
+                  <th className="px-3 py-2 text-right font-bold">תאריך</th>
+                  <th className="px-3 py-2 text-right font-bold">פריט</th>
+                  <th className="px-3 py-2 text-right font-bold">סעיף חוזה</th>
+                  <th className="px-3 py-2 text-right font-bold">כמות</th>
+                  <th className="px-3 py-2 text-right font-bold">הערות</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,19 +360,19 @@ export default function WarehouseOutgoingPage() {
                       ? `${decoded.sectionCode} ${decoded.description}`.trim()
                       : "—"
                   return (
-                    <tr key={tx.id} className="border-t border-slate-100">
-                      <td className="px-4 py-3">{new Date(tx.created_at).toLocaleString("he-IL")}</td>
-                      <td className="px-4 py-3">
+                    <tr key={tx.id} className="border-t border-zinc-300">
+                      <td className="px-3 py-2 font-mono">{new Date(tx.created_at).toLocaleString("he-IL")}</td>
+                      <td className="px-3 py-2">
                         {item?.sku ?? "—"} - {item?.description ?? "—"}
                       </td>
-                      <td className="px-4 py-3">{contractLabel}</td>
-                      <td className="px-4 py-3 font-bold">
+                      <td className="px-3 py-2">{contractLabel}</td>
+                      <td className="px-3 py-2 font-mono font-bold">
                         {Number(tx.quantity).toLocaleString("he-IL", {
                           maximumFractionDigits: 3,
                         })}
                         {tx.unit ? ` ${tx.unit}` : ""}
                       </td>
-                      <td className="px-4 py-3">{tx.notes?.trim() || "—"}</td>
+                      <td className="px-3 py-2">{tx.notes?.trim() || "—"}</td>
                     </tr>
                   )
                 })}

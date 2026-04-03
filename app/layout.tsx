@@ -24,7 +24,6 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: "#0a0a0a",
-  colorScheme: "dark",
 };
 
 export const metadata: Metadata = {
@@ -51,15 +50,17 @@ export default function RootLayout({
     <html
       lang="he"
       dir="rtl"
-      className={`${heebo.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      className={`${heebo.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body dir="rtl" className="min-h-full flex flex-col font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          forcedTheme="dark"
+          defaultTheme="system"
+          storageKey="smart-building-theme"
+          enableSystem
+          enableColorScheme
+          disableTransitionOnChange
         >
           <TooltipProvider delay={0}>
             {children}

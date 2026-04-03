@@ -39,7 +39,6 @@ export type RecordOutgoingTransactionInput = {
   contractItemId?: string
   quantity: number
   notes?: string
-  actionBy?: string
 }
 
 export type RecordIncomingTransactionInput = {
@@ -58,7 +57,6 @@ export async function recordOutgoingTransaction(
   const contractItemId = String(input.contractItemId ?? "").trim()
   const quantity = toNum(input.quantity)
   const notes = String(input.notes ?? "").trim()
-  const actionBy = String(input.actionBy ?? "").trim()
 
   if (!projectId) throw new Error("projectId חסר")
   if (!itemId) throw new Error("itemId חסר")
@@ -67,6 +65,9 @@ export async function recordOutgoingTransaction(
   }
 
   const supabase = await createSupabaseServerAuthClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const itemRes = await supabase
     .schema("public")
@@ -78,7 +79,13 @@ export async function recordOutgoingTransaction(
     throw new Error("פריט מלאי לא נמצא")
   }
 
-  const normalizedNotes = [notes, actionBy ? `בוצע ע״י: ${actionBy}` : ""]
+  const actor =
+    String(user?.user_metadata?.full_name ?? "").trim() ||
+    String(user?.user_metadata?.name ?? "").trim() ||
+    String(user?.email ?? "").trim() ||
+    String(user?.id ?? "").trim()
+
+  const normalizedNotes = [notes, actor ? `בוצע ע״י: ${actor}` : ""]
     .filter(Boolean)
     .join(" | ")
 

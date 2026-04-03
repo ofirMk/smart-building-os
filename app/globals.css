@@ -40,6 +40,11 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-bg-main: var(--bg-main);
+  --color-bg-grid: var(--bg-grid);
+  --color-text-primary: var(--text-primary);
+  --color-border-muted: var(--border-muted);
+  --color-accent-primary: var(--accent-primary);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -82,6 +87,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --bg-main: #f8fafc;
+  --bg-grid: #ffffff;
+  --text-primary: #111827;
+  --border-muted: #e2e8f0;
+  --accent-primary: #f97316;
+  --radius-tokens: 0px;
 }
 
 .dark {
@@ -118,6 +129,33 @@
   --sidebar-ring: oklch(0.72 0.14 195);
 }
 
+html.theme-swiss {
+  --bg-main: #f8fafc;
+  --bg-grid: #ffffff;
+  --text-primary: #111827;
+  --border-muted: #e2e8f0;
+  --accent-primary: #f97316;
+  --radius-tokens: 0px;
+}
+
+html.theme-command {
+  --bg-main: #020617;
+  --bg-grid: #0f172a;
+  --text-primary: #f8fafc;
+  --border-muted: #334155;
+  --accent-primary: #2dd4bf;
+  --radius-tokens: 0.125rem;
+}
+
+html.theme-monolith {
+  --bg-main: #f1f5f9;
+  --bg-grid: #f1f5f9;
+  --text-primary: #000000;
+  --border-muted: #d1d5db;
+  --accent-primary: #2563eb;
+  --radius-tokens: 0px;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -138,5 +176,11 @@
   }
   .mo-pillar-details summary {
     transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
+  }
+}
+
+@layer utilities {
+  .radius-tokens {
+    border-radius: var(--radius-tokens);
   }
 }

@@ -39,7 +39,7 @@ export default async function MarkerOfekGanttProjectPage({ params }: PageProps) 
   return (
     <div dir="rtl" className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 px-4 py-8 md:px-6">
       <header className="space-y-2 text-start">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-primary/70">
           Marker Ofek - Work Management
         </p>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
@@ -50,16 +50,18 @@ export default async function MarkerOfekGanttProjectPage({ params }: PageProps) 
         </p>
       </header>
 
-      <Card className="border-violet-500/20 bg-slate-950/30">
+      <Card className="border-border-muted bg-bg-grid">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-100">
-            <BarChart3 className="size-5 text-violet-300" aria-hidden />
+          <CardTitle className="flex items-center gap-2 text-text-primary">
+            <BarChart3 className="size-5 text-text-primary/70" aria-hidden />
             ממשק גאנט / WBS
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-slate-300">
+        <CardContent className="text-sm text-text-primary">
           <GanttClient
             projectId={projectId}
+            projectName={projectName}
+            projectCode={projectCode || "MO-2026-001"}
             initialTasks={tasks}
             perTaskVariance={perTaskVariance}
             summary={{

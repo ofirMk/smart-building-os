@@ -75,6 +75,19 @@ export default function NewMarkerOfekProjectPage() {
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return
+      const target = event.target as HTMLElement | null
+      const tagName = (target?.tagName ?? "").toLowerCase()
+      const isInteractiveTarget =
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select" ||
+        tagName === "button" ||
+        Boolean(target?.closest("[contenteditable='true']")) ||
+        Boolean(target?.closest("[role='combobox']"))
+      const hasOpenOverlay =
+        document.querySelector("[data-slot='select-content']") != null ||
+        document.querySelector("[data-slot='dropdown-menu-content']") != null
+      if (isInteractiveTarget || hasOpenOverlay) return
       event.preventDefault()
       router.push("/marker-ofek/procurement/invoices/new")
     }

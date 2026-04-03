@@ -52,10 +52,10 @@ const MARKER_OFEK_CORE_LINKS: {
 
 /** אחידות: טקסט ואייקונים בכל פריטי מרקר אופק */
 const navBtnClass = cn(
-  "gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+  "gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
   "[&_svg]:size-4 [&_svg]:shrink-0",
-  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-  "data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground"
+  "hover:bg-violet-500/10 hover:text-violet-100 hover:ring-1 hover:ring-violet-400/25",
+  "data-active:bg-violet-500/15 data-active:text-violet-100 data-active:ring-1 data-active:ring-violet-400/35"
 )
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -107,8 +107,8 @@ export function MarkerOfekSidebarNav({
           <details className="mo-pillar-details" open={section.defaultOpen}>
             <summary
               className={cn(
-                "flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all duration-200",
+                "hover:bg-violet-500/10 hover:text-violet-100 hover:ring-1 hover:ring-violet-400/25",
                 "[&::-webkit-details-marker]:hidden"
               )}
             >
