@@ -388,22 +388,22 @@ export default function MarkerOfekCentralizedInvoicePage() {
         חזרה לכספים
       </Link>
 
-      <header className="rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-emerald-950/30 p-6 shadow-md sm:p-8">
+      <header className="pharmacy-hero-card p-6 sm:p-8">
         <div className="flex items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-500/35 bg-emerald-500/15 text-emerald-200">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
             <FileStack className="size-6" aria-hidden />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/90">
+            <p className="text-xs font-medium uppercase tracking-wider text-emerald-600/90">
               מרקר אופק
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
               חשבונית מרכזת
             </h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-300">
+            <p className="mt-1 max-w-2xl text-sm text-slate-500">
               איסוף חשבוניות מס (הופקה / שולמה) וחשבונות חלקיים מאושרים לפי פרויקט וחודש,
               והפקת מסמך אחד עם מספור מ־
-              <code className="rounded bg-white/10 px-1">invoice_seq</code>.
+              <code className="rounded bg-slate-100 px-1 text-[#1e293b]">invoice_seq</code>.
             </p>
           </div>
         </div>

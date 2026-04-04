@@ -1,8 +1,9 @@
 import { BarChart3 } from "lucide-react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { calculateTaskCostVariance, fetchProjectTasks } from "@/lib/actions/gantt-actions"
+import { calculateTaskCostVariance, fetchProjectTasks } from "@/lib/marker-ofek/gantt-actions"
+import { isProjectInManagingPartnerScope } from "@/lib/marker-ofek/effective-managing-partner-scope"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+import { notFound } from "next/navigation"
 import GanttClient from "./gantt-client"
 
 type PageProps = {
@@ -15,12 +16,30 @@ export default async function MarkerOfekGanttProjectPage({ params }: PageProps) 
   const projectId = String(id ?? "").trim()
 
   const supabase = await createSupabaseServerAuthClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (user?.email) {
+    const allowed = await isProjectInManagingPartnerScope(projectId, user.email, user.id)
+    if (!allowed) notFound()
+  }
+
   const { data } = await supabase
     .schema("public")
     .from("projects")
     .select("name, internal_project_code")
     .eq("id", projectId)
     .maybeSingle()
+
+  const { data: projectRows } = await supabase
+    .schema("public")
+    .from("projects")
+    .select("id, name, internal_project_code")
+    .eq("is_deleted", false)
+    .order("name", { ascending: true })
+
+  const projectOptions =
+    (projectRows ?? []) as { id: string; name: string; internal_project_code: string }[]
 
   const projectName = String(data?.name ?? "").trim() || "פרויקט לא מזוהה"
   const projectCode = String(data?.internal_project_code ?? "").trim()
@@ -37,43 +56,35 @@ export default async function MarkerOfekGanttProjectPage({ params }: PageProps) 
   )
 
   return (
-    <div dir="rtl" className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 px-4 py-8 md:px-6">
-      <header className="space-y-2 text-start">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-primary/70">
+    <div dir="rtl" className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 bg-[#FFFFFF]">
+      <header className="space-y-2 border-b border-slate-100 pb-4 text-start">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
           Marker Ofek - Work Management
         </p>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          גאנט וניהול משימות
-        </h1>
-        <p className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="size-5 text-indigo-600" aria-hidden />
+          <h1 className="page-title text-[#0f172a]">גאנט וניהול משימות</h1>
+        </div>
+        <p className="text-sm text-slate-500">
           {projectCode ? `${projectName} (${projectCode})` : projectName}
         </p>
       </header>
 
-      <Card className="border-border-muted bg-bg-grid">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-text-primary">
-            <BarChart3 className="size-5 text-text-primary/70" aria-hidden />
-            ממשק גאנט / WBS
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-text-primary">
-          <GanttClient
-            projectId={projectId}
-            projectName={projectName}
-            projectCode={projectCode || "MO-2026-001"}
-            initialTasks={tasks}
-            perTaskVariance={perTaskVariance}
-            summary={{
-              plannedCost: variance.plannedCost,
-              actualCost: variance.actualCost,
-              variance: variance.variance,
-              variancePercent: variance.variancePercent,
-              status: variance.status,
-            }}
-          />
-        </CardContent>
-      </Card>
+      <GanttClient
+        projectId={projectId}
+        projectName={projectName}
+        projectCode={projectCode || "MO-2026-001"}
+        projectOptions={projectOptions}
+        initialTasks={tasks}
+        perTaskVariance={perTaskVariance}
+        summary={{
+          plannedCost: variance.plannedCost,
+          actualCost: variance.actualCost,
+          variance: variance.variance,
+          variancePercent: variance.variancePercent,
+          status: variance.status,
+        }}
+      />
     </div>
   )
 }

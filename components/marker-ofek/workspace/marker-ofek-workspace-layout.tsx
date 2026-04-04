@@ -34,7 +34,7 @@ function MarkerOfekWorkspaceChrome({
     <>
       <motion.div
         layout
-        className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/85 px-2 py-2.5 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:-mx-6 md:px-4"
+        className="sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-3 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/90 md:-mx-8 md:px-6"
         dir="rtl"
         transition={{ type: "spring", stiffness: 400, damping: 38 }}
       >
@@ -58,10 +58,10 @@ function MarkerOfekWorkspaceChrome({
                 prefetch
                 scroll
                 className={cn(
-                  "inline-flex max-w-[11rem] truncate rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-150",
+                  "inline-flex max-w-[11rem] truncate rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
                   pathname === tab.href
-                    ? "bg-gradient-to-l from-violet-500/20 to-cyan-500/10 text-foreground shadow-sm ring-1 ring-violet-500/25"
-                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    ? "bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/20"
+                    : "text-muted-foreground hover:bg-muted/90 hover:text-foreground"
                 )}
               >
                 {tab.label}
@@ -74,7 +74,7 @@ function MarkerOfekWorkspaceChrome({
             type="button"
             variant="outline"
             size="sm"
-            className="h-9 gap-2 border-border/70 bg-background/80 shadow-sm"
+            className="h-9 gap-2 border-border bg-card shadow-sm transition-all duration-200"
             onClick={openCommandPalette}
           >
             <Search className="size-4 shrink-0" aria-hidden />

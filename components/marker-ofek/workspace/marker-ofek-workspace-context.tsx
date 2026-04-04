@@ -19,9 +19,20 @@ function tabLabelForPath(pathname: string): string {
   if (pathname === "/marker-ofek/contracts") return "חוזים"
   if (pathname.startsWith("/marker-ofek/procurement/new")) return "הזמנת רכש חדשה"
   if (pathname.startsWith("/marker-ofek/procurement/receipt/")) return "קבלת סחורה"
+  if (pathname.startsWith("/marker-ofek/procurement/orders")) return "הזמנות"
+  if (pathname.startsWith("/marker-ofek/procurement/suppliers")) return "ספקים"
+  if (pathname.startsWith("/marker-ofek/procurement/inventory")) return "ניהול מלאי"
+  if (pathname.startsWith("/marker-ofek/procurement/catalog")) return "קטלוג פריטים"
+  if (pathname.startsWith("/marker-ofek/procurement/assets")) return "נכסי חברה"
   if (pathname.startsWith("/marker-ofek/procurement/") && pathname !== "/marker-ofek/procurement")
     return "הזמנת רכש"
   if (pathname === "/marker-ofek/procurement") return "רכש"
+  if (pathname === "/marker-ofek/tenders" || pathname === "/marker-ofek/tenders/")
+    return "מכרזים והערכות"
+  if (pathname.startsWith("/marker-ofek/tenders/pricing")) return "תמחור — מכרזים"
+  if (pathname.startsWith("/marker-ofek/tenders/boq")) return "כתבי כמויות"
+  if (pathname.startsWith("/marker-ofek/tenders/comparison")) return "השוואת הצעות"
+  if (pathname.startsWith("/marker-ofek/tenders/wbs")) return "מבנה WBS"
   if (pathname.startsWith("/marker-ofek/projects/new")) return "הקמת פרויקט"
   if (
     pathname.includes("/contract-ai") &&
@@ -36,6 +47,7 @@ function tabLabelForPath(pathname: string): string {
   if (pathname === "/marker-ofek/projects") return "פרויקטים"
   if (pathname.startsWith("/marker-ofek/execution/progress-reports"))
     return "חשבונות חלקיים"
+  if (pathname.startsWith("/marker-ofek/execution/plans")) return "תוכניות ו-Takeoff"
   if (pathname.startsWith("/marker-ofek/execution/daily-logs"))
     return "יומני עבודה"
   if (pathname.startsWith("/marker-ofek/schedule")) return "לוח זמנים"
@@ -43,7 +55,7 @@ function tabLabelForPath(pathname: string): string {
   if (pathname.startsWith("/marker-ofek/items")) return "קטלוג"
   if (pathname.startsWith("/marker-ofek/finance")) return "כספים"
   if (pathname.startsWith("/marker-ofek/settings")) return "הגדרות"
-  return "מרקר אופק"
+  return "מערכת הביצוע"
 }
 
 type MarkerOfekWorkspaceContextValue = {

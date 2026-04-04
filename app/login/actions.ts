@@ -22,7 +22,9 @@ async function redirectAfterAuth(
     .maybeSingle()
 
   const role = (profile as { role?: string } | null)?.role ?? "tenant"
-  redirect(isAdminOrManagerRole(role) ? "/portal" : "/marker-ofek")
+  redirect(
+    isAdminOrManagerRole(role) ? "/portal" : "/marker-ofek/command-center"
+  )
 }
 
 function mapAuthError(error: { message: string }): string {

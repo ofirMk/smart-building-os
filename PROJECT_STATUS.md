@@ -1,6 +1,57 @@
 # Project Status - Deep Engineering Version
 
-Last Updated: 2026-04-03 (local)
+Last Updated: 2026-04-04 (local) — **Derivative Gantt (V1):** `public.tasks` gains `parent_task_id` (master task FK, distinct from WBS `parent_id`), `subcontractor_id` → `entities`, `is_derivative`, `contract_id` → `contracts`. **Cascade:** `cascadeDerivativesForMaster` in `gantt-actions` runs after master date edits (`updateTaskGridRow`, `updateTaskDatesWithDependencies`, including summary subtree shifts); derivatives shift by master start delta and clamp `end_date` ≤ master `end_date`. **FS auto-schedule:** `wbs-schedule` skips `is_derivative` leaves; `recalculateWbsSchedule` does not overwrite derivative dates. **Guards:** DB trigger `enforce_derivative_within_master_window` + app validation (Hebrew errors). **UI:** Gantt bars — indigo tint for derivatives, red `styles` when `derivativeIsDiamondAlert` (lag vs master timeline/%); subcontractor dashboard `/marker-ofek/execution/gantt/[id]/subcontractor` (master vs sub, contract link + `updateDerivativeTaskBillingLink`). **Actions:** `createDerivativeTask`, `updateDerivativeTaskBillingLink`. Field view shows master line + diamond. Migration `20260417120000_tasks_derivative_gantt.sql`. **`npx tsc --noEmit`** exit code 0.
+
+## Current logic (Partner Profit Center V1.0)
+
+- **Server action:** `getPartnerFinancials` in `lib/actions/partner-metrics-actions.ts` (replaces inline naming; `fetchPartnerMetricsDashboard` delegates to it). **Profit** = recognized income − (subcontractors + salaries + petty + overhead + procurement). **Management fee** = 25% × net profit per project; portfolio totals roll up sums.
+- **Income:** `mo_invoices` where `status` ∈ `approved`, `paid`, **plus** approved `partial_accounts.payment_due` for the same project when no `mo_invoices.linked_partial_account_id` references that partial (avoids double count). Requires enum `approved` on invoices — migration `20260407120000_mo_invoice_financial_status_approved.sql`.
+- **Contract & Billing / Revenue Engine (V1.0):** View `contract_items` = `contract_line_items` (includes `wbs_weight_percent`, `sort_order`). Partial lines: `quantity_previous`, `quantity_current`, `line_total_price`; header `partial_accounts.current_progress_percent`. **`calculatePartialAccount`** uses **pure helper** `lib/marker-ofek/partial-account-calc.ts`: period ₪ = Σ line deltas; **cumulative** = `previous_cumulative_approved + period_gross`; **indexed period** = `period_gross × index_coefficient` (default 1; `index_linkage_base_date` on contract for future CPI); **deductions** from `contract_deduction_rules` (retention / insurance / lab_fees) with fallback to `contracts.retention_pct`, `insurance_pct`, `lab_fees_pct`; **payment_due** = indexed − deductions. Columns `partial_accounts.period_work_indexed`, `lab_fees_deduction`. **UI** (`/marker-ofek/finance/contracts/[id]`): pharmacy shell; KPI + recognition ribbon; BOQ table columns **קודם % | נוכחי % | מצטבר % | סכום מצטבר ₪ | תקופה ₪ | הצעת גנט %**. `getContractRecognizedTotals` for invoiced vs partials.
+- **Salaries (hybrid):** if `projects.partner_cost_employee_salaries` > 0 use it; else Gantt labor (`computeGanttLaborCostByProjectId`). Exposed as `employeeSalariesIsManual` on each row.
+- **Procurement:** sum PO `total_amount` per project excluding `draft` POs. **Scanner path:** `receiveGoodsFromScanner` inserts `goods_receipts` + `goods_receipt_items`, validates PO line ownership and remaining qty vs prior receipts, requires shortage notes on partial fills; revalidates procurement routes. **Command Center:** sub-nav links dashboard ↔ catalog ↔ assets; catalog mirrors `items_catalog` with search + dialog insert; assets page uses demo rows until a `company_assets` (or equivalent) table is wired.
+- **RBAC:** unchanged (`resolvePartnerMetricsPersona`); Guy/Samer see only projects where they are `managing_partner_id`; Ophir sees all assigned projects + filter.
+- **UI:** `/marker-ofek/partner-finance` — white “pharmacy” shell, thin `slate-100` borders, `font-currency-mono` (JetBrains) for money, Framer Motion `animate` on KPI figures and list entrance. Expandable dashboard + project drill-down to `/marker-ofek/partner-finance/[projectId]`. Legacy `/partner-finance` redirects to the Marker Ofek route.
+- **Gantt (execution):** `gantt-task-react` integration — `Task` rows built from `GanttTaskRow` via `canonicalWbsFlatIds`; invalid ISO strings never become `Invalid Date` (`safeParseDay` + `sanitizedGanttTasks`). **Derivative Gantt:** subcontractor rows (`is_derivative`) linked to `parent_task_id` master; cascade on master moves; per-bar `styles` + ◆ label prefix; link to **סנכרון קבלני משנה**.
+
+## Tender → contract (Golden Pipeline Ph.1)
+
+- **Flow:** `draft` → **הגש למכרז** → `submitted` → קישור `linked_project_id` + `linked_entity_id` → (Ophir) **ניצחון והמרה לחוזה** → `contracts` row + `contract_line_items` (exposed as view `contract_items`) + `tender_projects.status = won`.
+- **Engine:** Final BoQ `tender_boq_items` (`boq_version = final`), prefer **leaf** lines (no child rows); `contracts.total_amount` = sum(q×price); line `wbs_weight_percent` from share of total.
+- **Facade:** Import `convertTenderToContract` from `lib/actions/contract-actions` in UI; implementation stays under `lib/marker-ofek/tenders/`.
+
+## Dekel reference (Tenders BoQ)
+
+- **Table `ref_dekel_prices`:** `item_description`, `external_sku`, `unit`, `list_price`, `category` (+ legacy `currency`, …). **Search:** RPC `search_dekel_prices(p_query, p_limit, p_category)` — priority `חשמל` / `תשתיות` when no category filter; Hebrew search-prefix stripping (`strip_hebrew_search_prefixes`); optional exact category filter for the fast ribbon.
+- **Tender default multiplier:** `tender_projects.default_dekel_multiplier` (default **1.10**); BoQ page strip + dialog load/save via `getTenderDekelDefaults` / `updateTenderDefaultDekelMultiplier`.
+- **Server actions:** `lib/marker-ofek/tenders/dekel-actions.ts` — `searchDekelPrices`, `applyDekelPriceToBoQ` (מקדם על מחיר בסיס → `unit_price`, עדכון תיאור ויחידה דרך `updateBoqItem`).
+- **UI:** `/marker-ofek/tenders/boq` — `DekelPricePickerDialog` (רצועת קטגוריות מהירה, מחיר דקל → המחיר שלך, `font-currency-mono`).
+
+## Schema changes (this update)
+
+- `20260417120000_tasks_derivative_gantt.sql` — `tasks.parent_task_id` (FK master, `on delete restrict`), `subcontractor_id`, `is_derivative`, `contract_id`; checks + trigger `tasks_derivative_master_window_trg` (derivative `end_date` ≤ master `end_date`).
+- `20260415120000_dekel_search_priority_and_tender_multiplier.sql` — `default_dekel_multiplier` on `tender_projects`; `strip_hebrew_search_prefixes`; `search_dekel_prices` v2 (3-arg).
+- `20260414120000_ref_dekel_prices_finalize.sql` — עמודות `item_description` / `category`, אינדקסי חיפוש, `search_dekel_prices`, דוגמאות seed אם הטבלה ריקה.
+- `20260413120000_tender_win_contract_pipeline.sql` — `tender_projects.status` ∈ `draft|submitted|won|lost`; `linked_project_id`, `linked_entity_id`; `contracts.tender_project_id` + unique (one contract per tender); `ref_dekel_prices` placeholder (Dekel sync TBD).
+- (None for procurement scaffolding — uses existing `goods_receipts` / `goods_receipt_items` / `po_line_items`.)
+- `20260407120000_mo_invoice_financial_status_approved.sql` — adds `approved` to `public.mo_invoice_financial_status` (before `paid`) for revenue recognition.
+- `20260409120000_contract_billing_center_v1.sql` — `public.contract_items` view (alias of `contract_line_items`); `partial_account_line_items.quantity_previous`, `quantity_current`, `line_total_price`; `partial_accounts.current_progress_percent`.
+- `20260410120000_contract_deduction_rules_index_linkage.sql` — `contract_deduction_rules` (retention / insurance / lab_fees % per contract); `contracts.lab_fees_pct`, `index_linkage_base_date`, `index_coefficient`; `contract_line_items.wbs_weight_percent`, `sort_order`; `partial_accounts.lab_fees_deduction`, `period_work_indexed`; view `contract_items` recreated; example BOQ seed template `supabase/snippets/example_boq_wbs_9_1m.sql`.
+
+## Unresolved / follow-ups
+
+- **Derivative Gantt:** No in-app UI yet to call `createDerivativeTask` (SQL or future dialog); `parent_task_id` vs WBS `parent_id` needs onboarding copy for PMs.
+- ~~**Gantt / `gantt-client.tsx`:** TypeScript errors against `gantt-task-react` `Task`, missing symbols, or invalid `Date` values passed to `<Gantt />`.~~ **Fixed (2026-04-03):** `safeParseDay` guards `parseISO`; `sanitizedGanttTasks` ensures valid `Date` instances; `onDateChange` / `onProgressChange` match library arity `(task, children?)`, validate `toIso` before `updateTaskGridRow`. Pharmacy Gantt shell (`bg-[#FFFFFF]`, `border-slate-100`) unchanged.
+- If payroll must be overridden to **exactly zero** while Gantt is non-zero, product needs a flag or NULLable manual column; V1 uses “positive manual wins.”
+- RLS on `mo_invoices` / `projects` for partners should be reviewed for defense-in-depth (app layer already filters).
+
+## Next steps
+
+- Optional: one-click **אישור חשבון חלקי** (status → `approved`) from billing UI with confirmation; ensure `mo_invoices` linking workflow for partials that graduate to invoice.
+- Optional: surface `approved` vs `paid` invoice mix in dashboards; admin workflow to set invoice status to `approved`.
+
+## External agent sync
+
+- **`GEMINI_SYNC_BRIEF.md`** — short contract for revenue recognition, billing math, and file pointers (kept in repo root).
 
 ## 1) Database Specs (Tables, Types, FKs, RLS)
 

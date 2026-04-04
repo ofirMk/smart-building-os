@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -11,22 +11,30 @@ import {
 } from "react"
 import {
   ArrowRightLeft,
+  BarChart,
   Building2,
   ChevronDown,
   ChevronUp,
   Gauge,
   LogOut,
+  Shield,
+  Sparkles,
 } from "lucide-react"
 
 import { logout } from "@/app/(dashboard)/actions"
 import {
   MARKER_OFEK_CONTRACTING_NAV_SECTIONS,
   type SidebarNavItem,
+  type SidebarNavSection,
   FACILITY_ADMIN_NAV_SECTIONS,
   HOLDEN_NAV_SECTIONS,
   isFacilityManagementContext,
   isMarkerOfekExecutiveContext,
 } from "@/app/(dashboard)/_components/sidebar"
+import {
+  indexOfSidebarSectionForPathname,
+  isSidebarNavItemActive,
+} from "@/app/(dashboard)/_components/sidebar-routes"
 import {
   type AppUserRole,
   guyRahumimWelcomeMessage,
@@ -55,21 +63,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useModuleVisibility } from "@/components/marker-ofek/marker-ofek-dashboard-context"
+import {
+  filterSidebarSectionsByModules,
+} from "@/lib/marker-ofek/module-registry"
+import { MIRROR_BANNER_INSET_PT_CLASS } from "@/lib/marker-ofek/mirror-layout"
+import { filterSidebarWhenNoManagedProjects } from "@/lib/marker-ofek/project-scope"
+import {
+  ERP_EXECUTION_SUBTITLE,
+  useOrganizationBranding,
+} from "@/components/organization-branding-context"
+import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
-
-function isActivePath(pathname: string, href: string) {
-  if (href === "/dashboard") {
-    return pathname === "/" || pathname === "/dashboard"
-  }
-  if (href === "/marker-ofek") {
-    return pathname === "/marker-ofek" || pathname === "/marker-ofek/"
-  }
-  if (href === "/") {
-    return pathname === "/" || pathname === "/dashboard"
-  }
-  return pathname === href || pathname.startsWith(`${href}/`)
-}
 
 function avatarLetterFromEmail(email: string | null): string {
   if (!email?.trim()) return "?"
@@ -88,18 +94,40 @@ function setSelectedCompanyCookie(company: CompanyCookie) {
 type AppSidebarProps = {
   userEmail: string | null
   userRole: AppUserRole
+  /** ברכת מארח — מרקר אופק */
+  hostGreetingLine?: string | null
+  showPartnerFinanceNav?: boolean
+  showHoldingExecutiveNav?: boolean
+  /** Ophir — link to per-user module toggles */
+  showUserPermissionsNav?: boolean
+  /** Admin / Ophir — AI user onboarding */
+  showAiUserSetupNav?: boolean
+  /** Guy/Samer / Ophir mirror: count of managed projects; null → do not hide empty-portfolio links */
+  scopedProjectCount?: number | null
+  /** When true, hide portfolio links if scopedProjectCount === 0 */
+  applyEmptyPortfolioNav?: boolean
+  /** Offset for fixed mirror banner */
+  mirrorBannerActive?: boolean
 }
 
 function SidebarNavLinkRow({
   pathname,
   item,
   closeMobileNav,
+  monoLabel = false,
+  markerSoftNav,
 }: {
   pathname: string
   item: SidebarNavItem
   closeMobileNav: () => void
+  /** תוויות מרקר אופק תחת אקורדיון — מונוספייס פרמיום */
+  monoLabel?: boolean
+  /** ניווט רך + לשונית פנימית — מרקר אופק */
+  markerSoftNav?: (href: string, title: string) => void
 }) {
   const Icon = item.icon
+  const useMarkerSoft =
+    Boolean(markerSoftNav) && item.href.startsWith("/marker-ofek")
   const isPrimaryHardRoute =
     item.href === "/" ||
     item.href === "/marker-ofek" ||
@@ -108,49 +136,84 @@ function SidebarNavLinkRow({
     item.href === "/hq"
   const isModulesCenterLink =
     (item.title === "מרכז מודולים" || item.title === "מרכז המודולים") &&
-    item.href === "/marker-ofek"
+    (item.href === "/marker-ofek/command-center" || item.href === "/marker-ofek")
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        isActive={isActivePath(pathname, item.href)}
+        isActive={isSidebarNavItemActive(pathname, item.href)}
         tooltip={item.title}
         size="default"
         className={cn(
-          "gap-2 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
+          "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
           "[&_svg]:size-4 [&_svg]:shrink-0",
-          "hover:bg-white/10 hover:text-zinc-100",
-          "data-active:bg-white/12 data-active:text-zinc-50"
+          "data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-sm"
         )}
         render={
           isModulesCenterLink ? (
             <a
-              href="/marker-ofek"
-              onClick={closeMobileNav}
+              href="/marker-ofek/command-center"
+              onClick={(e) => {
+                if (useMarkerSoft && markerSoftNav) {
+                  e.preventDefault()
+                  closeMobileNav()
+                  markerSoftNav("/marker-ofek/command-center", "מרכז המודולים")
+                  return
+                }
+                closeMobileNav()
+              }}
               dir="rtl"
               className="flex w-full items-center justify-start gap-2 text-start"
             >
               <Icon />
-              <span className="truncate">מרכז המודולים</span>
+              <span
+                className={cn("truncate", monoLabel && "font-currency-mono text-[13px]")}
+              >
+                מרכז המודולים
+              </span>
             </a>
           ) : isPrimaryHardRoute ? (
             <a
               href={item.href}
-              onClick={closeMobileNav}
+              onClick={(e) => {
+                if (useMarkerSoft && markerSoftNav) {
+                  e.preventDefault()
+                  closeMobileNav()
+                  markerSoftNav(item.href, item.title)
+                  return
+                }
+                closeMobileNav()
+              }}
               dir="rtl"
               className="flex w-full items-center justify-start gap-2 text-start"
             >
               <Icon />
-              <span className="truncate">{item.title}</span>
+              <span
+                className={cn("truncate", monoLabel && "font-currency-mono text-[13px]")}
+              >
+                {item.title}
+              </span>
             </a>
           ) : (
             <Link
               href={item.href}
-              onClick={closeMobileNav}
+              onClick={(e) => {
+                if (useMarkerSoft && markerSoftNav) {
+                  e.preventDefault()
+                  closeMobileNav()
+                  markerSoftNav(item.href, item.title)
+                  return
+                }
+                closeMobileNav()
+              }}
               dir="rtl"
               className="flex w-full items-center justify-start gap-2 text-start"
             >
               <Icon />
-              <span className="truncate">{item.title}</span>
+              <span
+                className={cn("truncate", monoLabel && "font-currency-mono text-[13px]")}
+              >
+                {item.title}
+              </span>
             </Link>
           )
         }
@@ -159,8 +222,109 @@ function SidebarNavLinkRow({
   )
 }
 
-export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
+function MarkerOfekSidebarAccordion({
+  pathname,
+  sections,
+  closeMobileNav,
+  markerSoftNav,
+}: {
+  pathname: string
+  sections: SidebarNavSection[]
+  closeMobileNav: () => void
+  markerSoftNav?: (href: string, title: string) => void
+}) {
+  const activeIdx = useMemo(
+    () => indexOfSidebarSectionForPathname(pathname, sections),
+    [pathname, sections]
+  )
+  const [openIdx, setOpenIdx] = useState<number>(() => activeIdx)
+
+  useEffect(() => {
+    setOpenIdx(activeIdx)
+  }, [activeIdx])
+
+  return (
+    <div className="flex flex-col gap-1.5 px-0.5">
+      {sections.map((section, idx) => {
+        const label = section.label?.trim() || `קבוצה ${idx + 1}`
+        const isOpen = openIdx === idx
+        const sectionHasActive = section.items.some((it) =>
+          isSidebarNavItemActive(pathname, it.href)
+        )
+
+        return (
+          <div
+            key={`${label}-${idx}`}
+            className="rounded-xl border border-slate-200/80 bg-white/40 dark:border-sidebar-border dark:bg-sidebar-accent/20"
+          >
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => {
+                setOpenIdx((cur) => (cur === idx ? -1 : idx))
+              }}
+              className={cn(
+                "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-start transition-colors duration-150",
+                "text-indigo-950 hover:bg-slate-50/90 dark:text-indigo-100 dark:hover:bg-sidebar-accent/60",
+                sectionHasActive && !isOpen && "bg-indigo-50/50 dark:bg-indigo-950/25"
+              )}
+            >
+              <span className="min-w-0 flex-1 text-sm font-semibold tracking-tight">
+                {label}
+              </span>
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  "size-4 shrink-0 text-indigo-950/60 transition-transform duration-200 ease-out motion-reduce:transition-none dark:text-indigo-200/70",
+                  isOpen && "-rotate-180"
+                )}
+              />
+            </button>
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              )}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div className="px-1 pb-2 pt-0.5">
+                  <SidebarMenu className="gap-0.5">
+                    {section.items.map((item, itemIdx) => (
+                      <SidebarNavLinkRow
+                        key={`acc-${idx}-${itemIdx}-${item.href}`}
+                        pathname={pathname}
+                        item={item}
+                        closeMobileNav={closeMobileNav}
+                        monoLabel
+                        markerSoftNav={markerSoftNav}
+                      />
+                    ))}
+                  </SidebarMenu>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+export function AppSidebar({
+  userEmail,
+  userRole,
+  hostGreetingLine = null,
+  showPartnerFinanceNav = false,
+  showHoldingExecutiveNav = false,
+  showUserPermissionsNav = false,
+  showAiUserSetupNav = false,
+  scopedProjectCount = null,
+  applyEmptyPortfolioNav = false,
+  mirrorBannerActive = false,
+}: AppSidebarProps) {
   const pathname = usePathname() ?? ""
+  const router = useRouter()
+  const smartWs = useSmartWorkspace()
   const [logoutPending, startLogoutTransition] = useTransition()
   const { isMobile, setOpenMobile } = useSidebar()
   const [fetchedRole, setFetchedRole] = useState<
@@ -183,13 +347,84 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
     [pathname]
   )
 
+  const { modules } = useModuleVisibility()
+
   const holdenNavSections = useMemo(() => {
-    if (effectiveRole === "admin") {
-      return [...HOLDEN_NAV_SECTIONS, ...FACILITY_ADMIN_NAV_SECTIONS]
+    const raw =
+      effectiveRole === "admin"
+        ? [...HOLDEN_NAV_SECTIONS, ...FACILITY_ADMIN_NAV_SECTIONS]
+        : HOLDEN_NAV_SECTIONS
+    return filterSidebarSectionsByModules(raw, modules)
+  }, [effectiveRole, modules])
+
+  const markerNavSections = useMemo((): SidebarNavSection[] => {
+    const withoutExec = showHoldingExecutiveNav
+      ? MARKER_OFEK_CONTRACTING_NAV_SECTIONS
+      : MARKER_OFEK_CONTRACTING_NAV_SECTIONS.map((section) => ({
+          ...section,
+          items: section.items.filter((i) => i.href !== "/marker-ofek/executive"),
+        }))
+    let withAdmin = withoutExec
+    if (showUserPermissionsNav || showAiUserSetupNav) {
+      withAdmin = withAdmin.map((section) =>
+        section.label === "מערכת"
+          ? {
+              ...section,
+              items: [
+                ...section.items,
+                ...(showAiUserSetupNav
+                  ? [
+                      {
+                        title: "הקמת משתמש (AI)",
+                        href: "/marker-ofek/settings/users/ai-setup",
+                        icon: Sparkles,
+                      } satisfies SidebarNavItem,
+                    ]
+                  : []),
+                ...(showUserPermissionsNav
+                  ? [
+                      {
+                        title: "הרשאות משתמשים",
+                        href: "/marker-ofek/settings/user-permissions",
+                        icon: Shield,
+                      } satisfies SidebarNavItem,
+                    ]
+                  : []),
+              ],
+            }
+          : section
+      )
     }
-    return HOLDEN_NAV_SECTIONS
-  }, [effectiveRole])
-  const markerNavSections = MARKER_OFEK_CONTRACTING_NAV_SECTIONS
+    const withPartners: SidebarNavSection[] = !showPartnerFinanceNav
+      ? withAdmin
+      : [
+          ...withAdmin,
+          {
+            label: "הנהלה בכירה",
+            items: [
+              {
+                title: "מרכז שותפי ניהול",
+                href: "/marker-ofek/partner-finance",
+                icon: BarChart,
+              },
+            ],
+          },
+        ]
+    const filtered = filterSidebarSectionsByModules(withPartners, modules)
+    return filterSidebarWhenNoManagedProjects(
+      filtered,
+      scopedProjectCount,
+      applyEmptyPortfolioNav
+    )
+  }, [
+    showPartnerFinanceNav,
+    showHoldingExecutiveNav,
+    showUserPermissionsNav,
+    showAiUserSetupNav,
+    scopedProjectCount,
+    applyEmptyPortfolioNav,
+    modules,
+  ])
 
   const guyWelcome = useMemo(
     () => guyRahumimWelcomeMessage(userEmail),
@@ -199,6 +434,14 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
   const closeMobileNav = useCallback(() => {
     if (isMobile) setOpenMobile(false)
   }, [isMobile, setOpenMobile])
+
+  const markerSoftNav = useCallback(
+    (href: string, title: string) => {
+      smartWs?.ensureTabForPath(href, title)
+      router.push(href)
+    },
+    [router, smartWs]
+  )
 
   useEffect(() => {
     if (!isMobile) return
@@ -250,12 +493,14 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
     }
   }, [])
 
-  const brandHref = isMarkerOfek ? "/marker-ofek" : "/dashboard/holden"
+  const branding = useOrganizationBranding()
+  const brandHref = isMarkerOfek ? "/marker-ofek/command-center" : "/dashboard/holden"
+  const erpBrandLine = `${branding.organizationName} · ${ERP_EXECUTION_SUBTITLE}`
   const brandTitle = isMarkerOfek
-    ? "מרקר אופק יזמות וביצוע"
+    ? erpBrandLine
     : "הולדן ניהול מבנים ומתחמים"
   const brandSubtitle = isMarkerOfek
-    ? "יזמות, ביצוע ורכש"
+    ? ERP_EXECUTION_SUBTITLE
     : "נכסים, דיירים ותחזוקה"
 
   return (
@@ -263,30 +508,40 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
       side="right"
       collapsible="offcanvas"
       variant="inset"
-      className="print:hidden"
+      className={cn("print:hidden", mirrorBannerActive && MIRROR_BANNER_INSET_PT_CLASS)}
     >
       <SidebarHeader className="space-y-4 pb-4 pt-1">
+        {isMarkerOfek && hostGreetingLine ? (
+          <div className="rounded-xl border border-sidebar-border bg-white/80 px-3 py-2.5 shadow-sm dark:bg-sidebar-accent/40">
+            <p className="text-sm font-semibold tracking-tight text-indigo-950 dark:text-indigo-100">
+              {hostGreetingLine}
+            </p>
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+              נעים לראותך כאן.
+            </p>
+          </div>
+        ) : null}
         <div className="space-y-2.5 px-1 group-data-[collapsible=icon]:hidden">
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-300">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             החלפת חברה
           </p>
-          <details className="group/company-switcher rounded-sm border border-zinc-600/80 bg-zinc-700/30 p-1.5 shadow-sm">
+          <details className="group/company-switcher rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-1.5 shadow-sm">
             <summary
               className={cn(
-                "flex cursor-pointer list-none items-center justify-between rounded-sm px-3 py-2 text-start text-sm font-semibold transition-colors",
-                "hover:bg-white/10"
+                "flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 text-start text-sm font-semibold transition-colors duration-200",
+                "hover:bg-sidebar-accent"
               )}
             >
               <span className="inline-flex items-center gap-2">
                 <ArrowRightLeft className="size-4 text-muted-foreground" aria-hidden />
                 {isMarkerOfek ? (
                   <>
-                    <Gauge className="size-4 text-violet-600 dark:text-violet-400" aria-hidden />
-                    <span>מרקר אופק - ביצוע</span>
+                    <Gauge className="size-4 text-sidebar-primary" aria-hidden />
+                    <span className="truncate">{erpBrandLine}</span>
                   </>
                 ) : (
                   <>
-                    <Building2 className="size-4 text-cyan-600 dark:text-cyan-400" aria-hidden />
+                    <Building2 className="size-4 text-slate-600 dark:text-slate-300" aria-hidden />
                     <span>הולדן גרופ - ניהול מבנים</span>
                   </>
                 )}
@@ -296,23 +551,23 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 aria-hidden
               />
             </summary>
-              <div className="mt-1 space-y-1 rounded-sm bg-zinc-900/55 p-1">
+              <div className="mt-1 space-y-1 rounded-lg bg-muted/80 p-1 dark:bg-sidebar-accent/40">
               <button
                 type="button"
                 onClick={() => {
                   closeMobileNav()
                   setSelectedCompanyCookie("marker_ofek")
-                  window.location.assign("/marker-ofek")
+                  window.location.assign("/marker-ofek/command-center")
                 }}
                 className={cn(
-                  "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
+                  "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors duration-200",
                   isMarkerOfek
-                    ? "bg-zinc-600/50 text-zinc-100"
-                    : "hover:bg-white/10"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                    : "hover:bg-sidebar-accent"
                 )}
               >
-                <span>מרקר אופק - ביצוע</span>
-                <Gauge className="size-4" aria-hidden />
+                <span className="truncate text-start">{erpBrandLine}</span>
+                <Gauge className="size-4 shrink-0" aria-hidden />
               </button>
               <button
                 type="button"
@@ -322,10 +577,10 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                   window.location.assign("/dashboard/holden")
                 }}
                 className={cn(
-                  "flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
+                  "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors duration-200",
                   isFacility && !isMarkerOfek
-                    ? "bg-zinc-600/50 text-zinc-100"
-                    : "hover:bg-white/10"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                    : "hover:bg-sidebar-accent"
                 )}
               >
                 <span>הולדן גרופ - ניהול מבנים</span>
@@ -338,7 +593,7 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                   setSelectedCompanyCookie("none")
                   window.location.assign("/")
                 }}
-                className="flex items-center justify-between rounded-sm px-3 py-2 text-xs text-zinc-300 transition-colors hover:bg-white/10"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors duration-200 hover:bg-sidebar-accent"
               >
                 <span>חזרה לבחירת חברה</span>
                 <ArrowRightLeft className="size-3.5" aria-hidden />
@@ -349,26 +604,48 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
 
         <a
           href={brandHref}
-          onClick={closeMobileNav}
-          className="flex items-center gap-3 rounded-sm px-2 py-2 outline-none transition-all duration-300 ease-in-out hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-zinc-400/30"
+          onClick={(e) => {
+            if (isMarkerOfek && brandHref.startsWith("/marker-ofek")) {
+              e.preventDefault()
+              closeMobileNav()
+              markerSoftNav(brandHref, "מרכז הפיקוד")
+              return
+            }
+            closeMobileNav()
+          }}
+          className="flex items-center gap-3 rounded-xl px-2 py-2 outline-none transition-all duration-200 ease-in-out hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring/40"
         >
           <div
             className={cn(
-              "flex size-11 shrink-0 items-center justify-center rounded-sm text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-in-out hover:scale-[1.02]",
-              "bg-gradient-to-br from-zinc-500 to-zinc-700"
+              "flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-md ring-1 ring-slate-100 transition-transform duration-200 ease-out hover:scale-[1.02]",
+              isMarkerOfek
+                ? "border border-slate-100 bg-white"
+                : "bg-gradient-to-br from-slate-800 to-slate-950 text-sidebar-primary-foreground dark:from-slate-100 dark:to-slate-300 dark:text-slate-900"
             )}
           >
             {isMarkerOfek ? (
-              <Gauge className="size-[1.125rem]" aria-hidden />
+              branding.brandLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={branding.brandLogoUrl}
+                  alt=""
+                  className="size-full object-contain p-1.5"
+                />
+              ) : (
+                <Building2
+                  className="size-[1.125rem] text-[#1e1b4b]"
+                  aria-hidden
+                />
+              )
             ) : (
               <Building2 className="size-[1.125rem]" aria-hidden />
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-bold tracking-tight text-zinc-100">
+            <span className="truncate text-sm font-bold tracking-tight text-sidebar-foreground">
               {brandTitle}
             </span>
-            <span className="truncate text-xs font-normal text-zinc-300">
+            <span className="truncate text-xs font-normal text-muted-foreground">
               {brandSubtitle}
             </span>
           </div>
@@ -383,8 +660,19 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
         ) : null}
       </SidebarHeader>
       <SidebarContent>
-        {(isMarkerOfek ? markerNavSections : holdenNavSections).map(
-          (section, idx) => (
+        {isMarkerOfek ? (
+          <SidebarGroup className="px-1">
+            <SidebarGroupContent>
+              <MarkerOfekSidebarAccordion
+                pathname={pathname}
+                sections={markerNavSections}
+                closeMobileNav={closeMobileNav}
+                markerSoftNav={markerSoftNav}
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : (
+          holdenNavSections.map((section, idx) => (
             <SidebarGroup key={section.label ?? `fm-section-${idx}`}>
               {section.label ? (
                 <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
@@ -404,11 +692,11 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-          )
+          ))
         )}
       </SidebarContent>
       <div
-        className="mx-3 my-2 h-px bg-gradient-to-l from-transparent via-black/[0.06] to-transparent dark:via-white/[0.08]"
+        className="mx-3 my-2 h-px bg-gradient-to-l from-transparent via-border to-transparent"
         aria-hidden
       />
       <SidebarFooter className="pb-2">
@@ -417,8 +705,8 @@ export function AppSidebar({ userEmail, userRole }: AppSidebarProps) {
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-start outline-none transition-all duration-300 ease-in-out",
-                  "hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-zinc-400/25 data-[popup-open]:bg-white/[0.08]"
+                  "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-start outline-none transition-all duration-200 ease-in-out",
+                  "hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 data-[popup-open]:bg-sidebar-accent"
                 )}
                 title={userEmail ?? "חשבון משתמש"}
               >

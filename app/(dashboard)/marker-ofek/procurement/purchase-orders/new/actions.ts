@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache"
 
+import { evaluateSupplierTaxCompliance } from "@/lib/marker-ofek/entity-supplier-compliance"
+import { poFromBoqServerSchema } from "@/lib/marker-ofek/erp-validation-schemas"
+import { getMoSystemSettings } from "@/lib/marker-ofek/mo-system-settings-actions"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
 export type CreatePoFromBoqLine = {
@@ -10,7 +13,8 @@ export type CreatePoFromBoqLine = {
   unit: string | null
   quantity: number
   unitPrice: number
-  catalogItemId?: string | null
+  /** חובה — FK ל־items_catalog */
+  catalogItemId: string
 }
 
 export type CreatePurchaseOrderFromBoqResult =
@@ -28,119 +32,146 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-async function resolveSupplierId(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
-  supplierName: string
-): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
-  const trimmed = supplierName.trim()
-  if (!trimmed) {
-    return { ok: false, error: "חסר שם ספק" }
-  }
-
-  const { data: existing, error: findErr } = await supabase
-    .from("entities")
-    .select("id")
-    .eq("type", "supplier")
-    .eq("is_deleted", false)
-    .ilike("name", trimmed)
-    .maybeSingle()
-
-  if (findErr) {
-    return { ok: false, error: findErr.message }
-  }
-  if (existing?.id) {
-    return { ok: true, id: existing.id as string }
-  }
-
-  const { data: inserted, error: insErr } = await supabase
-    .from("entities")
-    .insert({
-      name: trimmed,
-      type: "supplier",
-      contact_info: {},
-      is_deleted: false,
-    })
-    .select("id")
-    .single()
-
-  if (insErr || !inserted?.id) {
-    return {
-      ok: false,
-      error: insErr?.message ?? "יצירת ספק נכשלה",
-    }
-  }
-  return { ok: true, id: inserted.id as string }
-}
-
 export async function createPurchaseOrderFromBoq(input: {
+  projectId: string
   tenderId: string
-  supplierName: string
+  supplierEntityId: string
   lines: CreatePoFromBoqLine[]
 }): Promise<CreatePurchaseOrderFromBoqResult> {
-  const tenderId = input.tenderId?.trim()
-  if (!tenderId) {
-    return { ok: false, error: "נא לבחור מכרז" }
+  const parsed = poFromBoqServerSchema.safeParse({
+    projectId: input.projectId,
+    tenderId: input.tenderId,
+    supplierEntityId: input.supplierEntityId,
+    lines: input.lines,
+  })
+  if (!parsed.success) {
+    const msg = parsed.error.issues.map((i) => i.message).join(" · ")
+    return { ok: false, error: msg || "נתוני הזמנה לא תקינים" }
   }
-  const lines = input.lines.filter(
-    (l) =>
-      l.quantity > 0 &&
-      l.unitPrice >= 0 &&
-      l.description.trim().length > 0
-  )
-  if (lines.length === 0) {
-    return { ok: false, error: "נא לבחור לפחות שורת BoQ אחת עם כמות חיובית" }
-  }
+
+  const { projectId, tenderId, supplierEntityId, lines } = parsed.data
 
   const supabase = await createSupabaseServerAuthClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const supplier = await resolveSupplierId(supabase, input.supplierName)
-  if (!supplier.ok) {
-    return { ok: false, error: supplier.error }
+  const { data: projRow, error: projErr } = await supabase
+    .from("projects")
+    .select("id, is_deleted")
+    .eq("id", projectId)
+    .maybeSingle()
+  if (projErr) return { ok: false, error: projErr.message }
+  if (!projRow || projRow.is_deleted) {
+    return { ok: false, error: "פרויקט לא נמצא או מסומן כמחוק" }
+  }
+
+  const { data: tenderRow, error: tenErr } = await supabase
+    .from("tenders")
+    .select("id, project_id")
+    .eq("id", tenderId)
+    .maybeSingle()
+  if (tenErr) return { ok: false, error: tenErr.message }
+  if (!tenderRow) {
+    return { ok: false, error: "מכרז לא נמצא" }
+  }
+  const tProj = tenderRow.project_id as string | null
+  if (tProj != null && tProj !== projectId) {
+    return {
+      ok: false,
+      error: "המכרז אינו משויך לפרויקט שנבחר — בחרו התאמה תקינה",
+    }
+  }
+
+  const { data: supplierRow, error: supErr } = await supabase
+    .from("entities")
+    .select(
+      "id, type, is_deleted, legal_id, withholding_tax_expiry, bookkeeping_auth_expiry"
+    )
+    .eq("id", supplierEntityId)
+    .maybeSingle()
+
+  if (supErr) {
+    return { ok: false, error: supErr.message }
+  }
+  if (!supplierRow || supplierRow.is_deleted || supplierRow.type !== "supplier") {
+    return {
+      ok: false,
+      error: "יש לבחור ספק מאומת מהמערכת (ישות מסוג supplier)",
+    }
+  }
+  const legal = String(supplierRow.legal_id ?? "").trim()
+  if (!legal) {
+    return {
+      ok: false,
+      error: "לספק חייב להיות ח.פ / ע.מ (legal_id) לפני יצירת הזמנה",
+    }
+  }
+
+  const settingsRes = await getMoSystemSettings()
+  const settingsRow = settingsRes.ok ? settingsRes.settings : null
+  const compliance = evaluateSupplierTaxCompliance(
+    {
+      withholding_tax_expiry: supplierRow.withholding_tax_expiry as string | null,
+      bookkeeping_auth_expiry: supplierRow.bookkeeping_auth_expiry as string | null,
+    },
+    {
+      tax_compliance_mode: settingsRow?.tax_compliance_mode ?? "warning",
+    }
+  )
+  if (compliance.submitBlocked) {
+    return {
+      ok: false,
+      error:
+        "מצב תאימות מס: חסימה — עדכנו תאריכי תוקף לספק או שינוי מדיניות בהגדרות המערכת",
+    }
+  }
+
+  const catalogIds = Array.from(new Set(lines.map((l) => l.catalogItemId)))
+  const { data: catalogRows, error: catErr } = await supabase
+    .from("items_catalog")
+    .select("id")
+    .in("id", catalogIds)
+
+  if (catErr) {
+    return { ok: false, error: catErr.message }
+  }
+  if ((catalogRows ?? []).length !== catalogIds.length) {
+    return {
+      ok: false,
+      error: "אחד או יותר מזהי הפריטים בקטלוג אינם קיימים במערכת",
+    }
   }
 
   const selectedTotal = roundMoney(
     lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
   )
 
-  const itemIds = Array.from(
-    new Set(
-      lines
-        .map((line) => line.catalogItemId?.trim() || "")
-        .filter((id) => id.length > 0)
-    )
-  )
-
   const minPriceByItem = new Map<string, number>()
-  if (itemIds.length > 0) {
-    const { data: histRows, error: histErr } = await supabase
-      .from("supplier_item_prices")
-      .select("master_item_id, last_price")
-      .in("master_item_id", itemIds)
-      .limit(2000)
+  const { data: histRows, error: histErr } = await supabase
+    .from("supplier_item_prices")
+    .select("master_item_id, last_price")
+    .in("master_item_id", catalogIds)
+    .limit(2000)
 
-    if (histErr) {
-      return { ok: false, error: histErr.message }
-    }
+  if (histErr) {
+    return { ok: false, error: histErr.message }
+  }
 
-    for (const row of (histRows ?? []) as {
-      master_item_id: string | null
-      last_price: number | null
-    }[]) {
-      const itemId = row.master_item_id ?? ""
-      const p = Number(row.last_price ?? 0)
-      if (!itemId || !Number.isFinite(p)) continue
-      const current = minPriceByItem.get(itemId)
-      if (current == null || p < current) minPriceByItem.set(itemId, p)
-    }
+  for (const row of (histRows ?? []) as {
+    master_item_id: string | null
+    last_price: number | null
+  }[]) {
+    const itemId = row.master_item_id ?? ""
+    const p = Number(row.last_price ?? 0)
+    if (!itemId || !Number.isFinite(p)) continue
+    const current = minPriceByItem.get(itemId)
+    if (current == null || p < current) minPriceByItem.set(itemId, p)
   }
 
   const minTotal = roundMoney(
     lines.reduce((sum, line) => {
-      const id = line.catalogItemId?.trim() || ""
-      const minUnit = id ? minPriceByItem.get(id) : undefined
+      const minUnit = minPriceByItem.get(line.catalogItemId)
       const safeUnit =
         minUnit != null && Number.isFinite(minUnit) ? minUnit : line.unitPrice
       return sum + line.quantity * safeUnit
@@ -171,9 +202,9 @@ export async function createPurchaseOrderFromBoq(input: {
   const { data: poRow, error: poErr } = await supabase
     .from("purchase_orders")
     .insert({
-      project_id: null,
+      project_id: projectId,
       tender_id: tenderId,
-      supplier_id: supplier.id,
+      supplier_id: supplierEntityId,
       po_number: null,
       total_amount: selectedTotal,
       status,
@@ -200,7 +231,7 @@ export async function createPurchaseOrderFromBoq(input: {
     const lineTotal = roundMoney(row.quantity * row.unitPrice)
     return {
       po_id: poId,
-      item_id: null,
+      item_id: row.catalogItemId,
       description: row.description.trim(),
       quantity: row.quantity,
       unit: row.unit?.trim() || null,
@@ -215,9 +246,7 @@ export async function createPurchaseOrderFromBoq(input: {
     }
   })
 
-  const { error: linesErr } = await supabase
-    .from("po_line_items")
-    .insert(linePayload)
+  const { error: linesErr } = await supabase.from("po_line_items").insert(linePayload)
 
   if (linesErr) {
     await supabase.from("purchase_orders").delete().eq("id", poId)
@@ -225,8 +254,7 @@ export async function createPurchaseOrderFromBoq(input: {
   }
 
   revalidatePath("/marker-ofek/procurement")
-  const poNumber =
-    typeof poRow.po_number === "string" ? poRow.po_number : ""
+  const poNumber = typeof poRow.po_number === "string" ? poRow.po_number : ""
 
   if (ceoApprovalRequired) {
     const appUrl =

@@ -90,7 +90,7 @@ export function TicketsManagementView({
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-gray-400">
             מעקב אחר כל הקריאות בפרויקט המגורים — סטטוס, דחיפות ומיקום בזמן אמת.
-            מומלץ לעדכן קבלן וסטטוס לאחר ביקור בשטח.
+            מומלץ לעדכן חברה אחראית וסטטוס לאחר ביקור בשטח.
           </p>
         </div>
         <div className="shrink-0">

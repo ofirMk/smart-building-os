@@ -1,8 +1,6 @@
-import { PillarLandingShell } from "@/components/marker-ofek/pillar-landing-shell"
-import { getPillarByHref } from "@/lib/marker-ofek/pillar-registry"
+import { redirect } from "next/navigation"
 
-const pillar = getPillarByHref("/marker-ofek/billing")!
-
-export default function BillingPillarPage() {
-  return <PillarLandingShell pillar={pillar} />
+/** נקודת כניסה היסטורית — מרכז החיוב עבר ל־`/marker-ofek/finance/billing`. */
+export default function BillingPillarRedirectPage() {
+  redirect("/marker-ofek/finance/billing")
 }

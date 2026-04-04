@@ -323,24 +323,24 @@ export default function ProcurementAgingPage() {
         חזרה לרכש וספקים
       </Link>
 
-      <header className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-amber-950/35 p-5 shadow-lg sm:p-8">
+      <header className="pharmacy-hero-card p-5 sm:p-8">
         <div
           className="pointer-events-none absolute -start-20 -top-20 size-64 rounded-full bg-amber-500/10 blur-3xl"
           aria-hidden
         />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 text-amber-200">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700">
               <Scale className="size-5 sm:size-6" aria-hidden />
             </div>
             <div className="min-w-0 space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-amber-400/90">
+              <p className="text-xs font-medium uppercase tracking-wider text-amber-700/90">
                 מרקר אופק · רכש
               </p>
-              <h1 className="text-pretty text-xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="text-pretty text-xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
                 גילון ספקים וחוב
               </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
                 חשבונות פתוחים מול סחורה שהתקבלה, היסטוריית תשלומים, וסיכום חוב
                 לפי ספק.
               </p>

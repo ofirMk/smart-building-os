@@ -14,6 +14,7 @@ import {
   FileText,
   FileSpreadsheet,
   FolderOpen,
+  LayoutList,
   Loader2,
   MessageCircleQuestion,
   ShoppingCart,
@@ -49,6 +50,8 @@ import type {
   MarkerOfekProjectRow,
   PartialBillBaselineAIExtract,
 } from "@/types/marker-ofek"
+import { ProjectDocumentsVaultExplorer } from "@/components/marker-ofek/projects/project-documents-vault-explorer"
+import { ProjectGanttLaunchDialog } from "@/components/marker-ofek/projects/project-gantt-launch-dialog"
 
 const PROJECT_DOCS_BUCKET =
   process.env.NEXT_PUBLIC_PROJECT_DOCUMENTS_BUCKET?.trim() ||
@@ -487,7 +490,7 @@ function BaselineBillDataPreview({
                     key={`${row.section_number}-${i}`}
                     className={`border-b border-border/40 ${isOverBudget ? "bg-red-500/10" : "bg-card/30"}`}
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                    <td className="px-3 py-2 font-currency-mono text-[11px] text-muted-foreground tabular-nums">
                       {row.section_number || "—"}
                     </td>
                     <td className="max-w-[20rem] px-3 py-2 font-medium">
@@ -552,6 +555,7 @@ export function MarkerOfekProjectHubClient({
   const [documents, setDocuments] =
     React.useState<MarkerOfekProjectDocumentRow[]>(initialDocuments)
   const [uploading, setUploading] = React.useState(false)
+  const [vaultDocumentKind, setVaultDocumentKind] = React.useState("תוכניות")
   const [baselinePreview, setBaselinePreview] =
     React.useState<PartialBillBaselineAIExtract | null>(null)
   const [baselineScanPending, startBaselineScanTransition] =
@@ -661,6 +665,7 @@ export function MarkerOfekProjectHubClient({
         })
       if (upErr) throw upErr
 
+      const versionGroupId = crypto.randomUUID()
       const { data: row, error: insErr } = await supabase
         .from("project_documents")
         .insert({
@@ -668,10 +673,13 @@ export function MarkerOfekProjectHubClient({
           file_path: path,
           title: file.name,
           mime_type: file.type || null,
-          document_kind: null,
+          document_kind: vaultDocumentKind,
+          version_group_id: versionGroupId,
+          version_number: 1,
+          is_current: true,
         })
         .select(
-          "id, project_id, title, file_path, document_kind, mime_type, created_at"
+          "id, project_id, title, file_path, document_kind, mime_type, created_at, version_group_id, version_number, is_current, parent_document_id"
         )
         .single()
 
@@ -740,6 +748,28 @@ export function MarkerOfekProjectHubClient({
             ) : (
               <p className="text-muted-foreground">לא מקושר למכרז</p>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-100 bg-white">
+          <CardHeader>
+            <CardTitle className="text-base text-indigo-900">לו״ז וביצוע (גאנט)</CardTitle>
+            <CardDescription className="text-slate-600">
+              ניהול משימות, כספת תוכניות לפי WBS, וסנכרון שטח
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-500"
+              render={
+                <Link href={`/marker-ofek/execution/gantt/${encodeURIComponent(project.id)}`} />
+              }
+            >
+              <LayoutList className="size-4" aria-hidden />
+              פתח לו״ז
+            </Button>
+            <ProjectGanttLaunchDialog defaultProjectId={project.id} />
           </CardContent>
         </Card>
 
@@ -976,12 +1006,30 @@ export function MarkerOfekProjectHubClient({
               ה-AI מבסס תשובות אך ורק על מסמכי הכספת. תשובות שאינן מבוססות סעיף
               יסומנו כהמלצה מסחרית בלבד.
             </Badge>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="grid gap-1">
+                <Label className="text-xs text-slate-600">סוג מסמך (תיקייה)</Label>
+                <Select
+                  value={vaultDocumentKind}
+                  onValueChange={(v) => setVaultDocumentKind(v ?? "תוכניות")}
+                >
+                  <SelectTrigger className="w-[min(100%,14rem)] border-slate-100 bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="תוכניות">תוכניות</SelectItem>
+                    <SelectItem value="היתרים">היתרים</SelectItem>
+                    <SelectItem value="תעודות">תעודות</SelectItem>
+                    <SelectItem value="חוזה">חוזה</SelectItem>
+                    <SelectItem value="אחר">אחר</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
                 type="button"
                 variant="outline"
                 disabled={uploading}
-                className="relative gap-2"
+                className="relative gap-2 border-slate-100 bg-white"
               >
                 {uploading ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -999,25 +1047,7 @@ export function MarkerOfekProjectHubClient({
               </Button>
             </div>
 
-            {documents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                אין מסמכים בכספת עדיין.
-              </p>
-            ) : (
-              <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
-                {documents.map((d) => (
-                  <li
-                    key={d.id}
-                    className="flex items-center gap-2 rounded-md border border-border/50 px-2 py-1.5"
-                  >
-                    <FileText className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 truncate">
-                      {d.title?.trim() || d.file_path}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ProjectDocumentsVaultExplorer documents={documents} />
 
             <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 p-3">
               <p className="mb-2 text-xs text-muted-foreground">

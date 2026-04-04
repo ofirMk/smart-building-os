@@ -1,26 +1,41 @@
 import type { LucideIcon } from "lucide-react"
 import {
+  Archive,
+  BarChart,
   Database,
   FileScan,
   FileSignature,
+  FileSearch,
   FolderKanban,
   Gavel,
   Gauge,
-  BarChart3,
-  HardHat,
+  GitBranch,
+  GitCompare,
+  Briefcase,
   KeyRound,
   Landmark,
   Map,
-  Package,
+  Percent,
+  Car,
+  Calculator,
   Receipt,
   Scale,
   ScrollText,
-  Settings,
+  Shield,
   ShoppingCart,
+  Settings,
   Table2,
   Tags,
   Truck,
+  Users,
   Wallet,
+  Warehouse,
+  Building2,
+  ClipboardList,
+  LayoutGrid,
+  LayoutDashboard,
+  LayoutList,
+  Layers,
 } from "lucide-react"
 
 import { MARKER_OFEK_HREFS } from "@/app/(dashboard)/_components/sidebar-routes"
@@ -52,7 +67,8 @@ export type MarkerOfekPillar = {
 }
 
 /**
- * שמונת עמודי הליבה של מרקר אופק — מקור אמת ל-Hub, סרגל צד ודפי נחיתה.
+ * עמודי ליבה של מרקר אופק — מקור אמת ל-Hub, סרגל צד ודפי נחיתה.
+ * סדר זהב ב-Hub: `erp-module-hub` → procurement, tenders, field-execution, contracts-billing, finance.
  */
 export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
   {
@@ -106,66 +122,74 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
     ],
   },
   {
-    id: "project-setup",
-    navTitle: "פרויקטים",
-    cardTitle: "פרויקטים",
+    id: "tenders",
+    navTitle: "מכרזים והערכות",
+    cardTitle: "מכרזים",
     tagline:
-      "מרכזי רווח (Profit Center): פרויקטים, חוזים, חשבונות חלקיים ויומני עבודה.",
-    href: "/marker-ofek/projects",
-    icon: FolderKanban,
+      "תמחור, כתבי כמויות, השוואת הצעות ומבנה WBS — עד לזכייה והמרה לחוזה.",
+    href: "/marker-ofek/tenders",
+    icon: FileSearch,
     defaultOpen: true,
     navItems: [
       {
-        title: "מרכז פרויקטים",
-        href: "/marker-ofek/projects",
-        icon: FolderKanban,
+        title: "מרכז מכרזים",
+        href: "/marker-ofek/tenders",
+        icon: LayoutDashboard,
       },
       {
-        title: "חוזי לקוחות",
-        href: "/marker-ofek/contracts",
-        icon: FileSignature,
+        title: "תמחור פרויקטים",
+        href: "/marker-ofek/tenders/pricing",
+        icon: Calculator,
       },
       {
-        title: "חשבונות חלקיים",
-        href: "/marker-ofek/execution/progress-reports",
-        icon: BarChart3,
+        title: "כתבי כמויות",
+        href: "/marker-ofek/tenders/boq",
+        icon: FileSearch,
       },
       {
-        title: "יומני עבודה",
-        href: "/marker-ofek/execution/daily-logs",
-        icon: ScrollText,
+        title: "השוואת הצעות",
+        href: "/marker-ofek/tenders/comparison",
+        icon: GitCompare,
       },
+      { title: "מבנה WBS", href: "/marker-ofek/tenders/wbs", icon: Layers },
     ],
     quickActions: [
-      { title: "פרויקטים", href: "/marker-ofek/projects" },
-      { title: "הקמת פרויקט חדש", href: "/marker-ofek/projects/new" },
-      { title: "חוזה חדש", href: "/marker-ofek/contracts/new" },
+      { title: "מרכז מכרזים", href: "/marker-ofek/tenders" },
+      { title: "כתבי כמויות", href: "/marker-ofek/tenders/boq" },
+      { title: "השוואת הצעות", href: "/marker-ofek/tenders/comparison" },
     ],
   },
   {
     id: "procurement",
-    navTitle: "שרשרת אספקה ורכש",
-    cardTitle: "שרשרת אספקה ורכש",
-    tagline: "הזמנות, קליטת סחורה וקליטת מסמכי ספק חכמה.",
-    href: "/marker-ofek/procurement",
+    navTitle: "רכש",
+    cardTitle: "רכש",
+    tagline: "הזמנות, ספקים, קטלוג פריטים ונכסי חברה — קליטת סחורה וחשבוניות.",
+    href: "/marker-ofek/procurement/orders",
     icon: Truck,
     defaultOpen: true,
     navItems: [
-      { title: "לוח רכש", href: "/marker-ofek/procurement", icon: ShoppingCart },
+      { title: "גיליון פריטים", href: "/marker-ofek/items", icon: Tags },
       {
-        title: "ניהול ספקים",
-        href: "/marker-ofek/supply-chain/suppliers",
-        icon: Scale,
+        title: "קטלוג פריטים",
+        href: "/marker-ofek/procurement/catalog",
+        icon: LayoutGrid,
       },
-      {
-        title: "גיליון פריטים",
-        href: "/marker-ofek/items",
-        icon: Tags,
-      },
+      { title: "הזמנות", href: "/marker-ofek/procurement/orders", icon: ClipboardList },
       {
         title: "הזמנות רכש",
         href: "/marker-ofek/procurement/purchase-orders/new",
-        icon: Package,
+        icon: ShoppingCart,
+      },
+      { title: "ספקים", href: "/marker-ofek/procurement/suppliers", icon: Building2 },
+      {
+        title: "ניהול מלאי",
+        href: "/marker-ofek/procurement/inventory",
+        icon: Warehouse,
+      },
+      {
+        title: "נכסי חברה",
+        href: "/marker-ofek/procurement/assets",
+        icon: Car,
       },
       {
         title: "תעודות משלוח",
@@ -173,7 +197,7 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
         icon: Truck,
       },
       {
-        title: "חשבוניות ספק ובינה מלאכותית",
+        title: "חשבוניות ספק",
         href: "/marker-ofek/procurement/invoices/new",
         icon: Receipt,
       },
@@ -190,45 +214,29 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
       { title: "גילון ספקים", href: "/marker-ofek/procurement/aging", icon: Scale },
     ],
     quickActions: [
-      {
-        title: "ניהול ספקים",
-        href: "/marker-ofek/supply-chain/suppliers",
-      },
-      {
-        title: "גיליון פריטים",
-        href: "/marker-ofek/items",
-      },
-      {
-        title: "הזמנות רכש",
-        href: "/marker-ofek/procurement/purchase-orders/new",
-      },
-      {
-        title: "תעודות משלוח",
-        href: "/marker-ofek/procurement/delivery-notes/new",
-      },
-      {
-        title: "חשבוניות ספק",
-        href: "/marker-ofek/procurement/invoices/new",
-      },
-      {
-        title: "בקרת התאמות",
-        href: "/marker-ofek/procurement/reconciliation",
-      },
+      { title: "גיליון פריטים", href: "/marker-ofek/items" },
+      { title: "קטלוג פריטים", href: "/marker-ofek/procurement/catalog" },
+      { title: "הזמנות", href: "/marker-ofek/procurement/orders" },
     ],
   },
   {
     id: "field-execution",
-    navTitle: "ביצוע בשטח",
-    cardTitle: "ביצוע בשטח",
-    tagline: "מעקב קבלות, איכות וסגירת פערים מול הזמנות.",
-    href: "/marker-ofek/field-execution",
-    icon: HardHat,
-    defaultOpen: false,
+    navTitle: "פרויקטים",
+    cardTitle: "פרויקטים",
+    tagline: "ניהול אתרים, גאנט ביצוע, יומני עבודה וסנכרון שטח.",
+    href: "/marker-ofek/projects",
+    icon: Briefcase,
+    defaultOpen: true,
     navItems: [
       {
-        title: "סיכום ביצוע בשטח",
-        href: "/marker-ofek/field-execution",
-        icon: HardHat,
+        title: "מרכז פרויקטים",
+        href: "/marker-ofek/projects",
+        icon: FolderKanban,
+      },
+      {
+        title: "לו\"ז וביצוע (גאנט)",
+        href: "/marker-ofek/execution/gantt",
+        icon: LayoutList,
       },
       {
         title: "יומני עבודה",
@@ -236,40 +244,98 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
         icon: ScrollText,
       },
       {
-        title: "חשבונות חלקיים",
-        href: "/marker-ofek/execution/progress-reports",
-        icon: BarChart3,
+        title: "תוכניות ו-Takeoff",
+        href: "/marker-ofek/execution/plans",
+        icon: FileScan,
       },
-      { title: "גילון ספקים", href: "/marker-ofek/procurement/aging", icon: Scale },
+      {
+        title: "משאבים ולוח שנה",
+        href: "/marker-ofek/execution/resources",
+        icon: Users,
+      },
     ],
     quickActions: [
+      { title: "מרכז פרויקטים", href: "/marker-ofek/projects" },
+      { title: "גאנט", href: "/marker-ofek/execution/gantt" },
       { title: "יומן עבודה", href: "/marker-ofek/execution/daily-logs" },
-      {
-        title: "חשבון חלקי",
-        href: "/marker-ofek/execution/progress-reports",
-      },
-      { title: "גילון ספקים", href: "/marker-ofek/procurement/aging" },
     ],
   },
   {
-    id: "billing",
-    navTitle: "חיוב והנהלה",
-    cardTitle: "חיוב והנהלה",
-    tagline: "חשבוניות מס, תשלומים וחיוב מרוכז ללקוחות.",
-    href: "/marker-ofek/billing",
-    icon: Wallet,
-    defaultOpen: false,
+    id: "contracts-billing",
+    navTitle: "חוזה וחשבונות",
+    cardTitle: "חוזה וחשבונות",
+    tagline:
+      "חוזים, כספת מסמכים, מדדים, עכבון וחריגים — ואז חשבונות חלקיים; כספים (חשבוניות מס) במודול נפרד.",
+    href: "/marker-ofek/finance/contracts-billing",
+    icon: Landmark,
+    defaultOpen: true,
     navItems: [
-      { title: "נקודת כניסה לעמודה", href: "/marker-ofek/billing", icon: Wallet },
-      { title: "כספים — חשבוניות", href: "/marker-ofek/finance", icon: Receipt },
       {
-        title: "חשבונית מרכזת",
-        href: MARKER_OFEK_HREFS.financeCentralized,
-        icon: Landmark,
+        title: "מרכז חוזה וחשבונות",
+        href: "/marker-ofek/finance/contracts-billing",
+        icon: LayoutDashboard,
+      },
+      {
+        title: "חוזי מזמין וספקי ביצוע",
+        href: "/marker-ofek/contracts",
+        icon: FileSignature,
+      },
+      {
+        title: "כספת מסמכי חוזה",
+        href: "/marker-ofek/finance/contract-vault",
+        icon: Archive,
+      },
+      {
+        title: "הצמדות ומדדים",
+        href: "/marker-ofek/finance/indexation",
+        icon: Percent,
+      },
+      {
+        title: "עכבון וערבויות",
+        href: "/marker-ofek/finance/retention",
+        icon: Shield,
+      },
+      {
+        title: "חריגים ותוספות",
+        href: "/marker-ofek/finance/variations",
+        icon: GitBranch,
+      },
+      {
+        title: "חשבונות חלקיים",
+        href: "/marker-ofek/finance/partials",
+        icon: BarChart,
       },
     ],
     quickActions: [
-      { title: "חשבוניות", href: "/marker-ofek/finance" },
+      { title: "מרכז חוזה וחשבונות", href: "/marker-ofek/finance/contracts-billing" },
+      { title: "חוזי מזמין וספקי ביצוע", href: "/marker-ofek/contracts" },
+      { title: "חשבונות חלקיים", href: "/marker-ofek/finance/partials" },
+    ],
+  },
+  {
+    id: "finance",
+    navTitle: "כספים",
+    cardTitle: "כספים",
+    tagline: "חשבוניות מס, מרכז חיוב ותזרים וחשבונית מרכזת — אחרי חוזים וביצוע.",
+    href: "/marker-ofek/finance/billing",
+    icon: Wallet,
+    defaultOpen: true,
+    navItems: [
+      {
+        title: "מרכז חיוב ותזרים",
+        href: "/marker-ofek/finance/billing",
+        icon: Landmark,
+      },
+      { title: "חשבוניות מס", href: "/marker-ofek/finance", icon: Receipt },
+      {
+        title: "חשבונית מרכזת",
+        href: MARKER_OFEK_HREFS.financeCentralized,
+        icon: Wallet,
+      },
+    ],
+    quickActions: [
+      { title: "מרכז חיוב ותזרים", href: "/marker-ofek/finance/billing" },
+      { title: "חשבוניות מס", href: "/marker-ofek/finance" },
       { title: "חשבונית מרכזת", href: MARKER_OFEK_HREFS.financeCentralized },
     ],
   },
@@ -309,10 +375,14 @@ export function getPillarByHref(href: string): MarkerOfekPillar | undefined {
   return MARKER_OFEK_PILLARS.find((p) => p.href === href)
 }
 
+export function getPillarById(id: string): MarkerOfekPillar | undefined {
+  return MARKER_OFEK_PILLARS.find((p) => p.id === id)
+}
+
 /** כל נתיבי הניווט לרישום בסרגל (ייחודיים), כולל שורש מרקר אופק */
 export function getMarkerOfekFlatNavHrefs(): readonly string[] {
-  const seen = new Set<string>(["/marker-ofek"])
-  const out: string[] = ["/marker-ofek"]
+  const seen = new Set<string>(["/marker-ofek/command-center", "/marker-ofek"])
+  const out: string[] = ["/marker-ofek/command-center", "/marker-ofek"]
   for (const s of MARKER_OFEK_SIDEBAR_SECTIONS) {
     for (const it of s.items) {
       if (!seen.has(it.href)) {

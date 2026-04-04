@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto"
 
 import { revalidatePath } from "next/cache"
 
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import type { DocumentRelatedTo, DocumentType } from "@/types/documents"
 
 export type DocumentUploadState = {
@@ -78,7 +78,13 @@ export async function uploadDocument(
   const ext = getAsciiFileExtension(file.name)
   const storagePath = `${randomUUID()}.${ext}`
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerAuthClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user?.id) {
+    return { ok: false, message: "נדרשת התחברות להעלאת מסמכים." }
+  }
 
   const { error: uploadError } = await supabase.storage
     .from("documents")
@@ -94,8 +100,10 @@ export async function uploadDocument(
     }
   }
 
-  const { data: pub } = supabase.storage.from("documents").getPublicUrl(storagePath)
-  const fileUrl = pub.publicUrl
+  const { data: signed } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(storagePath, 3600)
+  const fileUrl = signed?.signedUrl ?? ""
 
   const { error: insertError } = await supabase.from("documents").insert({
     title,

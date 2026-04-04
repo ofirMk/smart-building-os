@@ -24,6 +24,15 @@ import {
 import { SupplierNameLink } from "@/components/marker-ofek/supplier-name-link"
 import { Button } from "@/components/ui/button"
 import { buttonVariants } from "@/components/ui/button-variants"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import {
   Table,
@@ -35,13 +44,14 @@ import {
 } from "@/components/ui/table"
 import { deliveryNoteImageSrcForDisplay } from "@/lib/marker-ofek/delivery-note-image-url"
 import { cn, formatError } from "@/lib/utils"
+import { updatePurchaseOrderFinanceFields } from "@/lib/marker-ofek/procurement/po-finance-fields-actions"
 import {
   signPurchaseOrderByCeo,
   signPurchaseOrderByUser,
 } from "./actions"
 
 type ProjectEmbed = { name: string; internal_project_code: string }
-type EntityEmbed = { name: string }
+type EntityEmbed = { name: string; default_withholding_tax_percent?: number | null }
 
 type PoLineRow = {
   id: string
@@ -64,6 +74,8 @@ type PoDetail = {
   price_deviation_amount: number
   user_signed_at: string | null
   ceo_signed_at: string | null
+  withholding_tax_percent?: number | null
+  direct_cost_category?: string | null
   projects: ProjectEmbed | ProjectEmbed[] | null
   entities: EntityEmbed | EntityEmbed[] | null
   po_line_items: PoLineRow[] | PoLineRow[] | null
@@ -148,6 +160,9 @@ export default function ProcurementPoDetailPage() {
   const [signatureSubmitting, setSignatureSubmitting] = React.useState<
     "user" | "ceo" | null
   >(null)
+  const [financeWh, setFinanceWh] = React.useState("")
+  const [financeCat, setFinanceCat] = React.useState("materials")
+  const [financeSaving, setFinanceSaving] = React.useState(false)
 
   React.useEffect(() => {
     if (!poId) {
@@ -178,8 +193,10 @@ export default function ProcurementPoDetailPage() {
             price_deviation_amount,
             user_signed_at,
             ceo_signed_at,
+            withholding_tax_percent,
+            direct_cost_category,
             projects ( name, internal_project_code ),
-            entities ( name ),
+            entities ( name, default_withholding_tax_percent ),
             po_line_items (
               id,
               description,
@@ -259,6 +276,8 @@ export default function ProcurementPoDetailPage() {
 
         if (!cancelled) {
           setPo(p)
+          setFinanceWh(String((p as PoDetail).withholding_tax_percent ?? 0))
+          setFinanceCat(String((p as PoDetail).direct_cost_category ?? "materials"))
           setReceivedByLine(priorByLine)
           setGoodsReceiptSummaries(summaries)
           setIsAdmin(adminFlag)
@@ -357,6 +376,27 @@ export default function ProcurementPoDetailPage() {
     }
   }
 
+  async function handleSaveFinanceFields() {
+    setFinanceSaving(true)
+    try {
+      const res = await updatePurchaseOrderFinanceFields({
+        poId: poActionId,
+        withholding_tax_percent: Number(financeWh) || 0,
+        direct_cost_category: financeCat,
+      })
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      toast.success("שדות כספיים נשמרו")
+      window.location.reload()
+    } catch (e) {
+      toast.error(formatError(e))
+    } finally {
+      setFinanceSaving(false)
+    }
+  }
+
   async function handleCeoSignature() {
     setSignatureSubmitting("ceo")
     try {
@@ -384,20 +424,20 @@ export default function ProcurementPoDetailPage() {
         חזרה לרכש וספקים
       </Link>
 
-      <header className="rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-emerald-950/30 p-5 shadow-md sm:p-7">
+      <header className="pharmacy-hero-card p-5 sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/90">
               פרטי הזמנת רכש
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
               {po.po_number}
             </h1>
-            <span className="inline-flex rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-xs font-medium text-white">
+            <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-[#1e293b]">
               {poStatusLabel(po.status)}
             </span>
           </div>
-          <div className="grid w-full gap-4 text-sm text-slate-200 sm:max-w-sm">
+          <div className="grid w-full gap-4 text-sm text-[#1e293b] sm:max-w-sm">
             <div className="flex items-start gap-3">
               <Building2 className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden />
               <div>
@@ -433,6 +473,57 @@ export default function ProcurementPoDetailPage() {
           </div>
         ) : null}
       </header>
+
+      <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-[#1e293b]">סיווג עלות וניכוי במקור</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          לקישור לדוחות כספיים ו-P&L. ברירת מחדל ניכוי מהספק:{" "}
+          <span className="font-currency-mono tabular-nums">
+            {Number(supplier?.default_withholding_tax_percent ?? 0).toFixed(2)}%
+          </span>
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label>קטגוריית עלות (PO)</Label>
+            <Select
+              value={financeCat}
+              onValueChange={(v) => setFinanceCat(v ?? "materials")}
+            >
+              <SelectTrigger className="border-slate-200 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="materials">חומרים וציוד</SelectItem>
+                <SelectItem value="subcontract">חברות ביצוע</SelectItem>
+                <SelectItem value="equipment">ציוד מכני / השכרה</SelectItem>
+                <SelectItem value="general">כללי</SelectItem>
+                <SelectItem value="marketing_overhead">שיווק / עקיפות משויכת</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="po-wh">ניכוי במקור %</Label>
+            <Input
+              id="po-wh"
+              className="font-currency-mono"
+              inputMode="decimal"
+              value={financeWh}
+              onChange={(e) => setFinanceWh(e.target.value)}
+            />
+          </div>
+        </div>
+        <Button
+          type="button"
+          className="mt-4 gap-2 bg-[#1e293b] text-white hover:bg-slate-800"
+          disabled={financeSaving}
+          onClick={() => void handleSaveFinanceFields()}
+        >
+          {financeSaving ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : null}
+          שמירת שדות כספיים
+        </Button>
+      </section>
 
       {pendingCeoApproval ? (
         <section className="rounded-2xl border border-red-500/35 bg-red-500/[0.08] p-4 shadow-sm sm:p-5">

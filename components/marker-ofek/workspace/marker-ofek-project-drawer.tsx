@@ -24,6 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { poRowCountsTowardCommittedSpend } from "@/lib/marker-ofek/procurement/po-cost-policy"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
 
@@ -151,11 +152,17 @@ export function MarkerOfekProjectDrawer() {
 
         const { data: pos, error: pErr } = await supabase
           .from("purchase_orders")
-          .select("id")
+          .select("id, status, is_ceo_approved")
           .eq("project_id", localProjectId)
           .eq("is_deleted", false)
         if (pErr) throw pErr
-        const poIds = ((pos ?? []) as { id: string }[]).map((x) => x.id)
+        const poIds = ((pos ?? []) as {
+          id: string
+          status: string
+          is_ceo_approved?: boolean | null
+        }[])
+          .filter((x) => poRowCountsTowardCommittedSpend(x))
+          .map((x) => x.id)
         let costSum = 0
         if (poIds.length > 0) {
           const { data: poli, error: poliErr } = await supabase
@@ -224,7 +231,7 @@ export function MarkerOfekProjectDrawer() {
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">פרויקט</Label>
             <Select
-              value={localProjectId || undefined}
+              value={localProjectId || ""}
               onValueChange={(v) => {
                 const id = v ?? ""
                 setLocalProjectId(id)
@@ -261,7 +268,7 @@ export function MarkerOfekProjectDrawer() {
             </div>
           ) : localProjectId ? (
             <div className="grid gap-3">
-              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-slate-950/40 via-background to-cyan-950/20 p-4 shadow-sm">
+              <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
                 <p className="text-xs font-medium text-muted-foreground">
                   תכנון (BoQ) לעומת עלות רכש
                 </p>

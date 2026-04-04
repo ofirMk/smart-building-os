@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache"
 
 import { formatError } from "@/lib/format-error"
+import {
+  calcCurrentAmountProgressLine,
+  clampPct,
+  roundMoney,
+} from "@/lib/marker-ofek/progress-report-line-calc"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
 const PAGE_PATH = "/marker-ofek/execution/progress-reports/new"
@@ -20,31 +25,6 @@ function reportDateIsrael(): string {
   const d = parts.find((p) => p.type === "day")?.value
   if (y && m && d) return `${y}-${m}-${d}`
   return new Date().toISOString().slice(0, 10)
-}
-
-function roundMoney(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100
-}
-
-function clampPct(n: number): number {
-  if (!Number.isFinite(n)) return 0
-  return Math.min(100, Math.max(0, n))
-}
-
-function calcCurrentAmount(
-  totalPrice: number,
-  selectedPctRaw: number,
-  previousPctRaw: number | null | undefined
-): { deltaPct: number; currentAmount: number; cumulativeValue: number } {
-  const previousPct = clampPct(Number(previousPctRaw ?? 0))
-  const selectedPct = clampPct(Number(selectedPctRaw))
-  const selectedBps = Math.round(selectedPct * 100)
-  const previousBps = Math.round(previousPct * 100)
-  const deltaBps = selectedBps - previousBps
-  const deltaPct = roundMoney(deltaBps / 100)
-  const currentAmount = roundMoney((totalPrice * deltaBps) / 10000)
-  const cumulativeValue = roundMoney((totalPrice * selectedBps) / 10000)
-  return { deltaPct, currentAmount, cumulativeValue }
 }
 
 export type SaveProgressReportResult =
@@ -124,8 +104,6 @@ export async function saveProgressReport(input: {
 
     /** סכום אושר בחשבון זה (שורות) — בסיס למדד/עכבון */
     let sumApprovedThisBill = 0
-    /** סכום ערך מצטבר (נוכחי) לכל השורות — לתצוגה/בקרה */
-    let sumCumulativeValue = 0
 
     const itemRows: Array<{
       contract_milestone_id: string
@@ -151,16 +129,15 @@ export async function saveProgressReport(input: {
         }
       }
 
-      let prevPct = clampPct(Number(line.pctPreviousCumulative))
-      let currPct = clampPct(Number(line.pctCurrentCumulative))
+      const prevPct = clampPct(Number(line.pctPreviousCumulative))
+      const currPct = clampPct(Number(line.pctCurrentCumulative))
 
-      const calc = calcCurrentAmount(milestoneAmount, currPct, prevPct)
+      const calc = calcCurrentAmountProgressLine(milestoneAmount, currPct, prevPct)
       const deltaPct = calc.deltaPct
       const approvedThisBill = calc.currentAmount
       const cumulativeValue = calc.cumulativeValue
 
       sumApprovedThisBill += approvedThisBill
-      sumCumulativeValue += cumulativeValue
 
       const include =
         currPct > 0 ||
@@ -190,7 +167,6 @@ export async function saveProgressReport(input: {
     }
 
     sumApprovedThisBill = roundMoney(sumApprovedThisBill)
-    sumCumulativeValue = roundMoney(sumCumulativeValue)
 
     const baseForRetention = roundMoney(sumApprovedThisBill + indexationAmount)
     const retentionAmount = roundMoney(

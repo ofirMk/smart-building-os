@@ -1,7 +1,7 @@
 import { format } from "date-fns"
 import Link from "next/link"
 
-import { fetchProjectTasks } from "@/lib/actions/gantt-actions"
+import { fetchProjectTasks } from "@/lib/marker-ofek/gantt-actions"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import FieldViewClient from "./field-view-client"
 

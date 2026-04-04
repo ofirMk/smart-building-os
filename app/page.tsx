@@ -26,11 +26,16 @@ export default function RootPage() {
 
         <section className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           <a
-            href="/marker-ofek"
+            href="/marker-ofek/command-center"
             onClick={() => setSelectedCompanyCookie("marker_ofek")}
             className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:bg-violet-500/10 hover:shadow-xl hover:shadow-violet-500/10"
           >
-            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">מרקר אופק</div>
+            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">
+              ביצוע ורכש
+            </div>
+            <p className="mt-3 max-w-xs text-sm text-zinc-400">
+              ERP הנדסה, חוזים ופרויקטים
+            </p>
           </a>
 
           <a

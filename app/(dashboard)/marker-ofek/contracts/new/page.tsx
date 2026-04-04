@@ -38,11 +38,14 @@ import {
 } from "@/components/ui/select"
 import { DualPaneLayout } from "@/components/marker-ofek/workspace/dual-pane-layout"
 import { onBoqRowInputKeyDown } from "@/lib/marker-ofek/contract-boq-enter"
-import {
-  encodeBoqMilestoneStoredName,
-  encodeMilestoneDisplayName,
-} from "@/lib/marker-ofek/milestone-name-codec"
 import { scanContractBoqPdf } from "@/app/(dashboard)/marker-ofek/contracts/actions/contract-actions"
+import { QuickCreateDrawer } from "@/components/marker-ofek/erp/quick-create-drawer"
+import { createErpContract } from "@/lib/marker-ofek/erp-contract-create-action"
+import {
+  quickCreateEntity,
+  quickCreateProject,
+} from "@/lib/marker-ofek/erp-quick-create-actions"
+import { erpContractCreateSchema } from "@/lib/marker-ofek/erp-validation-schemas"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn, formatError } from "@/lib/utils"
 import type { BaselineBillLineItemAI } from "@/types/marker-ofek"
@@ -148,8 +151,29 @@ export default function NewMarkerOfekContractPage() {
   const router = useRouter()
   const boqCardRef = React.useRef<HTMLDivElement | null>(null)
   const aiPdfInputRef = React.useRef<HTMLInputElement | null>(null)
-  const [projectName, setProjectName] = React.useState("")
-  const [entityName, setEntityName] = React.useState("")
+  const [projectId, setProjectId] = React.useState<string>("")
+  const [clientEntityId, setClientEntityId] = React.useState<string>("")
+  const [startDate, setStartDate] = React.useState(() =>
+    new Date().toISOString().slice(0, 10)
+  )
+  const [projectOptions, setProjectOptions] = React.useState<
+    { id: string; name: string }[]
+  >([])
+  const [clientOptions, setClientOptions] = React.useState<
+    { id: string; name: string }[]
+  >([])
+  const [projectDrawerOpen, setProjectDrawerOpen] = React.useState(false)
+  const [clientDrawerOpen, setClientDrawerOpen] = React.useState(false)
+  const [nestedClientDrawerOpen, setNestedClientDrawerOpen] =
+    React.useState(false)
+  const [qProjectName, setQProjectName] = React.useState("")
+  const [qProjectCode, setQProjectCode] = React.useState("")
+  const [qClientName, setQClientName] = React.useState("")
+  const [qClientLegal, setQClientLegal] = React.useState("")
+  const [qClientAddress, setQClientAddress] = React.useState("")
+  const [qClientWithholding, setQClientWithholding] = React.useState("")
+  const [qClientBookkeeping, setQClientBookkeeping] = React.useState("")
+  const [qClientDeductionPct, setQClientDeductionPct] = React.useState("")
   const [contractNumber, setContractNumber] = React.useState("")
   const [contractDisplayName, setContractDisplayName] = React.useState("")
   const [contractType, setContractType] = React.useState<ContractTypeValue>(
@@ -169,10 +193,43 @@ export default function NewMarkerOfekContractPage() {
   const [isAiScanPending, startAiScanTransition] = React.useTransition()
   const [aiDataLoaded, setAiDataLoaded] = React.useState(false)
   const [submitAttempted, setSubmitAttempted] = React.useState(false)
-  const [entityLegalId, setEntityLegalId] = React.useState("")
-  const [entityAddress, setEntityAddress] = React.useState("")
-  const [entityDeductionsFile, setEntityDeductionsFile] = React.useState("")
   const [dualSplit, setDualSplit] = React.useState(false)
+
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const supabase = createSupabaseBrowserClient()
+        const [pr, cl] = await Promise.all([
+          supabase
+            .from("projects")
+            .select("id, name")
+            .eq("is_deleted", false)
+            .order("name", { ascending: true })
+            .limit(500),
+          supabase
+            .from("entities")
+            .select("id, name")
+            .eq("type", "client")
+            .eq("is_deleted", false)
+            .order("name", { ascending: true })
+            .limit(500),
+        ])
+        if (cancelled) return
+        if (!pr.error) {
+          setProjectOptions((pr.data ?? []) as { id: string; name: string }[])
+        }
+        if (!cl.error) {
+          setClientOptions((cl.data ?? []) as { id: string; name: string }[])
+        }
+      } catch {
+        // ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const boqTotal = React.useMemo(() => computeBoqTotal(rows), [rows])
   const paushalTotalNum = parseNum(paushalTotalValue)
@@ -185,6 +242,59 @@ export default function NewMarkerOfekContractPage() {
     [validPaushal]
   )
   const paushalWeightsOk = Math.abs(paushalWeightSum - 100) <= 0.05
+
+  const erpContractPayload = React.useMemo(() => {
+    const retention = parseNum(retentionPct)
+    const insurance = parseNum(insurancePct)
+    const testing = parseNum(testingPct)
+    const boqForDb = getValidBoqRowsForDb(rows).map((r) => ({
+      sectionCode: r.sectionCode.trim(),
+      description: r.description.trim(),
+      unit: r.unit.trim(),
+      quantity: parseNum(r.quantity),
+      unitPrice: parseNum(r.unitPrice),
+    }))
+    const paushalForDb = getValidPaushalRowsForDb(paushalRows).map((m) => ({
+      sectionCode: m.sectionCode.trim(),
+      description: m.description.trim(),
+      weightPct: parseNum(m.weightPct),
+    }))
+    return {
+      projectId,
+      clientEntityId,
+      startDate: startDate.trim(),
+      contractType,
+      pricingModel,
+      contractNumber: contractNumber.trim() || null,
+      contractDisplayName: contractDisplayName.trim() || null,
+      retentionPct: retention,
+      insurancePct: insurance,
+      testingPct: testing,
+      paushalTotalValue:
+        pricingModel === "paushal" ? parseNum(paushalTotalValue) : null,
+      boqRows: pricingModel === "boq" ? boqForDb : undefined,
+      paushalRows: pricingModel === "paushal" ? paushalForDb : undefined,
+    }
+  }, [
+    projectId,
+    clientEntityId,
+    startDate,
+    contractType,
+    pricingModel,
+    contractNumber,
+    contractDisplayName,
+    retentionPct,
+    insurancePct,
+    testingPct,
+    paushalTotalValue,
+    rows,
+    paushalRows,
+  ])
+
+  const contractZodResult = React.useMemo(
+    () => erpContractCreateSchema.safeParse(erpContractPayload),
+    [erpContractPayload]
+  )
 
   function updateRow(id: string, patch: Partial<BoqRow>) {
     setRows((prev) =>
@@ -260,192 +370,113 @@ export default function NewMarkerOfekContractPage() {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const pName = projectName.trim()
-    const eName = entityName.trim()
-    if (!pName || !eName) {
-      setSubmitAttempted(true)
-      toast.error("יש למלא שם פרויקט ושם ישות לפני השמירה")
+    setSubmitAttempted(true)
+    if (!contractZodResult.success) {
+      const msg =
+        contractZodResult.error.issues.map((i) => i.message).join(" · ") ||
+        "נא להשלים שדות חובה (פרויקט, לקוח, תאריך, BoQ/פאושלי)"
+      toast.error(msg)
       return
     }
-    setSubmitAttempted(false)
 
     startSaveTransition(async () => {
-    const supabase = createSupabaseBrowserClient()
-
-    try {
-      const { data: existingEntity, error: entitySelectError } = await supabase
-        .from("entities")
-        .select("id")
-        .eq("name", eName)
-        .eq("is_deleted", false)
-        .maybeSingle()
-
-      if (entitySelectError) throw entitySelectError
-
-      let entityId: string
-      if (existingEntity?.id) {
-        entityId = existingEntity.id
-      } else {
-        const { data: newEntity, error: entityInsertError } = await supabase
-          .from("entities")
-          .insert({
-            name: eName,
-            type: "subcontractor",
-            contact_info: {},
-            legal_id: entityLegalId.trim() || null,
-            address: entityAddress.trim() || null,
-            deductions_file_number: entityDeductionsFile.trim() || null,
-          })
-          .select("id")
-          .single()
-
-        if (entityInsertError) throw entityInsertError
-        if (!newEntity?.id) throw new Error("לא התקבל מזהה ישות לאחר יצירה")
-        entityId = newEntity.id
-      }
-
-      const { data: existingProject, error: projectSelectError } = await supabase
-        .from("projects")
-        .select("id")
-        .eq("name", pName)
-        .eq("is_deleted", false)
-        .maybeSingle()
-
-      if (projectSelectError) throw projectSelectError
-
-      let projectId: string
-      if (existingProject?.id) {
-        projectId = existingProject.id
-      } else {
-        const { data: newProject, error: projectInsertError } = await supabase
-          .from("projects")
-          .insert({
-            name: pName,
-            internal_project_code: "",
-            status: "planning",
-          })
-          .select("id")
-          .single()
-
-        if (projectInsertError) throw projectInsertError
-        if (!newProject?.id) throw new Error("לא התקבל מזהה פרויקט לאחר יצירה")
-        projectId = newProject.id
-      }
-
-      const retention = parseNum(retentionPct)
-      const insurance = parseNum(insurancePct)
-      const testing = parseNum(testingPct)
-
-      if (pricingModel === "paushal") {
-        const totalVal = parseNum(paushalTotalValue)
-        if (!Number.isFinite(totalVal) || totalVal <= 0) {
-          toast.error("נא להזין סכום חוזה כולל חיובי (פאושלי)")
-          return
-        }
-        const validMs = getValidPaushalRowsForDb(paushalRows)
-        if (validMs.length === 0) {
-          toast.error("נא למלא לפחות שורת אבן דרך עם סעיף ותיאור")
-          return
-        }
-        const wSum = sumPaushalWeights(validMs)
-        if (Math.abs(wSum - 100) > 0.05) {
-          toast.error(
-            `סכום אחוזי משקל חייב להיות 100% (כרגע ${wSum}%)`
-          )
-          return
-        }
-      }
-
-      const agreementLabel =
-        pricingModel === "paushal" ? "פאושלי" : "כתב כמויות"
-      const totalForContract =
-        pricingModel === "boq" ? boqTotal : parseNum(paushalTotalValue)
-
-      const { data: newContract, error: contractInsertError } = await supabase
-        .from("contracts")
-        .insert({
-          project_id: projectId,
-          entity_id: entityId,
-          contract_type: contractType,
-          agreement_type: agreementLabel,
-          retention_pct: retention,
-          insurance_pct: insurance,
-          testing_pct: testing,
-          pricing_model: pricingModel,
-          total_amount: totalForContract,
-          status: "draft",
-          contract_number: contractNumber.trim() || null,
-          name: contractDisplayName.trim() || null,
-        })
-        .select("id")
-        .single()
-
-      if (contractInsertError) throw contractInsertError
-      if (!newContract?.id) throw new Error("לא התקבל מזהה חוזה לאחר שמירה")
-      const contractId = newContract.id
-
-      if (pricingModel === "boq") {
-        const boqForDb = getValidBoqRowsForDb(rows)
-        const boqTotal = roundMoney(computeBoqTotal(rows))
-        if (boqForDb.length > 0) {
-          const milestonePayload = boqForDb.map((r, i) => {
-            const amount = roundMoney(parseNum(r.quantity) * parseNum(r.unitPrice))
-            const wp =
-              boqTotal > 0 ? roundMoney((amount / boqTotal) * 100) : 0
-            return {
-              contract_id: contractId,
-              name: encodeBoqMilestoneStoredName(
-                r.sectionCode,
-                r.description,
-                r.quantity,
-                r.unitPrice
-              ),
-              amount,
-              sort_order: i,
-              weight_percentage: wp,
-            }
-          })
-
-          const { error: linesError } = await supabase
-            .from("contract_milestones")
-            .insert(milestonePayload)
-
-          if (linesError) {
-            await supabase.from("contracts").delete().eq("id", contractId)
-            throw linesError
+      try {
+        if (pricingModel === "paushal") {
+          const totalVal = parseNum(paushalTotalValue)
+          if (!Number.isFinite(totalVal) || totalVal <= 0) {
+            toast.error("נא להזין סכום חוזה כולל חיובי (פאושלי)")
+            return
+          }
+          const validMs = getValidPaushalRowsForDb(paushalRows)
+          if (validMs.length === 0) {
+            toast.error("נא למלא לפחות שורת אבן דרך עם סעיף ותיאור")
+            return
+          }
+          const wSum = sumPaushalWeights(validMs)
+          if (Math.abs(wSum - 100) > 0.05) {
+            toast.error(`סכום אחוזי משקל חייב להיות 100% (כרגע ${wSum}%)`)
+            return
           }
         }
-      } else {
-        const totalVal = parseNum(paushalTotalValue)
-        const validMs = getValidPaushalRowsForDb(paushalRows)
-        const milestonePayload = validMs.map((m, i) => {
-          const w = parseNum(m.weightPct)
-          return {
-            contract_id: contractId,
-            name: encodeMilestoneDisplayName(m.sectionCode, m.description),
-            amount: paushalLineAmount(totalVal, w),
-            sort_order: i,
-            weight_percentage: roundMoney(w),
-          }
-        })
 
-        const { error: msError } = await supabase
-          .from("contract_milestones")
-          .insert(milestonePayload)
+        const payload = erpContractPayload
 
-        if (msError) {
-          await supabase.from("contracts").delete().eq("id", contractId)
-          throw msError
+        const res = await createErpContract(payload)
+        if (!res.ok) {
+          toast.error(res.error)
+          return
         }
-      }
 
-      toast.success("החוזה נשמר בהצלחה")
-      router.push("/marker-ofek/contracts")
-      router.refresh()
-    } catch (err) {
-      toast.error(`שמירת החוזה נכשלה: ${formatError(err)}`)
-    }
+        toast.success("החוזה נשמר בהצלחה")
+        router.push("/marker-ofek/contracts")
+        router.refresh()
+      } catch (err) {
+        toast.error(`שמירת החוזה נכשלה: ${formatError(err)}`)
+      }
     })
+  }
+
+  async function handleQuickCreateClient() {
+    const pctRaw = qClientDeductionPct.trim().replace(",", ".")
+    const pct =
+      pctRaw === "" ? null : Number.parseFloat(pctRaw)
+    const res = await quickCreateEntity({
+      name: qClientName.trim(),
+      type: "client",
+      legalId: qClientLegal.trim() || undefined,
+      address: qClientAddress.trim() || undefined,
+      withholdingTaxExpiry: qClientWithholding.trim() || null,
+      bookkeepingAuthExpiry: qClientBookkeeping.trim() || null,
+      defaultWithholdingPercent:
+        pct != null && Number.isFinite(pct) ? pct : null,
+    })
+    if (!res.ok) {
+      toast.error(res.error)
+      return
+    }
+    const id = res.id
+    setClientOptions((prev) =>
+      [...prev, { id, name: qClientName.trim() }].sort((a, b) =>
+        a.name.localeCompare(b.name, "he")
+      )
+    )
+    setClientEntityId(id)
+    setClientDrawerOpen(false)
+    setNestedClientDrawerOpen(false)
+    setQClientName("")
+    setQClientLegal("")
+    setQClientAddress("")
+    setQClientWithholding("")
+    setQClientBookkeeping("")
+    setQClientDeductionPct("")
+    toast.success("המזמין נוצר ונבחר")
+  }
+
+  async function handleQuickCreateProject() {
+    if (!clientEntityId) {
+      setNestedClientDrawerOpen(true)
+      return
+    }
+    const res = await quickCreateProject({
+      name: qProjectName.trim(),
+      internalProjectCode: qProjectCode.trim() || undefined,
+      clientEntityId,
+    })
+    if (!res.ok) {
+      toast.error(res.error)
+      return
+    }
+    const id = res.id
+    setProjectOptions((prev) =>
+      [...prev, { id, name: qProjectName.trim() }].sort((a, b) =>
+        a.name.localeCompare(b.name, "he")
+      )
+    )
+    setProjectId(id)
+    setProjectDrawerOpen(false)
+    setQProjectName("")
+    setQProjectCode("")
+    toast.success("הפרויקט נוצר ונבחר")
   }
 
   const referencePanel = (
@@ -503,7 +534,7 @@ export default function NewMarkerOfekContractPage() {
           יצירת חוזה חדש
         </h1>
         <p className="text-sm text-muted-foreground">
-          מרקר אופק — הזנת פרטי חוזה, תנאים מסחריים וכתב כמויות (BoQ).
+          הזנת פרטי חוזה, תנאים מסחריים וכתב כמויות (BoQ).
         </p>
       </div>
 
@@ -522,99 +553,118 @@ export default function NewMarkerOfekContractPage() {
               <div className="space-y-1">
                 <CardTitle>פרטי חוזה</CardTitle>
                 <CardDescription>
-                  פרויקט, ישות חוזית (מזמין / קבלן משנה) וסוג החוזה.
+                  פרויקט ומזמין (לקוח) — בחירה מרשימה מאומתת; יצירה מהירה בלי לאבד את
+                  הטופס (ESC סוגר את המגירה).
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="grid gap-5 pt-6 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="project-name">שם פרויקט</Label>
-              <Input
-                id="project-name"
-                name="projectName"
-                value={projectName}
-                onChange={(e) => {
-                  setProjectName(e.target.value)
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="contract-project">פרויקט (חובה)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1"
+                  disabled={isSavePending}
+                  onClick={() => setProjectDrawerOpen(true)}
+                >
+                  <Plus className="size-3.5" aria-hidden />
+                  פרויקט חדש
+                </Button>
+              </div>
+              <Select
+                value={projectId || undefined}
+                disabled={isSavePending}
+                onValueChange={(v) => {
+                  setProjectId(v ?? "")
                   if (submitAttempted) setSubmitAttempted(false)
                 }}
-                placeholder='לדוגמה: הירדן 89 רמת גן'
-                dir="rtl"
-                disabled={isSavePending}
-                aria-invalid={submitAttempted && !projectName.trim()}
-                className={cn(
-                  "w-full",
-                  submitAttempted &&
-                    !projectName.trim() &&
-                    "border-destructive ring-2 ring-destructive/25"
-                )}
-              />
+              >
+                <SelectTrigger
+                  id="contract-project"
+                  className={cn(
+                    "w-full min-w-0",
+                    submitAttempted &&
+                      !projectId &&
+                      "border-destructive ring-2 ring-destructive/25"
+                  )}
+                >
+                  <SelectValue placeholder="בחרו פרויקט מהמערכת…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="entity-name">שם ישות (מזמין / קבלן משנה)</Label>
-              <Input
-                id="entity-name"
-                name="entityName"
-                value={entityName}
-                onChange={(e) => {
-                  setEntityName(e.target.value)
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="contract-client">מזמין — לקוח (חובה)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1"
+                  disabled={isSavePending}
+                  onClick={() => setClientDrawerOpen(true)}
+                >
+                  <Plus className="size-3.5" aria-hidden />
+                  לקוח חדש
+                </Button>
+              </div>
+              <Select
+                value={clientEntityId || undefined}
+                disabled={isSavePending}
+                onValueChange={(v) => {
+                  setClientEntityId(v ?? "")
                   if (submitAttempted) setSubmitAttempted(false)
                 }}
-                placeholder='לדוגמה: חיים מיכאלוביץ ניהול ביצוע ויזמות בע"מ'
-                dir="rtl"
+              >
+                <SelectTrigger
+                  id="contract-client"
+                  className={cn(
+                    "w-full min-w-0",
+                    submitAttempted &&
+                      !clientEntityId &&
+                      "border-destructive ring-2 ring-destructive/25"
+                  )}
+                >
+                  <SelectValue placeholder="בחרו מזמין (ישות client)…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientOptions.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="contract-start">תאריך תחילת חוזה (חובה)</Label>
+              <Input
+                id="contract-start"
+                name="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value)
+                  if (submitAttempted) setSubmitAttempted(false)
+                }}
                 disabled={isSavePending}
-                aria-invalid={submitAttempted && !entityName.trim()}
+                dir="ltr"
                 className={cn(
-                  "w-full",
+                  "w-full max-w-xs font-mono",
                   submitAttempted &&
-                    !entityName.trim() &&
+                    !startDate.trim() &&
                     "border-destructive ring-2 ring-destructive/25"
                 )}
-              />
-              <p className="text-xs text-muted-foreground">
-                השדות הבאים נשמרים בבסיס הנתונים רק כשיוצרים ישות חדשה (שם שלא
-                קיים במערכת).
-              </p>
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="entity-legal-id">ח.פ / ע.מ (לישות חדשה)</Label>
-              <Input
-                id="entity-legal-id"
-                name="entityLegalId"
-                value={entityLegalId}
-                onChange={(e) => setEntityLegalId(e.target.value)}
-                placeholder="מספר רישום מס"
-                dir="ltr"
-                disabled={isSavePending}
-                className="w-full font-mono"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="entity-address">כתובת (לישות חדשה)</Label>
-              <Input
-                id="entity-address"
-                name="entityAddress"
-                value={entityAddress}
-                onChange={(e) => setEntityAddress(e.target.value)}
-                placeholder="רחוב, עיר, מיקוד"
-                dir="rtl"
-                disabled={isSavePending}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="entity-deductions">
-                תיק ניכויים (לישות חדשה)
-              </Label>
-              <Input
-                id="entity-deductions"
-                name="entityDeductionsFile"
-                value={entityDeductionsFile}
-                onChange={(e) => setEntityDeductionsFile(e.target.value)}
-                placeholder="מספר תיק ניכויים אצל הלקוח"
-                dir="ltr"
-                disabled={isSavePending}
-                className="w-full font-mono"
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -631,7 +681,7 @@ export default function NewMarkerOfekContractPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="main_contract">חוזה מזמין</SelectItem>
-                  <SelectItem value="sub_contract">חוזה קבלן משנה</SelectItem>
+                  <SelectItem value="sub_contract">חוזה ספק ביצוע</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1162,10 +1212,17 @@ export default function NewMarkerOfekContractPage() {
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-3 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
+            {!contractZodResult.success ? (
+              <ul className="w-full list-inside list-disc text-start text-sm text-destructive sm:order-first sm:max-w-md">
+                {contractZodResult.error.issues.slice(0, 10).map((issue, i) => (
+                  <li key={`${issue.path.join(".")}-${i}`}>{issue.message}</li>
+                ))}
+              </ul>
+            ) : null}
             <Button
               type="submit"
               size="lg"
-              disabled={isSavePending}
+              disabled={isSavePending || !contractZodResult.success}
               className="w-full gap-2 bg-cyan-600 text-white hover:bg-cyan-500 sm:w-auto"
             >
               {isSavePending ? (
@@ -1178,6 +1235,185 @@ export default function NewMarkerOfekContractPage() {
           </CardFooter>
         </Card>
       </form>
+
+      <QuickCreateDrawer
+        open={clientDrawerOpen}
+        onOpenChange={setClientDrawerOpen}
+        title="לקוח חדש (מזמין)"
+        description="נשמר ב־MDM כישות מסוג client. אחרי השמירה הלקוח ייבחר אוטומטית בטופס הראשי."
+        footer={
+          <div className="flex w-full flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setClientDrawerOpen(false)}
+            >
+              ביטול
+            </Button>
+            <Button type="button" onClick={() => void handleQuickCreateClient()}>
+              שמירה ובחירה
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-2">
+          <Label htmlFor="q-client-name">שם</Label>
+          <Input
+            id="q-client-name"
+            value={qClientName}
+            onChange={(e) => setQClientName(e.target.value)}
+            placeholder="שם חברה / לקוח"
+            dir="rtl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="q-client-legal">ח.פ / ע.מ</Label>
+          <Input
+            id="q-client-legal"
+            value={qClientLegal}
+            onChange={(e) => setQClientLegal(e.target.value)}
+            dir="ltr"
+            className="font-mono"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="q-client-address">כתובת</Label>
+          <Input
+            id="q-client-address"
+            value={qClientAddress}
+            onChange={(e) => setQClientAddress(e.target.value)}
+            dir="rtl"
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="q-wh">תוקף ניכוי מס</Label>
+            <Input
+              id="q-wh"
+              type="date"
+              value={qClientWithholding}
+              onChange={(e) => setQClientWithholding(e.target.value)}
+              dir="ltr"
+              className="font-mono"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="q-bk">תוקף ניהול ספרים</Label>
+            <Input
+              id="q-bk"
+              type="date"
+              value={qClientBookkeeping}
+              onChange={(e) => setQClientBookkeeping(e.target.value)}
+              dir="ltr"
+              className="font-mono"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="q-ded">אחוז ניכוי ברירת מחדל (%)</Label>
+          <Input
+            id="q-ded"
+            value={qClientDeductionPct}
+            onChange={(e) => setQClientDeductionPct(e.target.value)}
+            placeholder="למשל 0"
+            dir="ltr"
+            className="font-currency-mono tabular-nums"
+          />
+        </div>
+      </QuickCreateDrawer>
+
+      <QuickCreateDrawer
+        open={nestedClientDrawerOpen}
+        onOpenChange={setNestedClientDrawerOpen}
+        stackLevel={1}
+        title="לקוח חדש (מתוך יצירת פרויקט)"
+        description="לא נבחר מזמין בטופס הראשי. לאחר השמירה תחזרו למגירת הפרויקט עם הלקוח מסומן."
+        footer={
+          <div className="flex w-full flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNestedClientDrawerOpen(false)}
+            >
+              ביטול
+            </Button>
+            <Button type="button" onClick={() => void handleQuickCreateClient()}>
+              שמירה ובחירה
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-2">
+          <Label htmlFor="q-nested-client-name">שם</Label>
+          <Input
+            id="q-nested-client-name"
+            value={qClientName}
+            onChange={(e) => setQClientName(e.target.value)}
+            placeholder="שם חברה / לקוח"
+            dir="rtl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="q-nested-client-legal">ח.פ / ע.מ</Label>
+          <Input
+            id="q-nested-client-legal"
+            value={qClientLegal}
+            onChange={(e) => setQClientLegal(e.target.value)}
+            dir="ltr"
+            className="font-mono"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="q-nested-client-address">כתובת</Label>
+          <Input
+            id="q-nested-client-address"
+            value={qClientAddress}
+            onChange={(e) => setQClientAddress(e.target.value)}
+            dir="rtl"
+          />
+        </div>
+      </QuickCreateDrawer>
+
+      <QuickCreateDrawer
+        open={projectDrawerOpen}
+        onOpenChange={setProjectDrawerOpen}
+        title="פרויקט חדש (F2)"
+        description="אם אין לקוח בטופס הראשי, לחיצה על שמירה תפתח מגירת לקוח מקוננת. מנהל הפרויקט: המשתמש המחובר."
+        footer={
+          <div className="flex w-full flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setProjectDrawerOpen(false)}
+            >
+              ביטול
+            </Button>
+            <Button type="button" onClick={() => void handleQuickCreateProject()}>
+              שמירה ובחירה
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-2">
+          <Label htmlFor="q-proj-name">שם פרויקט</Label>
+          <Input
+            id="q-proj-name"
+            value={qProjectName}
+            onChange={(e) => setQProjectName(e.target.value)}
+            dir="rtl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="q-proj-code">קוד פנימי (אופציונלי)</Label>
+          <Input
+            id="q-proj-code"
+            value={qProjectCode}
+            onChange={(e) => setQProjectCode(e.target.value)}
+            dir="ltr"
+            className="font-mono"
+          />
+        </div>
+      </QuickCreateDrawer>
     </div>
     </DualPaneLayout>
   )

@@ -143,7 +143,7 @@ export function MaintenanceClient({ tasks, vendors }: MaintenanceClientProps) {
             <div>
               <CardTitle className="text-lg">הוספת משימת תחזוקה</CardTitle>
               <CardDescription>
-                הגדירו יעד, תדירות וקבלן אחראי לפי הצורך.
+                הגדירו יעד, תדירות וחברה אחראית לפי הצורך.
               </CardDescription>
             </div>
           </div>
@@ -238,7 +238,7 @@ export function MaintenanceClient({ tasks, vendors }: MaintenanceClientProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="mt-vendor">הקצאת קבלן</Label>
+                <Label htmlFor="mt-vendor">הקצאת חברה</Label>
                 <select
                   id="mt-vendor"
                   name="vendor_id"
@@ -312,7 +312,7 @@ export function MaintenanceClient({ tasks, vendors }: MaintenanceClientProps) {
                     <TableHead>תדירות</TableHead>
                     <TableHead className="min-w-[120px]">מועד יעד</TableHead>
                     <TableHead className="hidden lg:table-cell">ביצוע אחרון</TableHead>
-                    <TableHead className="hidden sm:table-cell">קבלן</TableHead>
+                    <TableHead className="hidden sm:table-cell">חברה</TableHead>
                     <TableHead className="pe-4 text-end">פעולות</TableHead>
                   </TableRow>
                 </TableHeader>

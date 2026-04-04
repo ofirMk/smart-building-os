@@ -77,6 +77,27 @@ export function addWorkingDaysSync(
   return cursor
 }
 
+/** Positive delta moves forward in working days; negative moves backward (for FS lead / negative lag). */
+export function addWorkingDaysOffsetSync(
+  startIsoDate: string,
+  deltaWorkingDays: number,
+  jewishHolidayDates: ReadonlySet<string> = new Set()
+): string {
+  const start = normalizeIsoDate(startIsoDate)
+  const d = Math.trunc(Number(deltaWorkingDays) || 0)
+  if (d === 0) return start
+  if (d > 0) return addWorkingDaysSync(start, d, jewishHolidayDates)
+  let remaining = -d
+  let cursor = start
+  while (remaining > 0) {
+    cursor = shiftIsoDate(cursor, -1)
+    if (isWorkDay(cursor, jewishHolidayDates)) {
+      remaining -= 1
+    }
+  }
+  return cursor
+}
+
 export async function addWorkingDays(
   startIsoDate: string,
   durationDays: number
@@ -96,4 +117,24 @@ export async function addWorkingDays(
   }
 
   return addWorkingDaysSync(start, duration, holidays)
+}
+
+/** Working days strictly after `startIso` until `endIso` (matches Gantt duration semantics). */
+export function diffWorkingDaysWithHolidaySet(
+  startIso: string,
+  endIso: string,
+  jewishHolidayDates: ReadonlySet<string> = new Set()
+): number {
+  const start = normalizeIsoDate(startIso)
+  const end = normalizeIsoDate(endIso)
+  if (!start || !end || Date.parse(`${end}T00:00:00.000Z`) < Date.parse(`${start}T00:00:00.000Z`)) {
+    return 0
+  }
+  let count = 0
+  let cursor = start
+  while (Date.parse(`${cursor}T00:00:00.000Z`) < Date.parse(`${end}T00:00:00.000Z`)) {
+    cursor = shiftIsoDate(cursor, 1)
+    if (isWorkDay(cursor, jewishHolidayDates)) count += 1
+  }
+  return count
 }

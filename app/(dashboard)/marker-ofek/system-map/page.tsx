@@ -198,36 +198,36 @@ export default function MarkerOfekSystemMapPage() {
         חזרה ללוח בקרה
       </Link>
 
-      <header className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-violet-950/40 p-6 shadow-lg md:p-8">
+      <header className="pharmacy-hero-card p-6 md:p-8">
         <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-violet-500/35 bg-violet-500/15 text-violet-200">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-600">
               <Map className="size-6" aria-hidden />
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-violet-300/90">
+              <p className="text-xs font-medium uppercase tracking-wider text-violet-600/90">
                 מרקר אופק · ארכיטקטורה חיה
               </p>
-              <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] md:text-3xl">
                 מפת המערכת (Roadmap)
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
                 היררכיית ERP 0–7 (WBS): סטטוס פיתוח לפי צמתים — פעיל, בפיתוח,
                 או מתוכנן. הנתונים מגיעים מקובץ יחיד לעדכון שוטף.
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 text-violet-100/90">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 text-slate-500">
             <GitBranch className="size-5 opacity-80" aria-hidden />
             <span className="text-sm">אינדקס WBS חי</span>
           </div>
         </div>
 
-        <div className="relative mt-8 rounded-xl border border-white/10 bg-black/25 p-4 backdrop-blur-sm">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+        <div className="relative mt-8 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <span>
               השלמה לפי צמתים פעילים:{" "}
-              <strong className="text-white tabular-nums">
+              <strong className="text-[#1e293b] tabular-nums">
                 {stats.active} / {stats.total}
               </strong>{" "}
               ({stats.percentActive}%)
@@ -236,21 +236,21 @@ export default function MarkerOfekSystemMapPage() {
               <button
                 type="button"
                 onClick={expandAll}
-                className="rounded-md border border-white/15 px-2 py-1 text-[11px] hover:bg-white/10"
+                className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-[#1e293b] hover:bg-slate-100"
               >
                 הרחב הכול
               </button>
               <button
                 type="button"
                 onClick={collapseToRoots}
-                className="rounded-md border border-white/15 px-2 py-1 text-[11px] hover:bg-white/10"
+                className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-[#1e293b] hover:bg-slate-100"
               >
                 כווץ לשכבות
               </button>
             </div>
           </div>
           <div
-            className="h-3 overflow-hidden rounded-full bg-white/10"
+            className="h-3 overflow-hidden rounded-full bg-slate-200"
             role="progressbar"
             aria-valuenow={stats.percentActive}
             aria-valuemin={0}

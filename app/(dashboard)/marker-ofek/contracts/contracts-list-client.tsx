@@ -45,7 +45,7 @@ const currencyFormatter = new Intl.NumberFormat("he-IL", {
 
 function contractTypeLabel(t: string): string {
   if (t === "main_contract") return "חוזה מזמין"
-  if (t === "sub_contract") return "חוזה קבלן משנה"
+  if (t === "sub_contract") return "חוזה ספק ביצוע"
   return t
 }
 

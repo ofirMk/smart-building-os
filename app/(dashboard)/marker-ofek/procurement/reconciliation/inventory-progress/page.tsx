@@ -41,7 +41,7 @@ import {
   getContractItems,
   getProjectDiscrepancies,
   getUnassignedInventory,
-} from "@/lib/actions/reconciliation-actions"
+} from "@/lib/marker-ofek/reconciliation-actions"
 import { formatError } from "@/lib/utils"
 
 type ProjectOption = {
@@ -264,8 +264,9 @@ export default function InventoryProgressReconciliationPage() {
           <Select
             value={selectedProjectId}
             onValueChange={(v) => {
-              setSelectedProjectId(v)
-              void loadRecon(v)
+              const id = v ?? ""
+              setSelectedProjectId(id)
+              void loadRecon(id)
             }}
           >
             <SelectTrigger>

@@ -196,8 +196,13 @@ export default function MarkerOfekItemsCatalogPage() {
     e.preventDefault()
     const sku = form.sku.trim()
     const description = form.description.trim()
+    const cat = form.category.trim()
     if (!sku || !description) {
       toast.error("מק״ט מאסטר ותיאור פנימי הם שדות חובה")
+      return
+    }
+    if (!cat) {
+      toast.error("קטגוריה חובה — ללא קטגוריה לא נשמר פריט בקטלוג")
       return
     }
     const defaultPriceRaw = form.default_price.trim().replace(",", ".")
@@ -218,7 +223,7 @@ export default function MarkerOfekItemsCatalogPage() {
           sku,
           description,
           unit: form.unit.trim() || null,
-          category: form.category.trim() || null,
+          category: cat,
           default_price: defaultPrice,
           is_inventory: form.is_inventory,
         })
@@ -287,10 +292,15 @@ export default function MarkerOfekItemsCatalogPage() {
             מק״טים פנימיים (מאסטר) לרכש ולניהול ספקים.
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Button className="gap-2" render={<Link href="/marker-ofek/items/new" />}>
+          <Plus className="size-4" aria-hidden />
+          טופס מלא (קטגוריה חובה)
+        </Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger
             type="button"
-            className={cn(buttonVariants(), "gap-2 shrink-0")}
+            className={cn(buttonVariants({ variant: "outline" }), "gap-2 shrink-0")}
           >
             <Plus className="size-4" aria-hidden />
             הוספת מק״ט פנימי
@@ -343,14 +353,15 @@ export default function MarkerOfekItemsCatalogPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-cat">קטגוריה</Label>
+                    <Label htmlFor="new-cat">קטגוריה (חובה)</Label>
                     <Input
                       id="new-cat"
                       value={form.category}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, category: e.target.value }))
                       }
-                      placeholder="אופציונלי"
+                      placeholder="למשל: חומרי גמר"
+                      required
                     />
                   </div>
                 </div>
@@ -398,6 +409,7 @@ export default function MarkerOfekItemsCatalogPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {error ? (

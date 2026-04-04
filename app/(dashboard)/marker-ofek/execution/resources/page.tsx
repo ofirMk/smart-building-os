@@ -4,11 +4,12 @@ import * as React from "react"
 import { Loader2, Plus, Save, Users } from "lucide-react"
 import { toast } from "sonner"
 
+import { Button } from "@/components/ui/button"
 import {
   fetchResourcesGridRows,
   upsertResourceRow,
   type ResourceGridRow,
-} from "@/lib/actions/gantt-actions"
+} from "@/lib/marker-ofek/gantt-actions"
 import { formatError } from "@/lib/utils"
 
 type EditableResourceRow = ResourceGridRow & {
@@ -24,6 +25,9 @@ const statusOptions: Array<{
   { value: "unavailable", label: "לא זמין" },
   { value: "vacation", label: "בחופשה" },
 ]
+
+const gridFieldClass =
+  "w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-[13px] text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/45 focus:ring-2 focus:ring-primary/15"
 
 export default function MarkerOfekResourcesPage() {
   const [rows, setRows] = React.useState<EditableResourceRow[]>([])
@@ -91,148 +95,168 @@ export default function MarkerOfekResourcesPage() {
     }
   }
 
-  const gridFieldClass =
-    "w-full rounded-sm border border-zinc-200 bg-white px-2 py-1.5 text-[13px] text-zinc-900 placeholder:text-zinc-500 outline-none focus:border-zinc-400 focus:ring-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-
   return (
-    <div dir="rtl" className="mx-auto flex w-full max-w-7xl flex-col gap-4 bg-zinc-50 px-3 py-5 font-sans text-[13px] text-zinc-900 md:px-5">
+    <div
+      dir="rtl"
+      className="mx-auto flex min-h-[60vh] w-full max-w-7xl flex-col gap-6 bg-background p-6 font-sans text-[13px] text-foreground md:p-8"
+    >
       <header className="space-y-2 text-start">
-        <div className="inline-flex items-center gap-2 text-violet-700 dark:text-violet-300">
-          <Users className="size-5" />
-          <span className="text-xs font-semibold uppercase tracking-[0.2em]">
-            Marker Ofek - Resource Engine
+        <div className="inline-flex items-center gap-2 text-primary">
+          <Users className="size-5" aria-hidden />
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Marker Ofek — Resource Engine
           </span>
         </div>
-        <h1 className="text-xl font-bold tracking-tight md:text-2xl">ניהול כוח אדם ולוח שנה</h1>
-        <p className="text-[12px] text-zinc-500">
-          גיליון ניהול בסגנון Excel להוספה/עדכון עובדים, עלות יומית ובדיקת התנגשויות הקצאה.
+        <h1 className="module-page-title text-balance font-semibold">
+          ניהול כוח אדם ולוח שנה
+        </h1>
+        <p className="text-[12px] text-muted-foreground">
+          גיליון ניהול להוספה/עדכון עובדים, עלות יומית ובדיקת התנגשויות הקצאה.
         </p>
       </header>
 
       <div className="flex justify-start">
-        <button
-          type="button"
-          onClick={addNewRow}
-          className="inline-flex items-center gap-2 rounded-sm bg-zinc-900 px-2.5 py-1.5 text-[12px] font-medium text-zinc-100 hover:bg-zinc-700"
-        >
-          <Plus className="size-4" />
+        <Button type="button" size="sm" className="gap-2 font-semibold" onClick={addNewRow}>
+          <Plus className="size-4 shrink-0" aria-hidden />
           הוספת עובד
-        </button>
+        </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-sm border border-zinc-200 bg-white shadow-sm dark:border-slate-700 dark:bg-zinc-900">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         {loading ? (
-          <div className="flex items-center gap-2 px-4 py-8 text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
+          <div className="flex items-center gap-2 px-5 py-10 text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
             טוען משאבים...
           </div>
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+            <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-muted/40">
+              <Users className="size-7 text-muted-foreground opacity-80" aria-hidden />
+            </div>
+            <p className="text-sm font-medium text-foreground">אין משאבים רשומים</p>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              הוסיפו עובד ראשון כדי להתחיל לשבץ צוותים בפרויקטים ולחשב עלויות.
+            </p>
+            <Button type="button" size="sm" className="mt-1 gap-2 font-semibold" onClick={addNewRow}>
+              <Plus className="size-4 shrink-0" aria-hidden />
+              הוספת עובד
+            </Button>
+          </div>
         ) : (
-          <table className="w-full min-w-[920px] text-[13px] text-zinc-900 dark:text-slate-100">
-            <thead className="bg-zinc-100 text-zinc-900 dark:bg-slate-800 dark:text-slate-200">
-              <tr>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">שם עובד</th>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">מקצוע</th>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">עלות יומית</th>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">Cost Impact</th>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">סטטוס זמינות</th>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">Conflict Checker</th>
-                <th className="px-2 py-2 text-right font-bold text-zinc-900">פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const hasConflict = row.conflict_count > 0
-                const isSaving = savingId === row.id
-                return (
-                  <tr key={row.id} className="border-t border-zinc-200 dark:border-slate-800">
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="text"
-                        value={row.name}
-                        onChange={(e) => updateRow(row.id, { name: e.target.value })}
-                        className={gridFieldClass}
-                        placeholder="לדוגמה: אופיר דיין"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="text"
-                        value={row.profession}
-                        onChange={(e) => updateRow(row.id, { profession: e.target.value })}
-                        className={gridFieldClass}
-                        placeholder="לדוגמה: חשמלאי"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={row.cost_per_day}
-                        onChange={(e) =>
-                          updateRow(row.id, {
-                            cost_per_day: Number(e.target.value || 0),
-                          })
-                        }
-                        className={`${gridFieldClass} font-mono text-right`}
-                        placeholder="0.00"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1.5 font-mono tabular-nums text-right text-[12px] text-zinc-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                        ₪{Math.round(Number(row.cost_impact || 0)).toLocaleString("he-IL")}
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <select
-                        value={row.availability_status}
-                        onChange={(e) =>
-                          updateRow(row.id, {
-                            availability_status: e.target
-                              .value as EditableResourceRow["availability_status"],
-                          })
-                        }
-                        className={gridFieldClass}
-                      >
-                        {statusOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      {hasConflict ? (
-                        <div className="rounded-sm border border-red-300 bg-red-50 px-2 py-1 text-[11px] text-red-700">
-                          <div className="font-bold">התנגשות ({row.conflict_count})</div>
-                          <div className="truncate">פרויקטים: {row.conflict_projects.join(", ")}</div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] text-[13px]">
+              <thead className="border-b border-border bg-muted/40">
+                <tr>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">שם עובד</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">מקצוע</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">עלות יומית</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">Cost Impact</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">סטטוס זמינות</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">Conflict Checker</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-foreground">פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const hasConflict = row.conflict_count > 0
+                  const isSaving = savingId === row.id
+                  return (
+                    <tr
+                      key={row.id}
+                      className="border-t border-border/80 transition-colors hover:bg-muted/35"
+                    >
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          value={row.name}
+                          onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                          className={gridFieldClass}
+                          placeholder="לדוגמה: אופיר דיין"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          value={row.profession}
+                          onChange={(e) => updateRow(row.id, { profession: e.target.value })}
+                          className={gridFieldClass}
+                          placeholder="לדוגמה: חשמלאי"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={row.cost_per_day}
+                          onChange={(e) =>
+                            updateRow(row.id, {
+                              cost_per_day: Number(e.target.value || 0),
+                            })
+                          }
+                          className={`${gridFieldClass} font-mono tabular-nums text-right`}
+                          placeholder="0.00"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 font-mono tabular-nums text-right text-[12px] text-foreground">
+                          ₪{Math.round(Number(row.cost_impact || 0)).toLocaleString("he-IL")}
                         </div>
-                      ) : (
-                        <div className="rounded-sm border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700">
-                          ללא התנגשות
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <button
-                        type="button"
-                        disabled={!row.dirty || isSaving}
-                        onClick={() => void saveRow(row)}
-                        className="inline-flex items-center gap-1 rounded-sm border border-zinc-300 bg-white px-2.5 py-1 text-[11px] font-bold text-zinc-900 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isSaving ? (
-                          <Loader2 className="size-3 animate-spin" />
+                      </td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={row.availability_status}
+                          onChange={(e) =>
+                            updateRow(row.id, {
+                              availability_status: e.target
+                                .value as EditableResourceRow["availability_status"],
+                            })
+                          }
+                          className={gridFieldClass}
+                        >
+                          {statusOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        {hasConflict ? (
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-950 dark:text-amber-100">
+                            <div className="font-semibold">התנגשות ({row.conflict_count})</div>
+                            <div className="truncate text-amber-900/90 dark:text-amber-200/90">
+                              פרויקטים: {row.conflict_projects.join(", ")}
+                            </div>
+                          </div>
                         ) : (
-                          <Save className="size-3" />
+                          <div className="rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                            ללא התנגשות
+                          </div>
                         )}
-                        שמירה
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-3 py-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={!row.dirty || isSaving}
+                          className="gap-1.5 font-semibold disabled:opacity-40"
+                          onClick={() => void saveRow(row)}
+                        >
+                          {isSaving ? (
+                            <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+                          ) : (
+                            <Save className="size-3.5 shrink-0" aria-hidden />
+                          )}
+                          שמירה
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

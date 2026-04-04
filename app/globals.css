@@ -5,46 +5,48 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-heebo), "Segoe UI", "Arial Hebrew", ui-sans-serif,
-    system-ui, sans-serif;
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  /* Diamond: Heebo = Hebrew UI; Rubik = Latin/digits via .font-rubik; JetBrains = currency via .font-currency-mono */
+  --font-sans: var(--font-heebo), "Segoe UI", "Arial Hebrew", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-rubik: var(--font-rubik), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-bg-main: var(--bg-main);
-  --color-bg-grid: var(--bg-grid);
-  --color-text-primary: var(--text-primary);
-  --color-border-muted: var(--border-muted);
-  --color-accent-primary: var(--accent-primary);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-ring: hsl(var(--ring));
+  --color-input: hsl(var(--input));
+  --color-border: hsl(var(--border));
+  --color-destructive: hsl(var(--destructive));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card: hsl(var(--card));
+  --color-bg-main: hsl(var(--bg-main));
+  --color-bg-grid: hsl(var(--bg-grid));
+  --color-text-primary: hsl(var(--text-primary));
+  --color-border-muted: hsl(var(--border-muted));
+  --color-accent-primary: hsl(var(--accent-primary));
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -54,119 +56,118 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --bg-main: #f8fafc;
-  --bg-grid: #ffffff;
-  --text-primary: #111827;
-  --border-muted: #e2e8f0;
-  --accent-primary: #f97316;
-  --radius-tokens: 0px;
-}
-
-.dark {
-  --background: oklch(0.14 0.015 260);
-  --foreground: oklch(0.97 0.005 260);
-  --card: oklch(0.18 0.02 260);
-  --card-foreground: oklch(0.97 0.005 260);
-  --popover: oklch(0.18 0.02 260);
-  --popover-foreground: oklch(0.97 0.005 260);
-  --primary: oklch(0.72 0.14 195);
-  --primary-foreground: oklch(0.14 0.02 260);
-  --secondary: oklch(0.24 0.02 260);
-  --secondary-foreground: oklch(0.97 0.005 260);
-  --muted: oklch(0.24 0.02 260);
-  --muted-foreground: oklch(0.65 0.02 260);
-  --accent: oklch(0.26 0.03 260);
-  --accent-foreground: oklch(0.97 0.005 260);
-  --destructive: oklch(0.65 0.2 25);
-  --border: oklch(0.92 0.02 260 / 12%);
-  --input: oklch(0.92 0.02 260 / 14%);
-  --ring: oklch(0.72 0.14 195);
-  --chart-1: oklch(0.72 0.14 195);
-  --chart-2: oklch(0.65 0.12 230);
-  --chart-3: oklch(0.55 0.08 260);
-  --chart-4: oklch(0.45 0.06 260);
-  --chart-5: oklch(0.35 0.04 260);
-  --sidebar: oklch(0.16 0.018 260);
-  --sidebar-foreground: oklch(0.95 0.01 260);
-  --sidebar-primary: oklch(0.72 0.14 195);
-  --sidebar-primary-foreground: oklch(0.14 0.02 260);
-  --sidebar-accent: oklch(0.24 0.025 260);
-  --sidebar-accent-foreground: oklch(0.97 0.005 260);
-  --sidebar-border: oklch(0.92 0.02 260 / 10%);
-  --sidebar-ring: oklch(0.72 0.14 195);
-}
-
-html.theme-swiss {
-  --bg-main: #f8fafc;
-  --bg-grid: #ffffff;
-  --text-primary: #111827;
-  --border-muted: #e2e8f0;
-  --accent-primary: #f97316;
-  --radius-tokens: 0px;
-}
-
-html.theme-command {
-  --bg-main: #020617;
-  --bg-grid: #0f172a;
-  --text-primary: #f8fafc;
-  --border-muted: #334155;
-  --accent-primary: #2dd4bf;
-  --radius-tokens: 0.125rem;
-}
-
-html.theme-monolith {
-  --bg-main: #f1f5f9;
-  --bg-grid: #f1f5f9;
-  --text-primary: #000000;
-  --border-muted: #d1d5db;
-  --accent-primary: #2563eb;
-  --radius-tokens: 0px;
-}
-
 @layer base {
+  /**
+   * Pharmacy White (day) · Harmonious Night (dark) — HSL components for hsl(var(--token))
+   */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 243.4 75.4% 58.6%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 243.4 75.4% 58.6%;
+    --chart-1: 243.4 75.4% 58.6%;
+    --chart-2: 239.6 68.4% 59.2%;
+    --chart-3: 215.4 16.3% 46.9%;
+    --chart-4: 215 20.2% 65.1%;
+    --chart-5: 217.2 32.6% 17.5%;
+    --radius: 0.75rem;
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 243.4 75.4% 58.6%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 243.4 75.4% 58.6%;
+    --bg-main: 0 0% 100%;
+    --bg-grid: 0 0% 100%;
+    --text-primary: 222.2 84% 4.9%;
+    --border-muted: 214.3 31.8% 91.4%;
+    --accent-primary: 243.4 75.4% 58.6%;
+    --radius-tokens: 0.75rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 243.4 75.4% 58.6%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 243.4 75.4% 58.6%;
+    --chart-1: 243.4 75.4% 58.6%;
+    --chart-2: 239.6 68.4% 59.2%;
+    --chart-3: 215 20.2% 65.1%;
+    --chart-4: 217.2 32.6% 17.5%;
+    --chart-5: 215.3 25% 26.7%;
+    --sidebar: 222.2 47.4% 11.2%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 243.4 75.4% 58.6%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 243.4 75.4% 58.6%;
+    --bg-main: 222.2 84% 4.9%;
+    --bg-grid: 222.2 84% 10%;
+    --text-primary: 210 40% 98%;
+    --border-muted: 217.2 32.6% 17.5%;
+    --accent-primary: 243.4 75.4% 58.6%;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-heebo), "Segoe UI", "Arial Hebrew", ui-sans-serif, system-ui,
+      sans-serif;
+    font-feature-settings: "kern" 1, "liga" 1;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
   }
   html {
     @apply font-sans;
-    font-feature-settings: "kern" 1;
     scroll-behavior: auto;
+  }
+  .page-title {
+    @apply text-xl font-semibold tracking-tight text-foreground md:text-2xl;
+  }
+  .section-title {
+    @apply text-base font-semibold tracking-tight text-foreground md:text-lg;
+  }
+  /** Module page H1 — same scale as dashboard shell title (24px at md+) */
+  .module-page-title {
+    @apply text-xl font-semibold tracking-tight text-foreground md:text-2xl;
+  }
+  :where(a, button, [role="button"], summary, input, select, textarea, label[for]) {
+    @apply transition-colors duration-200;
   }
 }
 
@@ -177,10 +178,114 @@ html.theme-monolith {
   .mo-pillar-details summary {
     transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
   }
+  /** Module hero — follows theme (day white / night card) */
+  .pharmacy-hero-card {
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm;
+  }
 }
 
 @layer utilities {
+  /** Rubik: English labels & numerals (use alongside Heebo Hebrew body) */
+  .font-rubik {
+    font-family: var(--font-rubik), ui-sans-serif, system-ui, sans-serif;
+  }
+  /** JetBrains — currency / precision figures (Profit Center, dashboards) */
+  .font-currency-mono {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /** Portal / KPI tiles — theme-aware surfaces */
+  .glass-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    color: var(--card-foreground);
+    box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  }
+  .dark .glass-card {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  }
+  .glass-card-hover {
+    @apply transition-shadow duration-200 ease-out will-change-transform;
+  }
+  .glass-card-hover:hover {
+    box-shadow: 0 1px 3px 0 rgb(15 23 42 / 0.06);
+  }
+  .dark .glass-card-hover:hover {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.45);
+  }
+
   .radius-tokens {
     border-radius: var(--radius-tokens);
   }
+
+  /** Gantt: smooth horizontal/vertical navigation without affecting global html scroll */
+  .gantt-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /**
+   * Gantt grid mesh — uses --border at low opacity so day/night stay in sync
+   */
+  .gantt-grid-mesh {
+    --gantt-grid-line: color-mix(in srgb, var(--border) 42%, transparent);
+    background-image: linear-gradient(to right, var(--gantt-grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--gantt-grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .gantt-row-rule {
+    @apply border-b border-border/80;
+  }
+
+  .pharmacy-gantt-surface {
+    background-color: var(--card);
+    border-color: var(--border);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .pharmacy-gantt-surface .gantt-container {
+    background-color: var(--card);
+    transition: background-color 0.2s ease;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /**
+   * gantt-task-react (patched): timeline left, task list right — flex `order` on marked panes.
+   */
+  .mo-gantt-root {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .mo-gantt-timeline-col {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .mo-gantt-vscroll {
+    order: 2;
+    flex: 0 0 auto;
+  }
+
+  .mo-gantt-task-col {
+    order: 3;
+    flex: 0 0 auto;
+    border-inline-start: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+
+  .pharmacy-gantt-surface .mo-gantt-timeline-col svg text {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-anchor: end;
+  }
+
 }

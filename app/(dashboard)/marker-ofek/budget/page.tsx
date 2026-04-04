@@ -27,7 +27,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useOrganizationBranding } from "@/components/organization-branding-context"
 import { decodeMilestoneDisplayName } from "@/lib/marker-ofek/milestone-name-codec"
+import { poRowCountsTowardCommittedSpend } from "@/lib/marker-ofek/procurement/po-cost-policy"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn, formatError } from "@/lib/utils"
 
@@ -57,6 +59,7 @@ function milestonePlannedAmount(m: ContractMilestoneBudgetRow): number {
 }
 
 function MarkerOfekBudgetPageInner() {
+  const branding = useOrganizationBranding()
   const searchParams = useSearchParams()
   const projectFromUrl = searchParams.get("project")
   const [projects, setProjects] = React.useState<ProjectOption[]>([])
@@ -203,12 +206,18 @@ function MarkerOfekBudgetPageInner() {
 
         const { data: pos, error: poErr } = await supabase
           .from("purchase_orders")
-          .select("id")
+          .select("id, status, is_ceo_approved")
           .eq("project_id", projectId)
           .eq("is_deleted", false)
 
         if (poErr) throw poErr
-        const poIds = ((pos ?? []) as { id: string }[]).map((p) => p.id)
+        const poIds = ((pos ?? []) as {
+          id: string
+          status: string
+          is_ceo_approved?: boolean | null
+        }[])
+          .filter((p) => poRowCountsTowardCommittedSpend(p))
+          .map((p) => p.id)
 
         let totalPoActual = 0
         if (poIds.length > 0) {
@@ -387,31 +396,31 @@ function MarkerOfekBudgetPageInner() {
       className="flex min-h-0 flex-1 flex-col gap-8 pb-12"
     >
       <Link
-        href="/marker-ofek"
+        href="/marker-ofek/command-center"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowRight className="size-4 rotate-180" aria-hidden />
-        חזרה ללוח הבקרה
+        חזרה למרכז הפיקוד
       </Link>
 
-      <header className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950/40 p-6 shadow-xl ring-1 ring-white/5 sm:p-8">
+      <header className="pharmacy-hero-card p-6 sm:p-8">
         <div
           className="pointer-events-none absolute -start-24 top-0 size-72 rounded-full bg-teal-500/10 blur-3xl"
           aria-hidden
         />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="flex min-w-0 items-start gap-4">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-teal-200">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-teal-200 bg-teal-50 text-teal-600">
               <Gauge className="size-7" aria-hidden />
             </div>
             <div className="min-w-0 space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-300/90">
-                מרקר אופק
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-600/90">
+                {branding.organizationName}
               </p>
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
                 בקרה תקציבית
               </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
                 תכנון מול ביצוע — כתב כמויות מול הכנסות מאושרות ועלות רכש בפועל
                 (מבוסס קבלות). חלוקת עלות רכש לפי סעיף היא יחסית לתקציב המתוכנן
                 בסעיף.
@@ -422,7 +431,7 @@ function MarkerOfekBudgetPageInner() {
           <div className="w-full min-w-[min(100%,16rem)] space-y-2 md:max-w-xs">
             <label
               htmlFor="budget-project"
-              className="text-xs font-medium text-slate-300"
+              className="text-xs font-medium text-slate-500"
             >
               פרויקט
             </label>
@@ -436,7 +445,7 @@ function MarkerOfekBudgetPageInner() {
             >
               <SelectTrigger
                 id="budget-project"
-                className="h-11 border-white/15 bg-white/10 text-white backdrop-blur-sm [&_svg]:text-white"
+                className="h-11 border-slate-200 bg-white text-[#1e293b] [&_svg]:text-slate-500"
               >
                 <SelectValue placeholder="בחרו פרויקט" />
               </SelectTrigger>

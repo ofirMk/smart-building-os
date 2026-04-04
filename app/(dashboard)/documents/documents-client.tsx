@@ -44,7 +44,7 @@ const DOC_TYPE_OPTIONS: { value: DocumentRow["document_type"]; label: string }[]
 
 const RELATED_OPTIONS: { value: DocumentRow["related_to"]; label: string }[] = [
   { value: "tenant", label: "דייר" },
-  { value: "vendor", label: "קבלן" },
+  { value: "vendor", label: "חברה" },
   { value: "building", label: "בניין" },
   { value: "general", label: "כללי" },
 ]
@@ -110,7 +110,7 @@ export function DocumentsClient({ documents }: DocumentsClientProps) {
             <div>
               <CardTitle className="text-lg">העלאת מסמך</CardTitle>
               <CardDescription>
-                עד 50 מ״ב לקובץ. לאחר ההעלאה ייווצר קישור ציבורי לצפייה.
+                עד 50 מ״ב לקובץ. הורדה/צפייה בקישור חתום (משתמש מחובר בלבד).
               </CardDescription>
             </div>
           </div>
@@ -259,17 +259,23 @@ export function DocumentsClient({ documents }: DocumentsClientProps) {
                         {formatUploaded(d.created_at)}
                       </TableCell>
                       <TableCell className="pe-4 text-end">
-                        <a
-                          href={d.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={buttonVariants({
-                            variant: "outline",
-                            size: "sm",
-                          })}
-                        >
-                          צפייה / הורדה
-                        </a>
+                        {d.file_url ? (
+                          <a
+                            href={d.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={buttonVariants({
+                              variant: "outline",
+                              size: "sm",
+                            })}
+                          >
+                            צפייה / הורדה
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            אין קישור זמין — רעננו את הדף
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

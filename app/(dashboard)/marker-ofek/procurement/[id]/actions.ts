@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
+import { canViewHoldingExecutive } from "@/lib/marker-ofek/partner-metrics/access"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
 type SignatureActionResult = { ok: true } | { ok: false; error: string }
@@ -11,14 +12,26 @@ async function resolveUserAndRole() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { supabase, user: null, role: null as string | null }
+  if (!user) {
+    return {
+      supabase,
+      user: null,
+      role: null as string | null,
+      email: null as string | null,
+    }
+  }
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .maybeSingle()
   const role = (profile as { role?: string } | null)?.role ?? null
-  return { supabase, user, role }
+  return {
+    supabase,
+    user,
+    role,
+    email: user.email ?? null,
+  }
 }
 
 async function refreshPo(poId: string) {
@@ -70,9 +83,11 @@ export async function signPurchaseOrderByCeo(
   const trimmedPoId = poId.trim()
   if (!trimmedPoId) return { ok: false, error: "מזהה הזמנה חסר" }
 
-  const { supabase, user, role } = await resolveUserAndRole()
+  const { supabase, user, role, email } = await resolveUserAndRole()
   if (!user) return { ok: false, error: "נדרש להתחבר מחדש" }
-  if (role !== "admin") return { ok: false, error: "אין הרשאה לאישור מנכ״ל" }
+  if (!canViewHoldingExecutive(email, role)) {
+    return { ok: false, error: "אין הרשאה לאישור מנכ״ל" }
+  }
 
   const { data: po, error: poErr } = await supabase
     .from("purchase_orders")

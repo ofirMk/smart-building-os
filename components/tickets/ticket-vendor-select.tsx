@@ -29,7 +29,7 @@ export function TicketVendorSelect({
   const [isPending, startTransition] = useTransition()
   const { success, error } = useToast()
 
-  /** פעילים לבחירה; אם יש הקצאה לקבלן לא פעיל — מציגים אותו בראש כדי שלא יישבר ה-Select */
+  /** פעילים לבחירה; אם יש הקצאה לחברה לא פעילה — מציגים אותה בראש כדי שלא יישבר ה-Select */
   const selectableVendors = useMemo(() => {
     const active = vendors.filter((v) => v.is_active)
     if (!vendorId) return active
@@ -51,7 +51,7 @@ export function TicketVendorSelect({
           void (async () => {
             const result = await updateTicketVendor(ticketId, resolved)
             if (result.ok) {
-              success("הקבלן עודכן לקריאה")
+              success("החברה עודכנה לקריאה")
             } else {
               error(result.error || "עדכון נכשל")
             }
@@ -62,12 +62,12 @@ export function TicketVendorSelect({
       <SelectTrigger
         className="w-[min(200px,36vw)] max-w-full text-xs"
         size="sm"
-        aria-label="הקצאת קבלן לקריאה"
+        aria-label="הקצאת חברה לקריאה"
       >
-        <SelectValue placeholder="בחרו קבלן" />
+        <SelectValue placeholder="בחרו חברה" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={NONE}>ללא קבלן</SelectItem>
+        <SelectItem value={NONE}>ללא חברה</SelectItem>
         {selectableVendors.map((v) => (
           <SelectItem key={v.id} value={v.id}>
             {!v.is_active

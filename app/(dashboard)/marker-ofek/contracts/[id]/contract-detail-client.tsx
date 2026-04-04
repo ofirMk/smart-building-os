@@ -5,6 +5,7 @@ import * as React from "react"
 import {
   ArrowRight,
   Building2,
+  Landmark,
   Loader2,
   Printer,
   Receipt,
@@ -691,21 +692,28 @@ export function MarkerOfekContractDetailClient({
           >
             עריכת פרטי חוזה ואבני דרך
           </Link>
+          <Link
+            href={`/marker-ofek/finance/contracts/${id}`}
+            className="inline-flex w-fit items-center gap-2 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-500"
+          >
+            <Landmark className="size-4 shrink-0" aria-hidden />
+            מרכז חוזים וחיוב
+          </Link>
         </div>
 
-        <header className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-cyan-950/50 p-6 shadow-lg md:p-8">
+        <header className="pharmacy-hero-card p-6 md:p-8">
           <div
             className="pointer-events-none absolute -start-20 -top-20 size-64 rounded-full bg-cyan-500/15 blur-3xl"
             aria-hidden
           />
           <div className="relative grid gap-6 md:grid-cols-3">
             <div className="flex items-start gap-3 md:col-span-1">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-cyan-500/35 bg-cyan-500/10 text-cyan-300">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-600">
                 <Building2 className="size-5" aria-hidden />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-cyan-400/90">שם פרויקט</p>
-                <p className="text-lg font-semibold text-white">{projectName}</p>
+                <p className="text-xs font-medium text-cyan-600/90">שם פרויקט</p>
+                <p className="text-lg font-semibold text-[#1e293b]">{projectName}</p>
                 {contract.projects?.internal_project_code ? (
                   <p className="mt-0.5 font-mono text-xs text-slate-400">
                     {contract.projects.internal_project_code}
@@ -714,23 +722,23 @@ export function MarkerOfekContractDetailClient({
               </div>
             </div>
             <div className="flex items-start gap-3 md:col-span-1">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-violet-500/35 bg-violet-500/10 text-violet-300">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-600">
                 <Users className="size-5" aria-hidden />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-violet-300/90">שם ישות</p>
-                <p className="text-lg font-semibold text-white">{entityName}</p>
+                <p className="text-xs font-medium text-violet-600/90">שם ישות</p>
+                <p className="text-lg font-semibold text-[#1e293b]">{entityName}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 md:col-span-1">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/10 text-amber-200">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700">
                 <Receipt className="size-5" aria-hidden />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-amber-200/90">
+                <p className="text-xs font-medium text-amber-700/90">
                   סכום חוזה כולל
                 </p>
-                <p className="text-xl font-bold tabular-nums text-white">
+                <p className="font-currency-mono text-xl font-bold tabular-nums text-[#1e293b]">
                   {contractTotal}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">{agreementLabel}</p>

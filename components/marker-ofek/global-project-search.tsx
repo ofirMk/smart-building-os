@@ -4,6 +4,7 @@ import * as React from "react"
 import { Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+import { useMirrorPartnerFilter } from "@/components/marker-ofek/marker-ofek-dashboard-context"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 
 type ProjectOption = {
@@ -14,6 +15,7 @@ type ProjectOption = {
 
 export function GlobalProjectSearch() {
   const router = useRouter()
+  const partnerFilterId = useMirrorPartnerFilter()
   const [projects, setProjects] = React.useState<ProjectOption[]>([])
   const [query, setQuery] = React.useState("")
   const [open, setOpen] = React.useState(false)
@@ -22,20 +24,24 @@ export function GlobalProjectSearch() {
     let cancelled = false
     void (async () => {
       const supabase = createSupabaseBrowserClient()
-      const { data } = await supabase
+      let q = supabase
         .schema("public")
         .from("projects")
         .select("id, name, internal_project_code")
         .eq("is_deleted", false)
         .order("name", { ascending: true })
         .limit(200)
+      if (partnerFilterId) {
+        q = q.eq("managing_partner_id", partnerFilterId)
+      }
+      const { data } = await q
       if (cancelled) return
       setProjects((data as ProjectOption[]) ?? [])
     })()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [partnerFilterId])
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -57,21 +63,33 @@ export function GlobalProjectSearch() {
     <div className="relative w-full max-w-md">
       <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
       <input
+        id="global-project-search-input"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value)
           setOpen(true)
         }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && filtered.length > 0) {
+            e.preventDefault()
+            navigateToProject(filtered[0]!.id)
+          }
+          if (e.key === "Escape") {
+            e.preventDefault()
+            setOpen(false)
+            ;(e.target as HTMLInputElement).blur()
+          }
+        }}
         onFocus={() => setOpen(true)}
         onBlur={() => {
           window.setTimeout(() => setOpen(false), 120)
         }}
-        placeholder="חיפוש פרויקט (קוד/שם)..."
-        className="h-10 w-full rounded-xl border border-violet-400/30 bg-white/80 pe-10 ps-3 text-sm text-slate-900 shadow-sm outline-none ring-0 transition focus:border-violet-400/70 dark:bg-slate-900/60 dark:text-slate-100"
+        placeholder="חיפוש פרויקט (Ctrl+K)"
+        className="h-10 w-full rounded-xl border border-slate-200 bg-white pe-10 ps-3 text-sm text-[#1e293b] shadow-sm outline-none ring-0 transition focus:border-indigo-300"
         aria-label="חיפוש פרויקטים גלובלי"
       />
       {open && filtered.length > 0 ? (
-        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-700/40 bg-white/95 p-1 shadow-xl dark:bg-slate-950/95">
+        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-100 bg-white p-1 shadow-sm">
           {filtered.map((project) => (
             <button
               key={project.id}

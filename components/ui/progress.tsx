@@ -24,13 +24,13 @@ function Progress({
       aria-valuemax={100}
       aria-valuenow={Math.round(pct)}
       className={cn(
-        "relative h-2 w-full overflow-hidden rounded-full bg-primary/15",
+        "relative h-1 w-full overflow-hidden rounded-full bg-muted",
         className
       )}
       {...props}
     >
       <div
-        className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+        className="h-full rounded-full bg-gradient-to-l from-indigo-500 to-violet-500 transition-[width] duration-300 ease-out dark:from-indigo-400 dark:to-violet-500"
         style={{ width: `${pct}%` }}
       />
     </div>

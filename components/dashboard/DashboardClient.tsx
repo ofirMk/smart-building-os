@@ -24,7 +24,7 @@ export function DashboardClient({ data }: { data: DashboardClientData }) {
     >
       <header className="mb-10 border-b border-gray-800 pb-6">
         <h1 className="mb-2 bg-gradient-to-l from-cyan-400 to-blue-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
-          מרקר אופק — מרכז פיקוד נכסים
+          מרכז פיקוד נכסים
         </h1>
         <p className="text-gray-400">
           פרויקט אשקלון | 4 בנייני מגורים, 16 קומות | מבט על בזמן אמת

@@ -21,6 +21,8 @@ export function isAdminOrManagerRole(role: string | null | undefined): boolean {
 export const TENANT_DENIED_PATH_PREFIXES = [
   "/portal",
   "/marker-ofek",
+  "/partner-finance",
+  "/partner-metrics",
   "/hh-panels",
   "/hq",
 ] as const

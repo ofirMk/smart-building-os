@@ -105,7 +105,7 @@ const currencyFormatter = new Intl.NumberFormat("he-IL", {
 
 function entityTypeLabel(t: string): string {
   if (t === "supplier") return "ספק"
-  if (t === "subcontractor") return "קבלן משנה"
+  if (t === "subcontractor") return "ספק ביצוע"
   return t
 }
 
@@ -366,7 +366,7 @@ export default function NewPurchaseOrderPage() {
           הזמנת רכש חדשה
         </h1>
         <p className="text-sm text-muted-foreground">
-          הזינו פרויקט, ספק או קבלן משנה, ושורות — הסכום מחושב אוטומטית ונשמר
+          הזינו פרויקט, ספק או ספק ביצוע, ושורות — הסכום מחושב אוטומטית ונשמר
           ב-Supabase.
         </p>
       </div>
@@ -418,19 +418,19 @@ export default function NewPurchaseOrderPage() {
               </Select>
             </div>
             <div className="space-y-2 sm:col-span-1">
-              <Label htmlFor="po-supplier">ספק / קבלן משנה</Label>
+              <Label htmlFor="po-supplier">ספק רכש / ספק ביצוע</Label>
               <Select
                 value={supplierId}
                 onValueChange={(v) => setSupplierId(v ?? "")}
                 disabled={loadingRefs || isSubmitting}
               >
                 <SelectTrigger id="po-supplier" className="w-full">
-                  <SelectValue placeholder="בחרו ספק או קבלן משנה" />
+                  <SelectValue placeholder="בחרו ספק או ספק ביצוע" />
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.length === 0 ? (
                     <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                      אין ישויות מסוג ספק או קבלן משנה. הוסיפו בטבלת entities.
+                      אין ישויות מסוג ספק או ספק ביצוע. הוסיפו בטבלת entities.
                     </div>
                   ) : (
                     suppliers.map((s) => (

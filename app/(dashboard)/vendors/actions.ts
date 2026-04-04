@@ -19,7 +19,7 @@ export async function createVendor(
   const email = String(formData.get("email") ?? "").trim()
 
   if (!name) {
-    return { ok: false, message: "נא למלא שם קבלן." }
+    return { ok: false, message: "נא למלא שם חברה." }
   }
 
   try {
@@ -38,7 +38,7 @@ export async function createVendor(
 
     revalidatePath("/vendors")
     revalidatePath("/tickets")
-    return { ok: true, message: "הקבלן נוסף בהצלחה." }
+    return { ok: true, message: "החברה נוספה בהצלחה." }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "שגיאה בשמירה"
     return { ok: false, message: msg }

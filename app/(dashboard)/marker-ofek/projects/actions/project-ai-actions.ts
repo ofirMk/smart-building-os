@@ -352,7 +352,29 @@ function normalizeBaselineItemsLoose(raw: unknown): BaselineBillLineItemAI[] {
     }
     const unitStr =
       o.unit === undefined || o.unit === null ? "" : String(o.unit).trim()
+    const cumPctFinal = Math.min(100, Math.max(0, cumPctOut))
+    const item_id =
+      o.item_id === undefined || o.item_id === null
+        ? null
+        : String(o.item_id).trim() || null
+    const previousPercent = Number.isFinite(o.previous_percent as number)
+      ? Number(o.previous_percent)
+      : Number.isFinite(cumPctFinal)
+        ? cumPctFinal
+        : 0
+    const currentPerformance = Number.isFinite(o.current_performance as number)
+      ? Number(o.current_performance)
+      : 0
+    const totalAccumulated = Number.isFinite(o.total_accumulated as number)
+      ? Number(o.total_accumulated)
+      : roundMoney(previousPercent + currentPerformance)
+    const normalizedAlert =
+      String(o.alert ?? "").trim().toUpperCase() === "OVER_BUDGET" ||
+      totalAccumulated > 100
+        ? "OVER_BUDGET"
+        : null
     out.push({
+      item_id,
       section_number: String(o.section_number ?? "").trim(),
       description: String(o.description ?? "").trim(),
       unit: unitStr,
@@ -360,7 +382,11 @@ function normalizeBaselineItemsLoose(raw: unknown): BaselineBillLineItemAI[] {
       total_item_price: totalItem,
       unit_price: unitP,
       previous_cumulative_quantity: prevQty,
-      cumulative_execution_percent: Math.min(100, Math.max(0, cumPctOut)),
+      cumulative_execution_percent: cumPctFinal,
+      previous_percent: previousPercent,
+      current_performance: currentPerformance,
+      total_accumulated: totalAccumulated,
+      alert: normalizedAlert,
     })
   }
   return out

@@ -20,7 +20,7 @@ export function PillarLandingShell({ pillar }: PillarLandingShellProps) {
       className="mx-auto flex w-full max-w-3xl flex-col gap-10 pb-16 pt-2"
     >
       <Link
-        href="/marker-ofek"
+        href="/marker-ofek/command-center"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowRight className="size-4 rotate-180" aria-hidden />
@@ -33,7 +33,7 @@ export function PillarLandingShell({ pillar }: PillarLandingShellProps) {
         </div>
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            מרקר אופק
+            מערכת הביצוע והרכש
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             {pillar.navTitle}

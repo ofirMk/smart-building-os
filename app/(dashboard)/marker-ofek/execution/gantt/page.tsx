@@ -1,22 +1,11 @@
-import { redirect } from "next/navigation"
-
-import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+import { GanttExecutionHub } from "@/components/marker-ofek/execution/gantt-execution-hub"
+import { listProjectsForWbsSelector } from "@/lib/marker-ofek/wbs-structure-actions"
 
 export default async function MarkerOfekGanttEntryPage() {
-  const supabase = await createSupabaseServerAuthClient()
-  const { data: firstActiveProject } = await supabase
-    .schema("public")
-    .from("projects")
-    .select("id")
-    .eq("is_deleted", false)
-    .in("status", ["planning", "active", "on_hold"])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const projectId = String(firstActiveProject?.id ?? "").trim()
-  if (projectId) {
-    redirect(`/marker-ofek/execution/gantt/${projectId}`)
-  }
-  redirect("/marker-ofek/projects")
+  const projects = await listProjectsForWbsSelector()
+  return (
+    <div className="min-h-[calc(100vh-4rem)] bg-white">
+      <GanttExecutionHub projects={projects} />
+    </div>
+  )
 }

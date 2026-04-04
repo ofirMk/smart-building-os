@@ -6,15 +6,16 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 type SubmitPayload = {
+  projectId: string
   tenderId: string
-  supplierName: string
+  supplierEntityId: string
   lines: Array<{
     tenderBoqItemId: string
     description: string
     unit: string | null
     quantity: number
     unitPrice: number
-    catalogItemId?: string | null
+    catalogItemId: string
   }>
 }
 

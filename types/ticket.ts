@@ -15,7 +15,7 @@ export type TicketRow = {
   created_by: string
   assigned_to: string | null
   contractor_id: string | null
-  /** קבלן חיצוני מהטבלה vendors (לאחר מיגרציה) */
+  /** חברה חיצונית מהטבלה vendors (לאחר מיגרציה) */
   vendor_id?: string | null
   created_at: string
   updated_at: string

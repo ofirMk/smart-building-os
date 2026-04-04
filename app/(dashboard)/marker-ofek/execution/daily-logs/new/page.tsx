@@ -126,11 +126,11 @@ export default function NewDailyLogPage() {
       className="mx-auto flex w-full max-w-lg flex-col gap-6 px-1 pb-16 pt-2 sm:max-w-xl sm:px-0"
     >
       <Link
-        href="/marker-ofek/field-execution"
+        href="/marker-ofek/projects"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowRight className="size-4 rotate-180" aria-hidden />
-        חזרה לביצוע בשטח
+        חזרה לפרויקטים
       </Link>
 
       <header className="space-y-2 text-start">
@@ -140,7 +140,7 @@ export default function NewDailyLogPage() {
           </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              מודול 3.1 · ביצוע בשטח
+              מודול 3.1 · פרויקטים
             </p>
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
               יומן עבודה יומי

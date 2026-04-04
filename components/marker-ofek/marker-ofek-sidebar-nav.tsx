@@ -52,10 +52,10 @@ const MARKER_OFEK_CORE_LINKS: {
 
 /** אחידות: טקסט ואייקונים בכל פריטי מרקר אופק */
 const navBtnClass = cn(
-  "gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-  "[&_svg]:size-4 [&_svg]:shrink-0",
-  "hover:bg-violet-500/10 hover:text-violet-100 hover:ring-1 hover:ring-violet-400/25",
-  "data-active:bg-violet-500/15 data-active:text-violet-100 data-active:ring-1 data-active:ring-violet-400/35"
+  "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+  "[&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
+  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+  "data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:shadow-sm"
 )
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -75,7 +75,7 @@ export function MarkerOfekSidebarNav({
   return (
     <>
       <SidebarGroup>
-        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-400">
+        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           ניווט מהיר
         </SidebarGroupLabel>
         <SidebarGroupContent>
@@ -107,8 +107,8 @@ export function MarkerOfekSidebarNav({
           <details className="mo-pillar-details" open={section.defaultOpen}>
             <summary
               className={cn(
-                "flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all duration-200",
-                "hover:bg-violet-500/10 hover:text-violet-100 hover:ring-1 hover:ring-violet-400/25",
+                "flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground transition-all duration-200",
+                "hover:bg-sidebar-accent",
                 "[&::-webkit-details-marker]:hidden"
               )}
             >
@@ -149,7 +149,7 @@ export function MarkerOfekSidebarNav({
       ))}
 
       <SidebarGroup>
-        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-400">
+        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           מערכות
         </SidebarGroupLabel>
         <SidebarGroupContent>

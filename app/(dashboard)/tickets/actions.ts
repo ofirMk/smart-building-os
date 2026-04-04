@@ -80,7 +80,7 @@ export async function updateTicketVendor(
   }
 
   if (vendorId !== null && !UUID_RE.test(vendorId)) {
-    return { ok: false, error: "מזהה קבלן לא חוקי" }
+    return { ok: false, error: "מזהה חברה לא חוקי" }
   }
 
   const supabase = createSupabaseServerClient()
@@ -93,7 +93,7 @@ export async function updateTicketVendor(
   if (error) {
     return {
       ok: false,
-      error: error.message || "עדכון הקבלן נכשל",
+      error: error.message || "עדכון החברה נכשל",
     }
   }
 

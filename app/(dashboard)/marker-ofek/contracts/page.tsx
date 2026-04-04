@@ -3,18 +3,20 @@ import Link from "next/link"
 import { FileText, Plus, Scale, Settings } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button-variants"
+import { getOrganizationBranding } from "@/lib/marker-ofek/organization-branding"
 import { ContractsListClient } from "./contracts-list-client"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "ניהול חוזים — מרקר אופק",
-  description: "מודול חוזים למזמינים וקבלני משנה — מרקר אופק",
+  title: "ניהול חוזים",
+  description: "מודול חוזים למזמינים וספקי ביצוע",
 }
 
-export default function MarkerOfekContractsPage() {
+export default async function MarkerOfekContractsPage() {
+  const branding = await getOrganizationBranding()
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8">
-      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-cyan-950/40 p-6 shadow-lg shadow-black/20 md:p-8">
+      <div className="pharmacy-hero-card p-6 md:p-8">
         <div
           className="pointer-events-none absolute -start-24 -top-24 size-72 rounded-full bg-cyan-500/10 blur-3xl"
           aria-hidden
@@ -26,12 +28,12 @@ export default function MarkerOfekContractsPage() {
             </div>
             <div className="min-w-0 space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-cyan-400/90">
-                מרקר אופק
+                {branding.organizationName}
               </p>
-              <h1 className="text-pretty text-2xl font-bold tracking-tight text-white md:text-3xl">
-                מרקר אופק — ניהול חוזים (מזמין / קבלני משנה)
+              <h1 className="text-pretty text-2xl font-bold tracking-tight text-[#1e293b] md:text-3xl">
+                ניהול חוזים (מזמין / ספקי ביצוע)
               </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
                 מעקב אחר חוזים ראשיים ומשניים, ישויות עסקיות ופרויקטי ביצוע.
                 לחצו על שורה או על &quot;צפייה&quot; לפתיחת פרטי החוזה והגשת חשבון חלקי.
               </p>
@@ -42,7 +44,7 @@ export default function MarkerOfekContractsPage() {
               href="/marker-ofek/settings"
               className={cn(
                 buttonVariants({ size: "lg", variant: "outline" }),
-                "gap-2 border-white/30 bg-white/5 text-white hover:bg-white/10"
+                "gap-2 border-slate-200 bg-white text-[#1e293b] hover:bg-slate-50"
               )}
             >
               <Settings className="size-4" aria-hidden />

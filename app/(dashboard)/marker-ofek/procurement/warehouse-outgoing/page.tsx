@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ClipboardList, Loader2, PackageOpen, Search, Send } from "lucide-react"
 import { toast } from "sonner"
 
-import { recordOutgoingTransaction } from "@/lib/actions/reconciliation-actions"
+import { recordOutgoingTransaction } from "@/lib/marker-ofek/reconciliation-actions"
 import { decodeMilestoneStoredName } from "@/lib/marker-ofek/milestone-name-codec"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"

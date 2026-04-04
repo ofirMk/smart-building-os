@@ -139,7 +139,7 @@ function SidebarProvider({
           } as React.CSSProperties
         }
         className={cn(
-          "group/sidebar-wrapper flex min-h-svh w-full bg-zinc-50 dark:bg-zinc-900",
+          "group/sidebar-wrapper flex min-h-svh w-full bg-background",
           className
         )}
         {...props}
@@ -245,7 +245,7 @@ function Sidebar({
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] lg:flex",
+          "fixed inset-y-0 z-50 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] lg:flex",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -257,12 +257,8 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
           className={cn(
-            "flex size-full flex-col rounded-sm text-zinc-100 backdrop-blur-2xl",
-            "bg-[linear-gradient(180deg,rgba(63,63,70,0.96)_0%,rgba(39,39,42,0.96)_100%)]",
-            "shadow-[0_16px_56px_-16px_rgba(0,0,0,0.3),0_8px_24px_-12px_rgba(0,0,0,0.24)]",
-            "ring-1 ring-zinc-600/80 dark:ring-zinc-600",
-            "dark:shadow-[0_20px_60px_-16px_rgba(0,0,0,0.55),0_10px_30px_-14px_rgba(0,0,0,0.35)]",
-            "group-data-[variant=floating]:rounded-sm"
+            "flex size-full flex-col rounded-xl border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm",
+            "group-data-[variant=floating]:rounded-xl"
           )}
         >
           {children}
@@ -328,11 +324,9 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "relative flex w-full flex-1 flex-col bg-transparent lg:peer-data-[variant=inset]:m-3 lg:peer-data-[variant=inset]:me-0",
-        "lg:peer-data-[variant=inset]:rounded-sm lg:peer-data-[variant=inset]:bg-white/92 lg:peer-data-[variant=inset]:backdrop-blur-xl",
-        "lg:peer-data-[variant=inset]:shadow-[0_20px_56px_-28px_rgba(15,23,42,0.12),inset_0_1px_0_0_rgba(255,255,255,0.75)]",
-        "lg:peer-data-[variant=inset]:ring-1 lg:peer-data-[variant=inset]:ring-zinc-300",
-        "dark:lg:peer-data-[variant=inset]:bg-zinc-900/88 dark:lg:peer-data-[variant=inset]:shadow-[0_24px_64px_-28px_rgba(0,0,0,0.45)] dark:lg:peer-data-[variant=inset]:ring-zinc-700/90",
+        "relative flex w-full flex-1 flex-col bg-background lg:peer-data-[variant=inset]:m-3 lg:peer-data-[variant=inset]:me-0",
+        "lg:peer-data-[variant=inset]:rounded-xl lg:peer-data-[variant=inset]:border lg:peer-data-[variant=inset]:border-border",
+        "lg:peer-data-[variant=inset]:bg-background lg:peer-data-[variant=inset]:shadow-sm",
         "lg:peer-data-[variant=inset]:peer-data-[state=collapsed]:me-3",
         className
       )}
@@ -501,13 +495,13 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-start text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+  "peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-start text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding,colors] duration-200 group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-semibold data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   {
     variants: {
       variant: {
         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         outline:
-          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+          "border border-sidebar-border bg-background shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:ring-1 hover:ring-sidebar-border",
       },
       size: {
         default: "h-8 text-sm",

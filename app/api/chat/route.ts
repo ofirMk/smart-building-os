@@ -8,13 +8,34 @@ import {
 } from "ai"
 import { z } from "zod"
 
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import {
+  financeExecutiveSnapshotForChat,
+  financeProjectOverheadInsightForChat,
+  financeVatSummaryForChat,
+  supplierPaymentWithholdingEstimateForChat,
+} from "@/lib/marker-ofek/ai/marker-ofek-finance-chat-tools"
+import { markerOfekProcurementSnapshot } from "@/lib/marker-ofek/ai/marker-ofek-procurement-chat-tool"
+import { matchContractVaultDocumentsCore } from "@/lib/marker-ofek/contract-vault/vault-match-core"
+import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import type { TicketPriority } from "@/types/ticket"
 
 export const maxDuration = 120
 
-const SYSTEM_PROMPT =
-  "You are the Marker Ofek Smart Building AI Manager. You now have vision capabilities. When a user uploads an image, analyze it first. Diagnose the equipment (e.g., electrical panel, generator) and potential faults visible. Then, use your `create_ticket` tool based on this visual diagnosis. Example: if shown a tripped breaker, create a critical ticket 'Tripped Circuit Breaker in [Location]' with a visual description in the `description` field. Always reply in professional Hebrew based on your visual findings."
+const SYSTEM_PROMPT = [
+  "You are the enterprise Smart Building / construction ERP AI assistant — senior financial and operations analyst.",
+  "Tone: professional Hebrew, calm, audit-ready, 'Pharmacy clean' — short paragraphs, no hype.",
+  "Financial amounts: always show Israeli Shekel amounts clearly (e.g. 1,234,567 ₪). Prefer putting each key figure on its own line for readability.",
+  "When tool results include `proactive_alerts` or negative P&L fields, surface them explicitly at the start of your answer (דגל אדום) before detail.",
+  "You have vision: when a user uploads an image, analyze equipment (e.g. electrical panel, generator), diagnose visible faults, and use `create_ticket` when appropriate.",
+  "For questions about contract documents, clauses, or project-specific paperwork, call `search_contract_vault` with the project UUID and the user's question as `query`.",
+  "Base contract answers only on snippets returned by that tool; cite file names briefly. If the tool returns no snippets, say you found no matching vault text.",
+  "For procurement / PO questions (e.g. last PO amount, status, rough share of main contract, or 'profit margin' of a PO — margin is not stored; explain and give the proxy), call `marker_ofek_procurement_snapshot` with `project_name_query` (Hebrew partial name like Ir HaYin).",
+  "For VAT / מע״מ exposure by project (output VAT from approved/paid tax invoices), call `finance_vat_summary_by_project`. Pass optional `project_name_query` (e.g. נחלים, Sde Dov) or omit for portfolio totals.",
+  "For holding / executive P&L, consolidated field vs loaded profit, overhead pool, and per-project overhead allocation, call `finance_executive_snapshot`.",
+  "To explain why net profit is low for a specific project (overhead loading, labor_based vs revenue_based, fixed_rate), call `finance_project_overhead_insight` with `project_name_query`.",
+  "For estimated net payment to a supplier after ניכוי במקור, call `supplier_payment_withholding_estimate` with `supplier_name_query` and `payment_amount_before_withholding_nis`. Clarify this is an estimate from profile/entity defaults, not tax advice.",
+].join(" ")
 
 /** Same default creator as `app/(dashboard)/tickets/actions.ts` for inserts. */
 const DEFAULT_CREATOR_PROFILE_ID =
@@ -38,7 +59,7 @@ function urgencyToPriority(
 }
 
 async function resolveDefaultBuildingId(
-  supabase: ReturnType<typeof createSupabaseServerClient>
+  supabase: SupabaseClient
 ): Promise<string | null> {
   const fromEnv = process.env.CHAT_DEFAULT_BUILDING_ID?.trim()
   if (fromEnv) return fromEnv
@@ -100,14 +121,24 @@ export async function POST(req: Request) {
     })
   }
 
+  const authSupabase = await createSupabaseServerAuthClient()
+  const {
+    data: { user: chatUser },
+  } = await authSupabase.auth.getUser()
+  if (!chatUser?.id) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
+
   const tools = {
     get_open_tickets: tool({
       description:
         "Fetch a list of all currently open maintenance tickets.",
       inputSchema: z.object({}),
       execute: async () => {
-        const supabase = createSupabaseServerClient()
-        const { data, error } = await supabase
+        const { data, error } = await authSupabase
           .from("tickets")
           .select("id, title, status, priority, building_id, created_at")
           .neq("status", "resolved")
@@ -147,8 +178,7 @@ export async function POST(req: Request) {
         urgency: z.enum(["low", "medium", "high", "critical"]),
       }),
       execute: async ({ title, description, urgency }) => {
-        const supabase = createSupabaseServerClient()
-        const buildingId = await resolveDefaultBuildingId(supabase)
+        const buildingId = await resolveDefaultBuildingId(authSupabase)
 
         if (!buildingId) {
           return {
@@ -160,7 +190,7 @@ export async function POST(req: Request) {
 
         const priority = urgencyToPriority(urgency)
 
-        const { data, error } = await supabase
+        const { data, error } = await authSupabase
           .from("tickets")
           .insert({
             building_id: buildingId,
@@ -188,6 +218,121 @@ export async function POST(req: Request) {
         }
       },
     }),
+
+    marker_ofek_procurement_snapshot: tool({
+      description:
+        "Procurement: find project by Hebrew/partial name, fetch latest purchase order and active main contract total. Use for questions about last PO, amounts, status, or 'margin' (explain margin is not stored; return cost-pressure proxy as PO÷contract %).",
+      inputSchema: z.object({
+        project_name_query: z
+          .string()
+          .min(1)
+          .describe("Partial project display name, e.g. עיר היין / Ir HaYin"),
+      }),
+      execute: async ({ project_name_query }) => {
+        return markerOfekProcurementSnapshot({ project_name_query })
+      },
+    }),
+
+    finance_executive_snapshot: tool({
+      description:
+        "Finance: holding dashboard — recognized revenue, direct costs, field profit, monthly corporate overhead pool, net loaded consolidated P&L, overhead allocation policy label, and per-project highlights (field profit, allocated overhead, net loaded). Includes proactive_alerts for negative loaded P&L. Use for 'how is the portfolio', consolidated P&L, executive summary.",
+      inputSchema: z.object({}),
+      execute: async () => financeExecutiveSnapshotForChat(),
+    }),
+
+    finance_vat_summary_by_project: tool({
+      description:
+        "Finance: output VAT (מע״מ פלט) from mo_invoices (approved/paid), aggregated by project. Optional project_name_query to filter by Hebrew/partial name or internal code (e.g. נחלים).",
+      inputSchema: z.object({
+        project_name_query: z
+          .string()
+          .optional()
+          .describe(
+            "Partial project name or code; leave empty for all projects in scope"
+          ),
+      }),
+      execute: async ({ project_name_query }) =>
+        financeVatSummaryForChat({ project_name_query }),
+    }),
+
+    finance_project_overhead_insight: tool({
+      description:
+        "Finance: for ONE project (match by name/code), return field profit vs allocated corporate overhead, net loaded profit, Gantt labor-day weight, global overhead pool, company allocation label, and per-project policy (revenue_based / labor_based / fixed_rate). Use to explain low net profit due to overhead loading.",
+      inputSchema: z.object({
+        project_name_query: z
+          .string()
+          .min(1)
+          .describe("Partial project display name or internal code"),
+      }),
+      execute: async ({ project_name_query }) =>
+        financeProjectOverheadInsightForChat({ project_name_query }),
+    }),
+
+    supplier_payment_withholding_estimate: tool({
+      description:
+        "Estimate ניכוי במקור and net amount paid: looks up supplier entity by name, uses supplier_finance_profile.withholding_rate_percent if set, else entities.default_withholding_tax_percent. Not a substitute for accountant advice.",
+      inputSchema: z.object({
+        supplier_name_query: z.string().min(1).describe("Partial supplier entity name"),
+        payment_amount_before_withholding_nis: z
+          .number()
+          .positive()
+          .describe("Gross payment in NIS before withholding"),
+      }),
+      execute: async ({
+        supplier_name_query,
+        payment_amount_before_withholding_nis,
+      }) =>
+        supplierPaymentWithholdingEstimateForChat({
+          supplier_name_query,
+          payment_amount_before_withholding_nis,
+        }),
+    }),
+
+    search_contract_vault: tool({
+      description:
+        "Vector search (768-dim embeddings) over the project's Contract Vault OCR excerpts. Use for RAG answers about signed contracts, annexes, and vault PDFs.",
+      inputSchema: z.object({
+        project_id: z
+          .string()
+          .min(1)
+          .describe("Project UUID the vault is scoped to"),
+        query: z
+          .string()
+          .min(1)
+          .describe("Natural language question or keywords to match"),
+        match_count: z
+          .number()
+          .int()
+          .min(1)
+          .max(12)
+          .optional()
+          .describe("Number of snippets (default 6)"),
+      }),
+      execute: async ({ project_id, query, match_count }) => {
+        try {
+          const res = await matchContractVaultDocumentsCore(authSupabase, {
+            projectId: project_id.trim(),
+            query: query.trim(),
+            matchCount: match_count,
+          })
+          if (!res.ok) {
+            return { ok: false as const, error: res.error, snippets: [] as const }
+          }
+          return {
+            ok: true as const,
+            count: res.snippets.length,
+            snippets: res.snippets.map((s) => ({
+              file_name: s.file_name,
+              excerpt: s.excerpt,
+              similarity: s.similarity,
+            })),
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e)
+          return { ok: false as const, error: msg, snippets: [] as const }
+        }
+      },
+    }),
   }
 
   const normalized = normalizeUserMessageParts(messages)
@@ -197,7 +342,7 @@ export async function POST(req: Request) {
     system: SYSTEM_PROMPT,
     messages: await convertToModelMessages(normalized),
     tools,
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(12),
   })
 
   return result.toUIMessageStreamResponse()

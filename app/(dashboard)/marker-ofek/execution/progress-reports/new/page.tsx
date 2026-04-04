@@ -51,6 +51,11 @@ import {
   wbsChapterPrefix,
 } from "@/lib/marker-ofek/wbs-chapter"
 import {
+  calcCurrentAmountProgressLine,
+  clampPct,
+  roundMoney,
+} from "@/lib/marker-ofek/progress-report-line-calc"
+import {
   decodeMilestoneDisplayName,
   decodeMilestoneStoredName,
 } from "@/lib/marker-ofek/milestone-name-codec"
@@ -102,31 +107,6 @@ function parseDecimal(s: string): number {
 function embedOne<T>(x: T | T[] | null | undefined): T | null {
   if (x == null) return null
   return Array.isArray(x) ? (x[0] ?? null) : x
-}
-
-function clampPct(n: number): number {
-  if (!Number.isFinite(n)) return 0
-  return Math.min(100, Math.max(0, n))
-}
-
-function roundMoney(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100
-}
-
-function calcCurrentAmount(
-  totalPrice: number,
-  selectedPctRaw: number,
-  previousPctRaw: number | null | undefined
-): { deltaPct: number; currentAmount: number; cumulativeValue: number } {
-  const previousPct = clampPct(Number(previousPctRaw ?? 0))
-  const selectedPct = clampPct(Number(selectedPctRaw))
-  const selectedBps = Math.round(selectedPct * 100)
-  const previousBps = Math.round(previousPct * 100)
-  const deltaBps = selectedBps - previousBps
-  const deltaPct = roundMoney(deltaBps / 100)
-  const currentAmount = roundMoney((totalPrice * deltaBps) / 10000)
-  const cumulativeValue = roundMoney((totalPrice * selectedBps) / 10000)
-  return { deltaPct, currentAmount, cumulativeValue }
 }
 
 function contractLabel(c: ContractOption): string {
@@ -459,7 +439,7 @@ function NewProgressReportPageInner() {
     for (const m of milestones) {
       const prev = parseDecimal(previousPctByLine[m.id] ?? "0")
       const curr = parseDecimal(currentPctByLine[m.id] ?? "0")
-      const calc = calcCurrentAmount(m.amount, curr, prev)
+      const calc = calcCurrentAmountProgressLine(m.amount, curr, prev)
       const deltaPct = calc.deltaPct
       const approvedThisBill = calc.currentAmount
       const cumulativeValue = calc.cumulativeValue
@@ -640,11 +620,11 @@ function NewProgressReportPageInner() {
       className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-1 pb-16 pt-2 sm:px-0"
     >
       <Link
-        href="/marker-ofek/field-execution"
+        href="/marker-ofek/projects"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowRight className="size-4 rotate-180" aria-hidden />
-        חזרה לביצוע בשטח
+        חזרה לפרויקטים
       </Link>
 
       <header className="space-y-2 text-start">
@@ -654,7 +634,7 @@ function NewProgressReportPageInner() {
           </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              מודול 3.2 · ביצוע בשטח
+              מודול 3.2 · פרויקטים
             </p>
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
               דיווח התקדמות / חשבונות חלקיים

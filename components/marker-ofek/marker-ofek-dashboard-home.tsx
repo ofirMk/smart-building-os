@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { getOrganizationBranding } from "@/lib/marker-ofek/organization-branding"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { formatCountHe } from "@/lib/dashboard-stats"
 import { cn } from "@/lib/utils"
@@ -22,6 +23,7 @@ const ACTIVE_PROJECT_STATUSES = ["planning", "active", "on_hold"] as const
 
 export async function MarkerOfekDashboardHome() {
   const supabase = await createSupabaseServerAuthClient()
+  const branding = await getOrganizationBranding()
 
   const [projectsCountRes, reportsRes] = await Promise.all([
     supabase
@@ -55,14 +57,14 @@ export async function MarkerOfekDashboardHome() {
     >
       <header className="space-y-3 text-center sm:mx-0 sm:max-w-2xl sm:text-start">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          מרקר אופק יזמות וביצוע
+          {branding.organizationName}
         </p>
         <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
           לוח בקרה — בנייה וביצוע
         </h1>
         <p className="mx-auto max-w-xl text-pretty text-sm text-muted-foreground sm:mx-0 md:text-base">
-          מסך הבית של מרקר אופק בלבד. ניהול נכסים (הולדן) נמצא תחת נתיבי המתקנים
-          — לא כאן.
+          {branding.slogan} מסך הבית של מערכת הביצוע והרכש. ניהול נכסים (הולדן) נמצא תחת נתיבי המתקנים —
+          לא כאן.
         </p>
       </header>
 
@@ -70,20 +72,22 @@ export async function MarkerOfekDashboardHome() {
         className="grid gap-6 md:grid-cols-3"
         aria-label="סיכום מהיר"
       >
-        <Card className="border-border/80 shadow-sm">
+        <Card className="rounded-xl border border-slate-100 bg-white shadow-sm transition-colors duration-200 hover:border-slate-200">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-lg font-semibold">
+              <CardTitle className="text-lg font-semibold text-[#1e293b]">
                 פרויקטים פעילים
               </CardTitle>
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-muted/50">
-                <FolderKanban className="size-5" aria-hidden />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+                <FolderKanban className="size-5 text-slate-500" aria-hidden />
               </span>
             </div>
-            <CardDescription>סטטוסים: תכנון, פעיל, בהמתנה</CardDescription>
+            <CardDescription className="text-slate-400">
+              סטטוסים: תכנון, פעיל, בהמתנה
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-3xl font-semibold tabular-nums text-foreground">
+            <p className="font-currency-mono text-3xl font-semibold tabular-nums text-[#1e293b]">
               {formatCountHe(activeProjects)}
             </p>
             <Button
@@ -99,14 +103,14 @@ export async function MarkerOfekDashboardHome() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 shadow-sm md:col-span-2">
+        <Card className="rounded-xl border border-slate-100 bg-white shadow-sm transition-colors duration-200 hover:border-slate-200 md:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <CardTitle className="text-lg font-semibold">
+                <CardTitle className="text-lg font-semibold text-[#1e293b]">
                   דוחות התקדמות אחרונים
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-slate-400">
                   נשלפים ממסד הנתונים — קישור ליצירה ועריכה
                 </CardDescription>
               </div>
@@ -131,13 +135,13 @@ export async function MarkerOfekDashboardHome() {
                 אין עדיין דוחות התקדמות במערכת.
               </p>
             ) : (
-              <ul className="divide-y divide-border/80 rounded-lg border border-border/60">
+              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-100">
                 {recentReports.map((r) => (
                   <li
                     key={r.id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-slate-50"
                   >
-                    <span className="font-medium text-foreground">
+                    <span className="font-medium text-[#1e293b]">
                       {r.report_month
                         ? `דיווח לחודש ${r.report_month}`
                         : "דוח התקדמות"}
@@ -156,17 +160,17 @@ export async function MarkerOfekDashboardHome() {
         </Card>
       </section>
 
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-sm">
+      <Card className="rounded-xl border border-slate-100 bg-white shadow-sm transition-colors duration-200 hover:border-slate-200">
         <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-2">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-background">
-            <LineChart className="size-5 text-primary" aria-hidden />
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+            <LineChart className="size-5 text-indigo-600" aria-hidden />
           </span>
           <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold">
+            <CardTitle className="text-lg font-semibold text-[#1e293b]">
               בקרת תקציב ועלויות
             </CardTitle>
-            <CardDescription>
-              מעקב תקציבי פרויקטים, התאמות והשוואה לתכנון — בתוך מרקר אופק בלבד.
+            <CardDescription className="text-slate-400">
+              מעקב תקציבי פרויקטים, התאמות והשוואה לתכנון — במערכת הביצוע בלבד.
             </CardDescription>
           </div>
         </CardHeader>

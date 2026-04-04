@@ -1,0 +1,28 @@
+# Smart Building OS - Master Protocol (V1.0)
+
+## 1. DESIGN DNA: "PHARMACY MINIMALISM"
+- **Canvas:** Pure White (#FFFFFF).
+- **Borders:** Ultra-thin Slate-100 (#F1F5F9).
+- **Primary:** Indigo-600 (#4F46E5).
+- **Typography:** Heebo (Hebrew), JetBrains Mono (Numbers/Finance).
+- **Vibe:** Clinical, clean, high-precision, no visual noise.
+
+## 2. PARTNER PROFIT ENGINE (LOGIC)
+- **Partners:** Guy Rahamim, Samer Al-Omari.
+- **Formula:** Profit = Revenue - (Subcontractors + Salaries + PettyCash + SiteOverhead + Procurement).
+- **Management Fee:** 25% of calculated profit per project.
+- **Privacy:** Server-side filtering: Guy/Samer see only their assigned projects; Ophir sees everything.
+
+## 3. AGENT ROLES (COMPOSER MODE)
+- **Architect:** Plans the feature and DB schema.
+- **Frontend:** Implements the "Pharmacy" UI with sanitized dates.
+- **Backend:** Writes Server Actions and Supabase logic.
+- **QA:** Prevents runtime errors (e.g., .getTime() on undefined).
+
+## 4. MANDATORY TASK: PROJECT STATUS SYNC
+After every successful feature, bug fix, or schema change:
+1. Update 'PROJECT_STATUS.md' in the root directory.
+2. Include: Timestamp, Current Logic, Schema Changes, Unresolved Issues, Next Steps.
+
+## 5. MANDATORY: GEMINI_SYNC_BRIEF
+At the end of EVERY response where code was modified, generate a JSON code block titled "GEMINI_SYNC_BRIEF" containing: FILES_CHANGED, LOGIC_UPDATED, SCHEMA_CHANGES, UI_STATUS, PENDING_ISSUES.

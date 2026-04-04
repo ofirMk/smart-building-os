@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Heebo, JetBrains_Mono } from "next/font/google";
+import { Heebo, JetBrains_Mono, Rubik } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -18,12 +18,18 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const rubik = Rubik({
+  variable: "--font-rubik",
+  subsets: ["latin", "hebrew"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0a0a0a",
+  themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
@@ -50,15 +56,15 @@ export default function RootLayout({
     <html
       lang="he"
       dir="rtl"
-      className={`${heebo.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${heebo.variable} ${rubik.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body dir="rtl" className="min-h-full flex flex-col font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           storageKey="smart-building-theme"
-          enableSystem
+          enableSystem={false}
           enableColorScheme
           disableTransitionOnChange
         >

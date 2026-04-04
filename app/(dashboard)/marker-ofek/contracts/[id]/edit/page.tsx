@@ -567,7 +567,7 @@ export default function EditMarkerOfekContractPage() {
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="edit-entity-name">שם ישות (מזמין / קבלן משנה)</Label>
+                <Label htmlFor="edit-entity-name">שם ישות (מזמין / ספק ביצוע)</Label>
                 <Input
                   id="edit-entity-name"
                   name="entityName"
@@ -632,7 +632,7 @@ export default function EditMarkerOfekContractPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="main_contract">חוזה מזמין</SelectItem>
-                    <SelectItem value="sub_contract">חוזה קבלן משנה</SelectItem>
+                    <SelectItem value="sub_contract">חוזה ספק ביצוע</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

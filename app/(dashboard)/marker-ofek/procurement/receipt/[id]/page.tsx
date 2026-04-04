@@ -514,17 +514,17 @@ export default function GoodsReceiptPage() {
         חזרה לרכש וספקים
       </Link>
 
-      <header className="rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-emerald-950/30 p-5 shadow-md sm:p-7">
+      <header className="pharmacy-hero-card p-5 sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/90">
               קבלת סחורה
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
               הזמנה {po.po_number}
             </h1>
           </div>
-          <div className="grid w-full gap-4 text-sm text-slate-200 sm:max-w-sm">
+          <div className="grid w-full gap-4 text-sm text-[#1e293b] sm:max-w-sm">
             <div className="flex items-start gap-3">
               <Building2 className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden />
               <div>

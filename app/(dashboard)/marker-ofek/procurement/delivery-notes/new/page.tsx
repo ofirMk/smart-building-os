@@ -1,17 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { ArrowRight, Boxes, Loader2, PackagePlus, Search } from "lucide-react"
+import Link from "next/link"
+import { ArrowRight, Loader2, Package, Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -22,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { recordIncomingTransaction } from "@/lib/actions/reconciliation-actions"
+import { recordIncomingTransaction } from "@/lib/marker-ofek/reconciliation-actions"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"
 
@@ -159,55 +154,56 @@ export default function NewDeliveryNotePage() {
   }
 
   return (
-    <div dir="rtl" className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 md:px-6">
-      <a
-        href="/marker-ofek/procurement"
-        className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-violet-300"
-      >
-        <ArrowRight className="size-4 rotate-180" aria-hidden />
-        חזרה לרכש
-      </a>
-
-      <header className="space-y-2 rounded-2xl border border-violet-500/20 bg-slate-950/40 p-5 shadow-[0_0_30px_-20px_rgba(139,92,246,0.7)]">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-500/20 text-violet-300">
-            <PackagePlus className="size-5" aria-hidden />
-          </span>
+    <div
+      dir="rtl"
+      className="min-h-screen bg-white p-8 font-sans text-slate-900 dark:bg-background dark:text-foreground"
+    >
+      <div className="mx-auto mb-8 flex max-w-4xl items-center justify-between border-b border-slate-100 pb-6 dark:border-border">
+        <div className="flex items-center gap-4">
+          <div className="rounded-full bg-slate-50 p-3 text-indigo-600 dark:bg-muted dark:text-indigo-400">
+            <Package size={24} aria-hidden />
+          </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300/90">
-              Marker Ofek Logistics
-            </p>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-50">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-foreground">
               קליטת סחורה - תעודת משלוח
             </h1>
+            <p className="text-sm text-slate-400 dark:text-muted-foreground">
+              רישום ומעקב מלאי פרויקטלי
+            </p>
           </div>
         </div>
-        <p className="text-sm text-slate-300">
-          רישום קליטת סחורה ישירות למלאי הפרויקט עם בקרה מסודרת על פריט, כמות ויחידה.
-        </p>
-      </header>
+        <Button
+          variant="ghost"
+          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+          render={
+            <Link href="/marker-ofek/procurement" className="inline-flex items-center gap-2">
+              <ArrowRight className="size-[18px]" aria-hidden />
+              חזרה לרכש
+            </Link>
+          }
+        />
+      </div>
 
-      <form onSubmit={onSubmit}>
-        <Card className="border-violet-500/20 bg-slate-950/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-100">
-              <Boxes className="size-5 text-violet-300" aria-hidden />
-              טופס קליטה מקצועי
-            </CardTitle>
-            <CardDescription>
-              בחירת פרויקט + פריט, כמות, יחידה והערות אסמכתא
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="projectId">פרויקט</Label>
+      <form onSubmit={onSubmit} className="mx-auto grid max-w-4xl gap-8">
+        <Card className="border-slate-100 bg-white p-8 shadow-sm dark:border-border dark:bg-card">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label
+                htmlFor="projectId"
+                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+              >
+                בחירת פרויקט
+              </Label>
               <Select
                 value={projectId || undefined}
-                onValueChange={(value) => setProjectId(value)}
+                onValueChange={(value) => setProjectId(value ?? "")}
                 disabled={loading || submitting}
               >
-                <SelectTrigger id="projectId">
-                  <SelectValue placeholder="בחר פרויקט" />
+                <SelectTrigger
+                  id="projectId"
+                  className="h-10 border-slate-200 bg-white dark:border-input dark:bg-background"
+                >
+                  <SelectValue placeholder="בחר פרויקט..." />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((project) => (
@@ -222,29 +218,45 @@ export default function NewDeliveryNotePage() {
               </Select>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="itemSearch">חיפוש פריט</Label>
+            <div className="space-y-2">
+              <Label
+                htmlFor="itemSearch"
+                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+              >
+                חיפוש פריט מהקטלוג
+              </Label>
               <div className="relative">
-                <Search className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" />
+                <Search
+                  className="pointer-events-none absolute right-3 top-1/2 size-[18px] -translate-y-1/2 text-slate-300 dark:text-muted-foreground"
+                  aria-hidden
+                />
                 <Input
                   id="itemSearch"
                   value={itemSearch}
                   onChange={(e) => setItemSearch(e.target.value)}
-                  placeholder="חפש לפי תיאור או SKU"
-                  className="pr-9"
+                  placeholder="חפש לפי תיאור או SKU..."
+                  className="border-slate-200 pr-10 dark:border-input"
                   disabled={loading || submitting}
                 />
               </div>
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="itemCatalogId">פריט מלאי</Label>
+              <Label
+                htmlFor="itemCatalogId"
+                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+              >
+                פריט מלאי
+              </Label>
               <Select
                 value={itemCatalogId || undefined}
-                onValueChange={(value) => setItemCatalogId(value)}
+                onValueChange={(value) => setItemCatalogId(value ?? "")}
                 disabled={loading || submitting}
               >
-                <SelectTrigger id="itemCatalogId">
+                <SelectTrigger
+                  id="itemCatalogId"
+                  className="h-10 border-slate-200 bg-white dark:border-input dark:bg-background"
+                >
                   <SelectValue placeholder="בחר פריט מהקטלוג" />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,7 +271,12 @@ export default function NewDeliveryNotePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quantity">כמות</Label>
+              <Label
+                htmlFor="quantity"
+                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+              >
+                כמות
+              </Label>
               <Input
                 id="quantity"
                 type="number"
@@ -269,48 +286,58 @@ export default function NewDeliveryNotePage() {
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="0.00"
+                className="border-slate-200 dark:border-input"
                 disabled={submitting}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unit">יחידה</Label>
+              <Label
+                htmlFor="unit"
+                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+              >
+                יחידה
+              </Label>
               <Input
                 id="unit"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                placeholder="יח', ק\"ג, מ\"ק..."
+                placeholder={'יח\', ק"ג, מ"ק...'}
+                className="border-slate-200 dark:border-input"
                 disabled={submitting}
               />
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes">הערות / אסמכתא</Label>
+              <Label
+                htmlFor="notes"
+                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+              >
+                הערות / אסמכתא
+              </Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="מספר תעודה, ספק, הערות קליטה..."
-                className="min-h-[88px]"
+                className="min-h-[100px] rounded-md border-slate-200 bg-white text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-input dark:bg-background"
                 disabled={submitting}
               />
             </div>
+          </div>
 
-            <div className="md:col-span-2">
-              <Button
-                type="submit"
-                disabled={submitting || loading}
-                className="w-full gap-2 bg-violet-600 text-white hover:bg-violet-500 md:w-auto"
-              >
-                {submitting ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <PackagePlus className="size-4" aria-hidden />
-                )}
-                שמירת קליטת סחורה
-              </Button>
-            </div>
-          </CardContent>
+          <div className="mt-8 flex justify-end border-t border-slate-50 pt-6 dark:border-border">
+            <Button
+              type="submit"
+              disabled={submitting || loading}
+              className="h-11 gap-2 rounded-lg bg-indigo-600 px-8 font-bold text-white hover:bg-indigo-700"
+            >
+              {submitting ? (
+                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+              ) : null}
+              שמירת קליטת סחורה
+            </Button>
+          </div>
         </Card>
       </form>
     </div>

@@ -720,20 +720,20 @@ export default function MarkerOfekAiImportPage() {
         חזרה לרכש
       </Link>
 
-      <header className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-violet-950/35 p-6 shadow-lg md:p-8">
+      <header className="pharmacy-hero-card p-6 md:p-8">
         <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-violet-500/35 bg-violet-500/15 text-violet-200">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-600">
               <ScanText className="size-6" aria-hidden />
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-violet-300/90">
+              <p className="text-xs font-medium uppercase tracking-wider text-violet-600/90">
                 מרקר אופק
               </p>
-              <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] md:text-3xl">
                 קליטת מסמך ספק — Shadow Catalog
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
                 חילוץ מטא-דאטה, קטגוריות ושורות. בשמירה נבנה אוטומטית קטלוג מאסטר
                 ומיפוי מק״ט ספק.
               </p>
@@ -743,7 +743,7 @@ export default function MarkerOfekAiImportPage() {
         <div className="relative mt-4">
           <Link
             href="/marker-ofek/procurement/ai-import/pending-allocation"
-            className="text-sm text-violet-200 underline-offset-4 hover:underline"
+            className="text-sm text-indigo-600 underline-offset-4 hover:underline"
           >
             מעבר לתצוגת Pending Allocation
           </Link>

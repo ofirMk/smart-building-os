@@ -1,0 +1,179 @@
+diff --git a/node_modules/gantt-task-react/dist/index.modern.js b/node_modules/gantt-task-react/dist/index.modern.js
+index b372269..fa774a4 100644
+--- a/node_modules/gantt-task-react/dist/index.modern.js
++++ b/node_modules/gantt-task-react/dist/index.modern.js
+@@ -515,7 +515,7 @@ var VerticalScroll = function VerticalScroll(_ref) {
+       marginTop: headerHeight,
+       marginLeft: rtl ? "" : "-1rem"
+     },
+-    className: styles$3.scroll,
++    className: styles$3.scroll + " mo-gantt-vscroll",
+     onScroll: onScroll,
+     ref: scrollRef
+   }, React.createElement("div", {
+@@ -568,7 +568,8 @@ var TaskList = function TaskList(_ref) {
+     onExpanderClick: onExpanderClick
+   };
+   return React.createElement("div", {
+-    ref: taskListRef
++    ref: taskListRef,
++    className: "mo-gantt-task-col"
+   }, React.createElement(TaskListHeader, Object.assign({}, headerProps)), React.createElement("div", {
+     ref: horizontalContainerRef,
+     className: horizontalContainerClass,
+@@ -1208,13 +1209,74 @@ var convertToMilestone = function convertToMilestone(task, index, dates, columnW
+ };
+ 
+ var taskXCoordinate = function taskXCoordinate(xDate, dates, columnWidth) {
+-  var index = dates.findIndex(function (d) {
+-    return d.getTime() >= xDate.getTime();
+-  }) - 1;
+-  var remainderMillis = xDate.getTime() - dates[index].getTime();
+-  var percentOfInterval = remainderMillis / (dates[index + 1].getTime() - dates[index].getTime());
+-  var x = index * columnWidth + percentOfInterval * columnWidth;
+-  return x;
++  if (!dates || dates.length < 2) {
++    return 0;
++  }
++
++  var t = xDate.getTime();
++  var ascending = dates[0].getTime() < dates[1].getTime();
++  var i;
++  var frac;
++
++  if (ascending) {
++    var hi = dates.findIndex(function (d) {
++      return d.getTime() >= t;
++    });
++
++    if (hi <= 0) {
++      hi = 1;
++    }
++
++    if (hi === -1) {
++      hi = dates.length - 1;
++    }
++
++    i = hi - 1;
++
++    if (i < 0) {
++      i = 0;
++    }
++
++    if (i > dates.length - 2) {
++      i = dates.length - 2;
++    }
++
++    var t0a = dates[i].getTime();
++    var t1a = dates[i + 1].getTime();
++    var spana = t1a - t0a;
++    frac = spana === 0 ? 0 : (t - t0a) / spana;
++  } else {
++    i = dates.findIndex(function (d, idx) {
++      var next = dates[idx + 1];
++
++      if (next === undefined) {
++        return false;
++      }
++
++      return d.getTime() >= t && t >= next.getTime();
++    });
++
++    if (i === -1) {
++      if (t >= dates[0].getTime()) {
++        i = 0;
++        var s0 = dates[0].getTime() - dates[1].getTime();
++        frac = s0 === 0 ? 0 : (dates[0].getTime() - t) / s0;
++      } else if (t <= dates[dates.length - 1].getTime()) {
++        i = Math.max(0, dates.length - 2);
++        var s1 = dates[i].getTime() - dates[i + 1].getTime();
++        frac = s1 === 0 ? 1 : (dates[i].getTime() - t) / s1;
++      } else {
++        i = 0;
++        frac = 0;
++      }
++    } else {
++      var ts = dates[i].getTime() - dates[i + 1].getTime();
++      frac = ts === 0 ? 0 : (dates[i].getTime() - t) / ts;
++    }
++  }
++
++  frac = Math.max(0, Math.min(1, frac));
++  return i * columnWidth + frac * columnWidth;
+ };
+ 
+ var taskXCoordinateRTL = function taskXCoordinateRTL(xDate, dates, columnWidth) {
+@@ -1888,7 +1950,8 @@ var TaskGanttContent = function TaskGanttContent(_ref) {
+       setIsMoving = _useState3[1];
+ 
+   useEffect(function () {
+-    var dateDelta = dates[1].getTime() - dates[0].getTime() - dates[1].getTimezoneOffset() * 60 * 1000 + dates[0].getTimezoneOffset() * 60 * 1000;
++    var rawDelta = dates[1].getTime() - dates[0].getTime() - dates[1].getTimezoneOffset() * 60 * 1000 + dates[0].getTimezoneOffset() * 60 * 1000;
++    var dateDelta = Math.abs(rawDelta) || 86400000;
+     var newXStep = timeStep * columnWidth / dateDelta;
+     setXStep(newXStep);
+   }, [columnWidth, dates, timeStep]);
+@@ -2141,7 +2204,7 @@ var TaskGantt = function TaskGantt(_ref) {
+     }
+   }, [scrollX]);
+   return React.createElement("div", {
+-    className: styles$9.ganttVerticalContainer,
++    className: styles$9.ganttVerticalContainer + " mo-gantt-timeline-col",
+     ref: verticalGanttContainerRef,
+     dir: "ltr"
+   }, React.createElement("svg", {
+@@ -2182,11 +2245,11 @@ var HorizontalScroll = function HorizontalScroll(_ref) {
+     }
+   }, [scroll]);
+   return React.createElement("div", {
+-    dir: "ltr",
++    dir: rtl ? "rtl" : "ltr",
+     style: {
+       margin: rtl ? "0px " + taskListWidth + "px 0px 0px" : "0px 0px 0px " + taskListWidth + "px"
+     },
+-    className: styles$a.scrollWrapper,
++    className: styles$a.scrollWrapper + " mo-gantt-hscroll gantt-scroll",
+     onScroll: onScroll,
+     ref: scrollRef
+   }, React.createElement("div", {
+@@ -2372,9 +2435,28 @@ var Gantt = function Gantt(_ref) {
+   useEffect(function () {
+     if (viewMode === dateSetup.viewMode && (viewDate && !currentViewDate || viewDate && (currentViewDate === null || currentViewDate === void 0 ? void 0 : currentViewDate.valueOf()) !== viewDate.valueOf())) {
+       var dates = dateSetup.dates;
+-      var index = dates.findIndex(function (d, i) {
+-        return viewDate.valueOf() >= d.valueOf() && i + 1 !== dates.length && viewDate.valueOf() < dates[i + 1].valueOf();
+-      });
++
++      if (!dates || dates.length < 2) {
++        return;
++      }
++
++      var index = -1;
++
++      if (dates[0].getTime() > dates[1].getTime()) {
++        index = dates.findIndex(function (d, i) {
++          var next = dates[i + 1];
++
++          if (next === undefined) {
++            return false;
++          }
++
++          return d.getTime() >= viewDate.valueOf() && viewDate.valueOf() >= next.valueOf();
++        });
++      } else {
++        index = dates.findIndex(function (d, i) {
++          return viewDate.valueOf() >= d.valueOf() && i + 1 !== dates.length && viewDate.valueOf() < dates[i + 1].valueOf();
++        });
++      }
+ 
+       if (index === -1) {
+         return;
+@@ -2643,7 +2725,7 @@ var Gantt = function Gantt(_ref) {
+     TaskListTable: TaskListTable
+   };
+   return React.createElement("div", null, React.createElement("div", {
+-    className: styles$9.wrapper,
++    className: styles$9.wrapper + " mo-gantt-root",
+     onKeyDown: handleKeyDown,
+     tabIndex: 0,
+     ref: wrapperRef

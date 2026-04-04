@@ -59,7 +59,7 @@ export type MoInvoiceDocumentType =
   | "tax_invoice_receipt"
 
 /** public.mo_invoice_financial_status */
-export type MoInvoiceFinancialStatus = "issued" | "paid" | "cancelled"
+export type MoInvoiceFinancialStatus = "issued" | "approved" | "paid" | "cancelled"
 
 /** public.mo_receipt_payment_method */
 export type MoReceiptPaymentMethod =
@@ -106,6 +106,18 @@ export interface CompanyProfile {
   phone: string | null
   email: string | null
   deductions_file_number: string | null
+  /** מע״מ / עוסק מורשה — MDM */
+  vat_registration_number?: string | null
+  bank_name?: string | null
+  bank_branch?: string | null
+  bank_account_number?: string | null
+  default_vat_rate_percent?: number | null
+  default_retention_percent?: number | null
+  indexation_source_note?: string | null
+  /** revenue_pct | labor_hours — העמסת עקיפות חברה */
+  overhead_allocation_method?: string | null
+  /** לוגו ארגון — URL ל-white label */
+  brand_logo_url?: string | null
   created_at: string
 }
 
@@ -121,6 +133,12 @@ export type MarkerOfekEntityRow = {
   address: string | null
   /** תיק ניכויים */
   deductions_file_number: string | null
+  /** ניכוי במקור ברירת מחדל לספק (%) */
+  default_withholding_tax_percent?: number | null
+  /** תוקף אישור ניכוי במקור */
+  withholding_tax_expiry?: string | null
+  /** תוקף אישור ניהול ספרים (ספקים) */
+  bookkeeping_auth_expiry?: string | null
   /** מספר סידורי מרצף supplier_seq / contractor_seq */
   mo_entity_code: string | null
   is_deleted: boolean
@@ -143,6 +161,12 @@ export type MarkerOfekProjectRow = {
   is_deleted: boolean
   deleted_at: string | null
   created_at: string
+  /** שותף מנהל — דשבורד רווחיות שותפים */
+  managing_partner_id?: string | null
+  partner_cost_subcontractors?: number
+  partner_cost_employee_salaries?: number
+  partner_cost_petty_cash?: number
+  partner_cost_site_overhead?: number
 }
 
 /** public.project_documents — כספת מסמכי פרויקט (חוזים, מפרטים, תוכניות) */
@@ -150,9 +174,71 @@ export type MarkerOfekProjectDocumentRow = {
   id: string
   project_id: string
   title: string | null
-  file_path: string
+  /** null when `is_folder` — אין אובייקט ב־storage */
+  file_path: string | null
   document_kind: string | null
   mime_type: string | null
+  created_at: string
+  version_group_id?: string
+  version_number?: number
+  is_current?: boolean
+  parent_document_id?: string | null
+  updated_at?: string
+  /** תיקיית כספת ברירת־מחדל (ללא קובץ) */
+  is_folder?: boolean
+  vault_folder_key?: string | null
+}
+
+/** public.project_sites — אתר ביצוע 1:1 לפרויקט */
+export type MarkerOfekProjectSiteRow = {
+  id: string
+  project_id: string
+  primary_contract_id: string | null
+  display_name: string | null
+  site_address: string | null
+}
+
+/** public.site_media.field_tag */
+export type SiteMediaFieldTag = "before" | "after" | "obstacle" | "inspection"
+
+/** public.daily_manpower.role */
+export type DailyManpowerRole =
+  | "project_manager"
+  | "team_lead"
+  | "certified_electrician"
+  | "assistant"
+  | "subcontractor_crew"
+
+/** public.daily_log_heavy_equipment.equipment_kind */
+export type DailyLogEquipmentKind = "scissor_lift" | "generator"
+
+/** public.site_media */
+export type MarkerOfekSiteMediaRow = {
+  id: string
+  project_id: string
+  storage_path: string
+  mime_type: string | null
+  caption: string | null
+  taken_at: string | null
+  /** תיוג שטח: לפני | אחרי | מכשול | ביקורת */
+  field_tag?: SiteMediaFieldTag | null
+  latitude?: number | null
+  longitude?: number | null
+  daily_log_id?: string | null
+  created_at: string
+}
+
+/** public.project_daily_logs */
+export type MarkerOfekProjectDailyLogRow = {
+  id: string
+  project_id: string
+  log_date: string
+  weather: string
+  crew_count: number
+  work_performed: string
+  task_ids: string[]
+  red_flags: string | null
+  photo_paths: string[]
   created_at: string
 }
 
@@ -200,6 +286,39 @@ export type MarkerOfekProjectTaskRow = {
   created_at: string
 }
 
+/**
+ * public.tasks — שורת גאנט (WBS + נגזרות חברות ביצוע).
+ * מסונכרן עם `GanttTaskRow` ב-`lib/marker-ofek/gantt-actions.ts`.
+ */
+export type MarkerOfekGanttTaskRow = {
+  id: string
+  project_id: string
+  parent_id: string | null
+  /** FK למשימת מאסטר (נפרד מ־parent_id של עץ WBS) */
+  parent_task_id: string | null
+  subcontractor_id: string | null
+  contract_id: string | null
+  is_derivative: boolean
+  name: string
+  description: string | null
+  start_date: string | null
+  end_date: string | null
+  actual_start_date: string | null
+  actual_end_date: string | null
+  progress: number
+  dependency_ids: string[]
+  dependency_lags: Record<string, number>
+  level: number
+  predecessor_index: number | null
+  predecessor_task_id: string | null
+  wbs_order: number
+  wbs_code: string | null
+  /** FK wbs_nodes — ייבוא מ־WBS; מסמכים דרך project_plan_links */
+  source_wbs_node_id?: string | null
+  estimated_cost: number
+  actual_cost: number
+}
+
 /** public.contracts */
 export type MarkerOfekContractRow = {
   id: string
@@ -209,7 +328,17 @@ export type MarkerOfekContractRow = {
   parent_contract_id: string | null
   agreement_type: string | null
   retention_pct: number
+  /** עכבון — תואם retention; משמש חישוב תקופתי */
+  retainage_percentage?: number
   insurance_pct: number
+  /** אגרות מעבדה (ברירת מיגרציה 0.5%) */
+  lab_fees_pct?: number
+  /** בסיס צמידה למדד */
+  index_linkage_base_date?: string | null
+  /** מקדם על עבודת תקופה (1 = ללא שינוי) */
+  index_coefficient?: number
+  /** שורת מדד בסיס ב־ref_index_history (אופציונלי) */
+  base_index_history_id?: string | null
   total_amount: number | null
   start_date: string | null
   end_date: string | null
@@ -271,9 +400,22 @@ export type MarkerOfekPartialAccountRow = {
   account_number: number
   status: MoPartialAccountStatus
   total_cumulative_amount: number
+  /** ברוטו תקופתי לפני מדד */
+  period_work_gross?: number
+  /** עבודת תקופה אחרי הצמדה (לפני ניכויים) */
+  period_work_indexed?: number
+  /** הפרש הצמדה ₪ */
+  indexation_adjustment_amount?: number
+  /** סכום עכבון על התקופה */
+  retainage_amount?: number
+  base_index_history_id?: string | null
+  applied_index_history_id?: string | null
   retention_deduction: number
   insurance_deduction: number
+  lab_fees_deduction?: number
   payment_due: number
+  /** התקדמות מצטברת בחוזה (0–100) לאחר חישוב */
+  current_progress_percent?: number | null
   snapshot_payload?: Record<string, unknown> | null
   previous_cumulative_approved?: number | null
   project_id?: string | null
@@ -294,6 +436,12 @@ export type MarkerOfekPartialAccountLineItemRow = {
   submitted_amount: number
   approved_percentage: number
   approved_amount: number
+  /** כמות/אחוז מצטבר קודם (שורה) */
+  quantity_previous: number
+  /** כמות/אחוז מצטבר נוכחי (שורה) */
+  quantity_current: number
+  /** ערך תקופתי לשורה (₪) */
+  line_total_price: number
   created_at: string
 }
 
@@ -369,6 +517,8 @@ export type MarkerOfekPurchaseOrderRow = {
   ceo_approval_email_sent_at?: string | null
   price_deviation_percent?: number
   price_deviation_amount?: number
+  /** עמודה מחושבת — רכש נספר ברווחיות רק כש־true */
+  is_ceo_approved?: boolean
   created_at: string
 }
 
@@ -427,6 +577,8 @@ export type MarkerOfekSupplierInvoiceRow = {
   po_id: string | null
   invoice_number: string | null
   total_amount: number
+  /** מע״מ תשומות (₪) — אופציונלי */
+  vat_amount?: number | null
   status: MoSupplierInvoiceStatus
   invoice_date: string
   paid_at: string | null
@@ -557,4 +709,62 @@ export type MarkerOfekGoodsReceiptItemInsert = {
   goods_receipt_id: string
   po_line_item_id: string
   quantity_received: number
+}
+
+/** public.tender_projects */
+export type MoTenderProjectStatus = "draft" | "submitted" | "won" | "lost"
+
+/** public.tender_boq_items.boq_version */
+export type MoBoqVersion = "v1" | "v2" | "final"
+
+export type MarkerOfekTenderProjectRow = {
+  id: string
+  name: string
+  internal_code: string | null
+  status: MoTenderProjectStatus
+  risk_percent: number
+  overhead_percent: number
+  /** מקדם ברירת מחדל על מחיר דקל (למשל 1.10) */
+  default_dekel_multiplier?: number
+  notes: string | null
+  linked_project_id?: string | null
+  linked_entity_id?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type MarkerOfekTenderBoqItemRow = {
+  id: string
+  tender_project_id: string
+  parent_id: string | null
+  sort_order: number
+  wbs_code: string | null
+  description: string
+  unit: string | null
+  quantity: number
+  unit_price: number
+  boq_version: MoBoqVersion
+  created_at: string
+  updated_at: string
+}
+
+export type MarkerOfekTenderVendorQuoteRow = {
+  id: string
+  tender_project_id: string
+  tender_boq_item_id: string | null
+  vendor_name: string
+  quoted_unit_price: number
+  notes: string | null
+  created_at: string
+}
+
+/** public.ref_dekel_prices — מחירון ייחוס דקל */
+export type RefDekelPriceRow = {
+  id: string
+  external_sku: string | null
+  item_description: string | null
+  unit: string | null
+  list_price: number | null
+  category: string | null
+  currency: string | null
 }

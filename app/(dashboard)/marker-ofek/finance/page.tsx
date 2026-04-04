@@ -35,6 +35,7 @@ const DOC_LABELS: Record<MoInvoiceDocumentType, string> = {
 
 const STATUS_LABELS: Record<MoInvoiceFinancialStatus, string> = {
   issued: "הופקה",
+  approved: "מאושרת",
   paid: "שולמה",
   cancelled: "בוטלה",
 }
@@ -138,20 +139,20 @@ export default function MarkerOfekFinancePage() {
         חזרה ללוח הבקרה
       </Link>
 
-      <header className="rounded-2xl border border-border/70 bg-gradient-to-br from-slate-950/90 via-slate-900/85 to-emerald-950/30 p-6 shadow-md sm:p-8">
+      <header className="pharmacy-hero-card p-6 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-500/35 bg-emerald-500/15 text-emerald-200">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
               <Wallet className="size-6" aria-hidden />
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/90">
+              <p className="text-xs font-medium uppercase tracking-wider text-emerald-600/90">
                 מרקר אופק
               </p>
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
                 כספים — חשבוניות וקבלות
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-slate-300">
+              <p className="mt-1 max-w-2xl text-sm text-slate-500">
                 מסמכים ממוספרים לפי מע״מ, כולל חשבונית מס וחשבונית מס קבלה.
               </p>
             </div>
@@ -162,16 +163,36 @@ export default function MarkerOfekFinancePage() {
       <section className="rounded-2xl border border-border/60 bg-card/90 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold">מסמכים כספיים שהופקו</h2>
-          <Link
-            href="/marker-ofek/finance/centralized"
-            className={cn(
-              buttonVariants({ size: "sm", variant: "outline" }),
-              "gap-2 border-emerald-500/40 text-emerald-800 hover:bg-emerald-500/10 dark:text-emerald-200"
-            )}
-          >
-            <FileStack className="size-4" aria-hidden />
-            חשבונית מרכזת
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/marker-ofek/finance/billing"
+              className={cn(
+                buttonVariants({ size: "sm", variant: "outline" }),
+                "gap-2 border-indigo-200 text-indigo-800 hover:bg-indigo-500/10"
+              )}
+            >
+              מרכז חוזים וחיוב
+            </Link>
+            <Link
+              href="/marker-ofek/contracts"
+              className={cn(
+                buttonVariants({ size: "sm", variant: "outline" }),
+                "gap-2 border-slate-200 text-slate-800 hover:bg-slate-50"
+              )}
+            >
+              כרטיסי חוזה
+            </Link>
+            <Link
+              href="/marker-ofek/finance/centralized"
+              className={cn(
+                buttonVariants({ size: "sm", variant: "outline" }),
+                "gap-2 border-emerald-500/40 text-emerald-800 hover:bg-emerald-500/10 dark:text-emerald-200"
+              )}
+            >
+              <FileStack className="size-4" aria-hidden />
+              חשבונית מרכזת
+            </Link>
+          </div>
         </div>
 
         {loading ? (

@@ -3,8 +3,11 @@
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { Bot, Loader2, Mic, Send, Sparkles, X } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Bot, Columns2, Loader2, Mic, Send, Sparkles, X } from "lucide-react"
+import { toast } from "sonner"
 
+import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -14,18 +17,60 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import type { HrWelcomePayload } from "@/lib/marker-ofek/diamond-navigator-curriculum"
+import { personaLabelHe } from "@/lib/marker-ofek/hr-onboarding-copy"
+import { getExecutiveOracleBrief } from "@/lib/marker-ofek/partner-metrics-actions"
+import { completeHrConciergeWelcome } from "@/lib/marker-ofek/user-dashboard-config-actions"
+import { isWorkspacePersona } from "@/lib/marker-ofek/workspace-types"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 
 const SPEECH_LANG = "he-IL"
 
-export function AiAssistant() {
+/** מספרים עם ₪ — יישור מטבע כמו בשאר מודולי הכספים */
+const ASSISTANT_MONEY_CHUNK =
+  /(\d[\d,'\s\u200f\u202a\u202c]*(?:\.\d{1,2})?\s*₪)/g
+
+function renderAssistantMessageText(text: string) {
+  const parts = text.split(ASSISTANT_MONEY_CHUNK)
+  return parts.map((part, i) => {
+    if (/^\d[\d,'\s\u200f\u202a\u202c]*(?:\.\d{1,2})?\s*₪$/.test(part.trim())) {
+      return (
+        <span key={i} className="font-currency-mono tabular-nums">
+          {part}
+        </span>
+      )
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
+export function AiAssistant({
+  hostFirstName = null,
+  hrWelcome = null,
+  hrWelcomePending = false,
+}: {
+  hostFirstName?: string | null
+  hrWelcome?: HrWelcomePayload | null
+  hrWelcomePending?: boolean
+}) {
+  const pathname = usePathname() ?? ""
+  const router = useRouter()
+  const ws = useSmartWorkspace()
+  const splitDocked =
+    Boolean(
+      ws?.splitView &&
+        ws.assistantSplitDocked &&
+        pathname.startsWith("/marker-ofek")
+    )
   const [open, setOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
   const [speechSupported, setSpeechSupported] = React.useState(false)
   const [listening, setListening] = React.useState(false)
+  const [oracleBullets, setOracleBullets] = React.useState<string[] | null>(null)
+  const [oracleFetched, setOracleFetched] = React.useState(false)
 
-  const { messages, sendMessage, status, error, clearError } = useChat({
+  const { messages, sendMessage, status, error, clearError, setMessages } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   })
 
@@ -47,6 +92,41 @@ export function AiAssistant() {
       inputRef.current?.focus()
     }
   }, [open])
+
+  React.useEffect(() => {
+    if (!hrWelcomePending || !hrWelcome) return
+    if (!pathname.startsWith("/marker-ofek")) return
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === "hr-welcome-marker")) return prev
+      const name = hostFirstName?.trim() || "שם"
+      const proj = hrWelcome.projectName?.trim() || "הארגון"
+      const persona = isWorkspacePersona(hrWelcome.persona) ? hrWelcome.persona : "field"
+      const roleLine = personaLabelHe(persona, hrWelcome.grantSystemAdmin === true)
+      const text = `שלום ${name}, הכנתי עבורך סביבת עבודה במרקר אופק עבור ${proj} (${roleLine}).\n\n${hrWelcome.rulesBrief}`
+      return [
+        ...prev,
+        {
+          id: "hr-welcome-marker",
+          role: "assistant",
+          parts: [{ type: "text", text }],
+        },
+      ]
+    })
+    setOpen(true)
+  }, [hrWelcomePending, hrWelcome, hostFirstName, pathname, setMessages])
+
+  React.useEffect(() => {
+    if (!open || oracleFetched) return
+    setOracleFetched(true)
+    void (async () => {
+      const res = await getExecutiveOracleBrief()
+      if (res.ok && res.bullets.length > 0) {
+        setOracleBullets(res.bullets)
+      } else {
+        setOracleBullets(null)
+      }
+    })()
+  }, [open, oracleFetched])
 
   React.useEffect(() => {
     const el = scrollRef.current
@@ -142,37 +222,62 @@ export function AiAssistant() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-50 flex flex-col items-start gap-3 print:hidden sm:bottom-6 sm:left-6"
+      className={cn(
+        "fixed z-50 flex flex-col items-start gap-3 print:hidden",
+        splitDocked
+          ? "bottom-6 start-[max(0.5rem,calc(50vw-0.5rem))] w-[min(calc(100vw-1rem),calc(50vw-1rem))] sm:bottom-8"
+          : "bottom-4 start-4 sm:bottom-6 sm:start-6"
+      )}
       dir="rtl"
     >
       {open ? (
         <Card
           className={cn(
-            "flex h-[min(560px,calc(100dvh-7rem))] w-[min(100vw-2rem,400px)] flex-col overflow-hidden",
-            "border-border/80 bg-card/95 shadow-2xl shadow-black/40 ring-1 ring-white/10 backdrop-blur-xl",
-            "supports-[backdrop-filter]:bg-card/90"
+            "flex h-[min(560px,calc(100dvh-7rem))] flex-col overflow-hidden border-slate-100 bg-white shadow-xl ring-1 ring-slate-100",
+            splitDocked
+              ? "w-full max-w-none"
+              : "w-[min(100vw-2rem,400px)] border-border/80 bg-card/95 shadow-2xl shadow-black/40 ring-white/10 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90"
           )}
         >
-          <CardHeader className="border-b border-border/60 bg-muted/20 p-3 pb-3">
+          <CardHeader className="border-b border-slate-100 bg-white p-3 pb-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-950/10 text-indigo-950 ring-1 ring-indigo-950/15">
                   <Bot className="size-5" aria-hidden />
                 </span>
-                <CardTitle className="text-base font-semibold leading-tight">
-                  עוזר חכם למנהל
+                <CardTitle className="text-base font-semibold leading-tight text-indigo-950">
+                  עוזר חכם — ניתוח פיננסי
                 </CardTitle>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-                onClick={() => setOpen(false)}
-                aria-label="סגירת הצ'אט"
-              >
-                <X className="size-4" />
-              </Button>
+              <div className="flex shrink-0 items-center gap-0.5">
+                {ws && pathname.startsWith("/marker-ofek") && ws.splitView ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "text-muted-foreground hover:text-foreground",
+                      ws.assistantSplitDocked &&
+                        "bg-indigo-950 text-white hover:bg-indigo-900 hover:text-white"
+                    )}
+                    title="עיגון לצד אזור הגלישה (תצוגה מפוצלת)"
+                    aria-pressed={ws.assistantSplitDocked}
+                    onClick={() => ws.setAssistantSplitDocked(!ws.assistantSplitDocked)}
+                  >
+                    <Columns2 className="size-4" aria-hidden />
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => setOpen(false)}
+                  aria-label="סגירת הצ'אט"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
             </div>
           </CardHeader>
 
@@ -183,10 +288,26 @@ export function AiAssistant() {
             >
               <div className="space-y-3">
                 {messages.length === 0 && !busy ? (
-                  <p className="text-center text-sm leading-relaxed text-muted-foreground">
-                    שאלו כל דבר על ניהול הנכס, הקריאות או הדיירים — או הקלידו
-                    הודעה לשליחה.
-                  </p>
+                  <div className="space-y-3 text-start text-sm leading-relaxed text-muted-foreground">
+                    {oracleBullets && oracleBullets.length > 0 ? (
+                      <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 px-3 py-2.5 text-indigo-950">
+                        <p className="text-xs font-semibold text-indigo-900">
+                          {hostFirstName
+                            ? `${hostFirstName}, שלוש נקודות מפתח מהדשבורד הפיננסי:`
+                            : "שלוש נקודות מפתח מהדשבורד הפיננסי:"}
+                        </p>
+                        <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-indigo-950/90">
+                          {oracleBullets.map((b) => (
+                            <li key={b}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    <p className="text-center">
+                      שאלו על מע״מ לפי פרויקט, רווח שטח מול רווח טעון, עומס הנהלה,
+                      או הערכת תשלום לספק אחרי ניכוי במקור — בנוסף לנכס ולקריאות.
+                    </p>
+                  </div>
                 ) : null}
                 {messages.map((m) => (
                   <div
@@ -206,7 +327,11 @@ export function AiAssistant() {
                     >
                       {m.parts.map((part, index) =>
                         part.type === "text" ? (
-                          <span key={`${m.id}-p-${index}`}>{part.text}</span>
+                          <span key={`${m.id}-p-${index}`}>
+                            {m.role === "assistant"
+                              ? renderAssistantMessageText(part.text)
+                              : part.text}
+                          </span>
                         ) : null
                       )}
                     </div>
@@ -225,13 +350,17 @@ export function AiAssistant() {
                 ) : null}
                 {error ? (
                   <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-center text-xs text-destructive">
-                    <p>אירעה שגיאה. נסו שוב.</p>
+                    <p>
+                      {hostFirstName
+                        ? `${hostFirstName}, משהו נתקע בדרך — נסו שוב בעוד רגע, או בדקו את החיבור.`
+                        : "משהו נתקע בדרך — נסו שוב בעוד רגע."}
+                    </p>
                     <button
                       type="button"
                       className="mt-1 underline underline-offset-2"
                       onClick={() => clearError()}
                     >
-                      סגירה
+                      הבנתי, סגירה
                     </button>
                   </div>
                 ) : null}
@@ -239,7 +368,29 @@ export function AiAssistant() {
             </div>
           </CardContent>
 
-          <CardFooter className="border-t border-border/60 bg-muted/10 p-3">
+          <CardFooter className="flex flex-col gap-2 border-t border-border/60 bg-muted/10 p-3">
+            {hrWelcomePending && hrWelcome ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full border-slate-200 bg-white text-[12px] text-slate-800 hover:bg-slate-50"
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    const res = await completeHrConciergeWelcome()
+                    if (res.ok) {
+                      toast.success("נשמר — ברוכים הבאים למרקר אופק.")
+                      router.refresh()
+                    } else {
+                      toast.error(res.error)
+                    }
+                  })()
+                }}
+              >
+                סיימתי את סיור הקליטה
+              </Button>
+            ) : null}
             <form
               className="flex w-full gap-2"
               onSubmit={(e) => {

@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { MoAccessRequestsPanel } from "@/components/marker-ofek/settings/mo-access-requests-panel"
+import { DEFAULT_ORGANIZATION_DISPLAY_NAME } from "@/lib/marker-ofek/organization-branding-public"
 import { COMPANY_PROFILE_COLUMNS } from "@/lib/marker-ofek/supabase-fields"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"
@@ -31,6 +33,10 @@ export default function MarkerOfekSettingsPage() {
   const [phone, setPhone] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [deductionsFile, setDeductionsFile] = React.useState("")
+  const [defaultVatPercent, setDefaultVatPercent] = React.useState("18")
+  const [defaultRetentionPercent, setDefaultRetentionPercent] =
+    React.useState("5")
+  const [indexationSourceNote, setIndexationSourceNote] = React.useState("")
 
   React.useEffect(() => {
     let cancelled = false
@@ -57,6 +63,21 @@ export default function MarkerOfekSettingsPage() {
           setPhone(p.phone ?? "")
           setEmail(p.email ?? "")
           setDeductionsFile(p.deductions_file_number ?? "")
+          setDefaultVatPercent(
+            String(
+              p.default_vat_rate_percent != null
+                ? p.default_vat_rate_percent
+                : 18
+            )
+          )
+          setDefaultRetentionPercent(
+            String(
+              p.default_retention_percent != null
+                ? p.default_retention_percent
+                : 5
+            )
+          )
+          setIndexationSourceNote(p.indexation_source_note ?? "")
         }
       } catch (e) {
         if (!cancelled) {
@@ -87,12 +108,21 @@ export default function MarkerOfekSettingsPage() {
       const { error } = await supabase
         .from("company_profile")
         .update({
-          company_name: companyName.trim() || "Marker Ofek",
+          company_name: companyName.trim() || DEFAULT_ORGANIZATION_DISPLAY_NAME,
           legal_id: legalId.trim() || null,
           address: address.trim() || null,
           phone: phone.trim() || null,
           email: email.trim() || null,
           deductions_file_number: deductionsFile.trim() || null,
+          default_vat_rate_percent: Math.min(
+            100,
+            Math.max(0, Number(defaultVatPercent.replace(",", ".")) || 0)
+          ),
+          default_retention_percent: Math.min(
+            100,
+            Math.max(0, Number(defaultRetentionPercent.replace(",", ".")) || 0)
+          ),
+          indexation_source_note: indexationSourceNote.trim() || null,
         })
         .eq("id", rowId)
 
@@ -119,13 +149,50 @@ export default function MarkerOfekSettingsPage() {
 
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-          הגדרות מרקר אופק — פרטים רשמיים למס
+          הגדרות ארגון — פרטים רשמיים למס
         </h1>
         <p className="text-sm text-muted-foreground">
           פרטים אלה מופיעים במסמכי חשבון חלקי והדפסות לפי דרישות רשות המסים
           בישראל.
         </p>
       </div>
+
+      <Card className="border border-slate-100 bg-white shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">מרכז הגדרות חכם</CardTitle>
+          <CardDescription>
+            מע״מ, הצמדות, עכבון, מודולים והרשאות — דף מפת דרכים אחד.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link
+            href="/marker-ofek/settings/smart"
+            className="inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:underline"
+          >
+            פתיחת מרכז ההגדרות החכם
+          </Link>
+        </CardContent>
+      </Card>
+
+      <MoAccessRequestsPanel />
+
+      <Card className="border border-indigo-100 bg-indigo-50/30 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">ניהול מודולים</CardTitle>
+          <CardDescription>
+            הפעלה וכיבוי של אזורים במערכת (גאנט, חיוב, Gap Hunter, נכסים, דשבורד
+            הנהלה).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link
+            href="/marker-ofek/settings/modules"
+            className="inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:underline"
+          >
+            פתיחת מפת המתגים
+          </Link>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <div className="flex min-h-[30vh] flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -228,6 +295,45 @@ export default function MarkerOfekSettingsPage() {
                   onChange={(e) => setDeductionsFile(e.target.value)}
                   dir="ltr"
                   className="font-mono"
+                  disabled={saving}
+                />
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="co-vat">מע״מ ברירת מחדל (%)</Label>
+                  <Input
+                    id="co-vat"
+                    type="text"
+                    inputMode="decimal"
+                    value={defaultVatPercent}
+                    onChange={(e) => setDefaultVatPercent(e.target.value)}
+                    dir="ltr"
+                    className="font-currency-mono"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="co-retention">עכבון ברירת מחדל (%)</Label>
+                  <Input
+                    id="co-retention"
+                    type="text"
+                    inputMode="decimal"
+                    value={defaultRetentionPercent}
+                    onChange={(e) => setDefaultRetentionPercent(e.target.value)}
+                    dir="ltr"
+                    className="font-currency-mono"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="co-index-src">מקור מדד / הצמדה (טקסט חופשי)</Label>
+                <Input
+                  id="co-index-src"
+                  value={indexationSourceNote}
+                  onChange={(e) => setIndexationSourceNote(e.target.value)}
+                  dir="rtl"
+                  placeholder="למשל: מדד הבינוי של הלמ״ס"
                   disabled={saving}
                 />
               </div>

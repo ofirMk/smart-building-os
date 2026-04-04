@@ -113,7 +113,7 @@ export function TicketsDataTable({
               יעד לטיפול (SLA)
             </TableHead>
             <TableHead className="min-w-[180px] text-start font-semibold">
-              קבלן
+              חברה
             </TableHead>
             <TableHead className="w-[52px] p-2 pe-4 text-end">
               <span className="sr-only">פעולות</span>

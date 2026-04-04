@@ -21,6 +21,14 @@ import {
   createPurchaseOrderFromBoq,
   type CreatePoFromBoqLine,
 } from "./actions"
+import { evaluateSupplierTaxCompliance } from "@/lib/marker-ofek/entity-supplier-compliance"
+import {
+  quickCreateEntity,
+  quickCreateProject,
+  quickCreateTenderForProject,
+} from "@/lib/marker-ofek/erp-quick-create-actions"
+import { poFromBoqServerSchema } from "@/lib/marker-ofek/erp-validation-schemas"
+import { getMoSystemSettings } from "@/lib/marker-ofek/mo-system-settings-actions"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -64,6 +72,7 @@ type TenderOption = {
   id: string
   project_name_from_ai: string | null
   created_at: string
+  project_id: string | null
 }
 
 type BoqDbRow = {
@@ -115,9 +124,18 @@ type SupplierPriceRow = {
 }
 
 type PendingPoSubmission = {
+  projectId: string
   tenderId: string
-  supplierName: string
+  supplierEntityId: string
   lines: CreatePoFromBoqLine[]
+}
+
+type SupplierOptionRow = {
+  id: string
+  name: string
+  legal_id: string | null
+  withholding_tax_expiry: string | null
+  bookkeeping_auth_expiry: string | null
 }
 
 function embedOne<T>(x: T | T[] | null | undefined): T | null {
@@ -168,12 +186,27 @@ export default function NewPurchaseOrderFromBoqPage() {
   const [tenders, setTenders] = React.useState<TenderOption[]>([])
   const [loadingTenders, setLoadingTenders] = React.useState(true)
   const [tenderId, setTenderId] = React.useState<string>("")
+  const [projectId, setProjectId] = React.useState<string>("")
+  const [projectRows, setProjectRows] = React.useState<{ id: string; name: string }[]>(
+    []
+  )
+  const [poFormAttempted, setPoFormAttempted] = React.useState(false)
+  const [quickProjectClientId, setQuickProjectClientId] = React.useState("")
+  const [quickClientOptions, setQuickClientOptions] = React.useState<
+    { id: string; name: string }[]
+  >([])
 
   const [boqRows, setBoqRows] = React.useState<BoqDbRow[]>([])
   const [loadingBoq, setLoadingBoq] = React.useState(false)
   const [rowState, setRowState] = React.useState<Record<string, RowState>>({})
 
-  const [supplierName, setSupplierName] = React.useState("")
+  const [supplierEntityId, setSupplierEntityId] = React.useState("")
+  const [supplierOptions, setSupplierOptions] = React.useState<
+    SupplierOptionRow[]
+  >([])
+  const [systemSettings, setSystemSettings] = React.useState<{
+    tax_compliance_mode: "warning" | "blocking"
+  } | null>(null)
   const [submitting, setSubmitting] = React.useState(false)
 
   const [catalogItems, setCatalogItems] = React.useState<CatalogItem[]>([])
@@ -200,8 +233,11 @@ export default function NewPurchaseOrderFromBoqPage() {
   const [newProjectLocation, setNewProjectLocation] = React.useState("")
   const [newSupplierName, setNewSupplierName] = React.useState("")
   const [newSupplierHp, setNewSupplierHp] = React.useState("")
+  const [newSupplierWithholding, setNewSupplierWithholding] = React.useState("")
+  const [newSupplierBookkeeping, setNewSupplierBookkeeping] = React.useState("")
+  const [newSupplierDeductionPct, setNewSupplierDeductionPct] = React.useState("")
   const tenderTriggerRef = React.useRef<HTMLButtonElement | null>(null)
-  const supplierInputRef = React.useRef<HTMLInputElement | null>(null)
+  const supplierSelectRef = React.useRef<HTMLButtonElement | null>(null)
   const [isItemModalOpen, setIsItemModalOpen] = React.useState(false)
   const [itemCreateTargetRowId, setItemCreateTargetRowId] =
     React.useState<string | null>(null)
@@ -234,7 +270,7 @@ export default function NewPurchaseOrderFromBoqPage() {
         const supabase = createSupabaseBrowserClient()
         const { data, error } = await supabase
           .from("tenders")
-          .select("id, project_name_from_ai, created_at")
+          .select("id, project_name_from_ai, created_at, project_id")
           .order("created_at", { ascending: false })
         if (error) throw error
         if (!cancelled) {
@@ -246,6 +282,88 @@ export default function NewPurchaseOrderFromBoqPage() {
         }
       } finally {
         if (!cancelled) setLoadingTenders(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const supabase = createSupabaseBrowserClient()
+        const { data, error } = await supabase
+          .from("projects")
+          .select("id, name")
+          .eq("is_deleted", false)
+          .order("name", { ascending: true })
+          .limit(800)
+        if (error) throw error
+        if (!cancelled) {
+          setProjectRows((data ?? []) as { id: string; name: string }[])
+        }
+      } catch (e) {
+        if (!cancelled) toast.error(formatError(e))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const supabase = createSupabaseBrowserClient()
+        const { data, error } = await supabase
+          .from("entities")
+          .select("id,name")
+          .eq("type", "client")
+          .eq("is_deleted", false)
+          .order("name", { ascending: true })
+          .limit(500)
+        if (error) throw error
+        if (!cancelled) {
+          setQuickClientOptions((data ?? []) as { id: string; name: string }[])
+        }
+      } catch {
+        /* ignore */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const supabase = createSupabaseBrowserClient()
+        const { data, error } = await supabase
+          .from("entities")
+          .select("id,name,legal_id,withholding_tax_expiry,bookkeeping_auth_expiry")
+          .eq("type", "supplier")
+          .eq("is_deleted", false)
+          .order("name", { ascending: true })
+          .limit(800)
+        if (error) throw error
+        if (!cancelled) {
+          setSupplierOptions((data ?? []) as SupplierOptionRow[])
+        }
+      } catch (e) {
+        if (!cancelled) toast.error(formatError(e))
+      }
+    })()
+    void (async () => {
+      const res = await getMoSystemSettings()
+      if (!cancelled && res.ok) {
+        setSystemSettings({
+          tax_compliance_mode: res.settings.tax_compliance_mode,
+        })
       }
     })()
     return () => {
@@ -288,7 +406,11 @@ export default function NewPurchaseOrderFromBoqPage() {
   }, [isCatalogSearchModalOpen])
 
   React.useEffect(() => {
-    if (!tenderId) {
+    const tenderUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        tenderId
+      )
+    if (!tenderId || !tenderUuid) {
       setBoqRows([])
       setRowState({})
       return
@@ -685,6 +807,33 @@ export default function NewPurchaseOrderFromBoqPage() {
     }
   }, [focusedRowId, rowState])
 
+  const supplierTaxUi = React.useMemo(() => {
+    if (!supplierEntityId.trim()) {
+      return { alertMessage: null as string | null, submitBlocked: false }
+    }
+    const ent = supplierOptions.find((s) => s.id === supplierEntityId)
+    return evaluateSupplierTaxCompliance(
+      ent
+        ? {
+            withholding_tax_expiry: ent.withholding_tax_expiry,
+            bookkeeping_auth_expiry: ent.bookkeeping_auth_expiry,
+          }
+        : null,
+      {
+        tax_compliance_mode: systemSettings?.tax_compliance_mode ?? "warning",
+      }
+    )
+  }, [supplierEntityId, supplierOptions, systemSettings])
+
+  const selectedRowsMissingCatalog = React.useMemo(() => {
+    for (const r of boqRows) {
+      const st = rowState[r.id]
+      if (!st?.selected) continue
+      if (!st.catalogItemId?.trim()) return true
+    }
+    return false
+  }, [boqRows, rowState])
+
   async function runSmartProcurementOptimization() {
     const selectedRows = boqRows.filter((r) => rowState[r.id]?.selected)
     if (selectedRows.length === 0) {
@@ -742,7 +891,7 @@ export default function NewPurchaseOrderFromBoqPage() {
     const bestSingle = eligibleSingleSource[0] ?? null
 
     if (bestSingle && bestSingle.total <= thresholdPrice) {
-      setSupplierName(bestSingle.name)
+      setSupplierEntityId(bestSingle.supplierId)
       setOptimizationSummary({
         ultimatePrice,
         thresholdPrice,
@@ -909,43 +1058,104 @@ export default function NewPurchaseOrderFromBoqPage() {
     }
   }
 
-  function saveQuickProject() {
+  async function saveQuickProject() {
     const name = newProjectName.trim()
     if (!name) {
       toast.error("נא להזין שם פרויקט")
       return
     }
+    if (!quickProjectClientId) {
+      toast.error("נא לבחור מזמין (לקוח) לפני יצירת פרויקט")
+      return
+    }
+    const pr = await quickCreateProject({
+      name,
+      internalProjectCode: newProjectLocation.trim() || undefined,
+      clientEntityId: quickProjectClientId,
+    })
+    if (!pr.ok) {
+      toast.error(pr.error)
+      return
+    }
+    const tr = await quickCreateTenderForProject({
+      projectId: pr.id,
+      title: name,
+    })
+    if (!tr.ok) {
+      toast.error(tr.error)
+      return
+    }
     const now = new Date().toISOString()
-    const tempId = `temp-${Date.now()}`
+    setProjectRows((prev) =>
+      [...prev, { id: pr.id, name }].sort((a, b) =>
+        a.name.localeCompare(b.name, "he")
+      )
+    )
+    setProjectId(pr.id)
     setTenders((prev) => [
       {
-        id: tempId,
-        project_name_from_ai: newProjectLocation.trim()
-          ? `${name} (${newProjectLocation.trim()})`
-          : name,
+        id: tr.id,
+        project_name_from_ai: name,
         created_at: now,
+        project_id: pr.id,
       },
       ...prev,
     ])
-    setTenderId(tempId)
+    setTenderId(tr.id)
     setIsProjectModalOpen(false)
     setNewProjectName("")
     setNewProjectLocation("")
-    toast.success("הפרויקט נוסף זמנית לטופס. ניתן להמשיך בהזמנה.")
+    setQuickProjectClientId("")
+    toast.success("נוצרו פרויקט ומכרז במערכת — ניתן לייבא BoQ למכרז")
   }
 
-  function saveQuickSupplier() {
+  async function saveQuickSupplier() {
     const name = newSupplierName.trim()
     if (!name) {
       toast.error("נא להזין שם ספק")
       return
     }
-    const suffix = newSupplierHp.trim() ? ` · ח.פ ${newSupplierHp.trim()}` : ""
-    setSupplierName(`${name}${suffix}`)
+    if (!newSupplierHp.trim()) {
+      toast.error("ח.פ / ע.מ חובה לספק (לא ניתן לשמור טקסט חופשי במקום FK)")
+      return
+    }
+    const pctRaw = newSupplierDeductionPct.trim().replace(",", ".")
+    const pct =
+      pctRaw === "" ? null : Number.parseFloat(pctRaw)
+    const res = await quickCreateEntity({
+      name,
+      type: "supplier",
+      legalId: newSupplierHp.trim(),
+      withholdingTaxExpiry: newSupplierWithholding.trim() || null,
+      bookkeepingAuthExpiry: newSupplierBookkeeping.trim() || null,
+      defaultWithholdingPercent:
+        pct != null && Number.isFinite(pct) ? pct : null,
+    })
+    if (!res.ok) {
+      toast.error(res.error)
+      return
+    }
+    const id = res.id
+    setSupplierOptions((prev) =>
+      [
+        ...prev,
+        {
+          id,
+          name,
+          legal_id: newSupplierHp.trim(),
+          withholding_tax_expiry: newSupplierWithholding.trim() || null,
+          bookkeeping_auth_expiry: newSupplierBookkeeping.trim() || null,
+        },
+      ].sort((a, b) => a.name.localeCompare(b.name, "he"))
+    )
+    setSupplierEntityId(id)
     setIsSupplierModalOpen(false)
     setNewSupplierName("")
     setNewSupplierHp("")
-    toast.success("הספק מולא בטופס הנוכחי.")
+    setNewSupplierWithholding("")
+    setNewSupplierBookkeeping("")
+    setNewSupplierDeductionPct("")
+    toast.success("הספק נוצר במערכת ונבחר")
   }
 
   function handleProjectModalOpenChange(open: boolean) {
@@ -961,7 +1171,7 @@ export default function NewPurchaseOrderFromBoqPage() {
     setIsSupplierModalOpen(open)
     if (!open) {
       requestAnimationFrame(() => {
-        supplierInputRef.current?.focus()
+        supplierSelectRef.current?.focus()
       })
     }
   }
@@ -987,8 +1197,9 @@ export default function NewPurchaseOrderFromBoqPage() {
           )}%)`
         )
       }
+      setProjectId("")
       setTenderId("")
-      setSupplierName("")
+      setSupplierEntityId("")
       setBoqRows([])
       setRowState({})
       setPendingSubmission(null)
@@ -1003,13 +1214,27 @@ export default function NewPurchaseOrderFromBoqPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!tenderId) {
-      toast.error("נא לבחור מכרז")
+    setPoFormAttempted(true)
+    if (!projectId) {
+      toast.error("נא לבחור פרויקט (חובה — FK)")
       return
     }
-    const name = supplierName.trim()
-    if (!name) {
-      toast.error("נא להזין שם ספק")
+    if (
+      !tenderId ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        tenderId
+      )
+    ) {
+      toast.error("נא לבחור מכרז תקין מהמערכת")
+      return
+    }
+    if (!supplierEntityId) {
+      toast.error("נא לבחור ספק מהמערכת")
+      return
+    }
+    const supLeg = supplierOptions.find((s) => s.id === supplierEntityId)
+    if (!supLeg?.legal_id?.trim()) {
+      toast.error("לספק חייב להיות ח.פ / ע.מ ב-MDM — עדכנו או צרו ספק עם מספר")
       return
     }
 
@@ -1020,18 +1245,23 @@ export default function NewPurchaseOrderFromBoqPage() {
       const qty = parseDecimal(st.orderQty)
       const up = parseDecimal(st.unitPrice)
       if (qty <= 0) continue
-        const fullDesc = st?.catalogDisplay?.trim()
-          ? `${st.catalogDisplay}${st.internalSku ? ` · מק״ט פנימי: ${st.internalSku}` : ""}${
-              st.supplierSku ? ` · מק״ט ספק: ${st.supplierSku}` : ""
-            }`
-          : lineDescription(r)
+      const catId = st?.catalogItemId?.trim()
+      if (!catId) {
+        toast.error("לכל שורה נבחרת חובה פריט מקטלוג (מק״ט פנימי)")
+        return
+      }
+      const fullDesc = st?.catalogDisplay?.trim()
+        ? `${st.catalogDisplay}${st.internalSku ? ` · מק״ט פנימי: ${st.internalSku}` : ""}${
+            st.supplierSku ? ` · מק״ט ספק: ${st.supplierSku}` : ""
+          }`
+        : lineDescription(r)
       lines.push({
         tenderBoqItemId: r.id,
         description: fullDesc,
         unit: r.unit,
         quantity: qty,
         unitPrice: up,
-        catalogItemId: st?.catalogItemId ?? null,
+        catalogItemId: catId,
       })
     }
     if (lines.length === 0) {
@@ -1040,9 +1270,19 @@ export default function NewPurchaseOrderFromBoqPage() {
     }
 
     const payload: PendingPoSubmission = {
+      projectId,
       tenderId,
-      supplierName: name,
+      supplierEntityId,
       lines,
+    }
+
+    const zodPo = poFromBoqServerSchema.safeParse(payload)
+    if (!zodPo.success) {
+      toast.error(
+        zodPo.error.issues.map((i) => i.message).join(" · ") ||
+          "אימות נתונים נכשל"
+      )
+      return
     }
 
     const { minTotal, selectedTotal } = await calculateTotals(lines)
@@ -1093,6 +1333,20 @@ export default function NewPurchaseOrderFromBoqPage() {
     (r) => rowState[r.id]?.selected
   ).length
 
+  const filteredTenders = React.useMemo(() => {
+    if (!projectId) return tenders
+    return tenders.filter((t) => !t.project_id || t.project_id === projectId)
+  }, [tenders, projectId])
+
+  const supplierHasLegal = React.useMemo(() => {
+    const s = supplierOptions.find((x) => x.id === supplierEntityId)
+    return Boolean(s?.legal_id?.trim())
+  }, [supplierOptions, supplierEntityId])
+
+  const tenderIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    tenderId
+  )
+
   return (
     <div
       dir="rtl"
@@ -1135,32 +1389,94 @@ export default function NewPurchaseOrderFromBoqPage() {
               פרטי הזמנה
             </CardTitle>
             <CardDescription>
-              מקור המכרז ושם הספק (ייווצר ישות ספק אם אינו קיים בקטלוג)
+              מכרז מקור וספק מאומת (FK) — יצירת ספק חדש רק דרך כפתור &quot;ספק חדש&quot;
+              (F2).
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2 text-start md:col-span-2">
+              <Label htmlFor="po-project">פרויקט (חובה — FK)</Label>
+              <Select
+                value={projectId || undefined}
+                onValueChange={(v) => {
+                  setProjectId(v ?? "")
+                  setPoFormAttempted(false)
+                }}
+              >
+                <SelectTrigger
+                  id="po-project"
+                  className={cn(
+                    "w-full",
+                    poFormAttempted &&
+                      !projectId &&
+                      "border-destructive ring-2 ring-destructive/30"
+                  )}
+                >
+                  <SelectValue placeholder="בחרו פרויקט…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectRows.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {poFormAttempted && !projectId ? (
+                <p className="text-xs font-medium text-destructive">
+                  חובה לבחור פרויקט מהרשימה — לא ניתן להקליד מזהה ידנית.
+                </p>
+              ) : null}
+            </div>
+            {supplierTaxUi.alertMessage ? (
+              <div
+                className="rounded-lg border border-orange-500/45 bg-orange-500/10 px-4 py-3 text-sm text-orange-950 dark:text-orange-50 md:col-span-2"
+                role="status"
+              >
+                <p className="font-medium">{supplierTaxUi.alertMessage}</p>
+                {supplierTaxUi.submitBlocked ? (
+                  <p className="mt-2 text-xs opacity-90">
+                    מצב חסימה פעיל בהגדרות המערכת — לא ניתן לשלוח הזמנה עד לעדכון
+                    תוקף אצל הספק או שינוי מדיניות אצל אופיר.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <div className="space-y-2 text-start">
               <Label htmlFor="po-tender" className="inline-flex items-center gap-2">
-                <span>פרויקט / מכרז</span>
+                <span>מכרז (חובה — FK)</span>
                 <kbd className="mr-2 rounded border border-border/80 bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                   F2
                 </kbd>
               </Label>
               <Select
                 value={tenderId || undefined}
-                onValueChange={(v) => setTenderId(v ?? "")}
+                onValueChange={(v) => {
+                  const id = v ?? ""
+                  setTenderId(id)
+                  setPoFormAttempted(false)
+                  const picked = tenders.find((x) => x.id === id)
+                  if (picked?.project_id) {
+                    setProjectId(picked.project_id)
+                  }
+                }}
                 disabled={loadingTenders}
               >
                 <SelectTrigger
                   id="po-tender"
                   ref={tenderTriggerRef}
-                  className="w-full"
+                  className={cn(
+                    "w-full",
+                    poFormAttempted &&
+                      (!tenderId || !tenderIsUuid) &&
+                      "border-destructive ring-2 ring-destructive/30"
+                  )}
                   onKeyDown={handleTenderFieldKeyDown}
                 >
                   <SelectValue placeholder="בחרו מכרז…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tenders.map((t) => (
+                  {filteredTenders.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {(t.project_name_from_ai?.trim() || "ללא שם") +
                         ` — ${new Date(t.created_at).toLocaleDateString("he-IL")}`}
@@ -1168,23 +1484,55 @@ export default function NewPurchaseOrderFromBoqPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {poFormAttempted && (!tenderId || !tenderIsUuid) ? (
+                <p className="text-xs font-medium text-destructive">
+                  יש לבחור מכרז קיים במערכת (מזהה UUID).
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2 text-start">
               <Label htmlFor="po-supplier" className="inline-flex items-center gap-2">
-                <span>שם ספק</span>
+                <span>ספק (חובה)</span>
                 <kbd className="mr-2 rounded border border-border/80 bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                   F2
                 </kbd>
               </Label>
-              <Input
-                id="po-supplier"
-                ref={supplierInputRef}
-                autoComplete="organization"
-                placeholder="למשל: ספק חשמל בע״מ"
-                value={supplierName}
-                onChange={(e) => setSupplierName(e.target.value)}
-                onKeyDown={handleSupplierFieldKeyDown}
-              />
+              <Select
+                value={supplierEntityId || undefined}
+                onValueChange={(v) => setSupplierEntityId(v ?? "")}
+              >
+                <SelectTrigger
+                  id="po-supplier"
+                  ref={supplierSelectRef}
+                  className={cn(
+                    "w-full",
+                    poFormAttempted &&
+                      supplierEntityId &&
+                      !supplierHasLegal &&
+                      "border-destructive ring-2 ring-destructive/30"
+                  )}
+                  onKeyDown={handleSupplierFieldKeyDown}
+                >
+                  <SelectValue placeholder="בחרו ספק מהמערכת…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {supplierOptions.map((s) => (
+                    <SelectItem
+                      key={s.id}
+                      value={s.id}
+                      disabled={!s.legal_id?.trim()}
+                    >
+                      {s.name}
+                      {!s.legal_id?.trim() ? " (חסר ח.פ)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {poFormAttempted && supplierEntityId && !supplierHasLegal ? (
+                <p className="text-xs font-medium text-destructive">
+                  לספק שנבחר אין ח.פ / ע.מ ב-MDM — עדכנו ישות או בחרו ספק מאומת.
+                </p>
+              ) : null}
             </div>
           </CardContent>
         </Card>
@@ -1527,9 +1875,14 @@ export default function NewPurchaseOrderFromBoqPage() {
                 size="lg"
                 disabled={
                   submitting ||
+                  !projectId ||
                   !tenderId ||
-                  !supplierName.trim() ||
-                  selectedRowsCount === 0
+                  !tenderIsUuid ||
+                  !supplierEntityId ||
+                  !supplierHasLegal ||
+                  supplierTaxUi.submitBlocked ||
+                  selectedRowsCount === 0 ||
+                  selectedRowsMissingCatalog
                 }
                 className="gap-2 min-w-[200px]"
               >
@@ -1595,7 +1948,11 @@ export default function NewPurchaseOrderFromBoqPage() {
       companyName: "מרקר אופק יזמות וביצוע",
       logoPath: "/marker-ofek-logo.png",
     },
-    supplierName: supplierName.trim() || null,
+    projectId: projectId || null,
+    tenderId: tenderId || null,
+    supplierEntityId: supplierEntityId || null,
+    supplierName:
+      supplierOptions.find((s) => s.id === supplierEntityId)?.name ?? null,
     lines: boqRows
       .filter((r) => rowState[r.id]?.selected)
       .map((r) => ({
@@ -1682,10 +2039,29 @@ export default function NewPurchaseOrderFromBoqPage() {
           <DialogHeader>
             <DialogTitle>הקמת פרויקט חדש</DialogTitle>
             <DialogDescription>
-              יצירה מהירה מתוך הזמנת הרכש (F2). ניתן להשלים פרטים בהמשך.
+              F2: נוצרים פרויקט (FK) + מכרז ריק במערכת — אחרי מכן יש לייבא BoQ למסלול
+              התמחור. דורש מזמין (לקוח) קיים.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2 text-start">
+              <Label htmlFor="quick-project-client">מזמין — לקוח (חובה)</Label>
+              <Select
+                value={quickProjectClientId || undefined}
+                onValueChange={(v) => setQuickProjectClientId(v ?? "")}
+              >
+                <SelectTrigger id="quick-project-client" className="w-full">
+                  <SelectValue placeholder="בחרו לקוח…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {quickClientOptions.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2 text-start">
               <Label htmlFor="quick-project-name">שם פרויקט</Label>
               <Input
@@ -1709,7 +2085,7 @@ export default function NewPurchaseOrderFromBoqPage() {
             <Button variant="outline" onClick={() => setIsProjectModalOpen(false)}>
               ביטול
             </Button>
-            <Button onClick={saveQuickProject}>שמור</Button>
+            <Button onClick={() => void saveQuickProject()}>שמור</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1719,7 +2095,7 @@ export default function NewPurchaseOrderFromBoqPage() {
           <DialogHeader>
             <DialogTitle>הקמת ספק חדש</DialogTitle>
             <DialogDescription>
-              יצירה מהירה מתוך מסך ההזמנה (F2). הנתון יוזן לטופס הנוכחי.
+              יצירה מהירה מתוך מסך ההזמנה (F2). הספק יישמר ב־MDM וייבחר בטופס.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1733,12 +2109,48 @@ export default function NewPurchaseOrderFromBoqPage() {
               />
             </div>
             <div className="space-y-2 text-start">
-              <Label htmlFor="quick-supplier-hp">ח.פ</Label>
+              <Label htmlFor="quick-supplier-hp">ח.פ / ע.מ (חובה)</Label>
               <Input
                 id="quick-supplier-hp"
                 placeholder="מספר ח.פ"
                 value={newSupplierHp}
                 onChange={(e) => setNewSupplierHp(e.target.value)}
+                dir="ltr"
+                className="font-mono"
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 text-start">
+                <Label htmlFor="quick-supplier-wh">תוקף ניכוי מס</Label>
+                <Input
+                  id="quick-supplier-wh"
+                  type="date"
+                  value={newSupplierWithholding}
+                  onChange={(e) => setNewSupplierWithholding(e.target.value)}
+                  dir="ltr"
+                  className="font-mono"
+                />
+              </div>
+              <div className="space-y-2 text-start">
+                <Label htmlFor="quick-supplier-bk">תוקף ניהול ספרים</Label>
+                <Input
+                  id="quick-supplier-bk"
+                  type="date"
+                  value={newSupplierBookkeeping}
+                  onChange={(e) => setNewSupplierBookkeeping(e.target.value)}
+                  dir="ltr"
+                  className="font-mono"
+                />
+              </div>
+            </div>
+            <div className="space-y-2 text-start">
+              <Label htmlFor="quick-supplier-ded">אחוז ניכוי ברירת מחדל (%)</Label>
+              <Input
+                id="quick-supplier-ded"
+                value={newSupplierDeductionPct}
+                onChange={(e) => setNewSupplierDeductionPct(e.target.value)}
+                dir="ltr"
+                className="font-currency-mono tabular-nums"
               />
             </div>
           </div>
@@ -1746,7 +2158,7 @@ export default function NewPurchaseOrderFromBoqPage() {
             <Button variant="outline" onClick={() => setIsSupplierModalOpen(false)}>
               ביטול
             </Button>
-            <Button onClick={saveQuickSupplier}>שמור</Button>
+            <Button onClick={() => void saveQuickSupplier()}>שמור</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

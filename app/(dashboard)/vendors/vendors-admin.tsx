@@ -75,7 +75,7 @@ export function VendorsAdmin({ vendors }: VendorsAdminProps) {
               <HardHat className="size-4" aria-hidden />
             </span>
             <div>
-              <CardTitle className="text-lg">הוספת קבלן</CardTitle>
+              <CardTitle className="text-lg">הוספת חברה</CardTitle>
               <CardDescription>
                 פרטי קשר לזיהוי בטבלת הקריאות ובמסמכים.
               </CardDescription>
@@ -89,7 +89,7 @@ export function VendorsAdmin({ vendors }: VendorsAdminProps) {
             className="grid gap-4 sm:grid-cols-2"
           >
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="vendor-name">שם קבלן</Label>
+              <Label htmlFor="vendor-name">שם חברה</Label>
               <Input
                 id="vendor-name"
                 name="name"
@@ -138,7 +138,7 @@ export function VendorsAdmin({ vendors }: VendorsAdminProps) {
             </div>
             <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
               <Button type="submit" disabled={formPending}>
-                {formPending ? "שומרים…" : "שמירת קבלן"}
+                {formPending ? "שומרים…" : "שמירת חברה"}
               </Button>
               {formState.message ? (
                 <p

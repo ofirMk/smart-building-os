@@ -2,7 +2,9 @@ import { createServerClient } from "@supabase/ssr"
 import { type NextRequest, NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import type { AppUserRole } from "@/lib/auth/user-role"
 import { isAdminOrManagerRole } from "@/lib/auth/user-role"
+import { canViewHoldingExecutive } from "@/lib/marker-ofek/partner-metrics/access"
 /** נתיבים הדורשים משתמש מחובר */
 function isProtectedPath(pathname: string): boolean {
   if (pathname === "/" || pathname === "/dashboard") return true
@@ -34,8 +36,48 @@ function isLoginPath(pathname: string): boolean {
   return (
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
-    pathname === "/admin"
+    pathname === "/admin" ||
+    pathname === "/auth/marker-ofek/login" ||
+    pathname.startsWith("/auth/marker-ofek/login/")
   )
+}
+
+/** דומיין ייעודי ל-Marker Ofek (למשל app.markerofek.co.il) — רשימה ב־MARKER_OFEK_AUTH_HOSTS */
+function isMarkerOfekDedicatedHost(request: NextRequest): boolean {
+  const raw =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? ""
+  const host = raw.split(":")[0]?.trim().toLowerCase() ?? ""
+  if (!host) return false
+  const env =
+    process.env.MARKER_OFEK_AUTH_HOSTS?.split(/[,;\s]+/).map((s) => s.trim().toLowerCase()).filter(Boolean) ??
+    []
+  if (env.length === 0) return false
+  return env.some((h) => {
+    if (!h) return false
+    if (host === h) return true
+    if (h.startsWith("*.")) {
+      const domain = h.slice(2)
+      return host === domain || host.endsWith(`.${domain}`)
+    }
+    return host.endsWith(`.${h}`)
+  })
+}
+
+function defaultLoginPathForRequest(request: NextRequest): string {
+  return isMarkerOfekDedicatedHost(request)
+    ? "/auth/marker-ofek/login"
+    : "/login"
+}
+
+function markerOfekPostAuthHome(
+  role: string | null,
+  email: string | null | undefined
+): string {
+  const r = role as AppUserRole | null
+  if (canViewHoldingExecutive(email ?? null, r ?? "tenant")) {
+    return "/marker-ofek/executive"
+  }
+  return "/marker-ofek/command-center"
 }
 
 function applyCookies(from: NextResponse, to: NextResponse) {
@@ -98,7 +140,7 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && isProtectedPath(pathname)) {
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = "/login"
+    redirectUrl.pathname = defaultLoginPathForRequest(request)
     redirectUrl.search = ""
     const redirectResponse = NextResponse.redirect(redirectUrl)
     applyCookies(supabaseResponse, redirectResponse)
@@ -108,10 +150,21 @@ export async function updateSession(request: NextRequest) {
   if (user && isLoginPath(pathname)) {
     const role = await getProfileRole(supabase, user.id)
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = isAdminOrManagerRole(role)
-      ? "/portal"
-      : "/marker-ofek"
     redirectUrl.search = ""
+    if (
+      pathname === "/auth/marker-ofek/login" ||
+      pathname.startsWith("/auth/marker-ofek/login/")
+    ) {
+      redirectUrl.pathname = markerOfekPostAuthHome(role, user.email)
+    } else if (isMarkerOfekDedicatedHost(request)) {
+      redirectUrl.pathname = isAdminOrManagerRole(role)
+        ? "/portal"
+        : markerOfekPostAuthHome(role, user.email)
+    } else {
+      redirectUrl.pathname = isAdminOrManagerRole(role)
+        ? "/portal"
+        : "/marker-ofek/command-center"
+    }
     const redirectResponse = NextResponse.redirect(redirectUrl)
     applyCookies(supabaseResponse, redirectResponse)
     return redirectResponse

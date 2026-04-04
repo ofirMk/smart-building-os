@@ -176,7 +176,7 @@ export function PreConstructionDashboard({ data }: PreConstructionDashboardProps
             icon={CircleDollarSign}
           />
           <KpiCard
-            title="הצעות קבלני משנה ממתינות"
+            title="הצעות חברות ביצוע ממתינות"
             value={pendingRfps.toLocaleString("he-IL")}
             description="בבדיקה, ללא מסמכים, או כשל AI"
             icon={Inbox}
