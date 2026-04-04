@@ -12,7 +12,7 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-export function clampMultiplier(n: number): number {
+function clampMultiplier(n: number): number {
   if (!Number.isFinite(n) || n <= 0) return 1
   return Math.min(100, Math.max(0.01, n))
 }

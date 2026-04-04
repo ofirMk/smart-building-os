@@ -16,15 +16,17 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  DAILY_LOG_EQUIPMENT_KINDS,
-  DAILY_MANPOWER_ROLES,
-  SITE_MEDIA_FIELD_TAGS,
   fetchPreviousDayManpowerDraft,
   fetchProjectSiteId,
   insertSiteMediaRecord,
   submitProjectDailyLogBundle,
-  type ManpowerLineInput,
 } from "@/lib/marker-ofek/project-execution-actions"
+import {
+  DAILY_LOG_EQUIPMENT_KINDS,
+  DAILY_MANPOWER_ROLES,
+  SITE_MEDIA_FIELD_TAGS,
+  type ManpowerLineInput,
+} from "@/lib/marker-ofek/project-execution-shared"
 import { TaskPlanVaultSheet } from "@/components/marker-ofek/execution/task-plan-vault-sheet"
 import { fetchProjectTasks, type GanttTaskRow } from "@/lib/marker-ofek/gantt-actions"
 import { formatWbsPrefixedDisplayName, splitWbsCodePrefix } from "@/lib/marker-ofek/wbs-code-numbering"

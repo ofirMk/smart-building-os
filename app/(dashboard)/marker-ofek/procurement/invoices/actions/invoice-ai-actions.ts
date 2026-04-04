@@ -8,6 +8,9 @@ import { revalidatePath } from "next/cache"
 
 import { extractModelJsonPayload } from "@/lib/ocr-invoice/parse-model-json"
 import { formatError } from "@/lib/format-error"
+import {
+  isMissingSuppliersLegalIdColumnError,
+} from "@/lib/marker-ofek/supabase-fields"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 
@@ -570,6 +573,8 @@ export async function processInvoiceAI(
   const supplierTaxId = normalizeTaxId(extractedData.supplier_tax_id)
   let supplierId: string | null = null
   let supplierActionLabel = "עודכן"
+  /** false כש־public.suppliers עדיין ללא legal_id בפרודקשן */
+  let suppliersLegalIdColumn = true
 
   // שלב 1: איתור ספק לפי ח.פ. אם קיים - עדכון שם במידת הצורך.
   if (supplierTaxId) {
@@ -578,7 +583,11 @@ export async function processInvoiceAI(
       .select("id, name")
       .eq("legal_id", supplierTaxId)
       .maybeSingle()
-    if (!supplierByTaxId.error && supplierByTaxId.data?.id) {
+    if (supplierByTaxId.error) {
+      if (isMissingSuppliersLegalIdColumnError(supplierByTaxId.error)) {
+        suppliersLegalIdColumn = false
+      }
+    } else if (supplierByTaxId.data?.id) {
       supplierId = String(supplierByTaxId.data.id)
       const existingName = String(supplierByTaxId.data.name ?? "").trim()
       if (
@@ -596,32 +605,53 @@ export async function processInvoiceAI(
 
   // שלב 2: גיבוי לפי שם ספק.
   if (!supplierId) {
-    const supplierByName = await db
+    let supplierByName = await db
       .from("suppliers")
       .select("id, legal_id")
       .ilike("name", supplierName)
       .maybeSingle()
+    if (supplierByName.error && isMissingSuppliersLegalIdColumnError(supplierByName.error)) {
+      suppliersLegalIdColumn = false
+      supplierByName = await db
+        .from("suppliers")
+        .select("id, name")
+        .ilike("name", supplierName)
+        .maybeSingle()
+    }
     if (!supplierByName.error && supplierByName.data?.id) {
       supplierId = String(supplierByName.data.id)
-      if (!previewOnly && supplierTaxId && !supplierByName.data.legal_id) {
-        await db
+      const rowLegal = (supplierByName.data as { legal_id?: string | null }).legal_id
+      if (!previewOnly && supplierTaxId && suppliersLegalIdColumn && !String(rowLegal ?? "").trim()) {
+        const up = await db
           .from("suppliers")
           .update({ legal_id: supplierTaxId })
           .eq("id", supplierId)
+        if (up.error && isMissingSuppliersLegalIdColumnError(up.error)) {
+          suppliersLegalIdColumn = false
+        }
       }
     }
   }
 
   // שלב 3: יצירת ספק חדש אוטומטית.
   if (!supplierId && !previewOnly) {
-    const inserted = await db
-      .from("suppliers")
-      .insert({
-        name: supplierName,
-        legal_id: supplierTaxId,
-      })
-      .select("id")
-      .single()
+    const insertRow: { name: string; legal_id?: string | null } = { name: supplierName }
+    if (supplierTaxId && suppliersLegalIdColumn) {
+      insertRow.legal_id = supplierTaxId
+    }
+    let inserted = await db.from("suppliers").insert(insertRow).select("id").single()
+    if (
+      inserted.error &&
+      suppliersLegalIdColumn &&
+      isMissingSuppliersLegalIdColumnError(inserted.error)
+    ) {
+      suppliersLegalIdColumn = false
+      inserted = await db
+        .from("suppliers")
+        .insert({ name: supplierName })
+        .select("id")
+        .single()
+    }
     if (inserted.error || !inserted.data?.id) {
       await removeInvoiceSourceFile(supabaseAuth, STORAGE_BUCKET, filePath)
       return { success: false, error: inserted.error?.message ?? "יצירת ספק נכשלה" }

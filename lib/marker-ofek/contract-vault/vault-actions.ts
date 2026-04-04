@@ -7,29 +7,13 @@ import {
   extractContractPlainText,
   vectorToPgString,
 } from "@/lib/marker-ofek/contract-vault/gemini-contract-ingest"
+import {
+  CONTRACT_VAULT_BUCKET,
+  type VaultDocumentRow,
+  type VaultSensitiveLevel,
+} from "@/lib/marker-ofek/contract-vault/vault-constants"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { formatError } from "@/lib/utils"
-
-export const CONTRACT_VAULT_BUCKET = "mo-contract-vault"
-
-export type VaultSensitiveLevel = "standard" | "confidential" | "restricted"
-
-export type VaultDocumentRow = {
-  id: string
-  project_id: string
-  storage_path: string
-  file_name: string
-  mime_type: string
-  file_size_bytes: number
-  sensitive_level: VaultSensitiveLevel
-  viewer_admin: boolean
-  viewer_manager: boolean
-  viewer_partner: boolean
-  ingest_status: string
-  ocr_text: string | null
-  ingest_error: string | null
-  created_at: string
-}
 
 export async function listContractVaultDocuments(projectId: string): Promise<
   { ok: true; rows: VaultDocumentRow[] } | { ok: false; error: string }

@@ -40,10 +40,12 @@ import {
 } from "@/components/ui/table"
 import {
   CONTRACT_VAULT_BUCKET,
-  finalizeContractVaultUpload,
-  listContractVaultDocuments,
   type VaultDocumentRow,
   type VaultSensitiveLevel,
+} from "@/lib/marker-ofek/contract-vault/vault-constants"
+import {
+  finalizeContractVaultUpload,
+  listContractVaultDocuments,
 } from "@/lib/marker-ofek/contract-vault/vault-actions"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn, formatError } from "@/lib/utils"

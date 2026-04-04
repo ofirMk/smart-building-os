@@ -18,6 +18,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  isMissingSuppliersLegalIdColumnError,
+  SUPPLIERS_TABLE_SELECT_MINIMAL,
+  SUPPLIERS_TABLE_SELECT_WITH_LEGAL_ID,
+} from "@/lib/marker-ofek/supabase-fields"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { buttonVariants } from "@/components/ui/button-variants"
 import { formatError } from "@/lib/format-error"
@@ -62,26 +67,50 @@ export function SuppliersMasterClient() {
       setError(null)
       try {
         const supabase = createSupabaseBrowserClient()
-        let { data, error } = await supabase
+        let data: SupplierRow[] | null = null
+        let { data: fetched, error } = await supabase
           .schema("public")
           .from("suppliers")
-          .select("id, name, legal_id, contact_info")
+          .select(SUPPLIERS_TABLE_SELECT_WITH_LEGAL_ID)
           .eq("is_deleted", false)
           .order("name", { ascending: true })
+        data = (fetched ?? null) as SupplierRow[] | null
         // Backward-compatible fallback when the dedicated suppliers table
         // does not expose is_deleted yet in some environments.
         if (error?.message?.toLowerCase().includes("is_deleted")) {
           const retry = await supabase
             .schema("public")
             .from("suppliers")
-            .select("id, name, legal_id, contact_info")
+            .select(SUPPLIERS_TABLE_SELECT_WITH_LEGAL_ID)
             .order("name", { ascending: true })
-          data = retry.data
+          data = (retry.data ?? null) as SupplierRow[] | null
+          error = retry.error
+        }
+        if (error && isMissingSuppliersLegalIdColumnError(error)) {
+          const retry = await supabase
+            .schema("public")
+            .from("suppliers")
+            .select(SUPPLIERS_TABLE_SELECT_MINIMAL)
+            .eq("is_deleted", false)
+            .order("name", { ascending: true })
+          data = (retry.data ?? null) as SupplierRow[] | null
+          error = retry.error
+        }
+        if (error?.message?.toLowerCase().includes("is_deleted")) {
+          const retry = await supabase
+            .schema("public")
+            .from("suppliers")
+            .select(SUPPLIERS_TABLE_SELECT_MINIMAL)
+            .order("name", { ascending: true })
+          data = (retry.data ?? null) as SupplierRow[] | null
           error = retry.error
         }
         if (error) throw error
         if (cancelled) return
-        const rows = (data ?? []) as SupplierRow[]
+        const rows = (data ?? []).map((r) => ({
+          ...r,
+          legal_id: r.legal_id ?? null,
+        }))
         setSuppliers(rows)
         if (rows.length > 0) setSelectedSupplierId((prev) => prev || rows[0]!.id)
       } catch (e) {
