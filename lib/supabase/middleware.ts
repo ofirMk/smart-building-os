@@ -4,6 +4,12 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { AppUserRole } from "@/lib/auth/user-role"
 import { isAdminOrManagerRole } from "@/lib/auth/user-role"
+import {
+  isExemptFromDiamondQualificationGate,
+  isMarkerOfekQualificationTrainingAllowlistPath,
+  isUserQualifiedForMarkerOfek,
+  MARKER_ONBOARDING_SANDBOX_PATH,
+} from "@/lib/marker-ofek/hr-qualification-gate"
 import { canViewHoldingExecutive } from "@/lib/marker-ofek/partner-metrics/access"
 /** נתיבים הדורשים משתמש מחובר */
 function isProtectedPath(pathname: string): boolean {
@@ -145,6 +151,21 @@ export async function updateSession(request: NextRequest) {
     const redirectResponse = NextResponse.redirect(redirectUrl)
     applyCookies(supabaseResponse, redirectResponse)
     return redirectResponse
+  }
+
+  if (user && pathname.startsWith("/marker-ofek")) {
+    const qRole = (await getProfileRole(supabase, user.id)) as AppUserRole | null
+    if (!isExemptFromDiamondQualificationGate(user.email, qRole)) {
+      const qualified = await isUserQualifiedForMarkerOfek(supabase, user.id)
+      if (!qualified && !isMarkerOfekQualificationTrainingAllowlistPath(pathname)) {
+        const redirectUrl = request.nextUrl.clone()
+        redirectUrl.pathname = MARKER_ONBOARDING_SANDBOX_PATH
+        redirectUrl.search = ""
+        const redirectResponse = NextResponse.redirect(redirectUrl)
+        applyCookies(supabaseResponse, redirectResponse)
+        return redirectResponse
+      }
+    }
   }
 
   if (user && isLoginPath(pathname)) {

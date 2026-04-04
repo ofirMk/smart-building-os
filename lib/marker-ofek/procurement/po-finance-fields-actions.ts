@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
+import { tryUnlockQualificationAfterDemoPoTaxSave } from "@/lib/marker-ofek/onboarding-unlock-actions"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { formatError } from "@/lib/utils"
 
@@ -61,6 +62,12 @@ export async function updatePurchaseOrderFinanceFields(input: {
 
     revalidatePath(`/marker-ofek/procurement/${poId}`)
     revalidatePath("/marker-ofek/procurement")
+
+    void tryUnlockQualificationAfterDemoPoTaxSave({
+      poId,
+      withholdingTaxPercent: pct,
+    })
+
     return { ok: true }
   } catch (e) {
     return { ok: false, error: formatError(e) }

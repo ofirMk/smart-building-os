@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -100,6 +101,22 @@ export function MarkerOfekWorkspaceLayout({
 }: {
   children: React.ReactNode
 }) {
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div
+        dir="rtl"
+        className="flex min-h-[14rem] items-center justify-center rounded-xl border border-slate-100 bg-[#FFFFFF] px-6 py-20"
+      >
+        <p className="text-sm font-medium text-slate-500">טוען סביבת עבודה…</p>
+      </div>
+    )
+  }
+
   return (
     <MarkerOfekWorkspaceProvider>
       <MarkerOfekWorkspaceChrome>{children}</MarkerOfekWorkspaceChrome>

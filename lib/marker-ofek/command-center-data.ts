@@ -8,6 +8,7 @@ import {
   derivativeIsDiamondAlert,
   type DerivativeScheduleRow,
 } from "@/lib/marker-ofek/derivative-gantt"
+import { MARKER_DEMO_SANDBOX_PROJECT_ID } from "@/lib/marker-ofek/hr-qualification-gate"
 
 export type CommandCenterHealthLevel = "green" | "yellow" | "red"
 
@@ -96,6 +97,7 @@ export async function getCommandCenterSnapshot(): Promise<CommandCenterSnapshot>
     .from("projects")
     .select("id")
     .eq("is_deleted", false)
+    .eq("is_demo_data", false)
     .in("status", ["planning", "active", "on_hold"])
     .order("created_at", { ascending: false })
     .limit(1)
@@ -121,6 +123,7 @@ export async function getCommandCenterSnapshot(): Promise<CommandCenterSnapshot>
         .from("purchase_orders")
         .select("id", { count: "exact", head: true })
         .eq("is_deleted", false)
+        .neq("project_id", MARKER_DEMO_SANDBOX_PROJECT_ID)
         .is("ceo_signed_at", null)
         .then((r) => ({ count: r.count, error: r.error }))
     ),
@@ -152,6 +155,7 @@ export async function getCommandCenterSnapshot(): Promise<CommandCenterSnapshot>
       .from("projects")
       .select("id")
       .eq("is_deleted", false)
+      .eq("is_demo_data", false)
       .in("status", ["planning", "active", "on_hold"]),
     db
       .from("tasks")

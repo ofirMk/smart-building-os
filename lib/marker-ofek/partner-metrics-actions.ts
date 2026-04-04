@@ -318,6 +318,7 @@ export async function getPartnerFinancials(params: {
         "id, name, internal_project_code, managing_partner_id, partner_cost_subcontractors, partner_cost_employee_salaries, partner_cost_petty_cash, partner_cost_site_overhead"
       )
       .eq("is_deleted", false)
+      .eq("is_demo_data", false)
 
     if (persona === "guy" || persona === "samer") {
       projQuery = projQuery.eq("managing_partner_id", user.id)
@@ -591,6 +592,7 @@ export async function getHoldingExecutiveDashboard(): Promise<
         "id, name, internal_project_code, managing_partner_id, partner_cost_subcontractors, partner_cost_employee_salaries, partner_cost_petty_cash, partner_cost_site_overhead"
       )
       .eq("is_deleted", false)
+      .eq("is_demo_data", false)
 
     if (persona === "guy" || persona === "samer") {
       projectsQuery = projectsQuery.eq("managing_partner_id", user.id)
@@ -990,6 +992,7 @@ async function loadPartnerOptions(
     .from("projects")
     .select("managing_partner_id")
     .eq("is_deleted", false)
+    .eq("is_demo_data", false)
     .not("managing_partner_id", "is", null)
 
   const idSet = new Set<string>(

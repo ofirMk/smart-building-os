@@ -42,13 +42,20 @@ const SmartWorkspaceContext = React.createContext<SmartWorkspaceContextValue | n
   null
 )
 
+/** מרווח ארוך יותר — מפחית סערת כתיבות (טאבים / מפוצל) מול Supabase */
+const WORKSPACE_PERSIST_DEBOUNCE_MS = 2000
+
 function useDebouncedSave() {
   const t = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   return React.useCallback((patch: SaveWorkspacePayload) => {
     if (t.current) clearTimeout(t.current)
     t.current = setTimeout(() => {
-      void saveMyWorkspaceSettings(patch)
-    }, 650)
+      void saveMyWorkspaceSettings(patch).then((res) => {
+        if (!res.ok && process.env.NODE_ENV === "development") {
+          console.warn("[smart-workspace] persist skipped:", res.error)
+        }
+      })
+    }, WORKSPACE_PERSIST_DEBOUNCE_MS)
   }, [])
 }
 

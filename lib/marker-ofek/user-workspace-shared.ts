@@ -6,6 +6,7 @@ import {
   isWorkspacePersona,
   mergeOpenTabsFromRow,
   parseBrowserBookmarks,
+  parseOpenTabs,
   parsePinnedWidgets,
 } from "@/lib/marker-ofek/workspace-types"
 
@@ -25,6 +26,50 @@ export const DEFAULT_WORKSPACE_SNAPSHOT: WorkspaceSettingsSnapshot = {
   defaultProjectId: null,
   emailBridgeSso: null,
   browserBookmarks: [],
+}
+
+/**
+ * מוכן ל־upsert: ללא null ב־JSONB של לשוניות, ערכי מחרוזת בטוחים.
+ * מונע שגיאות DB / hydration מ־undefined בשדות מערך.
+ */
+export function sanitizeWorkspaceSnapshotForUpsert(
+  s: WorkspaceSettingsSnapshot
+): WorkspaceSettingsSnapshot {
+  const openTabs = parseOpenTabs(s.openTabs as unknown)
+  const persona: WorkspacePersona = isWorkspacePersona(String(s.workspacePersona))
+    ? s.workspacePersona
+    : "executive"
+  const home =
+    typeof s.defaultBrowserHomepage === "string" && s.defaultBrowserHomepage.trim()
+      ? s.defaultBrowserHomepage.trim()
+      : DEFAULT_HOME
+  return {
+    pinnedWidgets: parsePinnedWidgets(s.pinnedWidgets as unknown),
+    sidePanelOpen: s.sidePanelOpen === true,
+    defaultBrowserHomepage: home,
+    workspacePersona: persona,
+    openTabs,
+    splitView: s.splitView === true,
+    secondaryTabHref:
+      typeof s.secondaryTabHref === "string" && s.secondaryTabHref.trim()
+        ? s.secondaryTabHref.trim()
+        : null,
+    splitPrimaryPinnedHref:
+      typeof s.splitPrimaryPinnedHref === "string" && s.splitPrimaryPinnedHref.trim()
+        ? s.splitPrimaryPinnedHref.trim()
+        : null,
+    assistantSplitDocked: s.assistantSplitDocked === true,
+    browserPanelEnabled: s.browserPanelEnabled !== false,
+    defaultProjectId:
+      typeof s.defaultProjectId === "string" && s.defaultProjectId.trim()
+        ? s.defaultProjectId.trim()
+        : null,
+    emailBridgeSso:
+      typeof s.emailBridgeSso === "string" && s.emailBridgeSso.trim()
+        ? s.emailBridgeSso.trim().toLowerCase()
+        : null,
+    browserBookmarks: parseBrowserBookmarks(s.browserBookmarks as unknown),
+  }
 }
 
 export function rowToSnapshot(row: Record<string, unknown> | null): WorkspaceSettingsSnapshot {

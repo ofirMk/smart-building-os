@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { HrWelcomePayload } from "@/lib/marker-ofek/diamond-navigator-curriculum"
+import { MARKER_ONBOARDING_SANDBOX_PATH } from "@/lib/marker-ofek/hr-qualification-gate"
 import { personaLabelHe } from "@/lib/marker-ofek/hr-onboarding-copy"
 import { getExecutiveOracleBrief } from "@/lib/marker-ofek/partner-metrics-actions"
 import { completeHrConciergeWelcome } from "@/lib/marker-ofek/user-dashboard-config-actions"
@@ -114,6 +115,29 @@ export function AiAssistant({
     })
     setOpen(true)
   }, [hrWelcomePending, hrWelcome, hostFirstName, pathname, setMessages])
+
+  React.useEffect(() => {
+    if (!pathname.startsWith(MARKER_ONBOARDING_SANDBOX_PATH)) return
+    if (!pathname.startsWith("/marker-ofek")) return
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === "diamond-sandbox-mission")) return prev
+      const text =
+        "משימת Diamond Qualification — בפרויקט הדמו בלבד:\n\n" +
+        "שלב 1: הקימו ספק חדש (במסכי רכש אפשר להשתמש ב־F2 לפתיחת הקמה מהירה).\n" +
+        "שלב 2: הגדירו לספק ניכוי מס במקור לפי חוקי הברזל בארגון (תוקף ואחוזים).\n" +
+        "שלב 3: צרו הזמנת רכש ראשונה לפרויקט «אימון Diamond — ארגז חול» ושמרו בשדות ההזמנה ניכוי מס במקור תקין (אחוז גדול מ־0).\n\n" +
+        "לאחר השמירה תאושרו אוטומטית לעבודה מלאה."
+      return [
+        ...prev,
+        {
+          id: "diamond-sandbox-mission",
+          role: "assistant" as const,
+          parts: [{ type: "text" as const, text }],
+        },
+      ]
+    })
+    setOpen(true)
+  }, [pathname, setMessages])
 
   React.useEffect(() => {
     if (!open || oracleFetched) return

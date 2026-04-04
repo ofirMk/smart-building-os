@@ -3,11 +3,27 @@
 import {
   DEFAULT_WORKSPACE_SNAPSHOT,
   rowToSnapshot,
+  sanitizeWorkspaceSnapshotForUpsert,
   type SaveWorkspacePayload,
 } from "@/lib/marker-ofek/user-workspace-shared"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import type { WorkspaceSettingsSnapshot } from "@/lib/marker-ofek/workspace-types"
 import { formatError } from "@/lib/utils"
+
+function logWorkspaceSaveError(phase: string, err: unknown, extra?: Record<string, unknown>) {
+  const msg = err instanceof Error ? err.message : String(err)
+  console.error("[workspace-save]", phase, msg, extra ?? {})
+}
+
+function isTransientWorkspaceWriteError(message: string): boolean {
+  return /deadlock|serialization|could not serialize|timeout|40001|40P01|57014|compaction|conflict|retry/i.test(
+    message
+  )
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 export async function getWorkspaceSettingsBootstrap(): Promise<WorkspaceSettingsSnapshot> {
   try {
@@ -49,7 +65,7 @@ export async function saveMyWorkspaceSettings(
     if (!user?.id) return { ok: false, error: "נדרשת התחברות" }
 
     const current = await getWorkspaceSettingsBootstrap()
-    const next: WorkspaceSettingsSnapshot = {
+    const merged: WorkspaceSettingsSnapshot = {
       pinnedWidgets: patch.pinnedWidgets ?? current.pinnedWidgets,
       sidePanelOpen: patch.sidePanelOpen ?? current.sidePanelOpen,
       defaultBrowserHomepage:
@@ -77,14 +93,17 @@ export async function saveMyWorkspaceSettings(
       browserBookmarks: patch.browserBookmarks ?? current.browserBookmarks,
     }
 
+    const next = sanitizeWorkspaceSnapshotForUpsert(merged)
+    const tabsPayload = next.openTabs
+
     const row = {
       user_id: user.id,
       pinned_widgets: next.pinnedWidgets,
       side_panel_open: next.sidePanelOpen,
       default_browser_homepage: next.defaultBrowserHomepage,
       workspace_persona: next.workspacePersona,
-      open_tabs: next.openTabs,
-      active_tabs: next.openTabs,
+      open_tabs: tabsPayload,
+      active_tabs: tabsPayload,
       split_view: next.splitView,
       secondary_tab_href: next.secondaryTabHref,
       split_primary_pinned_href: next.splitPrimaryPinnedHref,
@@ -96,17 +115,45 @@ export async function saveMyWorkspaceSettings(
       updated_at: new Date().toISOString(),
     }
 
-    const { error } = await supabase.from("user_workspace_settings").upsert(row, {
-      onConflict: "user_id",
-    })
-    if (error) {
-      if (/relation|does not exist|column/i.test(String(error.message ?? ""))) {
-        return { ok: false, error: "טבלת שולחן העבודה עדיין לא הופעלה במסד הנתונים." }
+    let lastMessage = ""
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const { error } = await supabase.from("user_workspace_settings").upsert(row, {
+        onConflict: "user_id",
+      })
+
+      if (!error) {
+        return { ok: true }
       }
-      throw error
+
+      lastMessage = String(error.message ?? error)
+      logWorkspaceSaveError("upsert_failed", error, {
+        userId: user.id,
+        attempt,
+        code: (error as { code?: string }).code,
+      })
+
+      if (/relation|does not exist|column/i.test(lastMessage)) {
+        return {
+          ok: false,
+          error: "טבלת שולחן העבודה עדיין לא הופעלה במסד הנתונים.",
+        }
+      }
+
+      if (attempt === 0 && isTransientWorkspaceWriteError(lastMessage)) {
+        await sleep(150)
+        continue
+      }
+
+      break
     }
-    return { ok: true }
+
+    logWorkspaceSaveError("upsert_aborted_after_retry", lastMessage, { userId: user.id })
+    return {
+      ok: false,
+      error: lastMessage.trim() || "שמירת שולחן העבודה נכשלה",
+    }
   } catch (e) {
+    logWorkspaceSaveError("saveMyWorkspaceSettings_exception", e)
     return { ok: false, error: formatError(e) }
   }
 }

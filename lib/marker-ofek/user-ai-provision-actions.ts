@@ -256,6 +256,21 @@ export async function provisionUserFromAiWizard(
       }
     }
 
+    if (invited) {
+      const { error: obErr } = await sr.from("user_onboarding_status").upsert(
+        {
+          user_id: userId,
+          is_qualified: false,
+          qualified_at: null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      )
+      if (obErr && !/relation|does not exist|column/i.test(String(obErr.message ?? ""))) {
+        console.error("[provision] user_onboarding_status:", obErr.message)
+      }
+    }
+
     return { ok: true, userId, invited }
   } catch (e) {
     return { ok: false, error: formatError(e) }

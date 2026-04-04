@@ -11,6 +11,8 @@ export const PROCUREMENT_DRILLDOWN_URLS = {
   projectSetup: "/marker-ofek/projects/new",
   /** Placeholder — ניהול קטגוריות רכש / Shadow Catalog */
   categorySetup: "/marker-ofek/procurement/categories-setup",
+  /** הקמת ספק + תאימות מס (F2 ממסכי רכש) */
+  supplierSetup: "/marker-ofek/entities/suppliers",
 } as const
 
 const ALLOWED_DRILLDOWN_PATHS: ReadonlySet<string> = new Set(
