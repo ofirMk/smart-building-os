@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 
 import { CommandCenterHeaderClient } from "./command-center-header-client"
 import { CommandCenterMotion } from "./command-center-motion"
+import { CommandCenterOpenTasksAccordion } from "./command-center-open-tasks-accordion"
 
 export type CommandCenterExecutivePulse = {
   recognizedRevenueNis: number
@@ -86,7 +87,12 @@ export function CommandCenterView({
   const partner = isPartnerMetricsViewer(userEmail)
   const exec = canViewHoldingExecutive(userEmail, userRole)
 
-  const actions: { label: string; count: number; href: string; hot: boolean }[] = [
+  const actions: {
+    label: string
+    count: number
+    href: string
+    hot: boolean
+  }[] = [
     {
       label: "הזמנות ממתינות לאישור הנהלה",
       count: snapshot.poPendingApproval,
@@ -113,13 +119,74 @@ export function CommandCenterView({
     },
   ]
 
+  const openTasksTotal = actions.reduce((sum, a) => sum + a.count, 0)
+
   return (
     <div dir="rtl" className="w-full text-[13px] text-[#1e293b]">
       <CommandCenterMotion>
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 font-sans">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 pb-10 font-sans lg:gap-12">
+        <header className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+              {branding.brandLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={branding.brandLogoUrl}
+                  alt=""
+                  className="size-full object-contain p-1.5"
+                />
+              ) : (
+                <Building2
+                  className="size-6 text-[#1e1b4b]"
+                  aria-hidden
+                />
+              )}
+            </div>
+            <div className="min-w-0 space-y-2 text-start">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {branding.organizationName}
+              </p>
+              <h2 className="text-xl font-semibold tracking-tight text-indigo-950 sm:text-2xl">
+                {hostWelcomeLine}
+              </h2>
+              <p className="text-sm leading-relaxed text-slate-600">{pulseSummary}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="module-page-title font-bold text-indigo-950">
+                  מרכז הפיקוד
+                </h1>
+                <CommandCenterHeaderClient />
+              </div>
+              <p className="font-currency-mono text-[12px] text-slate-500">
+                {branding.slogan}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {welcomeBack ? (
+          <section
+            className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5 shadow-sm"
+            aria-label="המשך מאיפה שעצרת"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-800/80">
+              ברוך שובך
+            </p>
+            <p className="mt-2 text-sm text-indigo-950">
+              {hostFirstName}, להמשיך מהמקום שבו עצרת ב־
+              <span className="font-medium"> {welcomeBack.pageTitle}</span>?
+            </p>
+            <Link
+              href={welcomeBack.href}
+              className="mt-3 inline-flex text-sm font-semibold text-indigo-700 underline-offset-2 hover:underline"
+            >
+              המשך ל{welcomeBack.pageTitle}
+            </Link>
+          </section>
+        ) : null}
+
         {executivePulse ? (
           <section
-            className="grid gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:grid-cols-3"
+            className="grid gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md sm:grid-cols-3"
             aria-label="דופק פיננסי"
           >
             <div>
@@ -223,100 +290,9 @@ export function CommandCenterView({
           </section>
         ) : null}
 
-        <header className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
-              {branding.brandLogoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={branding.brandLogoUrl}
-                  alt=""
-                  className="size-full object-contain p-1.5"
-                />
-              ) : (
-                <Building2
-                  className="size-6 text-[#1e1b4b]"
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div className="min-w-0 space-y-2 text-start">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {branding.organizationName}
-              </p>
-              <h2 className="text-xl font-semibold tracking-tight text-indigo-950 sm:text-2xl">
-                {hostWelcomeLine}
-              </h2>
-              <p className="text-sm leading-relaxed text-slate-600">{pulseSummary}</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="module-page-title font-bold text-indigo-950">
-                  מרכז הפיקוד
-                </h1>
-                <CommandCenterHeaderClient />
-              </div>
-              <p className="font-currency-mono text-[12px] text-slate-500">
-                {branding.slogan}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        {welcomeBack ? (
-          <section
-            className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5 shadow-sm"
-            aria-label="המשך מאיפה שעצרת"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-800/80">
-              ברוך שובך
-            </p>
-            <p className="mt-2 text-sm text-indigo-950">
-              {hostFirstName}, להמשיך מהמקום שבו עצרת ב־
-              <span className="font-medium"> {welcomeBack.pageTitle}</span>?
-            </p>
-            <Link
-              href={welcomeBack.href}
-              className="mt-3 inline-flex text-sm font-semibold text-indigo-700 underline-offset-2 hover:underline"
-            >
-              המשך ל{welcomeBack.pageTitle}
-            </Link>
-          </section>
-        ) : null}
-
-        <section
-          data-diamond-spotlight="cc-alerts"
-          className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm"
-          aria-label="משימות לטיפול"
-        >
-          <h2 className="text-sm font-semibold text-indigo-950">משימות פתוחות</h2>
-          <ul className="mt-3 space-y-2">
-            {actions.map((a) => (
-              <li key={a.label}>
-                <Link
-                  href={a.href}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-2 text-xs text-slate-700 hover:border-slate-100 hover:bg-slate-50"
-                >
-                  <span className="flex min-w-0 items-center gap-2 font-sans">
-                    <span
-                      className={cn(
-                        "size-2 shrink-0 rounded-full",
-                        a.hot ? "bg-red-500" : "bg-slate-200"
-                      )}
-                      aria-hidden
-                    />
-                    {a.label}
-                  </span>
-                  <span className="font-currency-mono tabular-nums text-indigo-950">
-                    {a.count}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
         <section
           data-diamond-spotlight="cc-pulse"
-          className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5"
+          className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md sm:p-5"
           aria-label="דופק תפעולי"
         >
           <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -350,91 +326,13 @@ export function CommandCenterView({
           </div>
         </section>
 
-        {partner ? (
-          <section
-            data-diamond-spotlight="cc-quick"
-            className="grid gap-4 sm:grid-cols-3"
-            aria-label="כרטיסי הנהלה בכירה"
-          >
-            <Link
-              href="/marker-ofek/partner-finance"
-              className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-            >
-              <p className="text-xs font-semibold text-indigo-950">מרכז שותפי ניהול</p>
-              <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
-                פורטפוליו · הכנסות מוכרות
-              </p>
-            </Link>
-            <Link
-              href="/marker-ofek/finance/billing"
-              className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-            >
-              <p className="text-xs font-semibold text-indigo-950">חיוב ותזרים</p>
-              <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
-                AR · חשבוניות
-              </p>
-            </Link>
-            {exec ? (
-              <Link
-                href="/marker-ofek/executive"
-                className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-              >
-                <p className="text-xs font-semibold text-indigo-950">דשבורד הנהלה</p>
-                <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
-                  אישורי מנכ״ל · P&amp;L
-                </p>
-              </Link>
-            ) : (
-              <Link
-                href="/marker-ofek/procurement/orders"
-                className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-              >
-                <p className="text-xs font-semibold text-indigo-950">תור אישורי רכש</p>
-                <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
-                  PO ממתינים
-                </p>
-              </Link>
-            )}
-          </section>
-        ) : (
-          <section
-            data-diamond-spotlight="cc-quick"
-            className="grid gap-4 sm:grid-cols-3"
-            aria-label="כרטיסי ניהול שטח"
-          >
-            <Link
-              href="/marker-ofek/execution/daily-logs"
-              className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-            >
-              <p className="text-xs font-semibold text-indigo-950">דיווח ביצוע יומי</p>
-              <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
-                רישום שטח
-              </p>
-            </Link>
-            <Link
-              href={snapshot.ganttHref}
-              className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-            >
-              <p className="text-xs font-semibold text-indigo-950">גאנט / WBS</p>
-              <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
-                התקדמות משימות
-              </p>
-            </Link>
-            <Link
-              href="/marker-ofek/procurement/orders"
-              className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-indigo-200"
-            >
-              <p className="text-xs font-semibold text-indigo-950">הזמנות ממתינות</p>
-              <p className="mt-2 font-currency-mono text-[11px] tabular-nums text-slate-500">
-                {snapshot.poPendingApproval} פתוחות
-              </p>
-            </Link>
-          </section>
-        )}
-
+        <div className="space-y-6">
+          <h2 className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 md:text-start">
+            ליבת המערכת
+          </h2>
         <section
           data-diamond-spotlight="cc-modules"
-          className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+          className="grid auto-rows-fr grid-cols-1 gap-8 md:grid-cols-3 lg:grid-cols-5 lg:gap-10"
           role="navigation"
           aria-label="מודולי המערכת"
         >
@@ -445,15 +343,15 @@ export function CommandCenterView({
               <article
                 key={tile.title}
                 className={cn(
-                  "flex min-h-[240px] flex-col justify-between rounded-xl border border-slate-100 bg-white p-6 shadow-sm transition-shadow duration-200 hover:border-slate-200 hover:shadow-md",
+                  "flex min-h-[240px] flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-6 shadow-md transition-shadow duration-200 hover:border-slate-300 hover:shadow-lg",
                   tile.articleClassName
                 )}
               >
                 <a href={tile.href} className="block">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-600">
-                        <Icon className="size-5 stroke-[1.5]" aria-hidden />
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm">
+                        <Icon className="size-6 stroke-[1.5]" aria-hidden />
                       </span>
                       <h2 className="text-base font-semibold tracking-tight text-indigo-950 md:text-lg">
                         {tile.title}
@@ -511,6 +409,102 @@ export function CommandCenterView({
             )
           })}
         </section>
+        </div>
+
+        <CommandCenterOpenTasksAccordion
+          actions={actions}
+          totalCount={openTasksTotal}
+        />
+
+        <div className="sticky bottom-3 z-20 mt-2 md:static md:bottom-auto">
+          <div
+            className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.12)] backdrop-blur-sm md:rounded-xl md:shadow-md"
+            data-diamond-spotlight="cc-quick"
+          >
+            <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:text-start">
+              פעולות מהירות
+            </p>
+            {partner ? (
+              <section
+                className="grid gap-3 sm:grid-cols-3"
+                aria-label="כרטיסי הנהלה בכירה"
+              >
+                <Link
+                  href="/marker-ofek/partner-finance"
+                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                >
+                  <p className="text-xs font-semibold text-indigo-950">מרכז שותפי ניהול</p>
+                  <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
+                    פורטפוליו · הכנסות מוכרות
+                  </p>
+                </Link>
+                <Link
+                  href="/marker-ofek/finance/billing"
+                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                >
+                  <p className="text-xs font-semibold text-indigo-950">חיוב ותזרים</p>
+                  <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
+                    AR · חשבוניות
+                  </p>
+                </Link>
+                {exec ? (
+                  <Link
+                    href="/marker-ofek/executive"
+                    className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  >
+                    <p className="text-xs font-semibold text-indigo-950">דשבורד הנהלה</p>
+                    <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
+                      אישורי מנכ״ל · P&amp;L
+                    </p>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/marker-ofek/procurement/orders"
+                    className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  >
+                    <p className="text-xs font-semibold text-indigo-950">תור אישורי רכש</p>
+                    <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
+                      PO ממתינים
+                    </p>
+                  </Link>
+                )}
+              </section>
+            ) : (
+              <section
+                className="grid gap-3 sm:grid-cols-3"
+                aria-label="כרטיסי ניהול שטח"
+              >
+                <Link
+                  href="/marker-ofek/execution/daily-logs"
+                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                >
+                  <p className="text-xs font-semibold text-indigo-950">דיווח ביצוע יומי</p>
+                  <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
+                    רישום שטח
+                  </p>
+                </Link>
+                <Link
+                  href={snapshot.ganttHref}
+                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                >
+                  <p className="text-xs font-semibold text-indigo-950">גאנט / WBS</p>
+                  <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
+                    התקדמות משימות
+                  </p>
+                </Link>
+                <Link
+                  href="/marker-ofek/procurement/orders"
+                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                >
+                  <p className="text-xs font-semibold text-indigo-950">הזמנות ממתינות</p>
+                  <p className="mt-1 font-currency-mono text-[11px] tabular-nums text-slate-500">
+                    {snapshot.poPendingApproval} פתוחות
+                  </p>
+                </Link>
+              </section>
+            )}
+          </div>
+        </div>
         </div>
       </CommandCenterMotion>
     </div>
