@@ -36,7 +36,7 @@ export async function getWorkspaceSettingsBootstrap(): Promise<WorkspaceSettings
     const { data, error } = await supabase
       .from("user_workspace_settings")
       .select(
-        "pinned_widgets, side_panel_open, default_browser_homepage, workspace_persona, open_tabs, active_tabs, split_view, secondary_tab_href, split_primary_pinned_href, assistant_split_docked, browser_panel_enabled, default_project_id, email_bridge_sso, browser_bookmarks"
+        "pinned_widgets, side_panel_open, default_browser_homepage, workspace_persona, open_tabs, active_tabs, split_view, secondary_tab_href, split_primary_pinned_href, assistant_split_docked, browser_panel_enabled, default_project_id, email_bridge_sso, browser_bookmarks, diamond_workspace_layout"
       )
       .eq("user_id", user.id)
       .maybeSingle()
@@ -91,6 +91,8 @@ export async function saveMyWorkspaceSettings(
       emailBridgeSso:
         patch.emailBridgeSso !== undefined ? patch.emailBridgeSso : current.emailBridgeSso,
       browserBookmarks: patch.browserBookmarks ?? current.browserBookmarks,
+      diamondWorkspaceLayout:
+        patch.diamondWorkspaceLayout ?? current.diamondWorkspaceLayout,
     }
 
     const next = sanitizeWorkspaceSnapshotForUpsert(merged)
@@ -112,6 +114,7 @@ export async function saveMyWorkspaceSettings(
       default_project_id: next.defaultProjectId,
       email_bridge_sso: next.emailBridgeSso,
       browser_bookmarks: next.browserBookmarks,
+      diamond_workspace_layout: next.diamondWorkspaceLayout,
       updated_at: new Date().toISOString(),
     }
 

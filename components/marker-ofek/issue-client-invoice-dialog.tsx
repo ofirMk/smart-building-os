@@ -190,6 +190,7 @@ export function IssueClientInvoiceDialog({
           vat_amount: vatAmount,
           grand_total: grandTotal,
           status,
+          is_finalized: false,
         })
         .select("id, invoice_number")
         .single()
@@ -212,6 +213,12 @@ export function IssueClientInvoiceDialog({
           throw payErr
         }
       }
+
+      const { error: finErr } = await supabase
+        .from("mo_invoices")
+        .update({ is_finalized: true })
+        .eq("id", inv.id)
+      if (finErr) throw finErr
 
       toast.success(
         `נוצרה חשבונית מס מס׳ ${(inv as { invoice_number: number }).invoice_number}`
@@ -246,7 +253,7 @@ export function IssueClientInvoiceDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
+        <div className="grid gap-8 py-4">
           {loadingRefs ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -284,7 +291,7 @@ export function IssueClientInvoiceDialog({
               <SelectTrigger>
                 <SelectValue placeholder="בחרו לקוח" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent diamondEntity="entities">
                 {clients.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -294,7 +301,7 @@ export function IssueClientInvoiceDialog({
             </Select>
             {clients.length === 0 ? (
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                אין ישויות מסוג ׳לקוח׳. הוסיפו לקוח בטבלת entities לפני הפקת חשבונית.
+                אין ישויות מסוג ׳לקוח׳. הוסיפו לקוח בטבלת הישויות לפני הפקת חשבונית.
               </p>
             ) : null}
           </div>
@@ -308,7 +315,7 @@ export function IssueClientInvoiceDialog({
               <SelectTrigger>
                 <SelectValue placeholder="ללא" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent diamondHref="/marker-ofek/finance/partials">
                 <SelectItem value="none">ללא</SelectItem>
                 {partials.map((p) => (
                   <SelectItem key={p.id} value={p.id}>

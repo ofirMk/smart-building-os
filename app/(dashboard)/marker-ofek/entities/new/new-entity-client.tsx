@@ -27,9 +27,18 @@ import { cn, formatError } from "@/lib/utils"
 
 type EntityKind = "client" | "supplier"
 
-export function NewEntityClient() {
-  const [kind, setKind] = React.useState<EntityKind>("supplier")
+export function NewEntityClient({
+  initialKind,
+}: {
+  /** מסלול הקמת מזמין (לקוח) — מ־/marker-ofek/customers/new */
+  initialKind?: EntityKind
+} = {}) {
+  const [kind, setKind] = React.useState<EntityKind>(initialKind ?? "supplier")
   const [name, setName] = React.useState("")
+
+  React.useEffect(() => {
+    if (initialKind) setKind(initialKind)
+  }, [initialKind])
   const [legalId, setLegalId] = React.useState("")
   const [address, setAddress] = React.useState("")
   const [pending, setPending] = React.useState(false)

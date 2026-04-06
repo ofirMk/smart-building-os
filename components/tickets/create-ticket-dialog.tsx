@@ -130,7 +130,7 @@ export function CreateTicketDialog({
             </div>
           ) : null}
 
-          <FieldGroup className="gap-4">
+          <FieldGroup className="gap-8">
             <Field>
               <FieldLabel htmlFor="ticket-title">נושא</FieldLabel>
               <FieldContent>
@@ -200,7 +200,7 @@ export function CreateTicketDialog({
                   >
                     <SelectValue placeholder="בחרו בניין" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent diamondHref="/buildings">
                     {buildings.map((b) => (
                       <SelectItem key={b.id} value={b.id}>
                         {b.name}

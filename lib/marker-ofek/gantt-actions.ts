@@ -43,6 +43,9 @@ export type GanttTaskRow = {
   dependency_lags: Record<string, number>
   estimated_cost: number
   actual_cost: number
+  /** תוויות קיבוץ גאנט: בניין → קומה (אופציונלי) */
+  building_label: string | null
+  floor_label: string | null
 }
 
 type UpdateTaskDatesInput = {
@@ -536,12 +539,23 @@ function toTaskRow(row: Record<string, unknown>): GanttTaskRow {
     dependency_lags,
     estimated_cost: Number(row.estimated_cost ?? 0) || 0,
     actual_cost: Number(row.actual_cost ?? 0) || 0,
+    building_label:
+      row.building_label == null || String(row.building_label).trim() === ""
+        ? null
+        : String(row.building_label).trim(),
+    floor_label:
+      row.floor_label == null || String(row.floor_label).trim() === ""
+        ? null
+        : String(row.floor_label).trim(),
   }
 }
 
 /** Columns after migration `tasks_derivative_gantt` (master ↔ subcontractor rows). */
-const TASKS_SELECT_WITH_DERIVATIVE =
+const TASKS_SELECT_WITH_DERIVATIVE_BASE =
   "id, project_id, parent_id, parent_task_id, subcontractor_id, contract_id, is_derivative, name, description, start_date, end_date, actual_start_date, actual_end_date, progress, dependency_ids, dependency_lags, level, predecessor_index, predecessor_task_id, wbs_order, wbs_code, source_wbs_node_id, estimated_cost, actual_cost"
+
+const TASKS_SELECT_WITH_DERIVATIVE =
+  `${TASKS_SELECT_WITH_DERIVATIVE_BASE}, building_label, floor_label`
 
 /** Legacy select when derivative columns are not yet applied to the DB. */
 const TASKS_SELECT_WITHOUT_DERIVATIVE =
@@ -570,6 +584,12 @@ function tasksQueryMissingSourceWbsNodeColumn(err: { message?: string; code?: st
   return msg.includes("source_wbs_node_id")
 }
 
+function tasksQueryMissingSiteLabelsColumn(err: { message?: string; code?: string } | null): boolean {
+  if (!err) return false
+  const msg = String(err.message ?? "").toLowerCase()
+  return msg.includes("building_label") || msg.includes("floor_label")
+}
+
 export async function fetchProjectTasks(projectId: string): Promise<GanttTaskRow[]> {
   const pid = String(projectId ?? "").trim()
   if (!pid) return []
@@ -594,6 +614,19 @@ export async function fetchProjectTasks(projectId: string): Promise<GanttTaskRow
 
   let rows: Array<Record<string, unknown>> = ((first.data ?? []) as Array<Record<string, unknown>>) ?? []
   let err = first.error
+
+  if (err && tasksQueryMissingSiteLabelsColumn(err)) {
+    const retrySite = await supabase
+      .schema("public")
+      .from("tasks")
+      .select(TASKS_SELECT_WITH_DERIVATIVE_BASE)
+      .eq("project_id", pid)
+      .order("parent_id", { ascending: true, nullsFirst: true })
+      .order("wbs_order", { ascending: true })
+      .order("created_at", { ascending: true })
+    rows = ((retrySite.data ?? []) as Array<Record<string, unknown>>) ?? []
+    err = retrySite.error
+  }
 
   if (err && tasksQueryMissingDerivativeColumns(err)) {
     const retry = await supabase
@@ -2217,4 +2250,55 @@ export async function calculateTaskCostVariance(projectId: string) {
     status,
     perTask,
   }
+}
+
+export type WbsNodeBrief = {
+  id: string
+  parent_node_id: string | null
+  label: string
+  sort_order: number
+}
+
+/** מבנה WBS לפרויקט (אם קיים) — לשילוב בתצוגת גאנט חזותית */
+export async function fetchProjectWbsBundle(projectId: string): Promise<{
+  structureId: string | null
+  nodes: WbsNodeBrief[]
+}> {
+  const pid = String(projectId ?? "").trim()
+  if (!pid) return { structureId: null, nodes: [] }
+
+  const supabase = await createSupabaseServerAuthClient()
+  const { data: structures, error: sErr } = await supabase
+    .from("wbs_structures")
+    .select("id")
+    .eq("project_id", pid)
+    .order("created_at", { ascending: false })
+    .limit(1)
+
+  if (sErr || !structures?.length) {
+    return { structureId: null, nodes: [] }
+  }
+
+  const structureId = String(structures[0]!.id ?? "").trim()
+  if (!structureId) return { structureId: null, nodes: [] }
+
+  const { data: nodes, error: nErr } = await supabase
+    .from("wbs_nodes")
+    .select("id, parent_node_id, label, sort_order")
+    .eq("structure_id", structureId)
+    .order("sort_order", { ascending: true })
+
+  if (nErr) {
+    return { structureId, nodes: [] }
+  }
+
+  const out: WbsNodeBrief[] = (nodes ?? []).map((n) => ({
+    id: String((n as { id?: string }).id ?? ""),
+    parent_node_id:
+      (n as { parent_node_id?: string | null }).parent_node_id ?? null,
+    label: String((n as { label?: string }).label ?? "").trim() || "—",
+    sort_order: Number((n as { sort_order?: number }).sort_order ?? 0) || 0,
+  }))
+
+  return { structureId, nodes: out.filter((x) => x.id) }
 }

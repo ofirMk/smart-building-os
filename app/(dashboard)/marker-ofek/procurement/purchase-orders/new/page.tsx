@@ -64,6 +64,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { F1UnifiedSearchModal } from "@/components/modals/f1-unified-search"
+import {
+  DIAMOND_TENDER_INTAKE_HREF,
+  useDiamondNavigation,
+} from "@/hooks/use-diamond-navigation"
 import { useProcurementEngine } from "@/hooks/use-procurement-engine"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn, formatError } from "@/lib/utils"
@@ -183,6 +187,7 @@ function lineDescription(row: BoqDbRow): string {
 }
 
 export default function NewPurchaseOrderFromBoqPage() {
+  useDiamondNavigation("projects")
   const [tenders, setTenders] = React.useState<TenderOption[]>([])
   const [loadingTenders, setLoadingTenders] = React.useState(true)
   const [tenderId, setTenderId] = React.useState<string>("")
@@ -1414,7 +1419,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                 >
                   <SelectValue placeholder="בחרו פרויקט…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="projects">
                   {projectRows.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
@@ -1445,7 +1450,7 @@ export default function NewPurchaseOrderFromBoqPage() {
             <div className="space-y-2 text-start">
               <Label htmlFor="po-tender" className="inline-flex items-center gap-2">
                 <span>מכרז (חובה — FK)</span>
-                <kbd className="mr-2 rounded border border-border/80 bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                <kbd className="me-2 rounded border border-border/80 bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                   F2
                 </kbd>
               </Label>
@@ -1475,7 +1480,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                 >
                   <SelectValue placeholder="בחרו מכרז…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondHref={DIAMOND_TENDER_INTAKE_HREF}>
                   {filteredTenders.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {(t.project_name_from_ai?.trim() || "ללא שם") +
@@ -1493,7 +1498,7 @@ export default function NewPurchaseOrderFromBoqPage() {
             <div className="space-y-2 text-start">
               <Label htmlFor="po-supplier" className="inline-flex items-center gap-2">
                 <span>ספק (חובה)</span>
-                <kbd className="mr-2 rounded border border-border/80 bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                <kbd className="me-2 rounded border border-border/80 bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                   F2
                 </kbd>
               </Label>
@@ -1515,7 +1520,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                 >
                   <SelectValue placeholder="בחרו ספק מהמערכת…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="entities">
                   {supplierOptions.map((s) => (
                     <SelectItem
                       key={s.id}
@@ -2053,7 +2058,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                 <SelectTrigger id="quick-project-client" className="w-full">
                   <SelectValue placeholder="בחרו לקוח…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="entities">
                   {quickClientOptions.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}

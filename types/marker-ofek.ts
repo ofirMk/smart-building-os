@@ -72,7 +72,8 @@ export type MoReceiptPaymentMethod =
 export type MarkerOfekMoInvoiceRow = {
   id: string
   invoice_number: number
-  project_id: string
+  /** null — הכנסה כללית (ללא שיוך פרויקט) */
+  project_id: string | null
   entity_id: string
   contract_id: string | null
   linked_partial_account_id: string | null
@@ -83,6 +84,8 @@ export type MarkerOfekMoInvoiceRow = {
   grand_total: number
   status: MoInvoiceFinancialStatus
   is_printed_original: boolean
+  is_finalized?: boolean
+  digital_signature_sha256?: string | null
   created_at: string
 }
 
@@ -317,6 +320,8 @@ export type MarkerOfekGanttTaskRow = {
   source_wbs_node_id?: string | null
   estimated_cost: number
   actual_cost: number
+  building_label?: string | null
+  floor_label?: string | null
 }
 
 /** public.contracts */

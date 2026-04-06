@@ -1,4 +1,5 @@
 import {
+  DEFAULT_DIAMOND_WORKSPACE_LAYOUT,
   type WorkspaceBrowserBookmark,
   type WorkspaceOpenTab,
   type WorkspacePersona,
@@ -6,6 +7,7 @@ import {
   isWorkspacePersona,
   mergeOpenTabsFromRow,
   parseBrowserBookmarks,
+  parseDiamondWorkspaceLayout,
   parseOpenTabs,
   parsePinnedWidgets,
 } from "@/lib/marker-ofek/workspace-types"
@@ -26,6 +28,7 @@ export const DEFAULT_WORKSPACE_SNAPSHOT: WorkspaceSettingsSnapshot = {
   defaultProjectId: null,
   emailBridgeSso: null,
   browserBookmarks: [],
+  diamondWorkspaceLayout: { ...DEFAULT_DIAMOND_WORKSPACE_LAYOUT },
 }
 
 /**
@@ -69,6 +72,9 @@ export function sanitizeWorkspaceSnapshotForUpsert(
         ? s.emailBridgeSso.trim().toLowerCase()
         : null,
     browserBookmarks: parseBrowserBookmarks(s.browserBookmarks as unknown),
+    diamondWorkspaceLayout: parseDiamondWorkspaceLayout(
+      s.diamondWorkspaceLayout as unknown
+    ),
   }
 }
 
@@ -108,6 +114,9 @@ export function rowToSnapshot(row: Record<string, unknown> | null): WorkspaceSet
         ? row.email_bridge_sso.trim().toLowerCase()
         : null,
     browserBookmarks: parseBrowserBookmarks(row.browser_bookmarks),
+    diamondWorkspaceLayout: parseDiamondWorkspaceLayout(
+      row.diamond_workspace_layout
+    ),
   }
 }
 
@@ -125,4 +134,5 @@ export type SaveWorkspacePayload = {
   defaultProjectId?: string | null
   emailBridgeSso?: string | null
   browserBookmarks?: WorkspaceBrowserBookmark[]
+  diamondWorkspaceLayout?: WorkspaceSettingsSnapshot["diamondWorkspaceLayout"]
 }

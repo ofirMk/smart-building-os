@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { HRAgentPanel } from "@/components/marker-ofek/hr-agent-panel"
 import { cn } from "@/lib/utils"
 
 function renderMessageParts(message: UIMessage): React.ReactNode {
@@ -112,8 +113,8 @@ export function AiUserSetupClient({
   }
 
   return (
-    <div dir="rtl" className="mx-auto w-full max-w-3xl space-y-6 pb-12">
-      <div>
+    <div dir="rtl" className="mx-auto w-full max-w-6xl space-y-10 pb-12">
+      <div className="mx-auto max-w-3xl">
         <Link
           href="/marker-ofek/settings"
           className="mb-2 inline-flex h-9 items-center rounded-md px-2 text-[13px] text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -127,7 +128,7 @@ export function AiUserSetupClient({
         </p>
       </div>
 
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="mx-auto max-w-3xl border-slate-100 shadow-sm">
         <CardHeader className="border-b border-slate-100 pb-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -206,6 +207,16 @@ export function AiUserSetupClient({
           </form>
         </CardContent>
       </Card>
+
+      <section className="space-y-3">
+        <div className="px-6 md:px-0">
+          <h2 className="text-lg font-semibold text-indigo-950">ניתוח חוזים (PDF)</h2>
+          <p className="mt-1 text-[13px] text-slate-600">
+            העלאת מסמכי חוזה (אחד או יותר) — ניתוח תשלומים, התחייבויות וסיכונים בעברית (דורש מפתח Gemini בשרת).
+          </p>
+        </div>
+        <HRAgentPanel />
+      </section>
     </div>
   )
 }

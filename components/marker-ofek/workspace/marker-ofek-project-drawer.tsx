@@ -242,7 +242,7 @@ export function MarkerOfekProjectDrawer() {
               <SelectTrigger className="border-border/70">
                 <SelectValue placeholder="בחרו פרויקט" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent diamondEntity="projects">
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}{" "}

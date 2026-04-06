@@ -2,15 +2,18 @@ import type { Metadata, Viewport } from "next";
 import { Heebo, JetBrains_Mono, Rubik } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 
+import { SonnerAudioBridge } from "@/components/marker-ofek/sonner-audio-bridge";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
 const heebo = Heebo({
   variable: "--font-heebo",
   subsets: ["latin", "hebrew"],
-  weight: ["400", "500", "600", "700"],
+  /** טפסים וכותרות משנה: Light / ExtraLight לצד גוף טקסט רגיל */
+  weight: ["200", "300", "400", "500", "600", "700"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -34,14 +37,13 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "בניין חכם — מערכת ניהול נכסים",
-    template: "%s · בניין חכם",
+    default: "Marker Ofek | מרקר אופק",
+    template: "%s · מרקר אופק",
   },
-  description:
-    "ניהול נכסים ברמה ארגונית: בניינים, קריאות שירות עם SLA, חיוב טעינה ומתקני דיירים.",
+  description: "מערכת ניהול פרויקטים ו-ERP מבוססת AI",
   manifest: "/manifest-tenant.json",
   appleWebApp: {
-    title: "ניהול מבנים",
+    title: "מרקר אופק",
     capable: true,
     statusBarStyle: "default",
   },
@@ -53,13 +55,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="he"
-      dir="rtl"
-      className={`${heebo.variable} ${rubik.variable} ${jetbrainsMono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body dir="rtl" className="min-h-full flex flex-col font-sans">
+    <html lang="he" dir="rtl" suppressHydrationWarning>
+      <body
+        className={cn(
+          heebo.variable,
+          rubik.variable,
+          jetbrainsMono.variable,
+          "h-full min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100"
+        )}
+        dir="rtl"
+        suppressHydrationWarning
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -69,7 +75,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delay={0}>
-            {children}
+            <div className="flex min-h-screen min-h-[100dvh] flex-col">
+              {children}
+            </div>
             <Toaster
               position="top-center"
               richColors
@@ -81,6 +89,7 @@ export default function RootLayout({
                 },
               }}
             />
+            <SonnerAudioBridge />
           </TooltipProvider>
         </ThemeProvider>
       </body>

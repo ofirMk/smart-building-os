@@ -219,7 +219,7 @@ export default function WarehouseOutgoingPage() {
                 setContractSearch("")
                 void loadByProject(nextProject)
               }}
-              className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-end text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
             >
               <option value="">בחר פרויקט...</option>
               {projects.map((project) => (
@@ -237,7 +237,7 @@ export default function WarehouseOutgoingPage() {
               min="0.001"
               step="0.001"
               required
-              className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right font-mono text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-end font-mono text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="0.000"
             />
           </div>
@@ -251,7 +251,7 @@ export default function WarehouseOutgoingPage() {
               type="text"
               value={itemSearch}
               onChange={(e) => setItemSearch(e.target.value)}
-              className="w-full rounded-sm border border-zinc-300 bg-white p-2 pr-8 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 pe-8 text-end text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="הקלד שם פריט..."
             />
           </div>
@@ -260,7 +260,7 @@ export default function WarehouseOutgoingPage() {
             required
             value={selectedItemId}
             onChange={(e) => setSelectedItemId(e.target.value)}
-            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-end text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
           >
             <option value="">בחר פריט מלאי...</option>
             {filteredInventoryItems.map((item) => (
@@ -282,7 +282,7 @@ export default function WarehouseOutgoingPage() {
               type="text"
               value={contractSearch}
               onChange={(e) => setContractSearch(e.target.value)}
-              className="w-full rounded-sm border border-zinc-300 bg-white p-2 pr-8 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+              className="w-full rounded-sm border border-zinc-300 bg-white p-2 pe-8 text-end text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               placeholder="חיפוש סעיף (קוד / תיאור)..."
             />
           </div>
@@ -290,7 +290,7 @@ export default function WarehouseOutgoingPage() {
             name="contractItemId"
             value={selectedContractItemId}
             onChange={(e) => setSelectedContractItemId(e.target.value)}
-            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-end text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
           >
             <option value="">בחר סעיף מכתב הכמויות (אופציונלי)...</option>
             {filteredContractItems.map((item) => {
@@ -312,7 +312,7 @@ export default function WarehouseOutgoingPage() {
           <input
             name="notes"
             type="text"
-            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-right text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-sm border border-zinc-300 bg-white p-2 text-end text-[13px] text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
             placeholder="לדוגמה: יציקה קומה 2"
           />
         </div>
@@ -343,11 +343,11 @@ export default function WarehouseOutgoingPage() {
             <table className="w-full text-[13px]">
               <thead className="bg-zinc-100 text-zinc-900">
                 <tr>
-                  <th className="px-3 py-2 text-right font-bold">תאריך</th>
-                  <th className="px-3 py-2 text-right font-bold">פריט</th>
-                  <th className="px-3 py-2 text-right font-bold">סעיף חוזה</th>
-                  <th className="px-3 py-2 text-right font-bold">כמות</th>
-                  <th className="px-3 py-2 text-right font-bold">הערות</th>
+                  <th className="px-3 py-2 text-end font-bold">תאריך</th>
+                  <th className="px-3 py-2 text-end font-bold">פריט</th>
+                  <th className="px-3 py-2 text-end font-bold">סעיף חוזה</th>
+                  <th className="px-3 py-2 text-end font-bold">כמות</th>
+                  <th className="px-3 py-2 text-end font-bold">הערות</th>
                 </tr>
               </thead>
               <tbody>

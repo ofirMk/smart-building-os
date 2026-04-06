@@ -99,6 +99,8 @@
     --border-muted: 214.3 31.8% 91.4%;
     --accent-primary: 243.4 75.4% 58.6%;
     --radius-tokens: 0.75rem;
+    /** מרווח מינימלי בין סקשנים בטפסים (= gap-8) */
+    --form-section-gap: 2rem;
   }
 
   .dark {
@@ -169,9 +171,52 @@
   :where(a, button, [role="button"], summary, input, select, textarea, label[for]) {
     @apply transition-colors duration-200;
   }
+
+  /**
+   * Hebrew-first: מיקום ופונט ל-placeholders (הטקסט ב-placeholder חייב להיות בעברית בקוד).
+   * שדות עם dir="ltr" (מספרים, קוד) — לא נכללים.
+   */
+  html[lang="he"][dir="rtl"] input:not([dir="ltr"])::placeholder,
+  html[lang="he"][dir="rtl"] textarea:not([dir="ltr"])::placeholder {
+    text-align: start;
+    font-family: var(--font-heebo), "Segoe UI", "Arial Hebrew", ui-sans-serif, system-ui,
+      sans-serif;
+    font-weight: 400;
+  }
+
+  html[lang="he"][dir="rtl"] label {
+    text-align: start;
+  }
 }
 
 @layer components {
+  /**
+   * סטנדרט טפסים: מרווח אנכי מינימלי בין סקשנים (מינימום כמו gap-8).
+   * שימוש: <form class="form-stack"> או עטיפה עם class="form-stack".
+   */
+  .form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: max(var(--form-section-gap), 2rem);
+  }
+
+  /** כותרת סקשן בטופס — משקל קל, sans (Heebo מ־body) */
+  .form-section-heading {
+    @apply text-lg font-extralight tracking-tight text-foreground md:text-xl;
+  }
+
+  /** כותרת משנה / תיאור תחת כותרת סקשן */
+  .form-section-lead {
+    @apply text-sm font-light leading-relaxed text-muted-foreground;
+  }
+
+  /**
+   * הצעות AI — טקסט „רוח” (Holden): עדין, מרווח, לא מתחרה על גוף הטופס
+   */
+  .ai-ghost-suggestion {
+    @apply text-sm font-extralight leading-relaxed text-slate-400/90 italic;
+  }
+
   .mo-pillar-details[open] summary .mo-pillar-chevron {
     transform: rotate(180deg);
   }

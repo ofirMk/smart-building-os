@@ -594,7 +594,7 @@ export default function NewMarkerOfekContractPage() {
                 >
                   <SelectValue placeholder="בחרו פרויקט מהמערכת…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="projects">
                   {projectOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
@@ -637,7 +637,7 @@ export default function NewMarkerOfekContractPage() {
                 >
                   <SelectValue placeholder="בחרו מזמין (ישות client)…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="entities">
                   {clientOptions.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}

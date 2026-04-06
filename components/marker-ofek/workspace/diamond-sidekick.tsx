@@ -86,7 +86,7 @@ export function DiamondSidekick() {
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", stiffness: 320, damping: 34 }}
           className={cn(
-            "fixed inset-y-0 left-0 z-[60] flex w-[min(100vw,420px)] flex-col border-e border-slate-200 bg-white shadow-xl print:hidden"
+            "fixed inset-y-0 start-0 z-[60] flex w-[min(100vw,420px)] flex-col border-e border-slate-200 bg-white shadow-xl print:hidden"
           )}
         >
           <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">

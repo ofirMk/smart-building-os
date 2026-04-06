@@ -399,7 +399,7 @@ export function MarkerOfekSupplierDrawer() {
               <SelectTrigger className="border-border/70">
                 <SelectValue placeholder="בחרו ספק" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent diamondEntity="entities">
                 {supplierSummaries
                   .filter((s) => !!s.supplierId)
                   .map((s) => (

@@ -33,6 +33,12 @@ export function GanttExecutionHub({
     router.push(`/marker-ofek/execution/gantt/${id}`)
   }
 
+  function openDiamondWorkspace() {
+    const id = projectId.trim()
+    if (!id) return
+    router.push(`/marker-ofek/execution/diamond-workspace/${id}`)
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 bg-white p-6 md:p-10">
       <div className="space-y-2 text-center md:text-start">
@@ -73,6 +79,15 @@ export function GanttExecutionHub({
             onClick={openGantt}
           >
             פתח גאנט
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-slate-200 bg-white hover:bg-slate-50"
+            disabled={!projectId}
+            onClick={openDiamondWorkspace}
+          >
+            שולחן יהלום
           </Button>
           <Button
             type="button"

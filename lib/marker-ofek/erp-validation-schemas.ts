@@ -112,6 +112,53 @@ export const quickProjectSchema = z.object({
   managingPartnerUserId: z.string().uuid().optional(),
 })
 
+/** טופס הקמת פרויקט פשוט (מסלול ‎/marker-ofek/projects/new‎) */
+export const markerProjectIntakeFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "שם פרויקט נדרש (לפחות 2 תווים)")
+    .max(240, "שם פרויקט ארוך מדי"),
+  client_name: z
+    .string()
+    .trim()
+    .max(240, "שם לקוח ארוך מדי")
+    .optional()
+    .transform((s) => s ?? ""),
+  tender_id: z.union([z.string().uuid("מזהה מכרז לא תקין"), z.null()]).optional(),
+})
+
+export type MarkerProjectIntakeFormInput = z.infer<
+  typeof markerProjectIntakeFormSchema
+>
+
+/** אשף יצירת חוזה מזמין (דף create-client) — נשמר כטיוטת ERP מינימלית */
+export const clientContractWizardSchema = z.object({
+  projectId: uuid,
+  clientEntityId: uuid,
+  contractKind: z.enum(["lump-sum", "measurement"]),
+  contractDisplayName: z
+    .string()
+    .trim()
+    .max(280)
+    .optional()
+    .nullable()
+    .transform((s) => (s && s.length > 0 ? s : null)),
+  retentionPct: z.preprocess(
+    (v) => {
+      if (v === "" || v == null || v === undefined) return 0
+      const n =
+        typeof v === "number" ? v : Number(String(v).replace(",", ".").trim())
+      return Number.isFinite(n) ? n : 0
+    },
+    z.number().min(0, "עיכבון לא יכול להיות שלילי").max(100, "עיכבון עד 100%")
+  ),
+})
+
+export type ClientContractWizardInput = z.infer<
+  typeof clientContractWizardSchema
+>
+
 export const quickEntitySchema = z
   .object({
     name: z.string().min(2, "שם חובה"),
@@ -137,6 +184,24 @@ export const quickEntitySchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "ח.פ / ע.מ חובה לספק לפני שמירה",
+          path: ["legalId"],
+        })
+        return
+      }
+      if (!/^\d{8,10}$/.test(lid)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "ח.פ / ע.מ — 8 עד 10 ספרות בלבד",
+          path: ["legalId"],
+        })
+      }
+    }
+    if (data.type === "client" && data.legalId?.trim()) {
+      const lid = data.legalId.trim()
+      if (!/^\d{8,10}$/.test(lid)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "ח.פ / ע.מ — 8 עד 10 ספרות בלבד",
           path: ["legalId"],
         })
       }

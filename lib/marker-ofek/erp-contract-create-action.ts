@@ -7,6 +7,7 @@ import {
   encodeMilestoneDisplayName,
 } from "@/lib/marker-ofek/milestone-name-codec"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+import { logMoAuditEvent } from "@/lib/marker-ofek/audit-log"
 import {
   erpContractCreateSchema,
   type ErpContractCreateInput,
@@ -167,6 +168,21 @@ export async function createErpContract(
         return { ok: false, error: msError.message }
       }
     }
+
+    void logMoAuditEvent({
+      action_type: "INSERT",
+      table_name: "contracts",
+      project_id: data.projectId,
+      new_data: {
+        id: contractId,
+        project_id: data.projectId,
+        entity_id: data.clientEntityId,
+        contract_type: data.contractType,
+        pricing_model: data.pricingModel,
+        start_date: data.startDate,
+        retention_pct: data.retentionPct,
+      },
+    })
 
     revalidatePath("/marker-ofek/contracts")
     return { ok: true, contractId }

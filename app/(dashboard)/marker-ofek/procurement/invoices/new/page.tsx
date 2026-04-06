@@ -639,7 +639,7 @@ export default function NewInvoiceAiPage() {
                 >
                   <SelectValue placeholder="בחרו פרויקט" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="projects">
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       <span className="inline-flex w-full items-center justify-between gap-2">
@@ -673,7 +673,7 @@ export default function NewInvoiceAiPage() {
             <SelectTrigger id="inv-po" className="w-full max-w-xl">
               <SelectValue placeholder="ללא קישור להזמנה" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent diamondEntity="procurement">
               {pos.map((p) => {
                 const ent = embedOne(p.entities)
                 return (

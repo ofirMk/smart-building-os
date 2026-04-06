@@ -27,6 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  DIAMOND_TENDER_INTAKE_HREF,
+  useDiamondNavigation,
+} from "@/hooks/use-diamond-navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"
 
@@ -52,6 +56,7 @@ function todayIsoDateLocal(): string {
 }
 
 export default function NewDailyLogPage() {
+  useDiamondNavigation(undefined, { f2Href: DIAMOND_TENDER_INTAKE_HREF })
   const [tenders, setTenders] = React.useState<TenderOption[]>([])
   const [loadingTenders, setLoadingTenders] = React.useState(true)
   const [tenderId, setTenderId] = React.useState("")
@@ -178,7 +183,7 @@ export default function NewDailyLogPage() {
                 <SelectTrigger id="daily-tender" className="w-full min-h-11">
                   <SelectValue placeholder="בחרו פרויקט…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondHref={DIAMOND_TENDER_INTAKE_HREF}>
                   {tenders.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {(t.project_name_from_ai ?? "ללא שם").trim() || "פרויקט"}

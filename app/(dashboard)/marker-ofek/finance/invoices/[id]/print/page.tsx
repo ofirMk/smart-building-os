@@ -30,6 +30,14 @@ const PAY_HE: Record<MoReceiptPaymentMethod, string> = {
   cash: "מזומן",
 }
 
+type LineRow = {
+  sort_order: number
+  description: string
+  quantity: number
+  unit_price: number
+  line_total: number
+}
+
 type InvoiceRow = {
   id: string
   invoice_number: number
@@ -39,6 +47,8 @@ type InvoiceRow = {
   vat_amount: number
   grand_total: number
   is_printed_original: boolean
+  digital_signature_sha256?: string | null
+  mo_invoice_line_items?: LineRow[] | null
   entities:
     | { name: string; legal_id: string | null; address: string | null }
     | null
@@ -127,6 +137,8 @@ export default function MoInvoicePrintPage() {
               vat_amount,
               grand_total,
               is_printed_original,
+              digital_signature_sha256,
+              mo_invoice_line_items ( sort_order, description, quantity, unit_price, line_total ),
               entities ( name, legal_id, address ),
               projects ( name, internal_project_code ),
               mo_receipt_payments ( id, payment_method, reference_number, amount, payment_date )
@@ -229,6 +241,19 @@ export default function MoInvoicePrintPage() {
     ? invoice.mo_receipt_payments
     : []
 
+  const lineItems = Array.isArray(invoice.mo_invoice_line_items)
+    ? [...invoice.mo_invoice_line_items].sort(
+        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+      )
+    : []
+
+  const subtotalN = Number(invoice.subtotal) || 0
+  const vatN = Number(invoice.vat_amount) || 0
+  const vatPercentDisplay =
+    subtotalN > 0.0001
+      ? Math.round((vatN / subtotalN) * 10000) / 100
+      : VAT_PCT
+
   const originalLabel = invoice.is_printed_original
     ? "העתק נאמן למקור"
     : "מקור"
@@ -324,7 +349,7 @@ export default function MoInvoicePrintPage() {
 
           <section className="mt-6 space-y-4 text-sm">
             <div className="rounded-md border border-slate-200 bg-slate-50/80 p-4 print:border-black print:bg-white">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500 print:text-black">
+              <p className="text-xs font-bold tracking-wide text-slate-500 print:text-black">
                 לכבוד
               </p>
               <p className="mt-1 text-base font-semibold">{client?.name ?? "—"}</p>
@@ -342,6 +367,51 @@ export default function MoInvoicePrintPage() {
                   ? ` · ${project.internal_project_code}`
                   : ""}
               </p>
+            ) : (
+              <p className="text-sm text-slate-600">סיווג: הכנסה כללית (ללא שיוך פרויקט)</p>
+            )}
+
+            {lineItems.length > 0 ? (
+              <table
+                className="w-full border-collapse border-2 border-slate-800 text-sm print:border-black"
+                aria-label="שורות חשבונית"
+              >
+                <thead>
+                  <tr className="border-b-2 border-slate-800 bg-slate-100 print:border-black print:bg-white">
+                    <th scope="col" className="px-2 py-2 text-start font-semibold">
+                      תיאור
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-end font-semibold">
+                      כמות
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-end font-semibold">
+                      מחיר יחידה
+                    </th>
+                    <th scope="col" className="px-2 py-2 text-end font-semibold">
+                      סה״כ שורה
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.map((row, idx) => (
+                    <tr
+                      key={`${row.sort_order}-${idx}`}
+                      className="border-b border-slate-200 print:border-black"
+                    >
+                      <td className="px-2 py-2 text-start">{row.description}</td>
+                      <td className="px-2 py-2 text-end font-mono tabular-nums">
+                        {row.quantity}
+                      </td>
+                      <td className="px-2 py-2 text-end font-mono tabular-nums">
+                        {currencyFormatter.format(Number(row.unit_price) || 0)}
+                      </td>
+                      <td className="px-2 py-2 text-end font-mono tabular-nums">
+                        {currencyFormatter.format(Number(row.line_total) || 0)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : null}
 
             <table
@@ -365,7 +435,7 @@ export default function MoInvoicePrintPage() {
                     scope="row"
                     className="bg-slate-100 px-3 py-2 text-start font-semibold print:bg-white"
                   >
-                    מע״מ ({VAT_PCT}%)
+                    מע״מ ({vatPercentDisplay}%)
                   </th>
                   <td className="px-3 py-2 text-end font-mono tabular-nums">
                     {currencyFormatter.format(Number(invoice.vat_amount) || 0)}
@@ -408,7 +478,12 @@ export default function MoInvoicePrintPage() {
           </section>
 
           <footer className="mt-10 border-t border-slate-200 pt-4 text-center text-xs text-slate-500 print:mt-8 print:border-black print:text-black">
-            <p>מסמך ממוחשב — חתימה דיגיטלית לפי נהלי החברה והוראות מס רשויות.</p>
+            <p>מסמך ממוחשב — חתימה אלקטרונית (גיבוב SHA-256) לפי נהלי החברה.</p>
+            {invoice.digital_signature_sha256 ? (
+              <p className="mt-2 break-all font-mono text-[10px] text-slate-600 print:text-black">
+                {invoice.digital_signature_sha256}
+              </p>
+            ) : null}
           </footer>
         </article>
       </div>

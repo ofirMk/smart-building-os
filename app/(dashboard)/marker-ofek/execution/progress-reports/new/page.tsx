@@ -59,6 +59,7 @@ import {
   decodeMilestoneDisplayName,
   decodeMilestoneStoredName,
 } from "@/lib/marker-ofek/milestone-name-codec"
+import { useDiamondNavigation } from "@/hooks/use-diamond-navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"
 
@@ -161,6 +162,7 @@ function groupMilestonesByWbsChapter(rows: MilestoneRow[]): {
 
 function NewProgressReportPageInner() {
   const router = useRouter()
+  useDiamondNavigation("contracts")
   const searchParams = useSearchParams()
   const filterProjectId = searchParams.get("projectId")?.trim() ?? ""
 
@@ -694,7 +696,7 @@ function NewProgressReportPageInner() {
                 <SelectTrigger id="pr-contract" className="min-h-11 w-full">
                   <SelectValue placeholder="בחרו חוזה…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="contracts">
                   {contracts.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {contractLabel(c)}

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
+import { DiamondSelectDrillFooter } from "@/components/ui/diamond-select-drill-footer"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
@@ -59,6 +60,9 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
+  footer,
+  diamondEntity,
+  diamondHref,
   side = "bottom",
   sideOffset = 4,
   align = "center",
@@ -69,7 +73,22 @@ function SelectContent({
   Pick<
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
-  >) {
+  > & {
+    /** תוכן תחתון מחוץ ל־List (רמזים, לא פריטי בחירה) */
+    footer?: React.ReactNode
+    /** יעד F2 כשהרשימה פתוחה: ‎/marker-ofek/{entity}/new‎ */
+    diamondEntity?: string
+    /** יעד F2 מלא כשהרשימה פתוחה (גובר על ‎diamondEntity‎) */
+    diamondHref?: string
+  }) {
+  const hasDiamondTarget =
+    Boolean(diamondEntity?.trim()) || Boolean(diamondHref?.trim())
+  const resolvedFooter =
+    footer ?? (hasDiamondTarget ? <DiamondSelectDrillFooter /> : undefined)
+
+  const hasDiamondChrome =
+    resolvedFooter != null || hasDiamondTarget
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -78,16 +97,28 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
-        className="isolate z-50"
+        className="isolate z-[100]"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
-          className={cn("relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-zinc-300 bg-popover text-popover-foreground shadow-md duration-200 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-start-2 data-[side=inline-start]:slide-in-from-end-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          data-diamond-entity={diamondEntity?.trim() || undefined}
+          data-diamond-href={diamondHref?.trim() || undefined}
+          className={cn(
+            "relative isolate z-[100] max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-zinc-300 bg-popover text-popover-foreground shadow-md duration-200 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-start-2 data-[side=inline-start]:slide-in-from-end-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            hasDiamondChrome &&
+              "rounded-xl border-slate-100 p-1 shadow-2xl",
+            className
+          )}
           {...props}
         >
           <SelectScrollUpButton />
           <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          {resolvedFooter != null ? (
+            <div role="note" className="pointer-events-none shrink-0 px-0.5 pb-0.5">
+              {resolvedFooter}
+            </div>
+          ) : null}
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
@@ -117,7 +148,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pe-8 ps-1.5 text-start text-sm font-medium outline-hidden select-none hover:bg-zinc-100 data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900 data-[selected]:border-r-4 data-[selected]:border-emerald-600 data-[selected]:bg-emerald-50 data-[selected]:font-bold data-[selected]:text-emerald-900 data-[selected]:hover:bg-emerald-50 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-lg py-1 pe-8 ps-1.5 text-start text-sm font-medium outline-hidden select-none hover:bg-zinc-100 data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900 data-[selected]:border-s-4 data-[selected]:border-emerald-600 data-[selected]:bg-emerald-50 data-[selected]:font-bold data-[selected]:text-emerald-900 data-[selected]:hover:bg-emerald-50 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
       {...props}

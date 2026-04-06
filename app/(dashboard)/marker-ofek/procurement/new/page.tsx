@@ -405,7 +405,7 @@ export default function NewPurchaseOrderPage() {
                 <SelectTrigger id="po-project" className="w-full">
                   <SelectValue placeholder="בחרו פרויקט" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="projects">
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}{" "}
@@ -427,10 +427,10 @@ export default function NewPurchaseOrderPage() {
                 <SelectTrigger id="po-supplier" className="w-full">
                   <SelectValue placeholder="בחרו ספק או ספק ביצוע" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="entities">
                   {suppliers.length === 0 ? (
                     <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                      אין ישויות מסוג ספק או ספק ביצוע. הוסיפו בטבלת entities.
+                      אין ישויות מסוג ספק או ספק ביצוע. הוסיפו בטבלת הישויות.
                     </div>
                   ) : (
                     suppliers.map((s) => (
@@ -554,7 +554,7 @@ export default function NewPurchaseOrderPage() {
                         <SelectTrigger id={`master-${row.id}`} className="w-full">
                           <SelectValue placeholder="בחרו פריט או הזנה ידנית" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent diamondEntity="items">
                           <SelectItem value={NO_MASTER_VALUE}>
                             ללא — הזנה ידנית בלבד
                           </SelectItem>

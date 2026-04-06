@@ -58,8 +58,8 @@ export default async function MarkerOfekGanttProjectPage({ params }: PageProps) 
   return (
     <div dir="rtl" className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 bg-[#FFFFFF]">
       <header className="space-y-2 border-b border-slate-100 pb-4 text-start">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Marker Ofek - Work Management
+        <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
+          מרקר אופק — ביצוע ותזמון
         </p>
         <div className="flex items-center gap-2">
           <BarChart3 className="size-5 text-indigo-600" aria-hidden />

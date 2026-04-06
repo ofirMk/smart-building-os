@@ -192,6 +192,15 @@ export default function MarkerOfekFinancePage() {
               <FileStack className="size-4" aria-hidden />
               חשבונית מרכזת
             </Link>
+            <Link
+              href="/marker-ofek/invoices/new"
+              className={cn(
+                buttonVariants({ size: "sm", variant: "default" }),
+                "gap-2 bg-slate-900 text-white hover:bg-slate-800"
+              )}
+            >
+              מחולל חשבוניות
+            </Link>
           </div>
         </div>
 
@@ -239,7 +248,7 @@ export default function MarkerOfekFinancePage() {
                         {ent?.name ?? "—"}
                       </TableCell>
                       <TableCell className="max-w-[140px] truncate sm:max-w-[200px]">
-                        {proj?.name ?? "—"}
+                        {proj?.name ?? "הכנסה כללית"}
                       </TableCell>
                       <TableCell className="whitespace-nowrap tabular-nums text-sm">
                         {r.issue_date

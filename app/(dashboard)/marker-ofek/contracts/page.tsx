@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { FileText, Plus, Scale, Settings } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { buttonVariants } from "@/components/ui/button-variants"
 import { getOrganizationBranding } from "@/lib/marker-ofek/organization-branding"
 import { ContractsListClient } from "./contracts-list-client"
@@ -50,16 +51,16 @@ export default async function MarkerOfekContractsPage() {
               <Settings className="size-4" aria-hidden />
               פרטים רשמיים למס
             </Link>
-            <Link
-              href="/marker-ofek/contracts/new"
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "gap-2 bg-cyan-600 text-white hover:bg-cyan-500"
-              )}
+            <Button
+              size="lg"
+              className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+              render={
+                <Link href="/marker-ofek/contracts/select-type" />
+              }
             >
               <Plus className="size-4" aria-hidden />
-              יצירת חוזה חדש
-            </Link>
+              חוזה חדש
+            </Button>
           </div>
         </div>
       </div>

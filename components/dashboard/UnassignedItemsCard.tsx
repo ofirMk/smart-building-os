@@ -114,13 +114,13 @@ export function UnassignedItemsCard({
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="relative w-full md:w-96">
           <Search
-            className="pointer-events-none absolute right-3 top-2.5 text-slate-400"
+            className="pointer-events-none absolute end-3 top-2.5 text-slate-400"
             size={18}
           />
           <input
             type="text"
             placeholder="חיפוש חומר (למשל: כבל, מנתק, צינור)..."
-            className="w-full rounded-lg border border-red-100 py-2 pl-4 pr-10 outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-red-100 py-2 ps-4 pe-10 outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -153,7 +153,7 @@ export function UnassignedItemsCard({
         ) : null}
       </div>
 
-      <div className="max-h-96 space-y-3 overflow-y-auto pr-2">
+      <div className="max-h-96 space-y-3 overflow-y-auto pe-2">
         {filteredItems.map((item) => (
           <div
             key={item.id}
@@ -208,7 +208,7 @@ export function UnassignedItemsCard({
       </div>
 
       {selectedIds.length > 0 && (
-        <div className="animate-in slide-in-from-bottom-5 sticky bottom-4 left-0 right-0 z-50 mt-4 flex items-center justify-between rounded-xl bg-blue-600 p-4 text-white shadow-2xl">
+        <div className="animate-in slide-in-from-bottom-5 sticky bottom-4 inset-x-0 z-50 mt-4 flex items-center justify-between rounded-xl bg-blue-600 p-4 text-white shadow-2xl">
           <div className="flex items-center gap-4">
             <span className="rounded-full bg-white px-3 py-1 font-bold text-blue-600">
               {selectedIds.length} פריטים נבחרו

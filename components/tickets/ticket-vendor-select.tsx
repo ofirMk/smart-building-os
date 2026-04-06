@@ -66,7 +66,7 @@ export function TicketVendorSelect({
       >
         <SelectValue placeholder="בחרו חברה" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent diamondEntity="entities">
         <SelectItem value={NONE}>ללא חברה</SelectItem>
         {selectableVendors.map((v) => (
           <SelectItem key={v.id} value={v.id}>

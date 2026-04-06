@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   Archive,
+  Banknote,
   BarChart,
   BarChart3,
   Bot,
@@ -312,6 +313,21 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "חשבוניות מס",
         href: "/marker-ofek/finance",
         icon: Receipt,
+      },
+      {
+        title: "לקוחות (CRM)",
+        href: "/marker-ofek/finance/customers",
+        icon: Users,
+      },
+      {
+        title: "קבלה חדשה",
+        href: "/marker-ofek/finance/receipts/new",
+        icon: Banknote,
+      },
+      {
+        title: "גילוי חובות",
+        href: "/marker-ofek/finance/reports/aging",
+        icon: ScrollText,
       },
       {
         title: "רווח והפסד",

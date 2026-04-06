@@ -779,7 +779,11 @@ export function MarkerOfekProjectHubClient({
               <CardTitle className="text-base">חוזי לקוח / ביצוע</CardTitle>
               <CardDescription>חוזים המשויכים לפרויקט זה</CardDescription>
             </div>
-            <Button size="sm" variant="outline" render={<Link href="/marker-ofek/contracts/new" />}>
+            <Button
+              size="sm"
+              variant="outline"
+              render={<Link href="/marker-ofek/contracts/select-type" />}
+            >
               חוזה חדש
             </Button>
           </CardHeader>
@@ -917,7 +921,7 @@ export function MarkerOfekProjectHubClient({
                         >
                           <SelectValue placeholder="בחרו חוזה…" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent diamondEntity="contracts">
                           {contracts.map((c) => (
                             <SelectItem key={c.id} value={c.id}>
                               {baselineContractSelectLabel(c)}

@@ -25,6 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DIAMOND_TENDER_INTAKE_HREF,
+  useDiamondNavigation,
+} from "@/hooks/use-diamond-navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"
 import type { MarkerOfekTenderRow } from "@/types/marker-ofek"
@@ -44,6 +48,7 @@ function tenderLabel(t: MarkerOfekTenderRow): string {
 
 export default function NewMarkerOfekProjectPage() {
   const router = useRouter()
+  useDiamondNavigation(undefined, { f2Href: DIAMOND_TENDER_INTAKE_HREF })
   const [tenders, setTenders] = React.useState<MarkerOfekTenderRow[]>([])
   const [loadingTenders, setLoadingTenders] = React.useState(true)
   const [tenderId, setTenderId] = React.useState<string>("")
@@ -71,30 +76,6 @@ export default function NewMarkerOfekProjectPage() {
       cancelled = true
     }
   }, [])
-
-  React.useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
-      const target = event.target as HTMLElement | null
-      const tagName = (target?.tagName ?? "").toLowerCase()
-      const isInteractiveTarget =
-        tagName === "input" ||
-        tagName === "textarea" ||
-        tagName === "select" ||
-        tagName === "button" ||
-        Boolean(target?.closest("[contenteditable='true']")) ||
-        Boolean(target?.closest("[role='combobox']"))
-      const hasOpenOverlay =
-        document.querySelector("[data-slot='select-content']") != null ||
-        document.querySelector("[data-slot='dropdown-menu-content']") != null
-      if (isInteractiveTarget || hasOpenOverlay) return
-      event.preventDefault()
-      router.push("/marker-ofek/procurement/invoices/new")
-    }
-
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [router])
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -140,8 +121,8 @@ export default function NewMarkerOfekProjectPage() {
           <CardDescription>
             שם פרויקט ושם לקוח. שיוך למכרז זוכה אופציונלי (מסלול קליטת מכרזים).
           </CardDescription>
-          <p className="text-xs text-muted-foreground">
-            לחץ ESC לחזרה למסך החשבונית הקודם.
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            F2 — קליטת מכרז. Escape — חזרה למסך הקודם (אחרי ניווט יהלום).
           </p>
         </CardHeader>
         <form onSubmit={onSubmit}>
@@ -203,7 +184,7 @@ export default function NewMarkerOfekProjectPage() {
                     >
                       <SelectValue placeholder="בחרו מכרז או ללא שיוך" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent diamondHref={DIAMOND_TENDER_INTAKE_HREF}>
                       <SelectItem value={TENDER_NONE_VALUE}>
                         ללא שיוך (פרויקט עצמאי)
                       </SelectItem>

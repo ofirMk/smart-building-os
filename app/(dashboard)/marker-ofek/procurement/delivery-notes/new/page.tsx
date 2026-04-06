@@ -190,7 +190,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="projectId"
-                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
               >
                 בחירת פרויקט
               </Label>
@@ -205,7 +205,7 @@ export default function NewDeliveryNotePage() {
                 >
                   <SelectValue placeholder="בחר פרויקט..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="projects">
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
@@ -221,7 +221,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="itemSearch"
-                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
               >
                 חיפוש פריט מהקטלוג
               </Label>
@@ -235,7 +235,7 @@ export default function NewDeliveryNotePage() {
                   value={itemSearch}
                   onChange={(e) => setItemSearch(e.target.value)}
                   placeholder="חפש לפי תיאור או SKU..."
-                  className="border-slate-200 pr-10 dark:border-input"
+                  className="border-slate-200 pe-10 dark:border-input"
                   disabled={loading || submitting}
                 />
               </div>
@@ -244,7 +244,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2 md:col-span-2">
               <Label
                 htmlFor="itemCatalogId"
-                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
               >
                 פריט מלאי
               </Label>
@@ -259,7 +259,7 @@ export default function NewDeliveryNotePage() {
                 >
                   <SelectValue placeholder="בחר פריט מהקטלוג" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent diamondEntity="items">
                   {filteredItems.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.description}
@@ -273,7 +273,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="quantity"
-                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
               >
                 כמות
               </Label>
@@ -294,7 +294,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="unit"
-                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
               >
                 יחידה
               </Label>
@@ -311,7 +311,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2 md:col-span-2">
               <Label
                 htmlFor="notes"
-                className="mr-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
               >
                 הערות / אסמכתא
               </Label>

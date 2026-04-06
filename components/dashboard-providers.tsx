@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { DashboardDiamondStandardNav } from "@/components/dashboard-diamond-standard-nav"
 import { MarkerOfekGlobalShortcuts } from "@/components/marker-ofek/marker-ofek-global-shortcuts"
 import { DiamondOnboardingProvider } from "@/components/marker-ofek/diamond-onboarding"
 import { MarkerOfekDashboardProvider } from "@/components/marker-ofek/marker-ofek-dashboard-context"
@@ -36,6 +37,7 @@ export function DashboardProviders({
   return (
     <React.Fragment>
       <OrganizationBrandingProvider value={brand}>
+        <DashboardDiamondStandardNav />
         <MarkerOfekGlobalShortcuts />
         <WorkspaceCrossTabSync />
         <MarkerOfekDashboardProvider

@@ -9,6 +9,7 @@ import {
   quickProjectSchema,
   quickTenderLinkSchema,
 } from "@/lib/marker-ofek/erp-validation-schemas"
+import { logMoAuditEvent } from "@/lib/marker-ofek/audit-log"
 import { formatError } from "@/lib/utils"
 
 export async function quickCreateProject(
@@ -56,10 +57,22 @@ export async function quickCreateProject(
       return { ok: false, error: insErr?.message ?? "יצירת פרויקט נכשלה" }
     }
 
+    const newId = inserted.id as string
+    void logMoAuditEvent({
+      action_type: "INSERT",
+      table_name: "projects",
+      project_id: newId,
+      new_data: {
+        id: newId,
+        name: parsed.data.name.trim(),
+        client_entity_id: parsed.data.clientEntityId,
+      },
+    })
+
     revalidatePath("/marker-ofek/projects")
     revalidatePath("/marker-ofek/contracts/new")
     revalidatePath("/marker-ofek/procurement/purchase-orders/new")
-    return { ok: true, id: inserted.id as string }
+    return { ok: true, id: newId }
   } catch (e) {
     return { ok: false, error: formatError(e) }
   }
@@ -154,11 +167,23 @@ export async function quickCreateEntity(
       return { ok: false, error: insErr?.message ?? "יצירת ישות נכשלה" }
     }
 
+    const entId = inserted.id as string
+    void logMoAuditEvent({
+      action_type: "INSERT",
+      table_name: "entities",
+      project_id: null,
+      new_data: {
+        id: entId,
+        name: parsed.data.name.trim(),
+        type: parsed.data.type,
+      },
+    })
+
     revalidatePath("/marker-ofek/entities")
     revalidatePath("/marker-ofek/entities/suppliers")
     revalidatePath("/marker-ofek/procurement/purchase-orders/new")
     revalidatePath("/marker-ofek/contracts/new")
-    return { ok: true, id: inserted.id as string }
+    return { ok: true, id: entId }
   } catch (e) {
     return { ok: false, error: formatError(e) }
   }

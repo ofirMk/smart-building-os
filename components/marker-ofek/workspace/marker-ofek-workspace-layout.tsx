@@ -1,11 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Search } from "lucide-react"
 
+import {
+  isMarkerOfekDiamondFormPath,
+  useDiamondNavigation,
+} from "@/hooks/use-diamond-navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -23,6 +27,23 @@ import {
   useMarkerOfekWorkspace,
 } from "./marker-ofek-workspace-context"
 
+/** רק כשאין פרויקט במגירה ולא בדף שכבר רושם ניווט יהלום בדף */
+function MarkerOfekWorkspaceProjectShortcutInner() {
+  useDiamondNavigation("projects")
+  return null
+}
+
+/**
+ * כשאין פרויקט במגירה — F2 מוביל ל־/marker-ofek/projects/new (יהלום).
+ * בדפי טופס עם ‎useDiamondNavigation‎ בדף — בלי כפילות מאזינים.
+ */
+function MarkerOfekProjectContextShortcut() {
+  const pathname = usePathname() ?? ""
+  const { contextProjectId } = useMarkerOfekWorkspace()
+  if (contextProjectId || isMarkerOfekDiamondFormPath(pathname)) return null
+  return <MarkerOfekWorkspaceProjectShortcutInner />
+}
+
 function MarkerOfekWorkspaceChrome({
   children,
 }: {
@@ -33,6 +54,7 @@ function MarkerOfekWorkspaceChrome({
 
   return (
     <>
+      <MarkerOfekProjectContextShortcut />
       <motion.div
         layout
         className="sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-3 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/90 md:-mx-8 md:px-6"
@@ -88,7 +110,18 @@ function MarkerOfekWorkspaceChrome({
           <MarkerOfekSupplierDrawerTrigger />
         </div>
       </motion.div>
-      {children}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="min-h-0 min-w-0 flex-1"
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
       <MarkerOfekCommandPalette />
       <MarkerOfekProjectDrawer />
       <MarkerOfekSupplierDrawer />
