@@ -116,7 +116,7 @@ export default async function FinancePnLPage() {
 
       <p className="text-center text-xs text-slate-400">
         לפרטי פרויקט ראו{" "}
-        <Link href="/marker-ofek/executive" className="text-indigo-700 underline">
+        <Link href="/management" className="text-indigo-700 underline">
           דשבורד הנהלה
         </Link>
         .

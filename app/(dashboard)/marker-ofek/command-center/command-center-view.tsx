@@ -449,7 +449,7 @@ export function CommandCenterView({
                 </Link>
                 {exec ? (
                   <Link
-                    href="/marker-ofek/executive"
+                    href="/management"
                     className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                   >
                     <p className="text-xs font-semibold text-indigo-950">דשבורד הנהלה</p>

@@ -17,6 +17,7 @@ export function isMarkerOfekPath(pathname: string | null): boolean {
 export function isMarkerOfekExecutiveContext(pathname: string | null): boolean {
   if (pathname == null || pathname === "") return false
   if (pathname === "/" || pathname === "/dashboard") return true
+  if (pathname === "/management" || pathname.startsWith("/management/")) return true
   if (pathname === "/partner-finance" || pathname.startsWith("/partner-finance/")) return true
   return isMarkerOfekPath(pathname)
 }

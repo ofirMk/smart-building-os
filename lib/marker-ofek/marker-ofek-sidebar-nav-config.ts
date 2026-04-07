@@ -69,7 +69,7 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
       },
       {
         title: "דשבורד הנהלה",
-        href: "/marker-ofek/executive",
+        href: "/management",
         icon: BarChart3,
       },
       {

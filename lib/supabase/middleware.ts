@@ -31,6 +31,7 @@ function isProtectedPath(pathname: string): boolean {
     "/chat",
     "/portal",
     "/marker-ofek",
+    "/management",
     "/hh-panels",
     "/hq",
   ] as const
@@ -81,7 +82,7 @@ function markerOfekPostAuthHome(
 ): string {
   const r = role as AppUserRole | null
   if (canViewHoldingExecutive(email ?? null, r ?? "tenant")) {
-    return "/marker-ofek/executive"
+    return "/management"
   }
   return "/marker-ofek/command-center"
 }
@@ -153,7 +154,12 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse
   }
 
-  if (user && pathname.startsWith("/marker-ofek")) {
+  if (
+    user &&
+    (pathname.startsWith("/marker-ofek") ||
+      pathname === "/management" ||
+      pathname.startsWith("/management/"))
+  ) {
     const qRole = (await getProfileRole(supabase, user.id)) as AppUserRole | null
     if (!isExemptFromDiamondQualificationGate(user.email, qRole)) {
       const qualified = await isUserQualifiedForMarkerOfek(supabase, user.id)

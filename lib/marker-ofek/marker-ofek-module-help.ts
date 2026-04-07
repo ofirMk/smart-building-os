@@ -94,6 +94,15 @@ const PREFIX_HELP: { prefix: string; block: ModuleHelpBlock }[] = [
     },
   },
   {
+    prefix: "/management",
+    block: {
+      title: "לוח ניהול בכיר",
+      paragraphs: [
+        "מדדי דופק, בריאות פרויקטים, התראות AI ותזרים — מבט CEO (Holden V1).",
+      ],
+    },
+  },
+  {
     prefix: "/marker-ofek/executive",
     block: {
       title: "דשבורד הנהלה",

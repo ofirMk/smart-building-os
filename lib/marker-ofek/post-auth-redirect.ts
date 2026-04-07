@@ -28,7 +28,7 @@ export async function resolvePostMarkerOfekLoginPath(
   const email = user.email ?? null
 
   if (canViewHoldingExecutive(email, role)) {
-    return "/marker-ofek/executive"
+    return "/management"
   }
 
   return "/marker-ofek/command-center"

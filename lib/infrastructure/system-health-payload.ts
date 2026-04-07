@@ -116,7 +116,7 @@ export function generateSystemHealthPayload(
       severity: "info",
       title: "אין חריגות קריטיות בבדיקה האוטומטית",
       detail: "המשיכו לנטר ידנית ובדקו דוחות תקופתיים.",
-      actionUrl: `${base}/marker-ofek/executive`,
+      actionUrl: `${base}/management`,
       actionLabel: "דשבורד הנהלה",
     })
   }

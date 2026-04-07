@@ -98,6 +98,7 @@ export async function upsertOverheadRegistryItem(input: {
       if (error) return { ok: false, error: error.message }
       revalidatePath("/marker-ofek/finance/overhead")
       revalidatePath("/marker-ofek/executive")
+      revalidatePath("/management")
       return { ok: true, id }
     }
     const { data, error } = await supabase
@@ -108,6 +109,7 @@ export async function upsertOverheadRegistryItem(input: {
     if (error || !data?.id) return { ok: false, error: error?.message ?? "שמירה נכשלה" }
     revalidatePath("/marker-ofek/finance/overhead")
     revalidatePath("/marker-ofek/executive")
+    revalidatePath("/management")
     return { ok: true, id: data.id as string }
   } catch (e) {
     return { ok: false, error: formatError(e) }
@@ -126,6 +128,7 @@ export async function deleteOverheadRegistryItem(
     if (error) return { ok: false, error: error.message }
     revalidatePath("/marker-ofek/finance/overhead")
     revalidatePath("/marker-ofek/executive")
+    revalidatePath("/management")
     return { ok: true }
   } catch (e) {
     return { ok: false, error: formatError(e) }

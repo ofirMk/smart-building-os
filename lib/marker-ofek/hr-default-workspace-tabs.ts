@@ -49,7 +49,7 @@ export function buildHrProvisionWorkspaceTabs(args: {
   }
 
   const execSplit = args.grantSystemAdmin || args.persona === "executive"
-  const primary = tab("/marker-ofek/executive", "דשבורד הנהלה", true)
+  const primary = tab("/management", "דשבורד הנהלה", true)
   return {
     openTabs: [
       primary,
@@ -81,7 +81,7 @@ export function defaultBrowserBookmarksForPersona(
   }
   return [
     { label: "מרכז פיקוד", href: "/marker-ofek/command-center" },
-    { label: "דשבורד הנהלה", href: "/marker-ofek/executive" },
+    { label: "דשבורד הנהלה", href: "/management" },
     { label: "כתבי כמויות", href: "/marker-ofek/tenders/boq" },
   ]
 }

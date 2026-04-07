@@ -132,6 +132,7 @@ export function pathnameToModule(pathname: string): ModuleId | null {
   }
 
   if (p.startsWith("/marker-ofek/executive")) return "executiveSummary"
+  if (p === "/management" || p.startsWith("/management/")) return "executiveSummary"
   if (p.startsWith("/marker-ofek/execution/gantt")) return "gantt"
   if (p.startsWith("/marker-ofek/execution/resources")) return "gantt"
   if (p.startsWith("/marker-ofek/execution/progress-reports")) return "billing"

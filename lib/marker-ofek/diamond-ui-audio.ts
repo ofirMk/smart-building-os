@@ -83,3 +83,22 @@ export function playDiamondTransitionSwoosh() {
   osc.start(t)
   osc.stop(t + 0.12)
 }
+
+/** כניסה לדשבורד — סוויש עדין */
+export function playDiamondDashboardEntrySwoosh() {
+  const c = ctx()
+  if (!c) return
+  const osc = c.createOscillator()
+  const g = c.createGain()
+  osc.type = "sine"
+  const t = c.currentTime
+  osc.frequency.setValueAtTime(260, t)
+  osc.frequency.exponentialRampToValueAtTime(640, t + 0.1)
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(0.016, t + 0.02)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11)
+  osc.connect(g)
+  g.connect(c.destination)
+  osc.start(t)
+  osc.stop(t + 0.13)
+}

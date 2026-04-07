@@ -136,7 +136,7 @@ export const DIAMOND_NAVIGATOR_STEPS: Record<DiamondTrackId, NavigatorStep[]> = 
       deepDive:
         "מע״מ פלט נגזר מחשבוניות מאושרות/שולם. דשבורד ההנהלה מרכז את התמונה לפני החלטות תזרים.",
       spotlightAnchor: "cc-modules",
-      ctaHref: "/marker-ofek/executive",
+      ctaHref: "/management",
       ctaLabel: "דשבורד הנהלה",
     },
   ],

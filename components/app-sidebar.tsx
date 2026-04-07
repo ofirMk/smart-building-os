@@ -362,7 +362,10 @@ export function AppSidebar({
       ? MARKER_OFEK_CONTRACTING_NAV_SECTIONS
       : MARKER_OFEK_CONTRACTING_NAV_SECTIONS.map((section) => ({
           ...section,
-          items: section.items.filter((i) => i.href !== "/marker-ofek/executive"),
+          items: section.items.filter(
+            (i) =>
+              i.href !== "/marker-ofek/executive" && i.href !== "/management"
+          ),
         }))
     let withAdmin = withoutExec
     if (showUserPermissionsNav || showAiUserSetupNav) {

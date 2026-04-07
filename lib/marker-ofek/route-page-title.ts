@@ -49,6 +49,9 @@ export function titleForPath(pathname: string): string {
   if (pathname === "/marker-ofek/executive") {
     return "דשבורד הנהלה"
   }
+  if (pathname === "/management" || pathname.startsWith("/management/")) {
+    return "לוח ניהול בכיר"
+  }
   if (
     pathname === "/marker-ofek/procurement" ||
     pathname === "/marker-ofek/procurement/" ||
