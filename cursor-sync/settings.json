@@ -1,0 +1,5 @@
+{
+    "window.commandCenter": true,
+    "git.autofetch": true,
+    "terminal.integrated.enableMultiLinePasteWarning": "never"
+}

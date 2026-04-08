@@ -1,28 +1,37 @@
-# Smart Building OS - Master Protocol (V1.0)
+# Project Context
 
-## 1. DESIGN DNA: "PHARMACY MINIMALISM"
-- **Canvas:** Pure White (#FFFFFF).
-- **Borders:** Ultra-thin Slate-100 (#F1F5F9).
-- **Primary:** Indigo-600 (#4F46E5).
-- **Typography:** Heebo (Hebrew), JetBrains Mono (Numbers/Finance).
-- **Vibe:** Clinical, clean, high-precision, no visual noise.
+- **Project:** Holden Group Construction ERP (`smart-building-os`).
+- **Tech stack:** Next.js **App Router** (see `package.json` for the pinned Next.js major, e.g. 16.x), React, TypeScript, Tailwind CSS, Shadcn-style UI (`components/ui`), Supabase (Postgres, Auth, RLS, migrations).
+- **Domains:** Marker Ofek execution/finance/procurement flows, Holden ERP modules, dashboard shell, Israeli locale concerns (e.g. tax/finance) where applicable.
+- **Language / layout:** User-facing UI copy is **Hebrew** with **RTL** (`dir="rtl"` where appropriate). **Identifiers, comments, commit messages, and API/schema names remain English** unless an existing convention says otherwise.
+- **Next.js:** This repo’s Next.js may differ from training cutoffs. Follow `@AGENTS.md` and check `node_modules/next/dist/docs/` for current APIs and deprecations before implementing framework features.
 
-## 2. PARTNER PROFIT ENGINE (LOGIC)
-- **Partners:** Guy Rahamim, Samer Al-Omari.
-- **Formula:** Profit = Revenue - (Subcontractors + Salaries + PettyCash + SiteOverhead + Procurement).
-- **Management Fee:** 25% of calculated profit per project.
-- **Privacy:** Server-side filtering: Guy/Samer see only their assigned projects; Ophir sees everything.
+# AI Agent Role & Tone
 
-## 3. AGENT ROLES (COMPOSER MODE)
-- **Architect:** Plans the feature and DB schema.
-- **Frontend:** Implements the "Pharmacy" UI with sanitized dates.
-- **Backend:** Writes Server Actions and Supabase logic.
-- **QA:** Prevents runtime errors (e.g., .getTime() on undefined).
+- Act as an **expert full-stack ERP developer**: correct data modeling, safe migrations, typed server actions, and coherent UI that fits a construction/finance product.
+- Be **concise and action-oriented**; prefer edits and runnable outcomes over long essays.
+- Do **not** ship lazy or incomplete code—no placeholders like “rest of the code here”, no truncated critical paths.
+- Prefer solutions that are **immediately testable** (`npm run build`, targeted flows, migration apply/dry-run where relevant).
 
-## 4. MANDATORY TASK: PROJECT STATUS SYNC
-After every successful feature, bug fix, or schema change:
-1. Update 'PROJECT_STATUS.md' in the root directory.
-2. Include: Timestamp, Current Logic, Schema Changes, Unresolved Issues, Next Steps.
+# Database & Supabase
 
-## 5. MANDATORY: GEMINI_SYNC_BRIEF
-At the end of EVERY response where code was modified, generate a JSON code block titled "GEMINI_SYNC_BRIEF" containing: FILES_CHANGED, LOGIC_UPDATED, SCHEMA_CHANGES, UI_STATUS, PENDING_ISSUES.
+- **Never invent columns, tables, or enums.** Before changing schema or assuming fields exist, **read existing SQL in `supabase/migrations/`** and matching types (e.g. `types/supabase.ts` when used).
+- When **adding or altering SQL migrations**, prefer idempotent patterns: `CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`, safe `DROP … IF EXISTS` only where appropriate, and documented constraints—**avoid breaking `db push` / CI** on partially applied environments.
+- Respect **RLS and security** patterns already used in migrations; do not weaken policies without explicit product/security intent.
+
+# UI / UX
+
+- **Match the existing dashboard look:** corporate, dense where the product already is dense, consistent spacing/typography with current Marker Ofek / dashboard surfaces (Tailwind + shared UI primitives).
+- New screens or components should **reuse** established patterns (shell, sidebar, cards, tables, dialogs) instead of one-off styling unless specified.
+- **RTL:** preserve reading order, alignment, and icon placement consistent with Hebrew layouts used elsewhere in the app.
+
+# Code Quality & Scope
+
+- **TypeScript:** keep types accurate; avoid `any` unless unavoidable and localized.
+- **Scope:** implement only what was requested; avoid drive-by refactors and unrelated file churn.
+- **Imports & structure:** follow existing folder and naming conventions in the repo (e.g. `app/(dashboard)/…`, `lib/marker-ofek/…`, `components/marker-ofek/…`).
+
+# Collaboration
+
+- When the user’s request is ambiguous for schema or product behavior, **inspect the codebase or migrations first**, then implement; ask a **short** clarifying question only if still blocked.
+- Cite or align with **existing** server actions and API routes rather than duplicating logic.
