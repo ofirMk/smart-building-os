@@ -5,8 +5,10 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { usePathname, useRouter } from "next/navigation"
 import { Bot, Columns2, Loader2, Mic, Send, Sparkles, X } from "lucide-react"
+import Draggable from "react-draggable"
 import { toast } from "sonner"
 
+import { useAiAssistantScreenContext } from "@/components/dashboard/ai-assistant-screen-context"
 import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +29,33 @@ import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 
 const SPEECH_LANG = "he-IL"
+
+const AI_PANEL_POSITION_KEY = "ai-panel-position"
+
+function DotsSixHandle({ className }: { className?: string }) {
+  const dots = [
+    [5, 5],
+    [5, 12],
+    [5, 19],
+    [12, 5],
+    [12, 12],
+    [12, 19],
+  ] as const
+  return (
+    <svg
+      className={cn("shrink-0 text-emerald-700/80", className)}
+      width="14"
+      height="22"
+      viewBox="0 0 17 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      {dots.map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="1.75" />
+      ))}
+    </svg>
+  )
+}
 
 /** מספרים עם ₪ — יישור מטבע כמו בשאר מודולי הכספים */
 const ASSISTANT_MONEY_CHUNK =
@@ -58,6 +87,7 @@ export function AiAssistant({
   const pathname = usePathname() ?? ""
   const router = useRouter()
   const ws = useSmartWorkspace()
+  const screenCtx = useAiAssistantScreenContext()
   const splitDocked =
     Boolean(
       ws?.splitView &&
@@ -70,15 +100,48 @@ export function AiAssistant({
   const [listening, setListening] = React.useState(false)
   const [oracleBullets, setOracleBullets] = React.useState<string[] | null>(null)
   const [oracleFetched, setOracleFetched] = React.useState(false)
+  const [panelSavedPos, setPanelSavedPos] = React.useState({ x: 0, y: 0 })
+  /** 0 = לפני קריאת localStorage; 1+ = אחרי — מאפשר defaultPosition נכון ב־Draggable */
+  const [panelLayoutKey, setPanelLayoutKey] = React.useState(0)
+
+  React.useLayoutEffect(() => {
+    try {
+      const raw = localStorage.getItem(AI_PANEL_POSITION_KEY)
+      if (raw) {
+        const j = JSON.parse(raw) as { x?: unknown; y?: unknown }
+        if (Number.isFinite(j.x) && Number.isFinite(j.y)) {
+          setPanelSavedPos({ x: Number(j.x), y: Number(j.y) })
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    setPanelLayoutKey((k) => k + 1)
+  }, [])
+
+  const chatTransport = React.useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: {
+          screenContext:
+            screenCtx?.digest && screenCtx.digest.trim() !== ""
+              ? screenCtx.digest.trim()
+              : undefined,
+        },
+      }),
+    [screenCtx?.digest]
+  )
 
   const { messages, sendMessage, status, error, clearError, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: chatTransport,
   })
 
   const busy = status === "submitted" || status === "streaming"
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  const panelNodeRef = React.useRef<HTMLDivElement>(null)
   const recognitionRef = React.useRef<SpeechRecognition | null>(null)
   /** טקסט שהיה בשדה בעת התחלת ההקלטה + תוצאות סופיות מצטברות */
   const speechPrefixRef = React.useRef("")
@@ -244,36 +307,40 @@ export function AiAssistant({
     setInput("")
   }
 
-  return (
+  const cardClassName = cn(
+    "flex h-[min(560px,calc(100dvh-7rem))] flex-col overflow-hidden border-slate-200/90 bg-white",
+    splitDocked
+      ? "w-full max-w-none shadow-xl ring-1 ring-slate-100"
+      : "w-[min(100vw-2rem,400px)] shadow-2xl shadow-slate-900/15 ring-1 ring-emerald-200/40 backdrop-blur-xl supports-[backdrop-filter]:bg-white/95"
+  )
+
+  const headerTitleBlock = (
     <div
       className={cn(
-        "fixed z-50 flex flex-col items-start gap-3 print:hidden",
-        splitDocked
-          ? "bottom-6 start-[max(0.5rem,calc(50vw-0.5rem))] w-[min(calc(100vw-1rem),calc(50vw-1rem))] sm:bottom-8"
-          : "bottom-4 start-4 sm:bottom-6 sm:start-6"
+        "flex min-w-0 flex-1 items-center gap-2",
+        !splitDocked &&
+          open &&
+          "drag-handle cursor-grab touch-none rounded-lg px-1 py-0.5 hover:bg-emerald-50/80 active:cursor-grabbing"
       )}
-      dir="rtl"
     >
-      {open ? (
-        <Card
-          className={cn(
-            "flex h-[min(560px,calc(100dvh-7rem))] flex-col overflow-hidden border-slate-100 bg-white shadow-xl ring-1 ring-slate-100",
-            splitDocked
-              ? "w-full max-w-none"
-              : "w-[min(100vw-2rem,400px)] border-border/80 bg-card/95 shadow-2xl shadow-black/40 ring-white/10 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90"
-          )}
-        >
-          <CardHeader className="border-b border-slate-100 bg-white p-3 pb-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-950/10 text-indigo-950 ring-1 ring-indigo-950/15">
-                  <Bot className="size-5" aria-hidden />
-                </span>
-                <CardTitle className="text-base font-semibold leading-tight text-indigo-950">
-                  עוזר חכם — ניתוח פיננסי
-                </CardTitle>
-              </div>
-              <div className="flex shrink-0 items-center gap-0.5">
+      {!splitDocked && open ? (
+        <DotsSixHandle className="opacity-90" />
+      ) : null}
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-950/10 text-emerald-950 ring-1 ring-emerald-900/15">
+        <Bot className="size-5" aria-hidden />
+      </span>
+      <CardTitle className="text-base font-semibold leading-tight text-slate-900">
+        עוזר חכם — ניתוח פיננסי
+      </CardTitle>
+    </div>
+  )
+
+  const assistantCard = (
+    <Card className={cardClassName}>
+      <CardHeader className="border-b border-emerald-100/90 bg-gradient-to-br from-emerald-50/90 to-white p-3 pb-3">
+        <div className="flex items-center justify-between gap-2">
+          {headerTitleBlock}
+          <div className="flex shrink-0 items-center gap-0.5">
                 {ws && pathname.startsWith("/marker-ofek") && ws.splitView ? (
                   <Button
                     type="button"
@@ -464,29 +531,81 @@ export function AiAssistant({
               </Button>
             </form>
           </CardFooter>
-        </Card>
-      ) : null}
+    </Card>
+  )
 
-      <Button
-        type="button"
-        size="icon-lg"
-        onClick={() => setOpen((o) => !o)}
-        className={cn(
-          "!h-14 !w-14 !min-h-14 !min-w-14 rounded-full p-0 shadow-lg shadow-primary/25",
-          "bg-gradient-to-br from-primary to-primary/80",
-          "ring-2 ring-primary/30 ring-offset-2 ring-offset-background",
-          "hover:from-primary/95 hover:to-primary/75 hover:shadow-xl hover:shadow-primary/30",
-          "focus-visible:ring-2 focus-visible:ring-ring"
-        )}
-        aria-expanded={open}
-        aria-label={open ? "סגירת עוזר חכם" : "פתיחת עוזר חכם"}
+  const fabButton = (
+    <Button
+      type="button"
+      size="icon-lg"
+      onClick={() => setOpen((o) => !o)}
+      className={cn(
+        "!h-14 !w-14 !min-h-14 !min-w-14 rounded-full p-0 shadow-lg shadow-emerald-600/25",
+        "bg-gradient-to-br from-emerald-600 to-emerald-700",
+        "ring-2 ring-emerald-500/35 ring-offset-2 ring-offset-background",
+        "hover:from-emerald-600/95 hover:to-emerald-700/90 hover:shadow-xl hover:shadow-emerald-600/30",
+        "focus-visible:ring-2 focus-visible:ring-ring",
+        !open && !splitDocked && "drag-handle cursor-grab touch-none active:cursor-grabbing"
+      )}
+      aria-expanded={open}
+      aria-label={open ? "סגירת עוזר חכם" : "פתיחת עוזר חכם"}
+    >
+      {open ? (
+        <X className="size-6 text-white" />
+      ) : (
+        <Sparkles className="size-6 text-white" />
+      )}
+    </Button>
+  )
+
+  if (splitDocked) {
+    return (
+      <div
+        className="fixed z-50 flex flex-col items-start gap-3 print:hidden"
+        dir="rtl"
+        style={{
+          bottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+          insetInlineStart: "max(0.5rem, calc(50vw - 0.5rem))",
+          width: "min(calc(100vw - 1rem), calc(50vw - 1rem))",
+        }}
       >
-        {open ? (
-          <X className="size-6 text-primary-foreground" />
-        ) : (
-          <Sparkles className="size-6 text-primary-foreground" />
-        )}
-      </Button>
+        {open ? assistantCard : null}
+        {fabButton}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 pointer-events-none print:hidden"
+      dir="rtl"
+      aria-hidden={false}
+    >
+      <Draggable
+        key={panelLayoutKey}
+        handle=".drag-handle"
+        defaultPosition={panelSavedPos}
+        nodeRef={panelNodeRef}
+        bounds="parent"
+        enableUserSelectHack={false}
+        onStop={(_, data) => {
+          try {
+            const next = { x: data.x, y: data.y }
+            localStorage.setItem(AI_PANEL_POSITION_KEY, JSON.stringify(next))
+            setPanelSavedPos(next)
+          } catch {
+            /* ignore */
+          }
+        }}
+      >
+        <div
+          ref={panelNodeRef}
+          className="pointer-events-auto absolute bottom-6 start-6 flex flex-col items-start gap-3"
+        >
+          {open ? assistantCard : null}
+          {fabButton}
+        </div>
+      </Draggable>
     </div>
   )
 }

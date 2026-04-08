@@ -36,7 +36,7 @@ export function MarkerOfekModuleHeaderActions() {
           type="button"
           variant="ghost"
           size="icon"
-          className="size-9 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-700"
+          className="size-9 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           aria-label="עזרה והסבר למסך"
           title="עזרה"
           onClick={() => setHelpOpen(true)}
@@ -47,7 +47,7 @@ export function MarkerOfekModuleHeaderActions() {
           href="/marker-ofek/settings/smart"
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
-            "size-9 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-700"
+            "size-9 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           )}
           aria-label="הגדרות חכמות"
           title="הגדרות"

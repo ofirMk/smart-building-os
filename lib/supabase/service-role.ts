@@ -3,6 +3,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 /**
  * Server-only client with the **service role** key — bypasses RLS for system jobs (cron, admin scripts).
  * Never import this in client components.
+ *
+ * Diamond V1.0: untyped client during incremental `types/supabase.ts` alignment; prefer `Tables<>` in lib.
  */
 export function createSupabaseServiceRoleClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

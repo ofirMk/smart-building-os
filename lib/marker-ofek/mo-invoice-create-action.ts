@@ -121,7 +121,7 @@ export async function createMoTaxInvoiceAction(
       }
     }
 
-    let contractId: string | null =
+    const contractId: string | null =
       p.contractId && String(p.contractId).trim() ? String(p.contractId).trim() : null
     if (contractId) {
       const { data: ct, error: ctErr } = await supabase
@@ -158,15 +158,56 @@ export async function createMoTaxInvoiceAction(
         ? (company as { legal_id: string }).legal_id
         : null
 
+    const financeClientId =
+      p.financeClientId && String(p.financeClientId).trim()
+        ? String(p.financeClientId).trim()
+        : null
+
+    if (financeClientId) {
+      const { data: fcRow, error: fcErr } = await supabase
+        .from("mo_finance_clients")
+        .select("id, entity_id")
+        .eq("id", financeClientId)
+        .eq("is_deleted", false)
+        .maybeSingle()
+      if (fcErr) return { ok: false, error: fcErr.message }
+      if (!fcRow) {
+        return { ok: false, error: "רשומת לקוח במאגר לא נמצאה" }
+      }
+      const fcEnt = (fcRow as { entity_id?: string | null }).entity_id
+      if (fcEnt && String(fcEnt) !== p.entityId) {
+        return {
+          ok: false,
+          error: "המאגר משויך ללקוח אחר — בחרו את אותה ישות או נקו את בחירת המאגר",
+        }
+      }
+    }
+
+    const dueDate =
+      p.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(String(p.dueDate).trim())
+        ? String(p.dueDate).trim()
+        : null
+
+    const itemsSnapshot = lineRows.map((l, i) => ({
+      sort_order: i,
+      description: l.description,
+      quantity: l.quantity,
+      unit_price: l.unitPrice,
+      line_total: l.lineTotal,
+    }))
+
     const { data: inv, error: invErr } = await supabase
       .from("mo_invoices")
       .insert({
         project_id: projectId,
         entity_id: p.entityId,
+        finance_client_id: financeClientId,
         contract_id: contractId,
         linked_partial_account_id: null,
         issue_date: p.issueDate,
+        due_date: dueDate,
         document_type: "tax_invoice",
+        items_snapshot: itemsSnapshot,
         subtotal,
         vat_amount: vatAmount,
         grand_total: grandTotal,
@@ -254,6 +295,7 @@ export async function createMoTaxInvoiceAction(
     })
 
     revalidatePath("/marker-ofek/finance")
+    revalidatePath("/marker-ofek/finance/invoices/new")
     revalidatePath("/marker-ofek/invoices/new")
     return { ok: true, invoiceId, invoiceNumber }
   } catch (e) {

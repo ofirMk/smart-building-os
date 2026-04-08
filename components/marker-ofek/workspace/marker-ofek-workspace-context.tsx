@@ -53,6 +53,7 @@ function tabLabelForPath(pathname: string): string {
   if (pathname.startsWith("/marker-ofek/schedule")) return "לוח זמנים"
   if (pathname.startsWith("/marker-ofek/budget")) return "תקציב"
   if (pathname.startsWith("/marker-ofek/items")) return "קטלוג"
+  if (pathname.startsWith("/marker-ofek/holden-erp")) return "Holden ERP"
   if (pathname.startsWith("/marker-ofek/finance")) return "כספים"
   if (pathname.startsWith("/marker-ofek/settings")) return "הגדרות"
   return "מערכת הביצוע"

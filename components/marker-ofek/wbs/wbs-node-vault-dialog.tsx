@@ -26,8 +26,8 @@ import {
   listPlanLinksForWbsNode,
   listVaultDocumentsForProject,
   removePlanLink,
-  type PlanLinkRow,
 } from "@/lib/marker-ofek/wbs-plan-link-actions"
+import type { PlanLinkRow } from "@/lib/marker-ofek/wbs-plan-link-types"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import type { MarkerOfekProjectDocumentRow } from "@/types/marker-ofek"
 import { formatError } from "@/lib/utils"

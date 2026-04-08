@@ -1,6 +1,7 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-export function createSupabaseServerClient() {
+/** לקוח anon ללא עוגיות — שימושים נקודתיים; עדיף `createSupabaseServerAuthClient` לדפים עם משתמש. */
+export function createSupabaseServerClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

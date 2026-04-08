@@ -91,6 +91,8 @@ export type TaskResourceAssignmentRow = {
   task_name: string
   start_date: string | null
   end_date: string | null
+  /** יחידות / מגבלת כוח־אדם יומית (למשימה) */
+  units: number | null
 }
 
 export type ResourceGridRow = {
@@ -761,6 +763,7 @@ export async function setTaskPrimaryBoqLink(input: {
   }
 
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   revalidatePath("/marker-ofek/execution")
   return { ok: true }
 }
@@ -964,6 +967,7 @@ export async function updateTaskGridRow(input: {
 
   await recalculateWbsSchedule(projectId)
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   revalidatePath("/marker-ofek/execution")
   revalidatePath(`/marker-ofek/projects/${projectId}`)
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}/subcontractor`)
@@ -1026,6 +1030,70 @@ export async function setTaskDependencyIds(input: {
   await recalculateWbsSchedule(projectId)
 
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
+  revalidatePath("/marker-ofek/execution")
+  revalidatePath(`/marker-ofek/projects/${projectId}`)
+  return { ok: true }
+}
+
+/** הוספת קדם FS יחיד למשימה (מממשכת dependency_ids קיימים). */
+export async function addFinishToStartPredecessor(input: {
+  projectId: string
+  successorTaskId: string
+  predecessorTaskId: string
+}) {
+  const projectId = String(input.projectId ?? "").trim()
+  const successorTaskId = String(input.successorTaskId ?? "").trim()
+  const predecessorTaskId = String(input.predecessorTaskId ?? "").trim()
+  if (!projectId || !successorTaskId || !predecessorTaskId) throw new Error("נתונים חסרים")
+  if (successorTaskId === predecessorTaskId) throw new Error("לא ניתן לקשר משימה לעצמה")
+
+  const projectTasks = await fetchProjectTasks(projectId)
+  const succ = projectTasks.find((t) => t.id === successorTaskId)
+  if (!succ) throw new Error("המשימה לא נמצאה בפרויקט")
+  if (!projectTasks.some((t) => t.id === predecessorTaskId)) {
+    throw new Error("משימת קדם לא נמצאה בפרויקט")
+  }
+
+  const existing = [...(succ.dependency_ids ?? [])]
+  if (existing.includes(predecessorTaskId)) return { ok: true }
+
+  const next = [...existing, predecessorTaskId]
+  if (wouldCreateDependencyCycle(successorTaskId, next, projectTasks)) {
+    throw new Error("CONFLICT_CIRCULAR_DEPENDENCY")
+  }
+
+  const dependency_lags: Record<string, number> = {}
+  for (const id of next) {
+    dependency_lags[id] = Math.trunc(Number(succ.dependency_lags?.[id] ?? 0) || 0)
+  }
+  dependency_lags[predecessorTaskId] = dependency_lags[predecessorTaskId] ?? 0
+
+  const flatIds = canonicalWbsFlatIds(ganttTasksToScheduleTasks(projectTasks))
+  const rows = next
+    .map((id) => flatIds.indexOf(id) + 1)
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b)
+  const predecessor_index = rows.length === 1 ? rows[0]! : rows.length > 0 ? Math.min(...rows) : null
+  const predecessor_task_id = next[0] ?? null
+
+  const supabase = await createSupabaseServerAuthClient()
+  const { error } = await supabase
+    .schema("public")
+    .from("tasks")
+    .update({
+      dependency_ids: next,
+      predecessor_index,
+      predecessor_task_id,
+      dependency_lags,
+    })
+    .eq("id", successorTaskId)
+    .eq("project_id", projectId)
+  if (error) throw new Error(error.message)
+
+  await recalculateWbsSchedule(projectId)
+  revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   revalidatePath("/marker-ofek/execution")
   revalidatePath(`/marker-ofek/projects/${projectId}`)
   return { ok: true }
@@ -1378,6 +1446,7 @@ export async function createTask(input: CreateTaskInput) {
   await recalculateWbsSchedule(projectId)
 
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   revalidatePath("/marker-ofek/execution")
   return { id: String(data.id) }
 }
@@ -1595,6 +1664,7 @@ export async function groupTasksAsHammock(input: {
   await syncWbsLevelsFromTree(projectId)
   await recalculateWbsSchedule(projectId)
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   revalidatePath("/marker-ofek/execution")
   return { parentId: String(parent.id) }
 }
@@ -1672,7 +1742,7 @@ export async function fetchResourceEngine(projectId: string): Promise<{
     supabase
       .schema("public")
       .from("task_resource_assignments")
-      .select("id, task_id, resource_id, project_id, tasks!inner ( name, start_date, end_date )")
+      .select("id, task_id, resource_id, project_id, units, tasks!inner ( name, start_date, end_date )")
       .eq("project_id", projectIdTrim),
   ])
   if (resourcesRes.error) throw new Error(resourcesRes.error.message)
@@ -1685,6 +1755,13 @@ export async function fetchResourceEngine(projectId: string): Promise<{
     const task = Array.isArray((row as { tasks?: unknown }).tasks)
       ? ((row as { tasks: Array<{ name?: string; start_date?: string | null; end_date?: string | null }> }).tasks[0] ?? {})
       : ((row as { tasks?: { name?: string; start_date?: string | null; end_date?: string | null } }).tasks ?? {})
+    const unitsRaw = (row as { units?: unknown }).units
+    const units =
+      unitsRaw == null || unitsRaw === ""
+        ? null
+        : Number.isFinite(Number(unitsRaw))
+          ? Number(unitsRaw)
+          : null
     return {
       id: String((row as { id?: unknown }).id ?? ""),
       task_id: String((row as { task_id?: unknown }).task_id ?? ""),
@@ -1693,6 +1770,7 @@ export async function fetchResourceEngine(projectId: string): Promise<{
       task_name: String(task.name ?? "").trim(),
       start_date: task.start_date ? String(task.start_date) : null,
       end_date: task.end_date ? String(task.end_date) : null,
+      units,
     }
   })
 
@@ -1746,6 +1824,7 @@ export async function createProjectResource(input: {
     .maybeSingle()
   if (!existing.error && existing.data?.id) {
     revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+    revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
     return { id: String(existing.data.id) }
   }
 
@@ -1762,6 +1841,7 @@ export async function createProjectResource(input: {
     .single()
   if (error || !data?.id) throw new Error(error?.message ?? "יצירת משאב נכשלה")
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   return { id: String(data.id) }
 }
 
@@ -1803,6 +1883,7 @@ export async function assignResourceToTask(input: {
   projectId: string
   taskId: string
   resourceId: string
+  units?: number | null
 }) {
   const projectId = String(input.projectId ?? "").trim()
   const taskId = String(input.taskId ?? "").trim()
@@ -1825,10 +1906,43 @@ export async function assignResourceToTask(input: {
         task_id: taskId,
         resource_id: resourceId,
         project_id: projectId,
+        units: input.units ?? null,
       })
+    if (error) throw new Error(error.message)
+  } else if (input.units !== undefined) {
+    const { error } = await supabase
+      .schema("public")
+      .from("task_resource_assignments")
+      .update({ units: input.units ?? null })
+      .eq("id", String(existing.id))
     if (error) throw new Error(error.message)
   }
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
+  return { ok: true }
+}
+
+export async function removeTaskResourceAssignment(input: {
+  projectId: string
+  taskId: string
+  resourceId: string
+}) {
+  const projectId = String(input.projectId ?? "").trim()
+  const taskId = String(input.taskId ?? "").trim()
+  const resourceId = String(input.resourceId ?? "").trim()
+  if (!projectId || !taskId || !resourceId) throw new Error("נתוני שיוך חסרים")
+  const supabase = await createSupabaseServerAuthClient()
+  const { error } = await supabase
+    .schema("public")
+    .from("task_resource_assignments")
+    .delete()
+    .eq("project_id", projectId)
+    .eq("task_id", taskId)
+    .eq("resource_id", resourceId)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
+  revalidatePath("/marker-ofek/execution")
   return { ok: true }
 }
 
@@ -1846,6 +1960,56 @@ export async function clearTaskResourceAssignments(input: { projectId: string; t
     .eq("task_id", taskId)
   if (error) throw new Error(error.message)
   revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
+  revalidatePath("/marker-ofek/execution")
+  return { ok: true }
+}
+
+export async function listSupplierEntitiesForGantt(): Promise<{ id: string; name: string }[]> {
+  const supabase = await createSupabaseServerAuthClient()
+  const { data, error } = await supabase
+    .schema("public")
+    .from("entities")
+    .select("id, name")
+    .in("type", ["subcontractor", "supplier"])
+    .eq("is_deleted", false)
+    .order("name", { ascending: true })
+  if (error) throw new Error(error.message)
+  return ((data ?? []) as Array<{ id?: string; name?: string }>).map((r) => ({
+    id: String(r.id ?? ""),
+    name: String(r.name ?? "").trim() || "—",
+  }))
+}
+
+export async function updateTaskDetailsForSchedule(input: {
+  projectId: string
+  taskId: string
+  name?: string
+  description?: string | null
+  subcontractorId?: string | null
+}) {
+  const projectId = String(input.projectId ?? "").trim()
+  const taskId = String(input.taskId ?? "").trim()
+  if (!projectId || !taskId) throw new Error("נתונים חסרים")
+  const supabase = await createSupabaseServerAuthClient()
+  const patch: Record<string, unknown> = {}
+  if (input.name !== undefined) {
+    const n = String(input.name).trim()
+    if (!n) throw new Error("שם משימה חובה")
+    patch.name = n
+  }
+  if (input.description !== undefined) patch.description = input.description
+  if (input.subcontractorId !== undefined) patch.subcontractor_id = input.subcontractorId
+  if (Object.keys(patch).length === 0) return { ok: true }
+  const { error } = await supabase
+    .schema("public")
+    .from("tasks")
+    .update(patch)
+    .eq("id", taskId)
+    .eq("project_id", projectId)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/marker-ofek/execution/gantt/${projectId}`)
+  revalidatePath(`/marker-ofek/projects/${projectId}/gantt-editor`)
   revalidatePath("/marker-ofek/execution")
   return { ok: true }
 }

@@ -23,6 +23,7 @@ import {
 } from "./actions"
 import { evaluateSupplierTaxCompliance } from "@/lib/marker-ofek/entity-supplier-compliance"
 import {
+  listErpPaymentTermsForEntityForm,
   quickCreateEntity,
   quickCreateProject,
   quickCreateTenderForProject,
@@ -140,6 +141,8 @@ type SupplierOptionRow = {
   legal_id: string | null
   withholding_tax_expiry: string | null
   bookkeeping_auth_expiry: string | null
+  withholding_tax_expires_at?: string | null
+  bookkeeping_cert_expiry?: string | null
 }
 
 function embedOne<T>(x: T | T[] | null | undefined): T | null {
@@ -237,10 +240,26 @@ export default function NewPurchaseOrderFromBoqPage() {
   const [newProjectName, setNewProjectName] = React.useState("")
   const [newProjectLocation, setNewProjectLocation] = React.useState("")
   const [newSupplierName, setNewSupplierName] = React.useState("")
+  const [newSupplierEmail, setNewSupplierEmail] = React.useState("")
+  const [newSupplierPhone, setNewSupplierPhone] = React.useState("")
+  const [newSupplierAddress, setNewSupplierAddress] = React.useState("")
   const [newSupplierHp, setNewSupplierHp] = React.useState("")
+  const [newSupplierTaxId, setNewSupplierTaxId] = React.useState("")
+  const [newSupplierErpSup, setNewSupplierErpSup] = React.useState("")
+  const [newSupplierErpCust, setNewSupplierErpCust] = React.useState("")
+  const [newSupplierPaymentTerm, setNewSupplierPaymentTerm] =
+    React.useState("")
+  const [newSupplierGl, setNewSupplierGl] = React.useState("")
   const [newSupplierWithholding, setNewSupplierWithholding] = React.useState("")
   const [newSupplierBookkeeping, setNewSupplierBookkeeping] = React.useState("")
   const [newSupplierDeductionPct, setNewSupplierDeductionPct] = React.useState("")
+  const [supplierPaymentTerms, setSupplierPaymentTerms] = React.useState<
+    { code: string; label: string }[]
+  >([])
+
+  React.useEffect(() => {
+    void listErpPaymentTermsForEntityForm().then(setSupplierPaymentTerms)
+  }, [])
   const tenderTriggerRef = React.useRef<HTMLButtonElement | null>(null)
   const supplierSelectRef = React.useRef<HTMLButtonElement | null>(null)
   const [isItemModalOpen, setIsItemModalOpen] = React.useState(false)
@@ -350,7 +369,9 @@ export default function NewPurchaseOrderFromBoqPage() {
         const supabase = createSupabaseBrowserClient()
         const { data, error } = await supabase
           .from("entities")
-          .select("id,name,legal_id,withholding_tax_expiry,bookkeeping_auth_expiry")
+          .select(
+            "id,name,legal_id,withholding_tax_expiry,bookkeeping_auth_expiry,withholding_tax_expires_at,bookkeeping_cert_expiry"
+          )
           .eq("type", "supplier")
           .eq("is_deleted", false)
           .order("name", { ascending: true })
@@ -820,8 +841,10 @@ export default function NewPurchaseOrderFromBoqPage() {
     return evaluateSupplierTaxCompliance(
       ent
         ? {
-            withholding_tax_expiry: ent.withholding_tax_expiry,
-            bookkeeping_auth_expiry: ent.bookkeeping_auth_expiry,
+            withholding_tax_expiry:
+              ent.withholding_tax_expires_at ?? ent.withholding_tax_expiry,
+            bookkeeping_auth_expiry:
+              ent.bookkeeping_cert_expiry ?? ent.bookkeeping_auth_expiry,
           }
         : null,
       {
@@ -1114,6 +1137,22 @@ export default function NewPurchaseOrderFromBoqPage() {
     toast.success("נוצרו פרויקט ומכרז במערכת — ניתן לייבא BoQ למכרז")
   }
 
+  function resetQuickSupplierFields() {
+    setNewSupplierName("")
+    setNewSupplierEmail("")
+    setNewSupplierPhone("")
+    setNewSupplierAddress("")
+    setNewSupplierHp("")
+    setNewSupplierTaxId("")
+    setNewSupplierErpSup("")
+    setNewSupplierErpCust("")
+    setNewSupplierPaymentTerm("")
+    setNewSupplierGl("")
+    setNewSupplierWithholding("")
+    setNewSupplierBookkeeping("")
+    setNewSupplierDeductionPct("")
+  }
+
   async function saveQuickSupplier() {
     const name = newSupplierName.trim()
     if (!name) {
@@ -1130,10 +1169,20 @@ export default function NewPurchaseOrderFromBoqPage() {
     const res = await quickCreateEntity({
       name,
       type: "supplier",
-      legalId: newSupplierHp.trim(),
-      withholdingTaxExpiry: newSupplierWithholding.trim() || null,
-      bookkeepingAuthExpiry: newSupplierBookkeeping.trim() || null,
-      defaultWithholdingPercent:
+      legal_id: newSupplierHp.trim(),
+      email: newSupplierEmail.trim() || undefined,
+      phone: newSupplierPhone.trim() || undefined,
+      address: newSupplierAddress.trim() || undefined,
+      tax_id: newSupplierTaxId.trim() || null,
+      erp_supplier_number: newSupplierErpSup.trim() || null,
+      erp_customer_number: newSupplierErpCust.trim() || null,
+      payment_term_code: newSupplierPaymentTerm.trim() || null,
+      gl_account_code: newSupplierGl.trim() || null,
+      withholding_tax_expiry: newSupplierWithholding.trim() || null,
+      bookkeeping_cert_expiry: newSupplierBookkeeping.trim() || null,
+      withholding_tax_pct:
+        pct != null && Number.isFinite(pct) ? pct : null,
+      default_withholding_tax_percent:
         pct != null && Number.isFinite(pct) ? pct : null,
     })
     if (!res.ok) {
@@ -1150,16 +1199,13 @@ export default function NewPurchaseOrderFromBoqPage() {
           legal_id: newSupplierHp.trim(),
           withholding_tax_expiry: newSupplierWithholding.trim() || null,
           bookkeeping_auth_expiry: newSupplierBookkeeping.trim() || null,
+          bookkeeping_cert_expiry: newSupplierBookkeeping.trim() || null,
         },
       ].sort((a, b) => a.name.localeCompare(b.name, "he"))
     )
     setSupplierEntityId(id)
     setIsSupplierModalOpen(false)
-    setNewSupplierName("")
-    setNewSupplierHp("")
-    setNewSupplierWithholding("")
-    setNewSupplierBookkeeping("")
-    setNewSupplierDeductionPct("")
+    resetQuickSupplierFields()
     toast.success("הספק נוצר במערכת ונבחר")
   }
 
@@ -2096,70 +2142,200 @@ export default function NewPurchaseOrderFromBoqPage() {
       </Dialog>
 
       <Dialog open={isSupplierModalOpen} onOpenChange={handleSupplierModalOpenChange}>
-        <DialogContent dir="rtl" className="sm:max-w-md" showCloseButton>
-          <DialogHeader>
+        <DialogContent
+          dir="rtl"
+          className="flex max-h-[min(90vh,880px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
+          showCloseButton
+        >
+          <DialogHeader className="shrink-0 space-y-1 border-b px-6 py-4 text-start">
             <DialogTitle>הקמת ספק חדש</DialogTitle>
             <DialogDescription>
               יצירה מהירה מתוך מסך ההזמנה (F2). הספק יישמר ב־MDM וייבחר בטופס.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2 text-start">
-              <Label htmlFor="quick-supplier-name">שם ספק</Label>
-              <Input
-                id="quick-supplier-name"
-                placeholder="שם חברה / ספק"
-                value={newSupplierName}
-                onChange={(e) => setNewSupplierName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 text-start">
-              <Label htmlFor="quick-supplier-hp">ח.פ / ע.מ (חובה)</Label>
-              <Input
-                id="quick-supplier-hp"
-                placeholder="מספר ח.פ"
-                value={newSupplierHp}
-                onChange={(e) => setNewSupplierHp(e.target.value)}
-                dir="ltr"
-                className="font-mono"
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2 text-start">
-                <Label htmlFor="quick-supplier-wh">תוקף ניכוי מס</Label>
-                <Input
-                  id="quick-supplier-wh"
-                  type="date"
-                  value={newSupplierWithholding}
-                  onChange={(e) => setNewSupplierWithholding(e.target.value)}
-                  dir="ltr"
-                  className="font-mono"
-                />
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-foreground">
+                  פרטים בסיסיים
+                </p>
+                <div className="space-y-2 text-start">
+                  <Label htmlFor="quick-supplier-name">שם ספק</Label>
+                  <Input
+                    id="quick-supplier-name"
+                    placeholder="שם חברה / ספק"
+                    value={newSupplierName}
+                    onChange={(e) => setNewSupplierName(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-email">אימייל</Label>
+                    <Input
+                      id="quick-supplier-email"
+                      type="email"
+                      value={newSupplierEmail}
+                      onChange={(e) => setNewSupplierEmail(e.target.value)}
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-phone">טלפון</Label>
+                    <Input
+                      id="quick-supplier-phone"
+                      type="tel"
+                      value={newSupplierPhone}
+                      onChange={(e) => setNewSupplierPhone(e.target.value)}
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 text-start">
+                  <Label htmlFor="quick-supplier-hp">ח.פ / ע.מ (חובה)</Label>
+                  <Input
+                    id="quick-supplier-hp"
+                    placeholder="מספר ח.פ"
+                    value={newSupplierHp}
+                    onChange={(e) => setNewSupplierHp(e.target.value)}
+                    dir="ltr"
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-2 text-start">
+                  <Label htmlFor="quick-supplier-addr">כתובת</Label>
+                  <Input
+                    id="quick-supplier-addr"
+                    value={newSupplierAddress}
+                    onChange={(e) => setNewSupplierAddress(e.target.value)}
+                    dir="rtl"
+                  />
+                </div>
               </div>
-              <div className="space-y-2 text-start">
-                <Label htmlFor="quick-supplier-bk">תוקף ניהול ספרים</Label>
-                <Input
-                  id="quick-supplier-bk"
-                  type="date"
-                  value={newSupplierBookkeeping}
-                  onChange={(e) => setNewSupplierBookkeeping(e.target.value)}
-                  dir="ltr"
-                  className="font-mono"
-                />
+
+              <div className="space-y-4 rounded-lg border-2 border-primary/20 bg-muted/40 p-4">
+                <p className="text-lg font-bold tracking-tight text-foreground">
+                  פרטים פיננסיים והנהלת חשבונות
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-2 text-start sm:col-span-2 lg:col-span-3">
+                    <Label htmlFor="quick-supplier-tax">ח.פ / ע.מ (tax_id)</Label>
+                    <Input
+                      id="quick-supplier-tax"
+                      value={newSupplierTaxId}
+                      onChange={(e) => setNewSupplierTaxId(e.target.value)}
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-erps">מספר ספק פריוריטי</Label>
+                    <Input
+                      id="quick-supplier-erps"
+                      value={newSupplierErpSup}
+                      onChange={(e) => setNewSupplierErpSup(e.target.value)}
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-erpc">מספר לקוח פריוריטי</Label>
+                    <Input
+                      id="quick-supplier-erpc"
+                      value={newSupplierErpCust}
+                      onChange={(e) => setNewSupplierErpCust(e.target.value)}
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label>תנאי תשלום</Label>
+                    <Select
+                      value={newSupplierPaymentTerm || "__none__"}
+                      onValueChange={(v) =>
+                        setNewSupplierPaymentTerm(
+                          !v || v === "__none__" ? "" : v
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="בחרו קוד" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">לא נבחר</SelectItem>
+                        {supplierPaymentTerms.map((t) => (
+                          <SelectItem key={t.code} value={t.code}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-ded">
+                      % ניכוי מס במקור
+                    </Label>
+                    <Input
+                      id="quick-supplier-ded"
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      max={100}
+                      step="any"
+                      value={newSupplierDeductionPct}
+                      onChange={(e) =>
+                        setNewSupplierDeductionPct(e.target.value)
+                      }
+                      dir="ltr"
+                      className="font-currency-mono tabular-nums"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-gl">כרטיס הנה״ח</Label>
+                    <Input
+                      id="quick-supplier-gl"
+                      value={newSupplierGl}
+                      onChange={(e) => setNewSupplierGl(e.target.value)}
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-bk">
+                      תוקף אישור ניהול ספרים
+                    </Label>
+                    <Input
+                      id="quick-supplier-bk"
+                      type="date"
+                      value={newSupplierBookkeeping}
+                      onChange={(e) =>
+                        setNewSupplierBookkeeping(e.target.value)
+                      }
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor="quick-supplier-wh">
+                      תוקף אישור ניכוי מס
+                    </Label>
+                    <Input
+                      id="quick-supplier-wh"
+                      type="date"
+                      value={newSupplierWithholding}
+                      onChange={(e) =>
+                        setNewSupplierWithholding(e.target.value)
+                      }
+                      dir="ltr"
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2 text-start">
-              <Label htmlFor="quick-supplier-ded">אחוז ניכוי ברירת מחדל (%)</Label>
-              <Input
-                id="quick-supplier-ded"
-                value={newSupplierDeductionPct}
-                onChange={(e) => setNewSupplierDeductionPct(e.target.value)}
-                dir="ltr"
-                className="font-currency-mono tabular-nums"
-              />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t px-6 py-4">
             <Button variant="outline" onClick={() => setIsSupplierModalOpen(false)}>
               ביטול
             </Button>

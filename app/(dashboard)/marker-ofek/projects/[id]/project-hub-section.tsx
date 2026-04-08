@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowRight, LayoutList, Smartphone } from "lucide-react"
+import { ArrowRight, LayoutList, MessageSquare, Smartphone } from "lucide-react"
 
 import { ProjectExecutionCommandView } from "@/components/marker-ofek/projects/project-execution-command-view"
 import { MarkerOfekProjectHubClient } from "./project-hub-client"
@@ -148,6 +148,13 @@ export async function MarkerOfekProjectHubSection({ id }: { id: string }) {
         >
           <Smartphone className="size-4" aria-hidden />
           יומן שטח
+        </Link>
+        <Link
+          href={`/projects/${id}/wall`}
+          className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50/80 px-4 py-2 text-sm font-medium text-indigo-900 shadow-sm hover:bg-indigo-100/80 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-100 dark:hover:bg-indigo-950/70"
+        >
+          <MessageSquare className="size-4" aria-hidden />
+          קיר פרויקט
         </Link>
         <Link
           href={`/marker-ofek/execution/gantt/${id}/field`}

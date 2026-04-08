@@ -81,7 +81,7 @@ create policy "projects_insert_staff"
       from public.profiles p
       where p.id = auth.uid()
         and (
-          p.role in ('admin', 'manager', 'contractor')
+          p.role = 'admin'
           or p.marker_ofek_full_project_access = true
         )
     )

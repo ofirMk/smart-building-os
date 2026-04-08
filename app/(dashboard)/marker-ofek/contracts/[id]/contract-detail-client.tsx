@@ -314,7 +314,7 @@ export function MarkerOfekContractDetailClient({
             .eq("is_deleted", false)
             .order("created_at", { ascending: false })
           const siblingIds = (siblingContracts ?? [])
-            .map((c) => (c as { id: string }).id)
+            .map((c: { id: string }) => c.id)
             .filter(Boolean)
           const projectContractIds =
             siblingIds.length > 0 ? siblingIds : [id]
@@ -593,7 +593,8 @@ export function MarkerOfekContractDetailClient({
       setPriorContractPaymentsSum(
         roundMoney(
           (pcAfter ?? []).reduce(
-            (s, r) => s + Number((r as { payment_due: number }).payment_due),
+            (s: number, r: { payment_due: number }) =>
+              s + Number(r.payment_due),
             0
           )
         )
@@ -606,7 +607,7 @@ export function MarkerOfekContractDetailClient({
           .select("id")
           .eq("project_id", pid)
           .eq("is_deleted", false)
-        const sibIds = (sibs ?? []).map((c) => (c as { id: string }).id)
+        const sibIds = (sibs ?? []).map((c: { id: string }) => c.id)
         if (sibIds.length > 0) {
           const { data: ppAfter } = await supabase
             .from("partial_accounts")
@@ -617,8 +618,8 @@ export function MarkerOfekContractDetailClient({
           setPriorProjectPaymentsSum(
             roundMoney(
               (ppAfter ?? []).reduce(
-                (s, r) =>
-                  s + Number((r as { payment_due: number }).payment_due),
+                (s: number, r: { payment_due: number }) =>
+                  s + Number(r.payment_due),
                 0
               )
             )

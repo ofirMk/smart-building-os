@@ -2,13 +2,22 @@
 
 import {
   DEFAULT_WORKSPACE_SNAPSHOT,
+  mergeSettingsColumnForUpsert,
   rowToSnapshot,
   sanitizeWorkspaceSnapshotForUpsert,
   type SaveWorkspacePayload,
 } from "@/lib/marker-ofek/user-workspace-shared"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
-import type { WorkspaceSettingsSnapshot } from "@/lib/marker-ofek/workspace-types"
+import type {
+  CommandCenterWorkspaceLayout,
+  WorkspaceSettingsSnapshot,
+  WorkspaceUiSettings,
+} from "@/lib/marker-ofek/workspace-types"
 import { formatError } from "@/lib/utils"
+
+function normWorkspacePath(p: string): string {
+  return p.replace(/\/$/, "") || "/"
+}
 
 function logWorkspaceSaveError(phase: string, err: unknown, extra?: Record<string, unknown>) {
   const msg = err instanceof Error ? err.message : String(err)
@@ -36,14 +45,14 @@ export async function getWorkspaceSettingsBootstrap(): Promise<WorkspaceSettings
     const { data, error } = await supabase
       .from("user_workspace_settings")
       .select(
-        "pinned_widgets, side_panel_open, default_browser_homepage, workspace_persona, open_tabs, active_tabs, split_view, secondary_tab_href, split_primary_pinned_href, assistant_split_docked, browser_panel_enabled, default_project_id, email_bridge_sso, browser_bookmarks, diamond_workspace_layout"
+        "pinned_widgets, side_panel_open, default_browser_homepage, workspace_persona, open_tabs, active_tabs, split_view, secondary_tab_href, split_primary_pinned_href, assistant_split_docked, browser_panel_enabled, default_project_id, email_bridge_sso, browser_bookmarks, diamond_workspace_layout, settings, workspace_scenarios, workspace_activity_log"
       )
       .eq("user_id", user.id)
       .maybeSingle()
 
     if (error) {
-      if (/relation|does not exist|column/i.test(String(error.message ?? ""))) {
-        return { ...DEFAULT_WORKSPACE_SNAPSHOT }
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[workspace-bootstrap]", error.message)
       }
       return { ...DEFAULT_WORKSPACE_SNAPSHOT }
     }
@@ -65,6 +74,29 @@ export async function saveMyWorkspaceSettings(
     if (!user?.id) return { ok: false, error: "נדרשת התחברות" }
 
     const current = await getWorkspaceSettingsBootstrap()
+
+    let mergedUi: WorkspaceUiSettings = {
+      ...current.uiSettings,
+      ...patch.uiSettings,
+      scrollByPath: {
+        ...current.uiSettings.scrollByPath,
+        ...patch.uiSettings?.scrollByPath,
+      },
+    }
+    if (patch.sidebarExpanded !== undefined) {
+      mergedUi = { ...mergedUi, sidebarExpanded: patch.sidebarExpanded }
+    }
+    if (patch.persistScrollForPath) {
+      const key = normWorkspacePath(patch.persistScrollForPath.path)
+      mergedUi = {
+        ...mergedUi,
+        scrollByPath: {
+          ...mergedUi.scrollByPath,
+          [key]: patch.persistScrollForPath.y,
+        },
+      }
+    }
+
     const merged: WorkspaceSettingsSnapshot = {
       pinnedWidgets: patch.pinnedWidgets ?? current.pinnedWidgets,
       sidePanelOpen: patch.sidePanelOpen ?? current.sidePanelOpen,
@@ -93,10 +125,36 @@ export async function saveMyWorkspaceSettings(
       browserBookmarks: patch.browserBookmarks ?? current.browserBookmarks,
       diamondWorkspaceLayout:
         patch.diamondWorkspaceLayout ?? current.diamondWorkspaceLayout,
+      uiSettings: mergedUi,
+      commandCenterLayout:
+        patch.commandCenterLayout !== undefined
+          ? patch.commandCenterLayout
+          : current.commandCenterLayout,
+      workspaceScenarios: patch.workspaceScenarios ?? current.workspaceScenarios,
+      workspaceActivityLog: patch.workspaceActivityLog ?? current.workspaceActivityLog,
+      activeScenarioId:
+        patch.activeScenarioId !== undefined ? patch.activeScenarioId : current.activeScenarioId,
+      aiDismissedPatterns: patch.aiDismissedPatterns ?? current.aiDismissedPatterns,
     }
 
     const next = sanitizeWorkspaceSnapshotForUpsert(merged)
     const tabsPayload = next.openTabs
+
+    const { data: settingsExisting } = await supabase
+      .from("user_workspace_settings")
+      .select("settings")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    const settingsColumn = mergeSettingsColumnForUpsert(
+      (settingsExisting as { settings?: unknown } | null)?.settings,
+      next.uiSettings,
+      {
+        ...(next.commandCenterLayout ? { commandCenterLayout: next.commandCenterLayout } : {}),
+        activeScenarioId: next.activeScenarioId,
+        aiDismissedPatterns: next.aiDismissedPatterns,
+      }
+    )
 
     const row = {
       user_id: user.id,
@@ -115,6 +173,9 @@ export async function saveMyWorkspaceSettings(
       email_bridge_sso: next.emailBridgeSso,
       browser_bookmarks: next.browserBookmarks,
       diamond_workspace_layout: next.diamondWorkspaceLayout,
+      settings: settingsColumn,
+      workspace_scenarios: next.workspaceScenarios,
+      workspace_activity_log: next.workspaceActivityLog,
       updated_at: new Date().toISOString(),
     }
 
@@ -135,13 +196,6 @@ export async function saveMyWorkspaceSettings(
         code: (error as { code?: string }).code,
       })
 
-      if (/relation|does not exist|column/i.test(lastMessage)) {
-        return {
-          ok: false,
-          error: "טבלת שולחן העבודה עדיין לא הופעלה במסד הנתונים.",
-        }
-      }
-
       if (attempt === 0 && isTransientWorkspaceWriteError(lastMessage)) {
         await sleep(150)
         continue
@@ -159,4 +213,10 @@ export async function saveMyWorkspaceSettings(
     logWorkspaceSaveError("saveMyWorkspaceSettings_exception", e)
     return { ok: false, error: formatError(e) }
   }
+}
+
+export async function saveCommandCenterLayout(
+  layout: CommandCenterWorkspaceLayout
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return saveMyWorkspaceSettings({ commandCenterLayout: layout })
 }

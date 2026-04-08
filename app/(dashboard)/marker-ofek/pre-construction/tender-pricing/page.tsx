@@ -155,7 +155,7 @@ export default function TenderPricingPage() {
       }
 
       setBoqItems(
-        (data ?? []).map((r) => ({
+        (data ?? []).map((r: Record<string, unknown>) => ({
           id: r.id as string,
           section: String(r.section ?? ""),
           itemNo: String(r.item_number ?? ""),

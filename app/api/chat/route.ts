@@ -9,9 +9,14 @@ import {
 import { z } from "zod"
 
 import {
+  DIAMOND_FINANCE_CONTROLLER_RULES,
+  DIAMOND_FINANCE_INVOICE_COPILOT_RULES,
+} from "@/lib/ai/prompts"
+import {
   financeExecutiveSnapshotForChat,
   financeProjectOverheadInsightForChat,
   financeVatSummaryForChat,
+  israelTaxOpenDataVendorLookupForChat,
   supplierPaymentWithholdingEstimateForChat,
 } from "@/lib/marker-ofek/ai/marker-ofek-finance-chat-tools"
 import { markerOfekProcurementSnapshot } from "@/lib/marker-ofek/ai/marker-ofek-procurement-chat-tool"
@@ -35,6 +40,11 @@ const SYSTEM_PROMPT = [
   "For holding / executive P&L, consolidated field vs loaded profit, overhead pool, and per-project overhead allocation, call `finance_executive_snapshot`.",
   "To explain why net profit is low for a specific project (overhead loading, labor_based vs revenue_based, fixed_rate), call `finance_project_overhead_insight` with `project_name_query`.",
   "For estimated net payment to a supplier after ניכוי במקור, call `supplier_payment_withholding_estimate` with `supplier_name_query` and `payment_amount_before_withholding_nis`. Clarify this is an estimate from profile/entity defaults, not tax advice.",
+  "When the user asks about a Tax ID (ח.פ / עוסק מורשה) or subcontractor compliance against government data, call `israel_tax_open_data_vendor_lookup` with `tax_id`. If `screenContext` in the request describes a mismatch alert, acknowledge it and suggest verification steps.",
+  "",
+  DIAMOND_FINANCE_CONTROLLER_RULES,
+  "",
+  DIAMOND_FINANCE_INVOICE_COPILOT_RULES,
 ].join(" ")
 
 /** Same default creator as `app/(dashboard)/tickets/actions.ts` for inserts. */
@@ -103,7 +113,7 @@ function normalizeUserMessageParts(messages: UIMessage[]): UIMessage[] {
 }
 
 export async function POST(req: Request) {
-  let body: { messages: UIMessage[] }
+  let body: { messages: UIMessage[]; screenContext?: string | null }
   try {
     body = await req.json()
   } catch {
@@ -113,7 +123,7 @@ export async function POST(req: Request) {
     })
   }
 
-  const { messages } = body
+  const { messages, screenContext: screenContextRaw } = body
   if (!Array.isArray(messages)) {
     return new Response(JSON.stringify({ error: "messages must be an array" }), {
       status: 400,
@@ -268,6 +278,15 @@ export async function POST(req: Request) {
         financeProjectOverheadInsightForChat({ project_name_query }),
     }),
 
+    israel_tax_open_data_vendor_lookup: tool({
+      description:
+        "Israel open-data (data.gov.il CKAN): look up vendor / business registration by tax id (ח.פ / מספר עוסק). Returns registered name hint and any withholding-related field text if present in the dataset. Requires server env ISRAEL_TAX_REGISTRY_RESOURCE_ID.",
+      inputSchema: z.object({
+        tax_id: z.string().min(1).describe("ח.פ או מספר עוסק (ספרות)"),
+      }),
+      execute: async ({ tax_id }) => israelTaxOpenDataVendorLookupForChat({ tax_id }),
+    }),
+
     supplier_payment_withholding_estimate: tool({
       description:
         "Estimate ניכוי במקור and net amount paid: looks up supplier entity by name, uses supplier_finance_profile.withholding_rate_percent if set, else entities.default_withholding_tax_percent. Not a substitute for accountant advice.",
@@ -337,9 +356,16 @@ export async function POST(req: Request) {
 
   const normalized = normalizeUserMessageParts(messages)
 
+  const screenContext =
+    typeof screenContextRaw === "string" ? screenContextRaw.trim() : ""
+  const systemWithScreen =
+    screenContext.length > 0
+      ? `${SYSTEM_PROMPT}\n\n---\nCurrent ERP screen context (what the user is viewing now; use for guidance only, not legal/tax advice):\n${screenContext.slice(0, 12_000)}`
+      : SYSTEM_PROMPT
+
   const result = streamText({
     model: openai("gpt-4o"),
-    system: SYSTEM_PROMPT,
+    system: systemWithScreen,
     messages: await convertToModelMessages(normalized),
     tools,
     stopWhen: stepCountIs(12),

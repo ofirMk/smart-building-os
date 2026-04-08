@@ -405,7 +405,7 @@ export default function GoodsReceiptPage() {
         .select("id")
         .eq("po_id", poId)
 
-      const allIds = (allReceipts ?? []).map((x) => x.id as string)
+      const allIds = (allReceipts ?? []).map((x: { id: string }) => x.id)
       const { data: allItems } = await supabase
         .from("goods_receipt_items")
         .select("po_line_item_id, quantity_received")

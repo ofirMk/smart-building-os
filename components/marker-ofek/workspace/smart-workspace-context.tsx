@@ -11,6 +11,7 @@ import {
   type WorkspaceBroadcastMessage,
   type WorkspaceOpenTab,
   type WorkspaceSettingsSnapshot,
+  type CommandCenterWorkspaceLayout,
 } from "@/lib/marker-ofek/workspace-types"
 
 function normPath(p: string): string {
@@ -18,6 +19,7 @@ function normPath(p: string): string {
 }
 
 type SmartWorkspaceContextValue = WorkspaceSettingsSnapshot & {
+  setCommandCenterLayout: (layout: CommandCenterWorkspaceLayout | null) => void
   setSidePanelOpen: (open: boolean) => void
   setSplitView: (on: boolean) => void
   setSecondaryTabHref: (href: string | null) => void
@@ -52,7 +54,7 @@ function useDebouncedSave() {
     t.current = setTimeout(() => {
       void saveMyWorkspaceSettings(patch).then((res) => {
         if (!res.ok && process.env.NODE_ENV === "development") {
-          console.warn("[smart-workspace] persist skipped:", res.error)
+          console.warn("[smart-workspace] persist failed:", res.error)
         }
       })
     }, WORKSPACE_PERSIST_DEBOUNCE_MS)
@@ -87,6 +89,34 @@ export function SmartWorkspaceProvider({
     openTabsRef.current = state.openTabs
   }, [state.openTabs])
 
+  const workspaceSyncKey = React.useMemo(
+    () =>
+      JSON.stringify({
+        scenarios: initial.workspaceScenarios.map((s) => ({ id: s.id, n: s.name })),
+        active: initial.activeScenarioId,
+        dismissed: initial.aiDismissedPatterns,
+        cc: initial.commandCenterLayout,
+      }),
+    [
+      initial.workspaceScenarios,
+      initial.activeScenarioId,
+      initial.aiDismissedPatterns,
+      initial.commandCenterLayout,
+    ]
+  )
+
+  React.useEffect(() => {
+    setState((prev) => ({
+      ...prev,
+      workspaceScenarios: initial.workspaceScenarios,
+      workspaceActivityLog: initial.workspaceActivityLog,
+      activeScenarioId: initial.activeScenarioId,
+      aiDismissedPatterns: initial.aiDismissedPatterns,
+      commandCenterLayout: initial.commandCenterLayout,
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- סנכרון מ־SSR כשמתעדכן workspaceSyncKey
+  }, [workspaceSyncKey])
+
   const persist = React.useCallback(
     (next: WorkspaceSettingsSnapshot) => {
       debouncedSave({
@@ -103,6 +133,10 @@ export function SmartWorkspaceProvider({
         defaultProjectId: next.defaultProjectId,
         emailBridgeSso: next.emailBridgeSso,
         browserBookmarks: next.browserBookmarks,
+        diamondWorkspaceLayout: next.diamondWorkspaceLayout,
+        ...(next.commandCenterLayout != null
+          ? { commandCenterLayout: next.commandCenterLayout }
+          : {}),
       })
     },
     [debouncedSave]
@@ -117,6 +151,13 @@ export function SmartWorkspaceProvider({
       })
     },
     [persist]
+  )
+
+  const setCommandCenterLayout = React.useCallback(
+    (layout: CommandCenterWorkspaceLayout | null) => {
+      patch((s) => ({ ...s, commandCenterLayout: layout }))
+    },
+    [patch]
   )
 
   const setSidePanelOpen = React.useCallback(
@@ -358,6 +399,7 @@ export function SmartWorkspaceProvider({
   const value = React.useMemo<SmartWorkspaceContextValue>(
     () => ({
       ...state,
+      setCommandCenterLayout,
       setSidePanelOpen,
       setSplitView,
       setSecondaryTabHref,
@@ -379,6 +421,7 @@ export function SmartWorkspaceProvider({
     }),
     [
       state,
+      setCommandCenterLayout,
       setSidePanelOpen,
       setSplitView,
       setSecondaryTabHref,

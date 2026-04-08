@@ -157,6 +157,10 @@ create index if not exists mo_field_snags_applied_line_idx
   where applied_partial_account_line_item_id is not null;
 
 alter table public.partial_account_line_items
+  add column if not exists contract_milestone_id uuid
+    references public.contract_milestones (id) on delete set null;
+
+alter table public.partial_account_line_items
   drop constraint if exists partial_account_line_items_line_or_milestone_chk;
 
 alter table public.partial_account_line_items

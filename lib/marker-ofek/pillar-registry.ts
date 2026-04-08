@@ -38,7 +38,7 @@ import {
   Layers,
 } from "lucide-react"
 
-import { MARKER_OFEK_HREFS } from "@/app/(dashboard)/_components/sidebar-routes"
+import { MARKER_OFEK_HREFS } from "@/lib/infrastructure/navigation/sidebar-routes"
 import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
 
 export type MarkerOfekPillarNavItem = {

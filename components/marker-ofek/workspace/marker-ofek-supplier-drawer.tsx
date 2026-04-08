@@ -184,7 +184,7 @@ export function MarkerOfekSupplierDrawer() {
             .order("name", { ascending: true })
             .limit(500)
           if (fallback.error) throw fallback.error
-          summaries = (fallback.data ?? []).map((r) => {
+          summaries = (fallback.data ?? []).map((r: Record<string, unknown>) => {
             const row = r as {
               id: string
               name: string

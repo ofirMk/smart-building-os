@@ -48,8 +48,14 @@ create policy mo_contract_vault_storage_select
   );
 
 -- ---------------------------------------------------------------------------
--- 3) Legacy public.documents + bucket documents — ללא anon; היקף לפי בניין (אופציונלי)
+-- 3) Legacy public.documents + bucket documents — ללא anon; גישה לפי תפקיד ב-profiles
 -- ---------------------------------------------------------------------------
+create table if not exists public.buildings (
+  id uuid primary key default gen_random_uuid(),
+  name varchar,
+  created_at timestamptz default now()
+);
+
 alter table public.documents
   add column if not exists building_id uuid references public.buildings (id) on delete set null;
 
@@ -70,25 +76,7 @@ create policy documents_select_building_scope
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
-    )
-    or (
-      building_id is not null
-      and exists (
-        select 1
-        from public.building_managers bm
-        where bm.building_id = documents.building_id
-          and bm.profile_id = auth.uid()
-      )
-    )
-    or (
-      building_id is not null
-      and exists (
-        select 1
-        from public.apartments a
-        where a.building_id = documents.building_id
-          and a.tenant_id = auth.uid()
-      )
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   );
 
@@ -102,7 +90,7 @@ create policy documents_insert_staff
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   );
 
@@ -116,7 +104,7 @@ create policy documents_update_staff
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   )
   with check (
@@ -124,7 +112,7 @@ create policy documents_update_staff
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   );
 
@@ -138,12 +126,12 @@ create policy documents_delete_staff
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   );
 
 comment on column public.documents.building_id is
-  'אופציונלי: היקף גישה לדיירים/מנהלי בניין; שורות ישנות ללא בניין — צפייה לצוות מערכת בלבד.';
+  'אופציונלי: קישור לוגי לבניין/אתר; RLS לפי תפקיד ב-profiles בלבד.';
 
 -- Bucket פרטי (חתימות URL מורשות למשתמש מחובר בלבד)
 update storage.buckets
@@ -165,31 +153,11 @@ create policy documents_storage_select_scoped
       select 1
       from public.documents d
       where d.storage_path = storage.objects.name
-        and (
-          exists (
-            select 1
-            from public.profiles p
-            where p.id = auth.uid()
-              and p.role in ('admin', 'manager', 'property_manager')
-          )
-          or (
-            d.building_id is not null
-            and exists (
-              select 1
-              from public.building_managers bm
-              where bm.building_id = d.building_id
-                and bm.profile_id = auth.uid()
-            )
-          )
-          or (
-            d.building_id is not null
-            and exists (
-              select 1
-              from public.apartments a
-              where a.building_id = d.building_id
-                and a.tenant_id = auth.uid()
-            )
-          )
+        and exists (
+          select 1
+          from public.profiles p
+          where p.id = auth.uid()
+            and p.role::text in ('admin', 'manager', 'property_manager')
         )
     )
   );
@@ -205,7 +173,7 @@ create policy documents_storage_insert_staff
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   );
 
@@ -220,7 +188,7 @@ create policy documents_storage_delete_staff
       select 1
       from public.profiles p
       where p.id = auth.uid()
-        and p.role in ('admin', 'manager', 'property_manager')
+        and p.role::text in ('admin', 'manager', 'property_manager')
     )
   );
 

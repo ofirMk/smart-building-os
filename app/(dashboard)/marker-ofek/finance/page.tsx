@@ -193,7 +193,7 @@ export default function MarkerOfekFinancePage() {
               חשבונית מרכזת
             </Link>
             <Link
-              href="/marker-ofek/invoices/new"
+              href="/marker-ofek/finance/invoices/new"
               className={cn(
                 buttonVariants({ size: "sm", variant: "default" }),
                 "gap-2 bg-slate-900 text-white hover:bg-slate-800"

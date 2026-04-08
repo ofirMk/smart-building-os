@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-import { PreConstructionDashboard } from "./_components/pre-construction-dashboard"
+import { PreConstructionDashboard } from "@/components/marker-ofek/pre-construction/pre-construction-dashboard"
 import { loadPreConstructionDashboardData } from "@/lib/marker-ofek/pre-construction-dashboard-data"
 
 export const dynamic = "force-dynamic"

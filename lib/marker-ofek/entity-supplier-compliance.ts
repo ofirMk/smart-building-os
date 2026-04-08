@@ -7,6 +7,9 @@ export type MoSystemSettingsComplianceSlice = {
 export type SupplierComplianceEntitySlice = {
   withholding_tax_expiry: string | null
   bookkeeping_auth_expiry: string | null
+  /** אופציונלי — ממוזג מעל `bookkeeping_auth_expiry` כשקיים במסד */
+  bookkeeping_cert_expiry?: string | null
+  withholding_tax_expires_at?: string | null
 }
 
 const BOOKKEEPING_MSG =
@@ -47,8 +50,11 @@ export function evaluateSupplierTaxCompliance(
       submitBlocked: mode === "blocking",
     }
   }
-  const badWithholding = isExpiredOrMissing(entity.withholding_tax_expiry, now)
-  const badBooks = isExpiredOrMissing(entity.bookkeeping_auth_expiry, now)
+  const wh = entity.withholding_tax_expires_at ?? entity.withholding_tax_expiry
+  const books =
+    entity.bookkeeping_cert_expiry ?? entity.bookkeeping_auth_expiry
+  const badWithholding = isExpiredOrMissing(wh, now)
+  const badBooks = isExpiredOrMissing(books, now)
   if (!badWithholding && !badBooks) {
     return { alertMessage: null, submitBlocked: false }
   }

@@ -1,25 +1,21 @@
 import Link from "next/link"
-import {
-  Briefcase,
-  Building2,
-  CheckCircle2,
-  Clock3,
-  FileCheck2,
-  FileSearch,
-  Landmark,
-  ShoppingCart,
-  Wallet,
-} from "lucide-react"
+import { Building2 } from "lucide-react"
 
 import type { AppUserRole } from "@/lib/auth/user-role"
 import type { CommandCenterSnapshot } from "@/lib/marker-ofek/command-center-data"
 import type { OrganizationBrandingSnapshot } from "@/lib/marker-ofek/organization-branding-public"
-import type { WorkspacePersona } from "@/lib/marker-ofek/workspace-types"
+import type { CommandCenterWorkspaceLayout, WorkspacePersona } from "@/lib/marker-ofek/workspace-types"
 import {
   canViewHoldingExecutive,
   isPartnerMetricsViewer,
 } from "@/lib/marker-ofek/partner-metrics/access"
-import { cn } from "@/lib/utils"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { CommandCenterModulesGrid } from "@/components/marker-ofek/command-center-modules-grid"
 
 import { CommandCenterHeaderClient } from "./command-center-header-client"
 import { CommandCenterMotion } from "./command-center-motion"
@@ -29,28 +25,6 @@ export type CommandCenterExecutivePulse = {
   recognizedRevenueNis: number
   portfolioNetLoadedProfitNis: number
   accountsReceivableNis: number
-}
-
-function statusMeta(level: CommandCenterSnapshot["tiles"][0]["level"]) {
-  if (level === "green") {
-    return {
-      label: "תקין",
-      dot: "bg-emerald-500",
-      badge: "border border-slate-100 bg-emerald-50 text-emerald-800",
-    }
-  }
-  if (level === "yellow") {
-    return {
-      label: "למעקב",
-      dot: "bg-amber-400",
-      badge: "border border-slate-100 bg-amber-50 text-amber-900",
-    }
-  }
-  return {
-    label: "סיכון",
-    dot: "bg-red-500",
-    badge: "border border-slate-100 bg-red-50 text-red-900",
-  }
 }
 
 const ils0 = new Intl.NumberFormat("he-IL", {
@@ -70,6 +44,8 @@ export function CommandCenterView({
   welcomeBack,
   executivePulse,
   workspacePersona,
+  savedDefaultProjectId,
+  commandCenterLayout,
 }: {
   snapshot: CommandCenterSnapshot
   userEmail: string | null
@@ -81,9 +57,12 @@ export function CommandCenterView({
   welcomeBack: { href: string; pageTitle: string } | null
   executivePulse: CommandCenterExecutivePulse | null
   workspacePersona: WorkspacePersona
+  /** פרויקט ברירת מחדל משולחן העבודה השמור */
+  savedDefaultProjectId?: string | null
+  /** סדר והסתרת כרטיסי מודול — `settings.layout.commandCenter` */
+  commandCenterLayout: CommandCenterWorkspaceLayout | null
 }) {
   const { tiles } = snapshot
-  const tileIcons = [ShoppingCart, FileSearch, Briefcase, Landmark, Wallet] as const
   const partner = isPartnerMetricsViewer(userEmail)
   const exec = canViewHoldingExecutive(userEmail, userRole)
 
@@ -121,46 +100,61 @@ export function CommandCenterView({
 
   const openTasksTotal = actions.reduce((sum, a) => sum + a.count, 0)
 
+  const hasUrgentAlerts =
+    tiles.some((t) => t.level !== "green") ||
+    snapshot.poPendingApproval > 0 ||
+    snapshot.scheduleExceptions > 0 ||
+    snapshot.staleDraftPartials > 0
+
   return (
-    <div dir="rtl" className="w-full text-[13px] text-[#1e293b]">
+    <div dir="rtl" className="w-full text-[13px] text-slate-900">
       <CommandCenterMotion>
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 pb-10 font-sans lg:gap-12">
-        <header className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-8 font-sans lg:gap-5">
+        <header className="border-b border-slate-200 pb-1.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            {branding.organizationName}
+          </p>
+          <div className="mt-0.5 flex flex-row items-start gap-2">
+            <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm sm:size-8">
               {branding.brandLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={branding.brandLogoUrl}
                   alt=""
-                  className="size-full object-contain p-1.5"
+                  className="size-full object-contain p-0.5"
                 />
               ) : (
-                <Building2
-                  className="size-6 text-[#1e1b4b]"
-                  aria-hidden
-                />
+                <Building2 className="size-4 text-slate-800" aria-hidden />
               )}
             </div>
-            <div className="min-w-0 space-y-2 text-start">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {branding.organizationName}
-              </p>
-              <h2 className="text-xl font-semibold tracking-tight text-indigo-950 sm:text-2xl">
-                {hostWelcomeLine}
-              </h2>
-              <p className="text-sm leading-relaxed text-slate-600">{pulseSummary}</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="module-page-title font-bold text-indigo-950">
+            <div className="min-w-0 flex-1 text-start">
+              <div className="flex flex-row flex-wrap items-baseline gap-x-2.5 gap-y-0">
+                <h1 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">
                   מרכז הפיקוד
                 </h1>
-                <CommandCenterHeaderClient />
+                <p className="text-xs font-medium text-slate-800 sm:text-sm">{hostWelcomeLine}</p>
               </div>
-              <p className="font-currency-mono text-[12px] text-slate-500">
+              <div className="mt-0.5 flex flex-row flex-wrap items-center gap-1.5">
+                <CommandCenterHeaderClient />
+                <p className="min-w-0 flex-1 text-[10px] leading-snug text-slate-600 sm:text-[11px]">
+                  {pulseSummary}
+                </p>
+              </div>
+              <p className="mt-0.5 line-clamp-1 font-currency-mono text-[9px] text-slate-500">
                 {branding.slogan}
               </p>
             </div>
           </div>
+          {savedDefaultProjectId ? (
+            <div className="mt-1 flex justify-start">
+              <Link
+                href={`/marker-ofek/projects/${savedDefaultProjectId}`}
+                className="text-[10px] font-medium text-emerald-700 underline-offset-2 hover:text-emerald-800 hover:underline dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                מעבר לפרויקט ברירת המחדל שלך
+              </Link>
+            </div>
+          ) : null}
         </header>
 
         {welcomeBack ? (
@@ -290,126 +284,64 @@ export function CommandCenterView({
           </section>
         ) : null}
 
-        <section
-          data-diamond-spotlight="cc-pulse"
-          className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md sm:p-5"
-          aria-label="דופק תפעולי"
+        <Accordion
+          type="single"
+          collapsible
+          defaultValue={undefined}
+          className="rounded-xl border border-slate-200 bg-white px-2 shadow-sm sm:px-3"
         >
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            דופק
-          </h2>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 font-currency-mono text-sm tabular-nums text-indigo-950">
-            <span>
-              PO ממתינים:{" "}
-              <span className="text-indigo-900">{snapshot.poPendingApproval}</span>
-            </span>
-            <span>
-              חריגות לו״ז:{" "}
-              <span className="text-indigo-900">{snapshot.scheduleExceptions}</span>
-            </span>
-            <span>
-              מכרזים פתוחים:{" "}
-              <span className="text-indigo-900">{snapshot.openTendersCount}</span>
-            </span>
-            <span>
-              דיווחי שבוע:{" "}
-              <span className="text-indigo-900">{snapshot.weeklyExecutionLogs}</span>
-            </span>
-            <span>
-              חלקיים בטיוטה (ממושכים):{" "}
-              <span className="text-indigo-900">{snapshot.staleDraftPartials}</span>
-            </span>
-            <span>
-              יומני שטח אתמול (טיוטה):{" "}
-              <span className="text-indigo-900">{snapshot.draftFieldLogsYesterday}</span>
-            </span>
-          </div>
-        </section>
+          <AccordionItem value="cc-operational-pulse" className="border-0">
+            <AccordionTrigger
+              data-diamond-spotlight="cc-pulse"
+              className="py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-900 hover:no-underline sm:py-2.5"
+              aria-label="דופק תפעולי — לחצו לפתיחת מדדי עומס"
+            >
+              <span className="flex flex-row-reverse items-center gap-2">
+                {hasUrgentAlerts ? (
+                  <span
+                    className="inline-flex size-2 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(15,23,42,0.12)]"
+                    aria-hidden
+                  />
+                ) : null}
+                דופק
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-3 pt-0">
+              <div className="flex flex-wrap gap-x-6 gap-y-2 font-currency-mono text-sm tabular-nums text-slate-900">
+                <span>
+                  PO ממתינים:{" "}
+                  <span className="text-slate-900">{snapshot.poPendingApproval}</span>
+                </span>
+                <span>
+                  חריגות לו״ז:{" "}
+                  <span className="text-slate-900">{snapshot.scheduleExceptions}</span>
+                </span>
+                <span>
+                  מכרזים פתוחים:{" "}
+                  <span className="text-slate-900">{snapshot.openTendersCount}</span>
+                </span>
+                <span>
+                  דיווחי שבוע:{" "}
+                  <span className="text-slate-900">{snapshot.weeklyExecutionLogs}</span>
+                </span>
+                <span>
+                  חלקיים בטיוטה (ממושכים):{" "}
+                  <span className="text-slate-900">{snapshot.staleDraftPartials}</span>
+                </span>
+                <span>
+                  יומני שטח אתמול (טיוטה):{" "}
+                  <span className="text-slate-900">{snapshot.draftFieldLogsYesterday}</span>
+                </span>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
-        <div className="space-y-6">
-          <h2 className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 md:text-start">
-            ליבת המערכת
-          </h2>
-        <section
-          data-diamond-spotlight="cc-modules"
-          className="grid auto-rows-fr grid-cols-1 gap-8 md:grid-cols-3 lg:grid-cols-5 lg:gap-10"
-          role="navigation"
-          aria-label="מודולי המערכת"
-        >
-          {tiles.map((tile, idx) => {
-            const meta = statusMeta(tile.level)
-            const Icon = tileIcons[idx] ?? FileSearch
-            return (
-              <article
-                key={tile.title}
-                className={cn(
-                  "flex min-h-[240px] flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-6 shadow-md transition-shadow duration-200 hover:border-slate-300 hover:shadow-lg",
-                  tile.articleClassName
-                )}
-              >
-                <a href={tile.href} className="block">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm">
-                        <Icon className="size-6 stroke-[1.5]" aria-hidden />
-                      </span>
-                      <h2 className="text-base font-semibold tracking-tight text-indigo-950 md:text-lg">
-                        {tile.title}
-                      </h2>
-                    </div>
-                    <span
-                      className={cn(
-                        "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium",
-                        meta.badge
-                      )}
-                    >
-                      <span className={cn("inline-block size-2 rounded-full", meta.dot)} aria-hidden />
-                      {meta.label}
-                    </span>
-                  </div>
-                  <p
-                    className={cn(
-                      "mt-3 text-[12px] leading-relaxed text-slate-600",
-                      tile.summaryMono && "font-currency-mono tabular-nums"
-                    )}
-                  >
-                    {tile.summary}
-                  </p>
-                </a>
-                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-600">
-                  {tile.highlights.map((line, hidx) => (
-                    <li key={`${tile.title}-${hidx}`} className="flex items-start gap-1.5">
-                      {hidx === 0 ? (
-                        <Clock3 className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden />
-                      ) : hidx === 1 ? (
-                        <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden />
-                      ) : (
-                        <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600" aria-hidden />
-                      )}
-                      <span
-                        className={cn(
-                          (hidx === 1 || line.includes("₪")) && "font-currency-mono tabular-nums"
-                        )}
-                      >
-                        {line}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4">
-                  <a
-                    href={tile.quickActionHref}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-600 px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-indigo-500"
-                  >
-                    {tile.quickActionLabel}
-                    <FileCheck2 className="size-3.5 shrink-0 opacity-95" aria-hidden />
-                  </a>
-                </div>
-              </article>
-            )
-          })}
-        </section>
-        </div>
+        {/* מודולי ליבה: DndContext + SortableContext + שמירת פריסה — ראו CommandCenterModulesGrid */}
+        <CommandCenterModulesGrid
+          masterTiles={snapshot.tiles}
+          layout={commandCenterLayout}
+        />
 
         <CommandCenterOpenTasksAccordion
           actions={actions}

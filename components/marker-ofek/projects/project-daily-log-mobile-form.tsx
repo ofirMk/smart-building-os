@@ -30,10 +30,8 @@ import {
 import { TaskPlanVaultSheet } from "@/components/marker-ofek/execution/task-plan-vault-sheet"
 import { fetchProjectTasks, type GanttTaskRow } from "@/lib/marker-ofek/gantt-actions"
 import { formatWbsPrefixedDisplayName, splitWbsCodePrefix } from "@/lib/marker-ofek/wbs-code-numbering"
-import {
-  listPlanDocumentsForTask,
-  type PlanLinkRow,
-} from "@/lib/marker-ofek/wbs-plan-link-actions"
+import { listPlanDocumentsForTask } from "@/lib/marker-ofek/wbs-plan-link-actions"
+import type { PlanLinkRow } from "@/lib/marker-ofek/wbs-plan-link-types"
 import { computeWbsDisplayCodes } from "@/lib/marker-ofek/wbs-display-codes"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import type { DailyLogEquipmentKind, DailyManpowerRole, SiteMediaFieldTag } from "@/types/marker-ofek"

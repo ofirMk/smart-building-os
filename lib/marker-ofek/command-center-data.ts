@@ -9,20 +9,13 @@ import {
   type DerivativeScheduleRow,
 } from "@/lib/marker-ofek/derivative-gantt"
 import { MARKER_DEMO_SANDBOX_PROJECT_ID } from "@/lib/marker-ofek/hr-qualification-gate"
+import type { CommandCenterSnapshot, CommandCenterTile } from "@/lib/marker-ofek/command-center-types"
 
-export type CommandCenterHealthLevel = "green" | "yellow" | "red"
-
-export type CommandCenterTile = {
-  title: string
-  href: string
-  summary: string
-  highlights: string[]
-  quickActionLabel: string
-  quickActionHref: string
-  level: CommandCenterHealthLevel
-  summaryMono?: boolean
-  articleClassName?: string
-}
+export type {
+  CommandCenterHealthLevel,
+  CommandCenterSnapshot,
+  CommandCenterTile,
+} from "@/lib/marker-ofek/command-center-types"
 
 type BoqLine = {
   tender_project_id: string
@@ -65,18 +58,6 @@ function sumOpenTendersEstimate(lines: BoqLine[], projectIds: string[]): number 
     }
   }
   return Math.round(total * 100) / 100
-}
-
-export type CommandCenterSnapshot = {
-  tiles: CommandCenterTile[]
-  poPendingApproval: number
-  /** יומני שטח (project_daily_logs) מאתמול במצב טיוטה — אישור לחיוב */
-  draftFieldLogsYesterday: number
-  weeklyExecutionLogs: number
-  openTendersCount: number
-  scheduleExceptions: number
-  staleDraftPartials: number
-  ganttHref: string
 }
 
 /**

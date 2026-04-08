@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { createSupabaseBrowserClient as getSupabaseBrowser } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
 import type { MoCommentContext } from "@/types/marker-ofek"
 
@@ -54,19 +54,29 @@ export function useMoCommentPresence(
   const [idsWithComments, setIdsWithComments] = React.useState<Set<string>>(
     () => new Set()
   )
+  const mountedRef = React.useRef(true)
+
+  React.useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const refresh = React.useCallback(async () => {
     if (!projectId || contextIds.length === 0) {
-      setIdsWithComments(new Set())
+      if (mountedRef.current) setIdsWithComments(new Set())
       return
     }
-    const supabase = createSupabaseBrowserClient()
+    const supabase = getSupabaseBrowser()
     const { data, error } = await supabase
       .from("project_comments")
       .select("context_id")
       .eq("project_id", projectId)
       .eq("context_type", contextType)
       .in("context_id", contextIds)
+
+    if (!mountedRef.current) return
 
     if (error) {
       console.warn("[project_comments] presence", error.message)
@@ -126,18 +136,32 @@ export function MoContextCommentButton({
   const [sending, setSending] = React.useState(false)
   const [draft, setDraft] = React.useState("")
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null)
+  const mountedRef = React.useRef(true)
 
   React.useEffect(() => {
-    createSupabaseBrowserClient()
-      .auth.getUser()
-      .then(({ data }) => setCurrentUserId(data.user?.id ?? null))
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const { data } = await getSupabaseBrowser().auth.getUser()
+      if (!cancelled) setCurrentUserId(data.user?.id ?? null)
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const loadThread = React.useCallback(async () => {
     if (!contextId || contextType === "general") return
     setLoading(true)
     try {
-      const supabase = createSupabaseBrowserClient()
+      const supabase = getSupabaseBrowser()
       const { data, error } = await supabase
         .from("project_comments")
         .select("id, message, created_at, user_id, profiles ( full_name, email )")
@@ -145,13 +169,14 @@ export function MoContextCommentButton({
         .eq("context_type", contextType)
         .eq("context_id", contextId)
         .order("created_at", { ascending: true })
+      if (!mountedRef.current) return
       if (error) throw error
       setRows((data as CommentRow[]) ?? [])
     } catch (e) {
       console.error(e)
-      setRows([])
+      if (mountedRef.current) setRows([])
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }, [projectId, contextType, contextId])
 
@@ -164,7 +189,7 @@ export function MoContextCommentButton({
     if (!text || !contextId || !currentUserId) return
     setSending(true)
     try {
-      const supabase = createSupabaseBrowserClient()
+      const supabase = getSupabaseBrowser()
       const { error } = await supabase.from("project_comments").insert({
         project_id: projectId,
         user_id: currentUserId,

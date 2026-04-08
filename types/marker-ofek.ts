@@ -47,6 +47,7 @@ export type MoPartialAccountStatus =
   | "draft"
   | "submitted"
   | "approved"
+  | "sent"
   | "paid"
 
 /** סטטוס הוראת שינוי (חריג) — אם יישמרו שוב ב-DB */
@@ -144,6 +145,20 @@ export type MarkerOfekEntityRow = {
   bookkeeping_auth_expiry?: string | null
   /** מספר סידורי מרצף supplier_seq / contractor_seq */
   mo_entity_code: string | null
+  /** Holden — מס זהות / עוסק מורשה (משותף לקוח/ספק; מימוש DB Phase 6) */
+  tax_id?: string | null
+  /** Holden — לקוחות ERP / A/R (Phase 9) */
+  erp_customer_number?: string | null
+  status_he?: string | null
+  account_manager?: string | null
+  currency_code?: string | null
+  vat_code?: string | null
+  phone?: string | null
+  fax?: string | null
+  email?: string | null
+  address_line_1?: string | null
+  city?: string | null
+  zip_code?: string | null
   is_deleted: boolean
   deleted_at: string | null
   created_at: string

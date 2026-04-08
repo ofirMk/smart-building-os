@@ -5,10 +5,8 @@ import * as React from "react"
 import { ArrowRight, ClipboardList, Loader2, ScrollText } from "lucide-react"
 import { toast } from "sonner"
 
-import {
-  saveDailyLog,
-  type DailyLogWeather,
-} from "../actions"
+import { saveDailyLog } from "../actions"
+import type { DailyLogWeather } from "../types"
 import { Button } from "@/components/ui/button"
 import {
   Card,

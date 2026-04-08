@@ -38,7 +38,7 @@ import {
   Warehouse,
 } from "lucide-react"
 
-import { MARKER_OFEK_HREFS } from "@/app/(dashboard)/_components/sidebar-routes"
+import { MARKER_OFEK_HREFS } from "@/lib/infrastructure/navigation/sidebar-routes"
 
 export type MarkerOfekSidebarNavItem = {
   title: string
@@ -305,14 +305,19 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
     defaultOpen: true,
     items: [
       {
+        title: "הפקת חשבונית מס",
+        href: MARKER_OFEK_HREFS.financeInvoiceNew,
+        icon: Receipt,
+      },
+      {
+        title: "מרכז כספים",
+        href: "/marker-ofek/finance",
+        icon: Wallet,
+      },
+      {
         title: "מרכז חיוב ותזרים",
         href: "/marker-ofek/finance/billing",
         icon: Landmark,
-      },
-      {
-        title: "חשבוניות מס",
-        href: "/marker-ofek/finance",
-        icon: Receipt,
       },
       {
         title: "לקוחות (CRM)",
@@ -347,7 +352,7 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
       {
         title: "חשבונית מרכזת",
         href: MARKER_OFEK_HREFS.financeCentralized,
-        icon: Wallet,
+        icon: FileText,
       },
     ],
   },

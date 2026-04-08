@@ -1,5 +1,6 @@
 import "server-only"
 
+import { fetchVendorTaxStatusFromOpenData } from "@/lib/finance/israel-tax-registry-open-data"
 import { computeWithholdingOnPayment } from "@/lib/marker-ofek/israeli-tax-helpers"
 import {
   getMoVatSummaryByProject,
@@ -416,5 +417,34 @@ export async function supplierPaymentWithholdingEstimateForChat(input: {
     },
     formatting_hint:
       "הבהר למשתמש: הניכוי הוא הערכה לפי אחוז בפרופיל הספק או בעמודת ברירת המחדל בישות; לא מחליף ייעוץ מס.",
+  }
+}
+
+/**
+ * בדיקת ח.פ./עוסק מול מאגר מידע פתוח (data.gov.il) — ניכוי במקור / ציות ספקים.
+ */
+export async function israelTaxOpenDataVendorLookupForChat(input: {
+  tax_id: string
+}): Promise<
+  | {
+      ok: true
+      found: boolean
+      registered_name: string | null
+      withholding_hint: string | null
+      disclaimer: string
+    }
+  | { ok: false; error: string }
+> {
+  const res = await fetchVendorTaxStatusFromOpenData(input.tax_id.trim())
+  if (!res.ok) {
+    return { ok: false, error: res.error }
+  }
+  return {
+    ok: true,
+    found: res.data.found,
+    registered_name: res.data.registeredName,
+    withholding_hint: res.data.withholdingHint,
+    disclaimer:
+      "מקור: מאגר מידע פתוח; יש לאמת מול רשות המסים ורואה חשבון. לא ייעוץ משפטי או מס.",
   }
 }

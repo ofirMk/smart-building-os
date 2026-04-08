@@ -7,8 +7,8 @@ import {
   ClipboardList,
   FilePenLine,
   FileText,
-  Landmark,
   LayoutDashboard,
+  Wallet,
 } from "lucide-react"
 
 import {
@@ -21,10 +21,7 @@ import {
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
-import {
-  FACILITY_HOME_PATH,
-  MARKER_OFEK_HREFS,
-} from "@/app/(dashboard)/_components/sidebar-routes"
+import { FACILITY_HOME_PATH } from "@/lib/infrastructure/navigation/sidebar-routes"
 
 const MARKER_OFEK_CORE_LINKS: {
   title: string
@@ -45,8 +42,8 @@ const MARKER_OFEK_CORE_LINKS: {
   },
   {
     title: "כספים",
-    href: MARKER_OFEK_HREFS.financeCentralized,
-    icon: Landmark,
+    href: "/marker-ofek/finance",
+    icon: Wallet,
   },
 ]
 

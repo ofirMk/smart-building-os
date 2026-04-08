@@ -44,6 +44,16 @@ create table if not exists public.tender_boq_items (
   updated_at timestamptz not null default now()
 );
 
+-- Older DBs may already have `tender_boq_items` (e.g. `tender_id` → `public.tenders`) without
+-- `tender_project_id` / versioning columns — `CREATE TABLE IF NOT EXISTS` skips, then indexes fail.
+alter table public.tender_boq_items add column if not exists tender_project_id uuid;
+alter table public.tender_boq_items add column if not exists parent_id uuid;
+alter table public.tender_boq_items add column if not exists sort_order int not null default 0;
+alter table public.tender_boq_items add column if not exists wbs_code text;
+alter table public.tender_boq_items add column if not exists unit_price numeric(18, 6) not null default 0;
+alter table public.tender_boq_items add column if not exists boq_version text not null default 'v1';
+alter table public.tender_boq_items add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists tender_boq_items_project_idx
   on public.tender_boq_items (tender_project_id);
 create index if not exists tender_boq_items_project_version_idx
@@ -66,6 +76,9 @@ create table if not exists public.tender_vendor_quotes (
   notes text,
   created_at timestamptz not null default now()
 );
+
+alter table public.tender_vendor_quotes add column if not exists tender_project_id uuid;
+alter table public.tender_vendor_quotes add column if not exists tender_boq_item_id uuid;
 
 create index if not exists tender_vendor_quotes_project_idx
   on public.tender_vendor_quotes (tender_project_id);

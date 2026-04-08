@@ -15,8 +15,8 @@ import {
 import {
   getProjectDocumentSignedUrl,
   listPlanDocumentsForTask,
-  type PlanLinkRow,
 } from "@/lib/marker-ofek/wbs-plan-link-actions"
+import type { PlanLinkRow } from "@/lib/marker-ofek/wbs-plan-link-types"
 import { cn, formatError } from "@/lib/utils"
 
 function isPdf(

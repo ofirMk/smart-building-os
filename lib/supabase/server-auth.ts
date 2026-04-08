@@ -4,6 +4,10 @@ import { cookies } from "next/headers"
 /**
  * לקוח Supabase עם עוגיות סשן — לשימוש ב־Server Actions וב־Server Components
  * שדורשים משתמש מחובר.
+ *
+ * Diamond V1.0: לקוח זה נשאר ללא גנריק DB בזמן מעבר הדרגתי; השתמשו ב־`Tables<"table">`
+ * מ־`@/types/supabase` בשכבת lib/ לשדות מדויקים. אחרי `supabase gen types typescript` — ניתן
+ * להחליף ל־`createServerClient<Database>`.
  */
 export async function createSupabaseServerAuthClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

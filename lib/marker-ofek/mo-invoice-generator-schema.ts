@@ -9,9 +9,15 @@ export const moInvoiceLineInputSchema = z.object({
 export const moInvoiceCreateInputSchema = z
   .object({
     entityId: z.string().uuid("בחרו לקוח"),
+    financeClientId: z.string().uuid().optional().nullable(),
     projectId: z.string().uuid().optional().nullable(),
     contractId: z.string().uuid().optional().nullable(),
     issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך לא תקין"),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך יעד לא תקין")
+      .optional()
+      .nullable(),
     documentCopyLabel: z.enum(["מקור", "העתק"]),
     vatRatePercent: z.coerce
       .number()

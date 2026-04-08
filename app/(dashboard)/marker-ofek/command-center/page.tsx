@@ -105,6 +105,8 @@ export default async function MarkerOfekCommandCenterPage() {
       welcomeBack={welcomeBack}
       executivePulse={executivePulse}
       workspacePersona={workspace.workspacePersona}
+      savedDefaultProjectId={workspace.defaultProjectId}
+      commandCenterLayout={workspace.commandCenterLayout}
     />
   )
 }

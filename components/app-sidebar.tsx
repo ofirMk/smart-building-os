@@ -11,30 +11,24 @@ import {
 } from "react"
 import {
   ArrowRightLeft,
-  BarChart,
   Building2,
   ChevronDown,
   ChevronUp,
   Gauge,
   LogOut,
-  Shield,
-  Sparkles,
 } from "lucide-react"
 
 import { logout } from "@/app/(dashboard)/actions"
 import {
-  MARKER_OFEK_CONTRACTING_NAV_SECTIONS,
   type SidebarNavItem,
   type SidebarNavSection,
   FACILITY_ADMIN_NAV_SECTIONS,
   HOLDEN_NAV_SECTIONS,
   isFacilityManagementContext,
   isMarkerOfekExecutiveContext,
-} from "@/app/(dashboard)/_components/sidebar"
-import {
-  indexOfSidebarSectionForPathname,
-  isSidebarNavItemActive,
-} from "@/app/(dashboard)/_components/sidebar-routes"
+} from "@/components/marker-ofek/marker-ofek-sidebar-sections"
+import { isSidebarNavItemActive } from "@/lib/infrastructure/navigation/sidebar-routes"
+import { MarkerOfekDualPaneSidebar } from "@/components/marker-ofek/marker-ofek-dual-pane-sidebar"
 import {
   type AppUserRole,
   guyRahumimWelcomeMessage,
@@ -68,7 +62,6 @@ import {
   filterSidebarSectionsByModules,
 } from "@/lib/marker-ofek/module-registry"
 import { MIRROR_BANNER_INSET_PT_CLASS } from "@/lib/marker-ofek/mirror-layout"
-import { filterSidebarWhenNoManagedProjects } from "@/lib/marker-ofek/project-scope"
 import {
   ERP_EXECUTION_SUBTITLE,
   useOrganizationBranding,
@@ -222,94 +215,6 @@ function SidebarNavLinkRow({
   )
 }
 
-function MarkerOfekSidebarAccordion({
-  pathname,
-  sections,
-  closeMobileNav,
-  markerSoftNav,
-}: {
-  pathname: string
-  sections: SidebarNavSection[]
-  closeMobileNav: () => void
-  markerSoftNav?: (href: string, title: string) => void
-}) {
-  const activeIdx = useMemo(
-    () => indexOfSidebarSectionForPathname(pathname, sections),
-    [pathname, sections]
-  )
-  const [openIdx, setOpenIdx] = useState<number>(() => activeIdx)
-
-  useEffect(() => {
-    setOpenIdx(activeIdx)
-  }, [activeIdx])
-
-  return (
-    <div className="flex flex-col gap-1.5 px-0.5">
-      {sections.map((section, idx) => {
-        const label = section.label?.trim() || `קבוצה ${idx + 1}`
-        const isOpen = openIdx === idx
-        const sectionHasActive = section.items.some((it) =>
-          isSidebarNavItemActive(pathname, it.href)
-        )
-
-        return (
-          <div
-            key={`${label}-${idx}`}
-            className="rounded-xl border border-slate-200/80 bg-white/40 dark:border-sidebar-border dark:bg-sidebar-accent/20"
-          >
-            <button
-              type="button"
-              aria-expanded={isOpen}
-              onClick={() => {
-                setOpenIdx((cur) => (cur === idx ? -1 : idx))
-              }}
-              className={cn(
-                "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-start transition-colors duration-150",
-                "text-indigo-950 hover:bg-slate-50/90 dark:text-indigo-100 dark:hover:bg-sidebar-accent/60",
-                sectionHasActive && !isOpen && "bg-indigo-50/50 dark:bg-indigo-950/25"
-              )}
-            >
-              <span className="min-w-0 flex-1 text-sm font-semibold tracking-tight">
-                {label}
-              </span>
-              <ChevronDown
-                aria-hidden
-                className={cn(
-                  "size-4 shrink-0 text-indigo-950/60 transition-transform duration-200 ease-out motion-reduce:transition-none dark:text-indigo-200/70",
-                  isOpen && "-rotate-180"
-                )}
-              />
-            </button>
-            <div
-              className={cn(
-                "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
-                isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              )}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <div className="px-1 pb-2 pt-0.5">
-                  <SidebarMenu className="gap-0.5">
-                    {section.items.map((item, itemIdx) => (
-                      <SidebarNavLinkRow
-                        key={`acc-${idx}-${itemIdx}-${item.href}`}
-                        pathname={pathname}
-                        item={item}
-                        closeMobileNav={closeMobileNav}
-                        monoLabel
-                        markerSoftNav={markerSoftNav}
-                      />
-                    ))}
-                  </SidebarMenu>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 export function AppSidebar({
   userEmail,
   userRole,
@@ -356,78 +261,6 @@ export function AppSidebar({
         : HOLDEN_NAV_SECTIONS
     return filterSidebarSectionsByModules(raw, modules)
   }, [effectiveRole, modules])
-
-  const markerNavSections = useMemo((): SidebarNavSection[] => {
-    const withoutExec = showHoldingExecutiveNav
-      ? MARKER_OFEK_CONTRACTING_NAV_SECTIONS
-      : MARKER_OFEK_CONTRACTING_NAV_SECTIONS.map((section) => ({
-          ...section,
-          items: section.items.filter(
-            (i) =>
-              i.href !== "/marker-ofek/executive" && i.href !== "/management"
-          ),
-        }))
-    let withAdmin = withoutExec
-    if (showUserPermissionsNav || showAiUserSetupNav) {
-      withAdmin = withAdmin.map((section) =>
-        section.label === "מערכת"
-          ? {
-              ...section,
-              items: [
-                ...section.items,
-                ...(showAiUserSetupNav
-                  ? [
-                      {
-                        title: "הקמת משתמש (AI)",
-                        href: "/marker-ofek/settings/users/ai-setup",
-                        icon: Sparkles,
-                      } satisfies SidebarNavItem,
-                    ]
-                  : []),
-                ...(showUserPermissionsNav
-                  ? [
-                      {
-                        title: "הרשאות משתמשים",
-                        href: "/marker-ofek/settings/user-permissions",
-                        icon: Shield,
-                      } satisfies SidebarNavItem,
-                    ]
-                  : []),
-              ],
-            }
-          : section
-      )
-    }
-    const withPartners: SidebarNavSection[] = !showPartnerFinanceNav
-      ? withAdmin
-      : [
-          ...withAdmin,
-          {
-            label: "הנהלה בכירה",
-            items: [
-              {
-                title: "מרכז שותפי ניהול",
-                href: "/marker-ofek/partner-finance",
-                icon: BarChart,
-              },
-            ],
-          },
-        ]
-    const filtered = filterSidebarSectionsByModules(withPartners, modules)
-    return filterSidebarWhenNoManagedProjects(
-      filtered,
-      scopedProjectCount,
-      applyEmptyPortfolioNav
-    )
-  }, [
-    showPartnerFinanceNav,
-    showHoldingExecutiveNav,
-    showUserPermissionsNav,
-    showAiUserSetupNav,
-    scopedProjectCount,
-    applyEmptyPortfolioNav,
-    modules,
-  ])
 
   const guyWelcome = useMemo(
     () => guyRahumimWelcomeMessage(userEmail),
@@ -664,13 +497,18 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         {isMarkerOfek ? (
-          <SidebarGroup className="px-1">
-            <SidebarGroupContent>
-              <MarkerOfekSidebarAccordion
-                pathname={pathname}
-                sections={markerNavSections}
+          <SidebarGroup className="px-0">
+            <SidebarGroupContent className="px-0">
+              <MarkerOfekDualPaneSidebar
+                modules={modules}
                 closeMobileNav={closeMobileNav}
                 markerSoftNav={markerSoftNav}
+                showPartnerFinanceNav={showPartnerFinanceNav}
+                showHoldingExecutiveNav={showHoldingExecutiveNav}
+                showUserPermissionsNav={showUserPermissionsNav}
+                showAiUserSetupNav={showAiUserSetupNav}
+                scopedProjectCount={scopedProjectCount}
+                applyEmptyPortfolioNav={applyEmptyPortfolioNav}
               />
             </SidebarGroupContent>
           </SidebarGroup>

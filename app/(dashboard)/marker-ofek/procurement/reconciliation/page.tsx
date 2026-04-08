@@ -89,7 +89,7 @@ export default function ProcurementReconciliationPage() {
         if (poRes.error) throw poRes.error
         if (grRes.error) throw grRes.error
 
-        const receiptIds = (grRes.data ?? []).map((r) => (r as { id: string }).id)
+        const receiptIds = (grRes.data ?? []).map((r: { id: string }) => r.id)
         const [grItemsRes, poLineRes] = await Promise.all([
           receiptIds.length
             ? supabase

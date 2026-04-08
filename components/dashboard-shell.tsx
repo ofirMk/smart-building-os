@@ -5,12 +5,20 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
 
+import {
+  CommandPaletteHeaderTrigger,
+  CommandPaletteProvider,
+} from "@/components/dashboard/command-palette"
 import { CommentNotificationBell } from "@/components/dashboard/comment-notification-bell"
 import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tracker"
 import { AppSidebar } from "@/components/app-sidebar"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
 import { GlobalProjectSearch } from "@/components/marker-ofek/global-project-search"
 import { MarkerOfekModuleHeaderActions } from "@/components/marker-ofek/marker-ofek-module-header-actions"
+import { SaveWorkspaceButton } from "@/components/marker-ofek/workspace/save-workspace-button"
+import { WorkspaceEfficiencyHost } from "@/components/marker-ofek/workspace/workspace-efficiency-host"
+import { WorkspaceScenarioSwitcher } from "@/components/marker-ofek/workspace/workspace-scenario-switcher"
+import { WorkspaceScrollRestore } from "@/components/marker-ofek/workspace/workspace-scroll-restore"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
   SidebarInset,
@@ -24,11 +32,12 @@ import {
 import {
   isMarkerOfekExecutiveContext,
   isMarkerOfekPath,
-} from "@/app/(dashboard)/_components/sidebar-routes"
+} from "@/lib/infrastructure/navigation/sidebar-routes"
 import { MirrorModeBanner } from "@/components/marker-ofek/mirror-mode-banner"
 import { MirrorModeSelector } from "@/components/marker-ofek/mirror-mode-selector"
 import { DiamondSidekickToggle } from "@/components/marker-ofek/workspace/diamond-sidekick"
 import { AiAssistant } from "@/components/dashboard/AiAssistant"
+import { AiAssistantScreenProvider } from "@/components/dashboard/ai-assistant-screen-context"
 import { DiamondWorkspaceHotkeys } from "@/components/marker-ofek/workspace/diamond-workspace-hotkeys"
 import { SmartWorkspaceChrome } from "@/components/marker-ofek/workspace/smart-workspace-chrome"
 import { SmartWorkspaceProvider } from "@/components/marker-ofek/workspace/smart-workspace-context"
@@ -48,6 +57,7 @@ import type { HrWelcomePayload } from "@/lib/marker-ofek/diamond-navigator-curri
 import type { WorkspaceSettingsSnapshot } from "@/lib/marker-ofek/workspace-types"
 import { DEFAULT_WORKSPACE_SNAPSHOT } from "@/lib/marker-ofek/user-workspace-shared"
 import { cn } from "@/lib/utils"
+import type { CSSProperties } from "react"
 
 type Crumb = { label: string; href: string | null }
 
@@ -194,7 +204,17 @@ export function DashboardShell({
 
   return (
     <SmartWorkspaceProvider initial={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}>
-    <SidebarProvider dir="rtl">
+    <CommandPaletteProvider>
+    <AiAssistantScreenProvider>
+    <SidebarProvider
+      dir="rtl"
+      defaultOpen={initialWorkspace?.uiSettings?.sidebarExpanded ?? true}
+      style={
+        isMarkerOfekExecutiveContext(pathname ?? "")
+          ? ({ "--sidebar-width": "22rem" } as CSSProperties)
+          : undefined
+      }
+    >
       {mirrorBannerOn && mirrorBannerLabel ? (
         <MirrorModeBanner label={mirrorBannerLabel} />
       ) : null}
@@ -221,6 +241,9 @@ export function DashboardShell({
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
         )}
       >
+        <WorkspaceScrollRestore
+          initialWorkspace={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}
+        />
         <header
           className={cn(
             "sticky z-20 flex min-h-[3.75rem] shrink-0 items-center gap-4 border-b border-slate-100 bg-white px-4 py-3 print:hidden md:px-8",
@@ -267,6 +290,7 @@ export function DashboardShell({
           {isMarkerOfekExecutiveContext(pathname) ? <GlobalProjectSearch /> : null}
           <MarkerOfekModuleHeaderActions />
           <div className="flex shrink-0 items-center gap-1">
+            <CommandPaletteHeaderTrigger />
             {isMarkerOfekPath(pathname) ? <WorkspaceParallelSplitControl /> : null}
             {isMarkerOfekPath(pathname) ? <DiamondSidekickToggle /> : null}
             {showMirrorSelector ? (
@@ -277,6 +301,9 @@ export function DashboardShell({
             {userRole === "admin" ? (
               <CommentNotificationBell className="text-muted-foreground transition-colors duration-300 ease-in-out hover:text-foreground" />
             ) : null}
+            {isMarkerOfekPath(pathname) ? <WorkspaceScenarioSwitcher /> : null}
+            {isMarkerOfekPath(pathname) ? <WorkspaceEfficiencyHost enabled /> : null}
+            {isMarkerOfekPath(pathname) ? <SaveWorkspaceButton /> : null}
           </div>
         </header>
         {isMarkerOfekPath(pathname) ? (
@@ -310,6 +337,8 @@ export function DashboardShell({
         hrWelcome={hrWelcome}
         hrWelcomePending={hrWelcomePending}
       />
+    </AiAssistantScreenProvider>
+    </CommandPaletteProvider>
     </SmartWorkspaceProvider>
   )
 }

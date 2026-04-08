@@ -5,13 +5,9 @@ import { revalidatePath } from "next/cache"
 import { formatError } from "@/lib/format-error"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
+import type { DailyLogWeather, SaveDailyLogResult } from "./types"
+
 const EXECUTION_PATH = "/marker-ofek/execution/daily-logs/new"
-
-export type DailyLogWeather = "sunny" | "cloudy" | "rain" | "heat_wind"
-
-export type SaveDailyLogResult =
-  | { ok: true }
-  | { ok: false; error: string }
 
 export async function saveDailyLog(input: {
   tenderId: string

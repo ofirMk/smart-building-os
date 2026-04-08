@@ -4,7 +4,7 @@ import Link from "next/link"
 import * as React from "react"
 import { Controller, useForm, useFormState } from "react-hook-form"
 
-import { MARKER_OFEK_HREFS } from "@/app/(dashboard)/_components/sidebar-routes"
+import { MARKER_OFEK_HREFS } from "@/lib/infrastructure/navigation/sidebar-routes"
 import {
   importBaselineBillAI,
   saveAiBaseline,

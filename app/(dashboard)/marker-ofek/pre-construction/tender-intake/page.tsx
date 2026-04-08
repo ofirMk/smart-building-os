@@ -6,12 +6,12 @@ import { ArrowRight, FileUp, Loader2, Plus, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { processTenderDocumentAI } from "./actions/tender-ai-actions"
-import { TenderBuildingVisualization } from "./_components/tender-building-visualization"
+import { TenderBuildingVisualization } from "@/components/marker-ofek/pre-construction/tender-building-visualization"
 import {
   TenderDocumentsTable,
   type TenderDocPendingRow,
   type TenderDocRow,
-} from "./_components/tender-documents-table"
+} from "@/components/marker-ofek/pre-construction/tender-documents-table"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -168,7 +168,7 @@ export default function TenderIntakePage() {
         setDocuments([])
       } else {
         setDocuments(
-          (docs ?? []).map((d) => ({
+          (docs ?? []).map((d: Record<string, unknown>) => ({
             id: d.id as string,
             file_name: d.file_name as string,
             ai_inferred_name: d.ai_inferred_name as string | null,

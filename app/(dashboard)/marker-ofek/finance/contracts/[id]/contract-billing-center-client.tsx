@@ -70,6 +70,7 @@ const STATUS_LABELS: Record<MoPartialAccountStatus, string> = {
   draft: "טיוטה",
   submitted: "הוגש",
   approved: "מאושר",
+  sent: "נשלח",
   paid: "שולם",
 }
 

@@ -10,6 +10,12 @@ import {
 } from "@/lib/marker-ofek/progress-report-line-calc"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
+import type {
+  ProgressReportLineInput,
+  ProgressReportSaveStatus,
+  SaveProgressReportResult,
+} from "./types"
+
 const PAGE_PATH = "/marker-ofek/execution/progress-reports/new"
 
 /** תאריך היום בישראל (YYYY-MM-DD) */
@@ -26,18 +32,6 @@ function reportDateIsrael(): string {
   if (y && m && d) return `${y}-${m}-${d}`
   return new Date().toISOString().slice(0, 10)
 }
-
-export type SaveProgressReportResult =
-  | { ok: true }
-  | { ok: false; error: string }
-
-export type ProgressReportLineInput = {
-  contractMilestoneId: string
-  pctPreviousCumulative: number
-  pctCurrentCumulative: number
-}
-
-export type ProgressReportSaveStatus = "draft" | "submitted"
 
 export async function saveProgressReport(input: {
   contractId: string

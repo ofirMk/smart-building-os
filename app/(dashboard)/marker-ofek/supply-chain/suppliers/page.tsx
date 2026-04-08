@@ -155,7 +155,7 @@ export default function SupplyChainSuppliersPage() {
             .eq("is_deleted", false)
             .order("name", { ascending: true })
           if (fallback.error) throw fallback.error
-          nextSuppliers = (fallback.data ?? []).map((r) => {
+          nextSuppliers = (fallback.data ?? []).map((r: Record<string, unknown>) => {
             const row = r as {
               id: string
               name: string
@@ -300,7 +300,7 @@ export default function SupplyChainSuppliersPage() {
           .order("created_at", { ascending: false })
           .limit(300)
         if (importsRes.error) throw importsRes.error
-        const importIds = (importsRes.data ?? []).map((r) => (r as { id: string }).id)
+        const importIds = (importsRes.data ?? []).map((r: { id: string }) => r.id)
         if (importIds.length === 0) {
           if (!cancelled) setItemHistoryRows([])
           return

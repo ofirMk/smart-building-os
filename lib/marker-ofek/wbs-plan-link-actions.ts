@@ -4,6 +4,7 @@ import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { revalidatePath } from "next/cache"
 
 import type { MarkerOfekProjectDocumentRow } from "@/types/marker-ofek"
+import type { PlanLinkRow } from "@/lib/marker-ofek/wbs-plan-link-types"
 import {
   VAULT_DEFAULT_FOLDERS,
   vaultFolderKeyOrder,
@@ -11,11 +12,6 @@ import {
 
 const DOCS_BUCKET =
   process.env.NEXT_PUBLIC_PROJECT_DOCUMENTS_BUCKET?.trim() || "project_documents"
-
-export type PlanLinkRow = {
-  link_id: string
-  document: MarkerOfekProjectDocumentRow
-}
 
 /** יוצר את ארבע תיקיות הכספת אם חסרות (אידמפוטנטי). */
 export async function ensureProjectVaultDefaultFolders(projectId: string): Promise<void> {

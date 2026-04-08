@@ -42,7 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { AiCopilotModal } from "./_components/AiCopilotModal"
+import { AiCopilotModal } from "@/components/marker-ofek/procurement/ai-import-copilot-modal"
 import {
   completeProcurementAiCopilotSave,
   createRetroPurchaseOrderFromDeliveryScan,

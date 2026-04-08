@@ -112,6 +112,9 @@ create trigger project_documents_updated_at
   for each row
   execute function public.set_updated_at();
 
+alter table public.project_documents
+  add column if not exists document_kind varchar;
+
 create index if not exists project_documents_project_kind_idx
   on public.project_documents (project_id, document_kind);
 

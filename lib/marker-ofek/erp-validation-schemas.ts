@@ -7,6 +7,15 @@ export const isoDateString = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "תאריך חייב בפורמט YYYY-MM-DD")
 
+/** תאריך אופציונלי — ריק, null, או YYYY-MM-DD (תואם קריאות ישנות עם ‎null‎) */
+export const optionalIsoDateNullable = z.preprocess(
+  (val) => (val == null ? "" : val),
+  z
+    .string()
+    .regex(/^$|^\d{4}-\d{2}-\d{2}$/, "תאריך חייב בפורמט YYYY-MM-DD")
+    .transform((s) => (s === "" ? null : s))
+)
+
 export const moneyStringSchema = z
   .string()
   .min(1, "חובה להזין סכום")
@@ -159,54 +168,137 @@ export type ClientContractWizardInput = z.infer<
   typeof clientContractWizardSchema
 >
 
-export const quickEntitySchema = z
-  .object({
-    name: z.string().min(2, "שם חובה"),
-    type: z.enum(["client", "supplier", "subcontractor"]),
-    legalId: z.string().optional(),
-    address: z.string().optional(),
-    withholdingTaxExpiry: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional()
-      .nullable(),
-    bookkeepingAuthExpiry: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional()
-      .nullable(),
-    defaultWithholdingPercent: z.number().min(0).max(100).optional().nullable(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === "supplier") {
-      const lid = data.legalId?.trim() ?? ""
-      if (!lid) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "ח.פ / ע.מ חובה לספק לפני שמירה",
-          path: ["legalId"],
-        })
-        return
-      }
-      if (!/^\d{8,10}$/.test(lid)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "ח.פ / ע.מ — 8 עד 10 ספרות בלבד",
-          path: ["legalId"],
-        })
-      }
+/**
+ * ממזג קלט ישן (camelCase) לשמות עמודות ב־`public.entities` (snake_case).
+ * השדות הסופיים ב־`quickEntitySchema` תואמים למסד.
+ */
+export function normalizeQuickEntityInput(raw: unknown): unknown {
+  if (raw == null || typeof raw !== "object") return raw
+  const o = { ...(raw as Record<string, unknown>) }
+  const firstStr = (
+    ...vals: (string | null | undefined)[]
+  ): string | undefined => {
+    for (const v of vals) {
+      if (v == null) continue
+      const t = String(v).trim()
+      if (t !== "") return t
     }
-    if (data.type === "client" && data.legalId?.trim()) {
-      const lid = data.legalId.trim()
-      if (!/^\d{8,10}$/.test(lid)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "ח.פ / ע.מ — 8 עד 10 ספרות בלבד",
-          path: ["legalId"],
-        })
+    return undefined
+  }
+  o.legal_id = firstStr(
+    o.legal_id as string | undefined,
+    o.legalId as string | undefined
+  )
+  o.tax_id = firstStr(o.tax_id as string | undefined, o.taxId as string | undefined)
+  o.erp_supplier_number = firstStr(
+    o.erp_supplier_number as string | undefined,
+    o.erpSupplierNumber as string | undefined
+  )
+  o.erp_customer_number = firstStr(
+    o.erp_customer_number as string | undefined,
+    o.erpCustomerNumber as string | undefined
+  )
+  o.payment_term_code = firstStr(
+    o.payment_term_code as string | undefined,
+    o.paymentTermCode as string | undefined
+  )
+  o.gl_account_code = firstStr(
+    o.gl_account_code as string | undefined,
+    o.glAccountCode as string | undefined
+  )
+  if (o.withholding_tax_pct == null && o.withholdingTaxPct != null) {
+    o.withholding_tax_pct = o.withholdingTaxPct
+  }
+  if (
+    o.default_withholding_tax_percent == null &&
+    o.defaultWithholdingPercent != null
+  ) {
+    o.default_withholding_tax_percent = o.defaultWithholdingPercent
+  }
+  const wDate = firstStr(
+    o.withholding_tax_expiry as string | undefined,
+    o.withholdingTaxExpiresAt as string | undefined,
+    o.withholdingTaxExpiry as string | undefined
+  )
+  if (wDate != null) o.withholding_tax_expiry = wDate
+  const bDate = firstStr(
+    o.bookkeeping_cert_expiry as string | undefined,
+    o.bookkeepingCertExpiresAt as string | undefined,
+    o.bookkeepingAuthExpiry as string | undefined
+  )
+  if (bDate != null) o.bookkeeping_cert_expiry = bDate
+  return o
+}
+
+/**
+ * שדות פיננסיים/ERP לטופס ישות — שמות זהים לעמודות `public.entities`
+ * (עמודות הליבה: `ENTITY_ERP_FINANCIAL_COLUMN_KEYS` ב־`types/holden-finance.ts`).
+ */
+export const quickEntityFinancialFieldsSchema = z.object({
+  tax_id: z.string().max(64).optional().nullable(),
+  erp_supplier_number: z.string().max(64).optional().nullable(),
+  erp_customer_number: z.string().max(64).optional().nullable(),
+  payment_term_code: z.string().max(16).optional().nullable(),
+  withholding_tax_pct: z.number().min(0).max(100).optional().nullable(),
+  gl_account_code: z.string().max(32).optional().nullable(),
+  withholding_tax_expiry: optionalIsoDateNullable.optional(),
+  bookkeeping_cert_expiry: optionalIsoDateNullable.optional(),
+  default_withholding_tax_percent: z
+    .number()
+    .min(0)
+    .max(100)
+    .optional()
+    .nullable(),
+})
+
+/** קלט יצירת ישות מהירה — שמות שדות כמו בעמודות `public.entities` (אחרי נרמול). */
+export const quickEntitySchema = z.preprocess(
+  normalizeQuickEntityInput,
+  z
+    .object({
+      name: z.string().min(2, "שם חובה"),
+      type: z.enum(["client", "supplier", "subcontractor"]),
+      legal_id: z.string().optional(),
+      address: z.string().optional(),
+      email: z.union([z.literal(""), z.string().email("אימייל לא תקין")]).optional(),
+      phone: z.string().max(64).optional().nullable(),
+    })
+    .merge(quickEntityFinancialFieldsSchema)
+    .superRefine((data, ctx) => {
+      const supplierLike =
+        data.type === "supplier" || data.type === "subcontractor"
+      if (supplierLike) {
+        const lid = data.legal_id?.trim() ?? ""
+        if (!lid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "ח.פ / ע.מ חובה לספק לפני שמירה",
+            path: ["legal_id"],
+          })
+          return
+        }
+        if (!/^\d{8,10}$/.test(lid)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "ח.פ / ע.מ — 8 עד 10 ספרות בלבד",
+            path: ["legal_id"],
+          })
+        }
       }
-    }
-  })
+      if (data.type === "client" && data.legal_id?.trim()) {
+        const lid = data.legal_id.trim()
+        if (!/^\d{8,10}$/.test(lid)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "ח.פ / ע.מ — 8 עד 10 ספרות בלבד",
+            path: ["legal_id"],
+          })
+        }
+      }
+    })
+)
+
+export type QuickEntityInput = z.infer<typeof quickEntitySchema>
 
 export const quickCatalogItemSchema = z.object({
   sku: z.string().min(1, "מק״ט חובה"),

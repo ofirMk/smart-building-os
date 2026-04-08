@@ -423,11 +423,11 @@ export default function NewMarkerOfekContractPage() {
     const res = await quickCreateEntity({
       name: qClientName.trim(),
       type: "client",
-      legalId: qClientLegal.trim() || undefined,
+      legal_id: qClientLegal.trim() || undefined,
       address: qClientAddress.trim() || undefined,
-      withholdingTaxExpiry: qClientWithholding.trim() || null,
-      bookkeepingAuthExpiry: qClientBookkeeping.trim() || null,
-      defaultWithholdingPercent:
+      withholding_tax_expiry: qClientWithholding.trim() || null,
+      bookkeeping_cert_expiry: qClientBookkeeping.trim() || null,
+      default_withholding_tax_percent:
         pct != null && Number.isFinite(pct) ? pct : null,
     })
     if (!res.ok) {

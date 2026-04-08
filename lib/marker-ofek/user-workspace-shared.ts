@@ -1,15 +1,26 @@
 import {
+  parseCommandCenterLayoutFromSettings,
+  sanitizeCommandCenterLayoutForSnapshot,
+} from "@/lib/marker-ofek/command-center-layout"
+import {
   DEFAULT_DIAMOND_WORKSPACE_LAYOUT,
+  type CommandCenterWorkspaceLayout,
   type WorkspaceBrowserBookmark,
   type WorkspaceOpenTab,
   type WorkspacePersona,
   type WorkspaceSettingsSnapshot,
+  type WorkspaceUiSettings,
   isWorkspacePersona,
   mergeOpenTabsFromRow,
+  parseActiveScenarioIdFromSettings,
+  parseAiDismissedPatternsFromSettings,
   parseBrowserBookmarks,
   parseDiamondWorkspaceLayout,
   parseOpenTabs,
   parsePinnedWidgets,
+  parseWorkspaceActivityLog,
+  parseWorkspaceScenarios,
+  parseWorkspaceUiSettings,
 } from "@/lib/marker-ofek/workspace-types"
 
 const DEFAULT_HOME = "https://www.gov.il/he/service/companies-registry"
@@ -29,6 +40,12 @@ export const DEFAULT_WORKSPACE_SNAPSHOT: WorkspaceSettingsSnapshot = {
   emailBridgeSso: null,
   browserBookmarks: [],
   diamondWorkspaceLayout: { ...DEFAULT_DIAMOND_WORKSPACE_LAYOUT },
+  uiSettings: { scrollByPath: {} },
+  commandCenterLayout: null,
+  workspaceScenarios: [],
+  workspaceActivityLog: [],
+  activeScenarioId: null,
+  aiDismissedPatterns: [],
 }
 
 /**
@@ -75,7 +92,24 @@ export function sanitizeWorkspaceSnapshotForUpsert(
     diamondWorkspaceLayout: parseDiamondWorkspaceLayout(
       s.diamondWorkspaceLayout as unknown
     ),
+    uiSettings: sanitizeUiSettings(s.uiSettings as unknown),
+    commandCenterLayout: sanitizeCommandCenterLayoutForSnapshot(s.commandCenterLayout),
+    workspaceScenarios: parseWorkspaceScenarios(s.workspaceScenarios).slice(0, 50),
+    workspaceActivityLog: parseWorkspaceActivityLog(s.workspaceActivityLog).slice(-500),
+    activeScenarioId:
+      typeof s.activeScenarioId === "string" && s.activeScenarioId.trim()
+        ? s.activeScenarioId.trim()
+        : null,
+    aiDismissedPatterns: Array.isArray(s.aiDismissedPatterns)
+      ? s.aiDismissedPatterns.filter((x): x is string => typeof x === "string" && x.length > 0)
+      : [],
   }
+}
+
+function sanitizeUiSettings(raw: unknown): WorkspaceUiSettings {
+  const base = parseWorkspaceUiSettings(raw)
+  if (!base.scrollByPath) base.scrollByPath = {}
+  return base
 }
 
 export function rowToSnapshot(row: Record<string, unknown> | null): WorkspaceSettingsSnapshot {
@@ -117,7 +151,56 @@ export function rowToSnapshot(row: Record<string, unknown> | null): WorkspaceSet
     diamondWorkspaceLayout: parseDiamondWorkspaceLayout(
       row.diamond_workspace_layout
     ),
+    uiSettings: parseWorkspaceUiSettings(row.settings),
+    commandCenterLayout: parseCommandCenterLayoutFromSettings(row.settings),
+    workspaceScenarios: parseWorkspaceScenarios(row.workspace_scenarios),
+    workspaceActivityLog: parseWorkspaceActivityLog(row.workspace_activity_log),
+    activeScenarioId: parseActiveScenarioIdFromSettings(row.settings),
+    aiDismissedPatterns: parseAiDismissedPatternsFromSettings(row.settings),
   }
+}
+
+/** מיזוג JSON לעמודת `settings` — שומר מפתחות קיימים מחוץ ל־diamondUi */
+export function mergeSettingsColumnForUpsert(
+  existingRaw: unknown,
+  ui: WorkspaceUiSettings,
+  options?: {
+    commandCenterLayout?: CommandCenterWorkspaceLayout
+    activeScenarioId?: string | null
+    aiDismissedPatterns?: string[]
+  }
+): Record<string, unknown> {
+  const base =
+    existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
+      ? { ...(existingRaw as Record<string, unknown>) }
+      : {}
+  base.diamondUi = {
+    sidebarExpanded: ui.sidebarExpanded,
+    scrollByPath: { ...(ui.scrollByPath ?? {}) },
+  }
+  if (options?.commandCenterLayout) {
+    const prevLayout =
+      base.layout && typeof base.layout === "object" && !Array.isArray(base.layout)
+        ? { ...(base.layout as Record<string, unknown>) }
+        : {}
+    prevLayout.commandCenter = {
+      order: [...options.commandCenterLayout.order],
+      hidden: [...options.commandCenterLayout.hidden],
+    }
+    base.layout = prevLayout
+  }
+  if (options && "activeScenarioId" in options) {
+    base.activeScenarioId = options.activeScenarioId
+  }
+  if (options?.aiDismissedPatterns !== undefined) {
+    const prevAi =
+      base.ai && typeof base.ai === "object" && !Array.isArray(base.ai)
+        ? { ...(base.ai as Record<string, unknown>) }
+        : {}
+    prevAi.dismissedPatterns = [...options.aiDismissedPatterns]
+    base.ai = prevAi
+  }
+  return base
 }
 
 export type SaveWorkspacePayload = {
@@ -135,4 +218,16 @@ export type SaveWorkspacePayload = {
   emailBridgeSso?: string | null
   browserBookmarks?: WorkspaceBrowserBookmark[]
   diamondWorkspaceLayout?: WorkspaceSettingsSnapshot["diamondWorkspaceLayout"]
+  /** מיזוג מצב UI (סרגל / גלילה) — נשמר בעמודת `settings` */
+  uiSettings?: Partial<WorkspaceUiSettings>
+  /** גלילה לנתיב בודד — ממוזג ל־scrollByPath הקיים */
+  persistScrollForPath?: { path: string; y: number }
+  /** מצב סרגל — נשמר ב־diamondUi.sidebarExpanded */
+  sidebarExpanded?: boolean
+  /** פריסת מודולי מרכז הפיקוד — `settings.layout.commandCenter` */
+  commandCenterLayout?: CommandCenterWorkspaceLayout | null
+  workspaceScenarios?: WorkspaceSettingsSnapshot["workspaceScenarios"]
+  workspaceActivityLog?: WorkspaceSettingsSnapshot["workspaceActivityLog"]
+  activeScenarioId?: string | null
+  aiDismissedPatterns?: string[]
 }

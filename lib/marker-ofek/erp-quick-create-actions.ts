@@ -126,6 +126,35 @@ export async function quickCreateTenderForProject(
   }
 }
 
+function firstValidIsoDate(val: string | null | undefined): string | null {
+  const t = typeof val === "string" ? val.trim() : ""
+  if (t && /^\d{4}-\d{2}-\d{2}$/.test(t)) return t
+  return null
+}
+
+/** תנאי תשלום לטופס ישות — קריאה בלבד */
+export async function listErpPaymentTermsForEntityForm(): Promise<
+  { code: string; label: string }[]
+> {
+  try {
+    const supabase = await createSupabaseServerAuthClient()
+    const { data, error } = await supabase
+      .from("erp_payment_terms")
+      .select("code, description")
+      .order("code")
+    if (error) return []
+    return (data ?? []).map((r) => ({
+      code: r.code as string,
+      label:
+        r.description && String(r.description).trim()
+          ? `${r.code} — ${String(r.description).trim()}`
+          : String(r.code),
+    }))
+  } catch {
+    return []
+  }
+}
+
 export async function quickCreateEntity(
   raw: unknown
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
@@ -141,23 +170,45 @@ export async function quickCreateEntity(
     } = await supabase.auth.getUser()
     if (!user?.id) return { ok: false, error: "נדרשת התחברות" }
 
-    const w = parsed.data.withholdingTaxExpiry?.trim() || null
-    const b = parsed.data.bookkeepingAuthExpiry?.trim() || null
-    const wDate = w && /^\d{4}-\d{2}-\d{2}$/.test(w) ? w : null
-    const bDate = b && /^\d{4}-\d{2}-\d{2}$/.test(b) ? b : null
+    const wDate = firstValidIsoDate(parsed.data.withholding_tax_expiry)
+    const bDate = firstValidIsoDate(parsed.data.bookkeeping_cert_expiry)
+
+    const contact: Record<string, string> = {}
+    const em = parsed.data.email?.trim()
+    const ph = parsed.data.phone?.trim()
+    if (em) contact.email = em
+    if (ph) contact.phone = ph
+
+    const pctRaw =
+      parsed.data.withholding_tax_pct ?? parsed.data.default_withholding_tax_percent
+    const pct =
+      pctRaw != null && Number.isFinite(Number(pctRaw))
+        ? Number(pctRaw)
+        : null
+
+    const taxIdTrim = parsed.data.tax_id?.trim() || null
+    const erpSup = parsed.data.erp_supplier_number?.trim() || null
+    const erpCust = parsed.data.erp_customer_number?.trim() || null
+    const ptc = parsed.data.payment_term_code?.trim() || null
+    const gl = parsed.data.gl_account_code?.trim() || null
 
     const { data: inserted, error: insErr } = await supabase
       .from("entities")
       .insert({
         name: parsed.data.name.trim(),
         type: parsed.data.type,
-        contact_info: {},
-        legal_id: parsed.data.legalId?.trim() || null,
+        contact_info: contact,
+        legal_id: parsed.data.legal_id?.trim() || null,
         address: parsed.data.address?.trim() || null,
+        tax_id: taxIdTrim,
+        erp_supplier_number: erpSup,
+        erp_customer_number: erpCust,
+        payment_term_code: ptc,
+        gl_account_code: gl,
         withholding_tax_expiry: wDate,
-        bookkeeping_auth_expiry: bDate,
-        default_withholding_tax_percent:
-          parsed.data.defaultWithholdingPercent ?? null,
+        bookkeeping_cert_expiry: bDate,
+        default_withholding_tax_percent: pct ?? 0,
+        withholding_tax_pct: pct,
         is_deleted: false,
       })
       .select("id")
