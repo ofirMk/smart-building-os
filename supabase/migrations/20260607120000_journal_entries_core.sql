@@ -7,7 +7,7 @@ create extension if not exists "uuid-ossp";
 -- journal_entries — כותרת פקודת יומן (טיוטה / סגורה)
 -- ---------------------------------------------------------------------------
 create table if not exists public.journal_entries (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   entry_number text unique,
   status text not null default 'draft'
     constraint journal_entries_status_chk check (status in ('draft', 'posted')),
@@ -31,7 +31,7 @@ comment on table public.journal_entries is
 -- journal_lines — שורות חובה / זכות
 -- ---------------------------------------------------------------------------
 create table if not exists public.journal_lines (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   entry_id uuid not null
     references public.journal_entries (id) on delete cascade,
   account_id uuid not null
