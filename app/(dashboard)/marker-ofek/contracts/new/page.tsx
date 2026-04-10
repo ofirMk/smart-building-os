@@ -192,6 +192,7 @@ export default function NewMarkerOfekContractPage() {
   const [isSavePending, startSaveTransition] = React.useTransition()
   const [isAiScanPending, startAiScanTransition] = React.useTransition()
   const [aiDataLoaded, setAiDataLoaded] = React.useState(false)
+  const [aiGlAccountCode, setAiGlAccountCode] = React.useState("")
   const [submitAttempted, setSubmitAttempted] = React.useState(false)
   const [dualSplit, setDualSplit] = React.useState(false)
 
@@ -274,6 +275,7 @@ export default function NewMarkerOfekContractPage() {
         pricingModel === "paushal" ? parseNum(paushalTotalValue) : null,
       boqRows: pricingModel === "boq" ? boqForDb : undefined,
       paushalRows: pricingModel === "paushal" ? paushalForDb : undefined,
+      glAccountCode: aiGlAccountCode.trim() || null,
     }
   }, [
     projectId,
@@ -289,6 +291,7 @@ export default function NewMarkerOfekContractPage() {
     paushalTotalValue,
     rows,
     paushalRows,
+    aiGlAccountCode,
   ])
 
   const contractZodResult = React.useMemo(
@@ -336,6 +339,7 @@ export default function NewMarkerOfekContractPage() {
     if (!file) return
 
     setAiDataLoaded(false)
+    setAiGlAccountCode("")
     startAiScanTransition(async () => {
       const fd = new FormData()
       fd.set("contract_boq_pdf", file)
@@ -345,6 +349,7 @@ export default function NewMarkerOfekContractPage() {
         return
       }
 
+      setAiGlAccountCode(String(res.data.glAccountCode ?? "").trim())
       setPricingModel("boq")
       const mapped = mapAiItemsToBoqRows(res.data.items ?? [])
       setRows(mapped)

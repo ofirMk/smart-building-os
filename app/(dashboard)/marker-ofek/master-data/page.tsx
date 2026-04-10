@@ -1,8 +1,59 @@
-import { PillarLandingShell } from "@/components/marker-ofek/pillar-landing-shell"
-import { getPillarByHref } from "@/lib/marker-ofek/pillar-registry"
+import { MasterDataDashboard } from "@/components/marker-ofek/master-data/master-data-dashboard"
+import {
+  fetchCurrenciesAction,
+  fetchErpPaymentTermsForMasterAction,
+  fetchSupplierPartsAction,
+  fetchSuppliersV2Action,
+  fetchUnitsOfMeasureAction,
+} from "@/lib/holden-erp/master-data-actions"
 
-const pillar = getPillarByHref("/marker-ofek/master-data")!
+const VALID_TABS = new Set([
+  "suppliers",
+  "parts",
+  "uom",
+  "currencies",
+])
 
-export default function MasterDataPillarPage() {
-  return <PillarLandingShell pillar={pillar} />
+export default async function MasterDataPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const sp = await searchParams
+  const raw =
+    typeof sp.tab === "string"
+      ? sp.tab
+      : Array.isArray(sp.tab)
+        ? sp.tab[0]
+        : undefined
+  const initialTab =
+    raw && VALID_TABS.has(raw) ? raw : "suppliers"
+
+  const [cur, uom, parts, sup, terms] = await Promise.all([
+    fetchCurrenciesAction(),
+    fetchUnitsOfMeasureAction(),
+    fetchSupplierPartsAction(),
+    fetchSuppliersV2Action(),
+    fetchErpPaymentTermsForMasterAction(),
+  ])
+
+  const loadErrors: string[] = []
+  if (!cur.ok) loadErrors.push(cur.error)
+  if (!uom.ok) loadErrors.push(uom.error)
+  if (!parts.ok) loadErrors.push(parts.error)
+  if (!sup.ok) loadErrors.push(sup.error)
+  if (!terms.ok) loadErrors.push(terms.error)
+
+  return (
+    <MasterDataDashboard
+      initialTab={initialTab}
+      initialCurrencies={cur.ok ? cur.data : []}
+      initialUom={uom.ok ? uom.data : []}
+      initialParts={parts.ok ? parts.data : []}
+      initialSuppliers={sup.ok ? sup.data : []}
+      paymentTerms={terms.ok ? terms.data : []}
+      loadErrors={loadErrors}
+    />
+  )
 }
+

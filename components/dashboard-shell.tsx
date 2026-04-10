@@ -201,6 +201,7 @@ export function DashboardShell({
   )
 
   const mirrorBannerOn = Boolean(mirrorBannerLabel?.trim())
+  const isHoldenErpShell = isMarkerOfekPath(pathname)
 
   return (
     <SmartWorkspaceProvider initial={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}>
@@ -234,8 +235,12 @@ export function DashboardShell({
       <SidebarInset
         dir="rtl"
         className={cn(
-          "relative z-0 min-h-svh min-w-0 flex-1 overflow-x-hidden bg-background text-foreground",
-          "lg:peer-data-[variant=inset]:m-0 lg:peer-data-[variant=inset]:rounded-none lg:peer-data-[variant=inset]:bg-background",
+          "relative z-0 min-h-svh min-w-0 flex-1 overflow-x-hidden text-foreground",
+          isHoldenErpShell ? "bg-slate-50" : "bg-background",
+          "lg:peer-data-[variant=inset]:m-0 lg:peer-data-[variant=inset]:rounded-none",
+          isHoldenErpShell
+            ? "lg:peer-data-[variant=inset]:bg-slate-50"
+            : "lg:peer-data-[variant=inset]:bg-background",
           "lg:peer-data-[variant=inset]:shadow-none lg:peer-data-[variant=inset]:ring-0 lg:peer-data-[variant=inset]:backdrop-blur-none",
           "print:pe-0 print:lg:pe-0",
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
@@ -246,7 +251,10 @@ export function DashboardShell({
         />
         <header
           className={cn(
-            "sticky z-20 flex min-h-[3.75rem] shrink-0 items-center gap-4 border-b border-slate-100 bg-white px-4 py-3 print:hidden md:px-8",
+            "sticky z-20 flex min-h-[3.75rem] shrink-0 items-center justify-between gap-4 border-b bg-white px-4 py-3 print:hidden md:px-8",
+            isHoldenErpShell
+              ? "border-slate-200/90 shadow-[0_1px_0_0_rgb(15_23_42/0.04)]"
+              : "border-slate-100",
             mirrorBannerOn ? MIRROR_BANNER_STICKY_TOP_CLASS : "top-0",
             "text-slate-900"
           )}
@@ -313,7 +321,12 @@ export function DashboardShell({
           </>
         ) : null}
         <SmartWorkspaceChrome>
-          <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-10 bg-background px-6 py-10 print:p-0 md:px-10 md:py-12">
+          <div
+            className={cn(
+              "mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-10 px-6 py-10 print:p-0 md:px-10 md:py-12",
+              isHoldenErpShell ? "bg-transparent" : "bg-background"
+            )}
+          >
             {children}
           </div>
         </SmartWorkspaceChrome>

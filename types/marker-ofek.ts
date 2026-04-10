@@ -286,6 +286,10 @@ export type PartialBillBaselineAIExtract = {
   testing_amount: number
   subcontractor_deductions: number
   total_approved: number
+  /**
+   * קוד חשבון מהמפה (Chart of Accounts) שסווגה ע״י ה-AI — חייב להתאים ל-account_code מהרשימה שסופקה לפרומפט
+   */
+  glAccountCode: string
   /** שורות כתב כמויות / אבני דרך — חובה מהמודל כשמופיעות בטבלת PDF */
   items: BaselineBillLineItemAI[]
 }
@@ -360,6 +364,8 @@ export type MarkerOfekContractRow = {
   /** שורת מדד בסיס ב־ref_index_history (אופציונלי) */
   base_index_history_id?: string | null
   total_amount: number | null
+  /** קוד חשבון מהמפה — סיווג AI / חיבור הנה״ח */
+  gl_account_code?: string | null
   start_date: string | null
   end_date: string | null
   status: MoContractStatus
@@ -408,6 +414,7 @@ export type MarkerOfekContractInsert = {
   retention_pct?: number
   insurance_pct?: number
   total_amount?: number | null
+  gl_account_code?: string | null
   start_date?: string | null
   end_date?: string | null
   status?: MoContractStatus

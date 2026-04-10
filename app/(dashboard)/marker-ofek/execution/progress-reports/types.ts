@@ -8,4 +8,4 @@ export type ProgressReportLineInput = {
   pctCurrentCumulative: number
 }
 
-export type ProgressReportSaveStatus = "draft" | "submitted"
+export type ProgressReportSaveStatus = "draft" | "submitted" | "approved"

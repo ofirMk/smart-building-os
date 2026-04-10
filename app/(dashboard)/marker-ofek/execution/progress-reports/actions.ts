@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { formatError } from "@/lib/format-error"
+import { createJournalEntryAction } from "@/lib/holden-erp/journal-actions"
 import {
   calcCurrentAmountProgressLine,
   clampPct,
@@ -72,12 +73,48 @@ export async function saveProgressReport(input: {
   }
 
   const reportStatus = input.reportStatus
-  if (reportStatus !== "draft" && reportStatus !== "submitted") {
+  if (
+    reportStatus !== "draft" &&
+    reportStatus !== "submitted" &&
+    reportStatus !== "approved"
+  ) {
     return { ok: false, error: "סטטוס דוח לא תקין" }
   }
 
   try {
     const supabase = await createSupabaseServerAuthClient()
+
+    const { data: contractRow, error: ctrErr } = await supabase
+      .from("contracts")
+      .select("id, gl_account_code, contract_number, name, entity_id")
+      .eq("id", contractId)
+      .eq("is_deleted", false)
+      .maybeSingle()
+
+    if (ctrErr) {
+      return { ok: false, error: ctrErr.message }
+    }
+    if (!contractRow) {
+      return { ok: false, error: "החוזה לא נמצא" }
+    }
+
+    const ctr = contractRow as {
+      gl_account_code: string | null
+      contract_number: string | null
+      name: string | null
+      entity_id: string
+    }
+
+    let contractorName = "—"
+    const { data: entRow } = await supabase
+      .from("entities")
+      .select("name")
+      .eq("id", ctr.entity_id)
+      .maybeSingle()
+    const entName = (entRow as { name?: string | null } | null)?.name
+    if (entName && String(entName).trim() !== "") {
+      contractorName = String(entName).trim()
+    }
 
     const { data: msRows, error: msErr } = await supabase
       .from("contract_milestones")
@@ -162,6 +199,28 @@ export async function saveProgressReport(input: {
 
     sumApprovedThisBill = roundMoney(sumApprovedThisBill)
 
+    const glFromContract =
+      ctr.gl_account_code != null && String(ctr.gl_account_code).trim() !== ""
+        ? String(ctr.gl_account_code).trim()
+        : null
+
+    if (reportStatus === "approved") {
+      if (!glFromContract) {
+        return {
+          ok: false,
+          error:
+            "לא ניתן לאשר דוח ללא קוד חשבון GL בחוזה — יש להגדיר קוד חשבון (מחילוץ AI בחוזה) לפני אישור ויצירת פקודת יומן",
+        }
+      }
+      if (sumApprovedThisBill <= 0) {
+        return {
+          ok: false,
+          error:
+            "לא ניתן לאשר דוח כשהסכום המאושר בחשבון חלקי אינו חיובי — נדרש סכום לפקודת יומן",
+        }
+      }
+    }
+
     const baseForRetention = roundMoney(sumApprovedThisBill + indexationAmount)
     const retentionAmount = roundMoney(
       (baseForRetention * retentionPercent) / 100
@@ -186,6 +245,7 @@ export async function saveProgressReport(input: {
         total_payable: totalPayable,
         insurance_amount: 0,
         testing_amount: 0,
+        gl_account_code: glFromContract,
       })
       .select("id")
       .single()
@@ -227,6 +287,84 @@ export async function saveProgressReport(input: {
     if (itemsErr) {
       await supabase.from("project_progress_reports").delete().eq("id", reportId)
       return { ok: false, error: itemsErr.message }
+    }
+
+    if (reportStatus === "approved") {
+      const { data: reportSnap, error: snapErr } = await supabase
+        .from("project_progress_reports")
+        .select("gl_account_code, cumulative_works_total")
+        .eq("id", reportId)
+        .single()
+
+      if (snapErr || !reportSnap) {
+        await supabase.from("project_progress_reports").delete().eq("id", reportId)
+        return {
+          ok: false,
+          error: snapErr?.message ?? "טעינת דוח מאושר נכשלה",
+        }
+      }
+
+      const report = reportSnap as {
+        gl_account_code: string | null
+        cumulative_works_total: number | string | null
+      }
+      const approvedAmount = roundMoney(
+        Number(report.cumulative_works_total ?? 0)
+      )
+      const glCode =
+        report.gl_account_code != null &&
+        String(report.gl_account_code).trim() !== ""
+          ? String(report.gl_account_code).trim()
+          : null
+
+      if (!glCode) {
+        await supabase.from("project_progress_reports").delete().eq("id", reportId)
+        return {
+          ok: false,
+          error:
+            "חסר קוד חשבון GL בדוח — לא ניתן ליצור פקודת יומן (נדרש gl_account_code)",
+        }
+      }
+      if (approvedAmount <= 0) {
+        await supabase.from("project_progress_reports").delete().eq("id", reportId)
+        return {
+          ok: false,
+          error:
+            "סכום מאושר בדוח (cumulative_works_total) אינו חיובי — לא ניתן ליצור פקודת יומן",
+        }
+      }
+
+      const jeRes = await createJournalEntryAction({
+        status: "draft",
+        entryDate: new Date().toISOString().split("T")[0],
+        description: "אישור חשבון חלקי אוטומטי - " + contractorName,
+        lines: [
+          {
+            accountId: glCode,
+            debit: approvedAmount,
+            credit: 0,
+            reference1: reportMonth,
+            reference2: reportId,
+            details: "חובה — חשבון חלקי מאושר (דוח)",
+          },
+          {
+            accountId: "300",
+            debit: 0,
+            credit: approvedAmount,
+            reference1: reportMonth,
+            reference2: reportId,
+            details: "זכות — קבלני משנה (חשבון 300)",
+          },
+        ],
+      })
+
+      if (!jeRes.success) {
+        await supabase.from("project_progress_reports").delete().eq("id", reportId)
+        return {
+          ok: false,
+          error: "יצירת פקודת יומן טיוטה נכשלה — " + jeRes.error,
+        }
+      }
     }
 
     revalidatePath(PAGE_PATH)

@@ -1,15 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import {
-  ArrowRightLeft,
-  ChevronDown,
-  ClipboardList,
-  FilePenLine,
-  FileText,
-  LayoutDashboard,
-  Wallet,
-} from "lucide-react"
+import { ArrowRightLeft, ChevronDown } from "lucide-react"
 
 import {
   SidebarGroup,
@@ -22,30 +14,6 @@ import {
 import { cn } from "@/lib/utils"
 import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
 import { FACILITY_HOME_PATH } from "@/lib/infrastructure/navigation/sidebar-routes"
-
-const MARKER_OFEK_CORE_LINKS: {
-  title: string
-  href: string
-  icon: typeof LayoutDashboard
-}[] = [
-  { title: "לוח בקרה", href: "/marker-ofek", icon: LayoutDashboard },
-  { title: "חוזים", href: "/marker-ofek/contracts", icon: FileText },
-  {
-    title: "דוחות התקדמות",
-    href: "/marker-ofek/execution/progress-reports",
-    icon: ClipboardList,
-  },
-  {
-    title: "יומני שטח",
-    href: "/marker-ofek/execution/daily-logs",
-    icon: FilePenLine,
-  },
-  {
-    title: "כספים",
-    href: "/marker-ofek/finance",
-    icon: Wallet,
-  },
-]
 
 /** אחידות: טקסט ואייקונים בכל פריטי מרקר אופק */
 const navBtnClass = cn(
@@ -71,34 +39,6 @@ export function MarkerOfekSidebarNav({
 }) {
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          ניווט מהיר
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {MARKER_OFEK_CORE_LINKS.map((link) => {
-              const Icon = link.icon
-              return (
-                <SidebarMenuItem key={link.href}>
-                  <SidebarMenuButton
-                    isActive={isActivePath(pathname, link.href)}
-                    tooltip={link.title}
-                    className={navBtnClass}
-                    render={
-                      <Link href={link.href} onClick={closeMobileNav}>
-                        <Icon aria-hidden />
-                        <span className="truncate">{link.title}</span>
-                      </Link>
-                    }
-                  />
-                </SidebarMenuItem>
-              )
-            })}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-
       {MARKER_OFEK_SIDEBAR_SECTIONS.map((section) => (
         <SidebarGroup key={section.id} className="py-0">
           <details className="mo-pillar-details" open={section.defaultOpen}>

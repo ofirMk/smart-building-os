@@ -5,6 +5,10 @@ import { cookies } from "next/headers"
  * לקוח Supabase עם עוגיות סשן — לשימוש ב־Server Actions וב־Server Components
  * שדורשים משתמש מחובר.
  *
+ * הערה: אל תעטוף קריאה זו בלולאה — כל קריאה יוצרת לקוח חדש לבקשה. קריאות Auth (rate limit)
+ * מגיעות בעיקר מ־middleware (getUser) ומ־Server Actions; שאילתות RSC צריכות להשתמש במודולי
+ * server-only + cache, לא בקובץ עם "use server" בראש הקובץ לכל export.
+ *
  * Diamond V1.0: לקוח זה נשאר ללא גנריק DB בזמן מעבר הדרגתי; השתמשו ב־`Tables<"table">`
  * מ־`@/types/supabase` בשכבת lib/ לשדות מדויקים. אחרי `supabase gen types typescript` — ניתן
  * להחליף ל־`createServerClient<Database>`.

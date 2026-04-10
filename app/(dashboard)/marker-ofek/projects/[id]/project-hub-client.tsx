@@ -130,6 +130,11 @@ const BASELINE_PREVIEW_FIELDS: {
     label: "סה״כ לתשלום בחשבון (נטו)",
     format: "currency",
   },
+  {
+    key: "glAccountCode",
+    label: "חשבון הנה״ח (סיווג AI)",
+    format: "text",
+  },
 ]
 
 function formatBaselineCell(

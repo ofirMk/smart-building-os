@@ -1,22 +1,18 @@
 "use client"
 
+import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
-  Archive,
-  BarChart3,
-  ClipboardList,
-  FilePenLine,
-  FolderKanban,
-  GanttChartSquare,
-  Home,
-  LayoutDashboard,
-  Layers,
+  Activity,
+  ArrowLeftRight,
+  CreditCard,
+  FileEdit,
   Receipt,
-  Settings,
-  Shield,
-  Sparkles,
+  ShieldCheck,
+  ShoppingCart,
+  Table2,
   Wallet,
 } from "lucide-react"
 import {
@@ -32,10 +28,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {
-  isSidebarNavItemActive,
-  MARKER_OFEK_HREFS,
-} from "@/lib/infrastructure/navigation/sidebar-routes"
+import { isSidebarNavItemActive } from "@/lib/infrastructure/navigation/sidebar-routes"
 import {
   filterNavItemsByModules,
   type ModuleVisibilityState,
@@ -43,31 +36,50 @@ import {
 import { navItemHiddenWhenNoManagedProjects } from "@/lib/marker-ofek/project-scope"
 import { cn } from "@/lib/utils"
 
-export type NavContextId = "home" | "finance" | "projects" | "execution"
+export type NavContextId =
+  | "procurement"
+  | "finance"
+  | "masterData"
+  | "system"
 
 type ContextualItem = {
   title: string
   href: string
-  icon: typeof Home
+  icon: LucideIcon
 }
 
 const PRIMARY: {
   id: NavContextId
   label: string
-  icon: typeof Home
+  icon: LucideIcon
 }[] = [
-  { id: "home", label: "ראשי", icon: Home },
-  { id: "finance", label: "כספים", icon: Wallet },
-  { id: "projects", label: "פרויקטים", icon: FolderKanban },
-  { id: "execution", label: "ביצוע", icon: GanttChartSquare },
+  { id: "procurement", label: "ניהול רכש", icon: ShoppingCart },
+  { id: "finance", label: "ניהול כספים", icon: Wallet },
+  { id: "masterData", label: "ניהול נתונים", icon: Table2 },
+  { id: "system", label: "מערכת", icon: Activity },
 ]
 
 function deriveContextFromPathname(pathname: string): NavContextId {
-  if (pathname.startsWith("/marker-ofek/finance")) return "finance"
-  if (pathname.startsWith("/marker-ofek/holden-erp")) return "finance"
-  if (pathname.startsWith("/marker-ofek/projects")) return "projects"
-  if (pathname.startsWith("/marker-ofek/execution")) return "execution"
-  return "home"
+  if (
+    pathname.startsWith("/marker-ofek/finance") ||
+    pathname.startsWith("/marker-ofek/holden-erp")
+  ) {
+    return "finance"
+  }
+  if (pathname.startsWith("/marker-ofek/master-data")) {
+    return "masterData"
+  }
+  if (pathname.startsWith("/marker-ofek/system")) {
+    return "system"
+  }
+  if (
+    pathname.startsWith("/marker-ofek/procurement") ||
+    pathname.startsWith("/marker-ofek/supply-chain") ||
+    pathname.startsWith("/marker-ofek/items")
+  ) {
+    return "procurement"
+  }
+  return "procurement"
 }
 
 function filterItems(
@@ -92,10 +104,10 @@ export function MarkerOfekDualPaneSidebar({
   modules,
   closeMobileNav,
   markerSoftNav,
-  showPartnerFinanceNav = false,
-  showHoldingExecutiveNav = false,
-  showUserPermissionsNav = false,
-  showAiUserSetupNav = false,
+  showPartnerFinanceNav: _showPartnerFinanceNav = false,
+  showHoldingExecutiveNav: _showHoldingExecutiveNav = false,
+  showUserPermissionsNav: _showUserPermissionsNav = false,
+  showAiUserSetupNav: _showAiUserSetupNav = false,
   scopedProjectCount = null,
   applyEmptyPortfolioNav = false,
 }: {
@@ -118,106 +130,58 @@ export function MarkerOfekDualPaneSidebar({
     setActiveContext(deriveContextFromPathname(pathname))
   }, [pathname])
 
-  const homeItems = useMemo((): ContextualItem[] => {
-    const base: ContextualItem[] = [
-      {
-        title: "מרכז הפיקוד",
-        href: "/marker-ofek/command-center",
-        icon: LayoutDashboard,
-      },
-      {
-        title: "מודולים",
-        href: "/marker-ofek/settings/modules",
-        icon: Layers,
-      },
-      {
-        title: "הגדרות",
-        href: "/marker-ofek/settings",
-        icon: Settings,
-      },
-    ]
-    if (showHoldingExecutiveNav) {
-      base.push({
-        title: "דשבורד הנהלה",
-        href: "/marker-ofek/executive",
-        icon: BarChart3,
-      })
-    }
-    if (showPartnerFinanceNav) {
-      base.push({
-        title: "מרכז שותפי ניהול",
-        href: "/marker-ofek/partner-finance",
-        icon: BarChart3,
-      })
-    }
-    if (showAiUserSetupNav) {
-      base.push({
-        title: "הקמת משתמש (AI)",
-        href: "/marker-ofek/settings/users/ai-setup",
-        icon: Sparkles,
-      })
-    }
-    if (showUserPermissionsNav) {
-      base.push({
-        title: "הרשאות משתמשים",
-        href: "/marker-ofek/settings/user-permissions",
-        icon: Shield,
-      })
-    }
-    return base
-  }, [
-    showHoldingExecutiveNav,
-    showPartnerFinanceNav,
-    showAiUserSetupNav,
-    showUserPermissionsNav,
-  ])
-
   const contextualById = useMemo(
     (): Record<NavContextId, ContextualItem[]> => ({
-      home: homeItems,
+      procurement: [
+        {
+          title: "מרכז רכש אחוד",
+          href: "/marker-ofek/procurement",
+          icon: ShoppingCart,
+        },
+      ],
       finance: [
         {
-          title: "Holden ERP",
-          href: "/marker-ofek/holden-erp",
-          icon: Sparkles,
+          title: "הזנת פקודת יומן",
+          href: "/marker-ofek/finance/journal-entries/new",
+          icon: FileEdit,
+        },
+        {
+          title: "בקרת תשלומים",
+          href: "/marker-ofek/finance/clearance",
+          icon: ShieldCheck,
+        },
+        {
+          title: "התאמות בנקים",
+          href: "/marker-ofek/finance/reconciliations",
+          icon: ArrowLeftRight,
         },
         {
           title: "הפקת חשבונית מס",
-          href: MARKER_OFEK_HREFS.financeInvoiceNew,
+          href: "/marker-ofek/finance/billing/new",
           icon: Receipt,
         },
         {
-          title: "ארכיון כספים",
-          href: "/marker-ofek/finance/invoices",
-          icon: Archive,
+          title: "ניהול מס״ב",
+          href: "/marker-ofek/finance/payments",
+          icon: CreditCard,
         },
       ],
-      projects: [
+      masterData: [
         {
-          title: "לוח פרויקטים",
-          href: "/marker-ofek/projects",
-          icon: FolderKanban,
+          title: "מרכז נתוני מאסטר",
+          href: "/marker-ofek/master-data",
+          icon: Table2,
         },
       ],
-      execution: [
+      system: [
         {
-          title: "גאנט ביצוע",
-          href: "/marker-ofek/execution/gantt",
-          icon: GanttChartSquare,
-        },
-        {
-          title: "יומני עבודה",
-          href: "/marker-ofek/execution/daily-logs",
-          icon: FilePenLine,
-        },
-        {
-          title: "דוחות התקדמות",
-          href: "/marker-ofek/execution/progress-reports",
-          icon: ClipboardList,
+          title: "בריאות המערכת",
+          href: "/marker-ofek/system/health",
+          icon: Activity,
         },
       ],
     }),
-    [homeItems]
+    []
   )
 
   const visibleContextual = useMemo(
@@ -260,10 +224,9 @@ export function MarkerOfekDualPaneSidebar({
       className="flex min-h-0 flex-1 gap-0 border-t border-slate-800/40 pt-2"
       dir="rtl"
     >
-      {/* Primary — slim icons (rightmost in RTL = first in DOM) */}
       <nav
         className="flex w-[52px] shrink-0 flex-col items-center gap-1 border-e border-slate-800/50 bg-slate-950/40 py-2 pe-0.5 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent"
-        aria-label="הקשר ראשי"
+        aria-label="ארבעת העמודים"
       >
         {PRIMARY.map((p) => {
           const Icon = p.icon
@@ -289,14 +252,13 @@ export function MarkerOfekDualPaneSidebar({
         })}
       </nav>
 
-      {/* Secondary — contextual links */}
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
         <div className="border-b border-slate-800/50 px-2 pb-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
             {contextTitle}
           </p>
         </div>
-            <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait">
           <motion.div
             key={activeContext}
             initial={{ opacity: 0, y: 6 }}
@@ -310,39 +272,39 @@ export function MarkerOfekDualPaneSidebar({
                 אין קישורים זמינים בהקשר הזה (בדוק מודולים או הרשאות).
               </p>
             ) : (
-            <SidebarMenu className="gap-0.5">
-              {visibleContextual.map((item) => {
-                const Icon = item.icon
-                return (
-                  <SidebarMenuItem key={`${activeContext}-${item.href}`}>
-                    <SidebarMenuButton
-                      isActive={isSidebarNavItemActive(pathname, item.href)}
-                      tooltip={item.title}
-                      size="default"
-                      className={cn(
-                        "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
-                        "[&_svg]:size-4 [&_svg]:shrink-0",
-                        "data-active:bg-emerald-500/20 data-active:text-emerald-50 data-active:shadow-sm",
-                        "hover:bg-slate-800/80 hover:text-emerald-100"
-                      )}
-                      render={
-                        <Link
-                          href={item.href}
-                          onClick={(e) => onNavClick(e, item.href, item.title)}
-                          dir="rtl"
-                          className="flex w-full items-center justify-start gap-2 text-start"
-                        >
-                          <Icon aria-hidden />
-                          <span className="truncate font-currency-mono text-[13px]">
-                            {item.title}
-                          </span>
-                        </Link>
-                      }
-                    />
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
+              <SidebarMenu className="gap-0.5">
+                {visibleContextual.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <SidebarMenuItem key={`${activeContext}-${item.href}`}>
+                      <SidebarMenuButton
+                        isActive={isSidebarNavItemActive(pathname, item.href)}
+                        tooltip={item.title}
+                        size="default"
+                        className={cn(
+                          "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
+                          "[&_svg]:size-4 [&_svg]:shrink-0",
+                          "data-active:bg-emerald-500/20 data-active:text-emerald-50 data-active:shadow-sm",
+                          "hover:bg-slate-800/80 hover:text-emerald-100"
+                        )}
+                        render={
+                          <Link
+                            href={item.href}
+                            onClick={(e) => onNavClick(e, item.href, item.title)}
+                            dir="rtl"
+                            className="flex w-full items-center justify-start gap-2 text-start"
+                          >
+                            <Icon aria-hidden />
+                            <span className="truncate font-currency-mono text-[13px]">
+                              {item.title}
+                            </span>
+                          </Link>
+                        }
+                      />
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
             )}
           </motion.div>
         </AnimatePresence>

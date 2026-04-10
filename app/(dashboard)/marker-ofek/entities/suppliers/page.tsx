@@ -2,26 +2,34 @@
 
 import Link from "next/link"
 import * as React from "react"
-import { ArrowRight, Loader2, Search } from "lucide-react"
+import { Loader2, Search } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  ErpDataCard,
+  ErpDenseHeaderRow,
+  ErpDenseTable,
+  ErpDenseTableBody,
+  ErpDenseTableCell,
+  ErpDenseTableHead,
+  ErpDenseTableHeader,
+  ErpDenseTableRow,
+  ErpListBackLink,
+  ErpListHeaderRow,
+  ErpListPageRoot,
+  ErpListTitleBlock,
+  ErpListToolbar,
+} from "@/components/marker-ofek/data-grid"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { formatError } from "@/lib/utils"
 
@@ -50,8 +58,12 @@ function statusFor(expiry: string | null): "ok" | "bad" {
   return end >= new Date() ? "ok" : "bad"
 }
 
+type StatusFilter = "all" | "ok" | "bad"
+
 export default function MarkerOfekSuppliersCompliancePage() {
+  const router = useRouter()
   const [query, setQuery] = React.useState("")
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all")
   const [rows, setRows] = React.useState<Row[]>([])
   const [loading, setLoading] = React.useState(true)
 
@@ -96,125 +108,164 @@ export default function MarkerOfekSuppliersCompliancePage() {
     )
   }, [rows, query])
 
+  const displayRows = React.useMemo(() => {
+    if (statusFilter === "all") return filtered
+    return filtered.filter((r) => {
+      const w = statusFor(r.withholding_tax_expiry)
+      const b = statusFor(r.bookkeeping_auth_expiry)
+      if (statusFilter === "ok") return w === "ok" && b === "ok"
+      return w === "bad" || b === "bad"
+    })
+  }, [filtered, statusFilter])
+
+  function goToEntity(id: string) {
+    router.push(`/marker-ofek/entities/${id}`)
+  }
+
   return (
-    <div
-      dir="rtl"
-      lang="he"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12 pt-2"
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href="/marker-ofek/entities"
-          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowRight className="size-4 rotate-180" aria-hidden />
-          חזרה לישויות
-        </Link>
-      </div>
+    <ErpListPageRoot>
+      <ErpListBackLink href="/marker-ofek/entities">חזרה לישויות</ErpListBackLink>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">ספקים — תאימות מס</h1>
-          <p className="text-sm text-muted-foreground">
-            תאריכי תוקף לניכוי ולניהול ספרים, ואחוז ניכוי ברירת מחדל.
-          </p>
-        </div>
-        <Button variant="outline" render={<Link href="/marker-ofek/procurement/purchase-orders/new" />}>
-          הזמנת רכש חדשה
-        </Button>
-      </div>
+      <ErpListHeaderRow
+        titleBlock={
+          <ErpListTitleBlock
+            title="ספקים — תאימות מס"
+            description="תאריכי תוקף לניכוי ולניהול ספרים, ואחוז ניכוי ברירת מחדל."
+          />
+        }
+        actions={
+          <Button variant="outline" className="text-[13px]" render={<Link href="/marker-ofek/procurement/purchase-orders/new" />}>
+            הזמנת רכש חדשה
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader className="space-y-4">
-          <div className="relative max-w-md">
-            <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="חיפוש ספק או ח.פ…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pe-10"
-              dir="rtl"
-            />
+      <ErpDataCard>
+        <ErpListToolbar
+          filterSlot={
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+            >
+              <SelectTrigger
+                className="h-9 w-[min(100%,220px)] text-[13px]"
+                dir="rtl"
+                aria-label="סינון לפי סטטוס תוקף"
+              >
+                <SelectValue placeholder="סינון" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הספקים</SelectItem>
+                <SelectItem value="ok">תוקף תקין (שניהם)</SelectItem>
+                <SelectItem value="bad">דורש טיפול (לפחות אחד)</SelectItem>
+              </SelectContent>
+            </Select>
+          }
+          searchSlot={
+            <>
+              <Search
+                className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                placeholder="חיפוש ספק או ח.פ…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="h-9 pe-10 text-[13px]"
+                dir="rtl"
+                aria-label="חיפוש ספקים"
+              />
+            </>
+          }
+        />
+        <p className="border-b border-slate-100 px-4 pb-3 text-[12px] text-muted-foreground dark:border-slate-800">
+          עדכון שדות בזרימת &quot;ספק חדש&quot; בהזמנת רכש או במסך ישות.
+        </p>
+
+        {loading ? (
+          <div className="flex items-center gap-2 px-4 py-10 text-muted-foreground">
+            <Loader2 className="size-5 animate-spin" aria-hidden />
+            טוען…
           </div>
-          <CardDescription>
-            עדכון שדות בזרימת &quot;ספק חדש&quot; בהזמנת רכש או דרך מסכי MDM עתידיים.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center gap-2 py-10 text-muted-foreground">
-              <Loader2 className="size-5 animate-spin" aria-hidden />
-              טוען…
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-start">ספק</TableHead>
-                    <TableHead className="text-start">ח.פ</TableHead>
-                    <TableHead className="text-start">ניכוי — תוקף</TableHead>
-                    <TableHead className="text-start">ניהול ספרים</TableHead>
-                    <TableHead className="text-start">ניכוי %</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        אין ספקים
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filtered.map((r) => {
-                      const w = statusFor(r.withholding_tax_expiry)
-                      const b = statusFor(r.bookkeeping_auth_expiry)
-                      return (
-                        <TableRow key={r.id}>
-                          <TableCell className="font-medium">{r.name}</TableCell>
-                          <TableCell className="font-mono text-xs" dir="ltr">
-                            {r.legal_id ?? "—"}
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={
-                                w === "ok"
-                                  ? "text-emerald-700 dark:text-emerald-400"
-                                  : "text-orange-700 dark:text-orange-400"
-                              }
-                            >
-                              {fmtDate(r.withholding_tax_expiry)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={
-                                b === "ok"
-                                  ? "text-emerald-700 dark:text-emerald-400"
-                                  : "text-orange-700 dark:text-orange-400"
-                              }
-                            >
-                              {fmtDate(r.bookkeeping_auth_expiry)}
-                            </span>
-                          </TableCell>
-                          <TableCell
-                            className="font-currency-mono tabular-nums text-sm"
-                            dir="ltr"
+        ) : (
+          <div className="overflow-x-auto">
+            <ErpDenseTable>
+              <ErpDenseTableHeader>
+                <ErpDenseHeaderRow>
+                  <ErpDenseTableHead>ספק</ErpDenseTableHead>
+                  <ErpDenseTableHead>ח.פ</ErpDenseTableHead>
+                  <ErpDenseTableHead>ניכוי — תוקף</ErpDenseTableHead>
+                  <ErpDenseTableHead>ניהול ספרים</ErpDenseTableHead>
+                  <ErpDenseTableHead>ניכוי %</ErpDenseTableHead>
+                </ErpDenseHeaderRow>
+              </ErpDenseTableHeader>
+              <ErpDenseTableBody>
+                {displayRows.length === 0 ? (
+                  <ErpDenseTableRow interactive={false}>
+                    <ErpDenseTableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                      אין ספקים
+                    </ErpDenseTableCell>
+                  </ErpDenseTableRow>
+                ) : (
+                  displayRows.map((r) => {
+                    const w = statusFor(r.withholding_tax_expiry)
+                    const b = statusFor(r.bookkeeping_auth_expiry)
+                    return (
+                      <ErpDenseTableRow
+                        key={r.id}
+                        interactive
+                        tabIndex={0}
+                        onClick={() => goToEntity(r.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault()
+                            goToEntity(r.id)
+                          }
+                        }}
+                      >
+                        <ErpDenseTableCell className="font-medium">{r.name}</ErpDenseTableCell>
+                        <ErpDenseTableCell className="font-mono text-[12px]" dir="ltr">
+                          {r.legal_id ?? "—"}
+                        </ErpDenseTableCell>
+                        <ErpDenseTableCell>
+                          <span
+                            className={
+                              w === "ok"
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : "text-orange-700 dark:text-orange-400"
+                            }
                           >
-                            {r.default_withholding_tax_percent != null
-                              ? `${r.default_withholding_tax_percent}%`
-                              : "—"}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                            {fmtDate(r.withholding_tax_expiry)}
+                          </span>
+                        </ErpDenseTableCell>
+                        <ErpDenseTableCell>
+                          <span
+                            className={
+                              b === "ok"
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : "text-orange-700 dark:text-orange-400"
+                            }
+                          >
+                            {fmtDate(r.bookkeeping_auth_expiry)}
+                          </span>
+                        </ErpDenseTableCell>
+                        <ErpDenseTableCell
+                          className="font-currency-mono tabular-nums text-[13px]"
+                          dir="ltr"
+                        >
+                          {r.default_withholding_tax_percent != null
+                            ? `${r.default_withholding_tax_percent}%`
+                            : "—"}
+                        </ErpDenseTableCell>
+                      </ErpDenseTableRow>
+                    )
+                  })
+                )}
+              </ErpDenseTableBody>
+            </ErpDenseTable>
+          </div>
+        )}
+      </ErpDataCard>
+    </ErpListPageRoot>
   )
 }

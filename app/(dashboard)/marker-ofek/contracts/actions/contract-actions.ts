@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { formatError } from "@/lib/format-error"
+import { fetchAllGlAccounts } from "@/lib/holden-erp/gl-accounts-data"
 import {
   extractContractBoqAndBaselineFromPdfBuffer,
   MAX_BASELINE_PDF_BYTES as MAX_CONTRACT_BOQ_PDF_BYTES,
@@ -36,7 +37,20 @@ export async function scanContractBoqPdf(
       }
     }
     const buffer = Buffer.from(await file.arrayBuffer())
-    const data = await extractContractBoqAndBaselineFromPdfBuffer(buffer)
+
+    const { data: glRowsRaw, success: glOk } = await fetchAllGlAccounts()
+    const glRows = glOk && Array.isArray(glRowsRaw) ? glRowsRaw : []
+    const expenseLike = glRows.filter((a) => {
+      const g = (a.trial_balance_group ?? "").toString()
+      return g.includes("עלות") || g.includes("הוצאות")
+    })
+    const glSource = expenseLike.length > 0 ? expenseLike : glRows
+    const glAccounts = glSource.map((a) => ({
+      code: a.account_code,
+      name: a.account_name_he,
+    }))
+
+    const data = await extractContractBoqAndBaselineFromPdfBuffer(buffer, glAccounts)
     return { ok: true, data }
   } catch (e) {
     return { ok: false, error: formatError(e) }

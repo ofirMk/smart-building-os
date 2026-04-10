@@ -12,6 +12,10 @@ export type GlAccountRow = {
   is_active: boolean
   created_at: string
   updated_at: string
+  /** Core finance — asset | liability | equity | income | expense */
+  account_class?: string | null
+  parent_id?: string | null
+  balance?: number | null
 }
 
 export type GlJournalEntryRow = {
@@ -58,6 +62,55 @@ export type PostJournalEntryOptions = {
   projectId?: string | null
   /** ISO date yyyy-MM-dd; defaults to UTC today */
   entryDate?: string
+}
+
+/** Payload for `createJournalEntryAction` — kept here so journal-actions exports only async functions */
+export type JournalEntryPayload = {
+  entryDate: string
+  description: string
+  /** אסמכתא חיצונית / מספר מסמך */
+  referenceNumber?: string
+  /** מפתח ייחודיות — מונע כפל פקודת יומן */
+  idempotencyKey?: string | null
+  status: "draft" | "posted"
+  lines: {
+    /** `gl_accounts.id` (UUID) or account_code — resolved server-side */
+    accountId: string
+    debit: number
+    credit: number
+    reference1: string
+    reference2: string
+    details: string
+  }[]
+}
+
+/** שורות יומן פתוחות להתאמה (צד כרטסת) */
+export interface UnmatchedJournalLine {
+  id: string
+  entry_id: string
+  entry_date: string
+  entry_number: string
+  description: string
+  reference_1: string
+  debit: number
+  credit: number
+  /** Net amount (debit − credit) for matching math */
+  amount: number
+}
+
+/** שורות בנק פתוחות להתאמה (צד דף בנק) */
+export interface UnmatchedBankLine {
+  id: string
+  statement_id: string
+  transaction_date: string
+  reference_number: string
+  description: string
+  debit: number
+  credit: number
+  /** Net amount (credit − debit): bank inflow minus outflow */
+  amount: number
+  /** מקור: ייבוא שטוח `bank_statement_entries` מול שורות legacy */
+  source?: "feed" | "legacy"
 }
 
 /** public.erp_payment_terms */
@@ -143,3 +196,48 @@ export type SupplierTaxComplianceResult =
       code: SupplierTaxComplianceCode
       reason: string
     }
+
+/** מס״ב — דוח התקדמות מאושר לריצת תשלום (סכום מ־`total_payable`) */
+export type PendingPaymentRow = {
+  id: string
+  date: string | null
+  contractorName: string
+  contractNumber: string
+  projectName: string
+  amount: number
+  glAccountCode: string | null
+  /** מקור השורה בקובץ מס״ב */
+  paymentSource: "progress_report" | "procurement_masav"
+}
+
+/** תחנת בקרה — קבלת מחסן מול הזמנה */
+export type FinancialClearanceRow = {
+  receiptId: string
+  receiptDate: string
+  warehouseLocation: string
+  poId: string
+  poNumber: string
+  projectName: string
+  supplierName: string
+  financialApprovalStatus: string
+  deliveryNoteStoragePath: string | null
+  verificationNotes: string | null
+  /** כל שורות ה־PO (ההזמנה המקורית) */
+  orderedLines: Array<{
+    lineId: string
+    partLabel: string
+    orderedQty: number
+    unitPrice: number
+    lineTotal: number
+  }>
+  /** כמויות בקבלה הנוכחית בלבד, לפי שורת הזמנה */
+  receiptQtyByPurchaseOrderLineId: Record<string, number>
+  /** לכל שורת PO, הכמות בקבלה זו שווה לכמות שהוזמנה */
+  quantitiesFullyAligned: boolean
+  /** יחס ערך (קבלה זו מול סה״כ PO) */
+  valueAlignmentRatio: number
+}
+
+export type FetchPendingPaymentsResult =
+  | { success: true; data: PendingPaymentRow[] }
+  | { success: false; data: []; error: string }

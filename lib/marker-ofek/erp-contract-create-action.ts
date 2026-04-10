@@ -81,6 +81,11 @@ export async function createErpContract(
           )
         : roundMoney(data.paushalTotalValue ?? 0)
 
+    const glAccountCodeDb =
+      data.glAccountCode != null && String(data.glAccountCode).trim() !== ""
+        ? String(data.glAccountCode).trim()
+        : null
+
     const { data: newContract, error: contractInsertError } = await supabase
       .from("contracts")
       .insert({
@@ -97,6 +102,7 @@ export async function createErpContract(
         contract_number: data.contractNumber?.trim() || null,
         name: data.contractDisplayName?.trim() || null,
         start_date: data.startDate,
+        gl_account_code: glAccountCodeDb,
       })
       .select("id")
       .single()

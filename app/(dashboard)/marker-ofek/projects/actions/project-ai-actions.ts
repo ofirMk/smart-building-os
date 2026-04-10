@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { formatError } from "@/lib/format-error"
+import { fetchAllGlAccounts } from "@/lib/holden-erp/gl-accounts-data"
 import {
   extractContractBoqAndBaselineFromPdfBuffer,
   MAX_BASELINE_PDF_BYTES as MAX_BOQ_PDF_BYTES,
@@ -25,6 +26,13 @@ export type ImportBaselineBillAIResult =
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+function normalizeGlAccountCodeForDb(
+  value: string | null | undefined
+): string | null {
+  const t = String(value ?? "").trim()
+  return t.length > 0 ? t : null
 }
 
 function clampPct(n: number): number {
@@ -408,6 +416,7 @@ function coerceBaselineFinancialSummary(
     testing_amount: coerceNum(s.testing_amount),
     subcontractor_deductions: coerceNum(s.subcontractor_deductions),
     total_approved: coerceNum(s.total_approved),
+    glAccountCode: String(s.glAccountCode ?? "").trim(),
   }
 }
 
@@ -562,9 +571,14 @@ export async function saveBaselineReport(input: {
       )
       .map((r) => (r as { id: string }).id)
 
+    const glAccountCodeForDb = normalizeGlAccountCodeForDb(b.glAccountCode)
+
     const { error: ctrUpdErr } = await supabase
       .from("contracts")
-      .update({ total_amount: sumAmounts })
+      .update({
+        total_amount: sumAmounts,
+        gl_account_code: glAccountCodeForDb,
+      })
       .eq("id", contractId)
     if (ctrUpdErr) {
       logSupabaseError("saveBaselineReport update contract total", ctrUpdErr)
@@ -628,6 +642,7 @@ export async function saveBaselineReport(input: {
         previous_billed_amount: previousBilled,
         cumulative_works_total: cumulativeWork,
         total_payable: totalPayable,
+        gl_account_code: glAccountCodeForDb,
       })
       .select("id")
       .single()
@@ -685,7 +700,12 @@ export async function saveBaselineReport(input: {
 }
 
 export type BuildContractAndBaselineAIResult =
-  | { ok: true; reportId: string; milestonesCreated: number }
+  | {
+      ok: true
+      reportId: string
+      milestonesCreated: number
+      glAccountCode: string
+    }
   | { ok: false; error: string }
 
 /**
@@ -757,15 +777,29 @@ export async function buildContractAndBaselineAI(
     }
 
     const buf = Buffer.from(await file.arrayBuffer())
+
+    const { data: glRowsRaw, success: glOk } = await fetchAllGlAccounts()
+    const glRows = glOk && Array.isArray(glRowsRaw) ? glRowsRaw : []
+    const expenseLike = glRows.filter((a) => {
+      const g = (a.trial_balance_group ?? "").toString()
+      return g.includes("עלות") || g.includes("הוצאות")
+    })
+    const glSource = expenseLike.length > 0 ? expenseLike : glRows
+    const glAccounts = glSource.map((a) => ({
+      code: a.account_code,
+      name: a.account_name_he,
+    }))
+
     let extracted: PartialBillBaselineAIExtract
     try {
-      extracted = await extractContractBoqAndBaselineFromPdfBuffer(buf)
+      extracted = await extractContractBoqAndBaselineFromPdfBuffer(buf, glAccounts)
     } catch (e) {
       console.error("[buildContractAndBaselineAI] PDF extract failed", e)
       return { ok: false, error: formatError(e) }
     }
 
     const b = extracted
+    const glAccountCodeForDb = normalizeGlAccountCodeForDb(b.glAccountCode)
     const rawItems = b.items ?? []
     if (rawItems.length === 0) {
       return {
@@ -876,6 +910,7 @@ export async function buildContractAndBaselineAI(
         previous_billed_amount: previousBilled,
         cumulative_works_total: cumulativeWork,
         total_payable: totalPayable,
+        gl_account_code: glAccountCodeForDb,
       })
       .select("id")
       .single()
@@ -931,17 +966,23 @@ export async function buildContractAndBaselineAI(
 
     await supabase
       .from("contracts")
-      .update({ total_amount: sumAmounts })
+      .update({
+        total_amount: sumAmounts,
+        gl_account_code: glAccountCodeForDb,
+      })
       .eq("id", contractId)
 
     revalidatePath("/marker-ofek/projects")
     revalidatePath(`/marker-ofek/projects/${projectId}`)
     revalidatePath("/marker-ofek/execution/progress-reports/new")
 
+    const glAccountCode = glAccountCodeForDb ?? ""
+
     return {
       ok: true,
       reportId,
       milestonesCreated: milestoneIds.length,
+      glAccountCode,
     }
   } catch (e) {
     console.error("[buildContractAndBaselineAI] unhandled", e)

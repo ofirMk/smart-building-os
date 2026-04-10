@@ -185,6 +185,7 @@ export type Database = {
           deleted_at: string | null
           end_date: string | null
           entity_id: string
+          gl_account_code: string | null
           id: string
           index_coefficient: number | null
           index_linkage_base_date: string | null
@@ -214,6 +215,7 @@ export type Database = {
           deleted_at?: string | null
           end_date?: string | null
           entity_id: string
+          gl_account_code?: string | null
           id?: string
           index_coefficient?: number | null
           index_linkage_base_date?: string | null
@@ -243,6 +245,7 @@ export type Database = {
           deleted_at?: string | null
           end_date?: string | null
           entity_id?: string
+          gl_account_code?: string | null
           id?: string
           index_coefficient?: number | null
           index_linkage_base_date?: string | null
@@ -1847,6 +1850,7 @@ export type Database = {
           bill_number: number | null
           contract_id: string | null
           created_at: string | null
+          gl_account_code: string | null
           cumulative_billed: number | null
           cumulative_works_total: number | null
           current_index: number | null
@@ -1879,6 +1883,7 @@ export type Database = {
           bill_number?: number | null
           contract_id?: string | null
           created_at?: string | null
+          gl_account_code?: string | null
           cumulative_billed?: number | null
           cumulative_works_total?: number | null
           current_index?: number | null
@@ -1911,6 +1916,7 @@ export type Database = {
           bill_number?: number | null
           contract_id?: string | null
           created_at?: string | null
+          gl_account_code?: string | null
           cumulative_billed?: number | null
           cumulative_works_total?: number | null
           current_index?: number | null
@@ -2161,6 +2167,7 @@ export type Database = {
           supplier_id: string
           tender_id: string | null
           total_amount: number
+          wh_status: Database["public"]["Enums"]["holden_wh_po_status"] | null
         }
         Insert: {
           ceo_approval_required?: boolean | null
@@ -2172,13 +2179,14 @@ export type Database = {
           internal_notes?: string | null
           is_deleted?: boolean
           order_date?: string
-          po_number: string
+          po_number?: string | null
           price_deviation_percent?: number | null
           project_id?: string | null
           status?: Database["public"]["Enums"]["mo_po_status"]
           supplier_id: string
           tender_id?: string | null
           total_amount?: number
+          wh_status?: Database["public"]["Enums"]["holden_wh_po_status"] | null
         }
         Update: {
           ceo_approval_required?: boolean | null
@@ -2197,6 +2205,7 @@ export type Database = {
           supplier_id?: string
           tender_id?: string | null
           total_amount?: number
+          wh_status?: Database["public"]["Enums"]["holden_wh_po_status"] | null
         }
         Relationships: [
           {
@@ -2218,6 +2227,129 @@ export type Database = {
             columns: ["tender_id"]
             isOneToOne: false
             referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_order_lines: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          order_id: string
+          part_id: string
+          quantity: number
+          unit_price: number
+          uom_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          order_id: string
+          part_id: string
+          quantity: number
+          unit_price?: number
+          uom_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          order_id?: string
+          part_id?: string
+          quantity?: number
+          unit_price?: number
+          uom_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_uom_id_fkey"
+            columns: ["uom_id"]
+            isOneToOne: false
+            referencedRelation: "units_of_measure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_receipts: {
+        Row: {
+          created_at: string
+          id: string
+          po_id: string
+          receipt_date: string
+          warehouse_location: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          po_id: string
+          receipt_date?: string
+          warehouse_location?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          po_id?: string
+          receipt_date?: string
+          warehouse_location?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_receipts_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_receipt_lines: {
+        Row: {
+          id: string
+          purchase_order_line_id: string
+          quantity_received: number
+          receipt_id: string
+        }
+        Insert: {
+          id?: string
+          purchase_order_line_id: string
+          quantity_received: number
+          receipt_id: string
+        }
+        Update: {
+          id?: string
+          purchase_order_line_id?: string
+          quantity_received?: number
+          receipt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_receipt_lines_purchase_order_line_id_fkey"
+            columns: ["purchase_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_receipt_lines_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -2445,6 +2577,7 @@ export type Database = {
           contact_name: string | null
           created_at: string | null
           email: string | null
+          entity_id: string | null
           id: string
           name: string
           payment_terms: string | null
@@ -2457,6 +2590,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string | null
           email?: string | null
+          entity_id?: string | null
           id?: string
           name: string
           payment_terms?: string | null
@@ -2469,6 +2603,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string | null
           email?: string | null
+          entity_id?: string | null
           id?: string
           name?: string
           payment_terms?: string | null
@@ -3117,6 +3252,7 @@ export type Database = {
         | "APPROVED"
         | "PAID"
       finance_invoice_type: "TAX_INVOICE" | "TRANSACTION" | "CREDIT"
+      holden_wh_po_status: "open" | "partially_received" | "closed"
       mo_contract_status: "draft" | "active" | "closed" | "terminated"
       mo_contract_type: "main_contract" | "sub_contract"
       mo_entity_type: "client" | "subcontractor" | "supplier"
@@ -3287,6 +3423,7 @@ export const Constants = {
   public: {
     Enums: {
       amenity_type: ["gym", "clubhouse"],
+      holden_wh_po_status: ["open", "partially_received", "closed"],
       mo_contract_status: ["draft", "active", "closed", "terminated"],
       mo_contract_type: ["main_contract", "sub_contract"],
       mo_entity_type: ["client", "subcontractor", "supplier"],

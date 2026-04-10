@@ -133,6 +133,7 @@ export const partialBillBaselineAISchema = z.object({
   testing_amount: z.coerce.number().default(0),
   subcontractor_deductions: z.coerce.number().default(0),
   total_approved: z.coerce.number().default(0),
+  glAccountCode: z.coerce.string().default(""),
   items: z
     .array(baselineBillLineItemSchema)
     .min(1, { message: "חובה לפחות שורת BoQ אחת — חלצו את כל שורות הטבלה מהמסמך" }),

@@ -59,6 +59,8 @@ export const erpContractCreateSchema = z
         })
       )
       .optional(),
+    /** קוד חשבון מהמפה — סיווג AI (אופציונלי) */
+    glAccountCode: z.string().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.pricingModel === "paushal") {
@@ -321,3 +323,15 @@ export const companyMdmFormSchema = z.object({
   bankBranch: z.string().min(1, "סניף חובה"),
   bankAccountNumber: z.string().min(1, "מספר חשבון חובה"),
 })
+
+/** ייבוא המוני — כרטסת ראשית (Holden `gl_accounts`) */
+export const glAccountImportSchema = z.object({
+  account_code: z.string().min(1, "קוד חשבון חובה"),
+  account_name_he: z.string().min(1, "שם חשבון (עברית) חובה"),
+  account_name_en: z.string().optional().default(""),
+  trial_balance_group: z.string().min(1, "קבוצת מאזן בוחן חובה"),
+  financial_statement_category: z.string().min(1, "קטגוריית דוח כספי חובה"),
+  is_active: z.boolean().default(true),
+})
+
+export type GlAccountImportInput = z.infer<typeof glAccountImportSchema>

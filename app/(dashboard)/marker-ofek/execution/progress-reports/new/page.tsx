@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import * as React from "react"
 import {
   ArrowRight,
+  BookOpen,
   ClipboardList,
   FileEdit,
   Loader2,
@@ -16,6 +17,14 @@ import { toast } from "sonner"
 
 import { buildContractAndBaselineAI } from "@/app/(dashboard)/marker-ofek/projects/actions/project-ai-actions"
 import { saveProgressReport } from "../actions"
+import {
+  fetchCurrenciesAction,
+  fetchUnitsOfMeasureAction,
+} from "@/lib/holden-erp/master-data-actions"
+import type {
+  MasterDataCurrencyRow,
+  MasterDataUomRow,
+} from "@/types/master-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -204,10 +213,33 @@ function NewProgressReportPageInner() {
   const [deductions, setDeductions] = React.useState("")
   const [previousBilled, setPreviousBilled] = React.useState("")
 
-  const [savingAs, setSavingAs] = React.useState<"draft" | "submitted" | null>(
-    null
-  )
+  const [savingAs, setSavingAs] = React.useState<
+    "draft" | "submitted" | "approved" | null
+  >(null)
   const restoredDraftKeyRef = React.useRef<string | null>(null)
+
+  const [masterCurrencies, setMasterCurrencies] = React.useState<
+    MasterDataCurrencyRow[]
+  >([])
+  const [masterUom, setMasterUom] = React.useState<MasterDataUomRow[]>([])
+  const [refCurrencyId, setRefCurrencyId] = React.useState("")
+  const [refUomId, setRefUomId] = React.useState("")
+
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const [c, u] = await Promise.all([
+        fetchCurrenciesAction(),
+        fetchUnitsOfMeasureAction(),
+      ])
+      if (cancelled) return
+      if (c.ok) setMasterCurrencies(c.data)
+      if (u.ok) setMasterUom(u.data)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const contractState = React.useMemo<ContractFlowState>(() => {
     if (!selectedContractId.trim()) return "idle"
@@ -574,7 +606,7 @@ function NewProgressReportPageInner() {
     setBaselineMeta(null)
   }
 
-  function saveReport(reportStatus: "draft" | "submitted") {
+  function saveReport(reportStatus: "draft" | "submitted" | "approved") {
     if (!selectedContractId.trim()) {
       toast.error("נא לבחור חוזה")
       return
@@ -601,11 +633,13 @@ function NewProgressReportPageInner() {
           toast.error(res.error)
           return
         }
-        toast.success(
-          reportStatus === "draft"
-            ? "הדוח נשמר כטיוטה"
-            : "החשבון החלקי הופק והדוח הועבר לסטטוס מוגש"
-        )
+        if (reportStatus === "draft") {
+          toast.success("הדוח נשמר כטיוטה")
+        } else if (reportStatus === "submitted") {
+          toast.success("החשבון החלקי הופק והדוח הועבר לסטטוס מוגש")
+        } else {
+          toast.success("החשבון אושר ופקודת יומן טיוטה נוצרה בהצלחה")
+        }
         resetForm()
       } catch (err) {
         toast.error(formatError(err))
@@ -716,6 +750,65 @@ function NewProgressReportPageInner() {
                 required
               />
             </div>
+            {(masterCurrencies.length > 0 || masterUom.length > 0) ? (
+              <div className="space-y-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 sm:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                    מטבע ויחידת מידה (מנתוני מאסטר)
+                  </p>
+                  <Link
+                    href="/marker-ofek/master-data?tab=suppliers"
+                    className="text-xs font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+                  >
+                    ניהול מאסטר
+                  </Link>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {masterCurrencies.length > 0 ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        מטבע התייחסות
+                      </Label>
+                      <select
+                        className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={refCurrencyId}
+                        onChange={(e) => setRefCurrencyId(e.target.value)}
+                      >
+                        <option value="">—</option>
+                        {masterCurrencies.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.code} {c.symbol}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                  {masterUom.length > 0 ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        יחידת מידה לכמויות
+                      </Label>
+                      <select
+                        className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        value={refUomId}
+                        onChange={(e) => setRefUomId(e.target.value)}
+                      >
+                        <option value="">—</option>
+                        {masterUom.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.code} · {u.description_he}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  השדות לעיל לתיעוד עסקי בלבד — אינם נשמרים בדוח (ניתן לקשר לשדות
+                  DB בעתיד).
+                </p>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -1158,6 +1251,37 @@ function NewProgressReportPageInner() {
             </Card>
 
             <div className="flex w-full flex-col gap-3 sm:max-w-2xl sm:self-center">
+              <Button
+                type="button"
+                size="lg"
+                variant="default"
+                className="min-h-12 w-full gap-2 border border-emerald-600/40 bg-emerald-700 text-white hover:bg-emerald-600 dark:bg-emerald-800 dark:hover:bg-emerald-700"
+                disabled={
+                  savingAs !== null ||
+                  saveReportPending ||
+                  buildBaselinePending ||
+                  loadingContracts ||
+                  !selectedContractId.trim() ||
+                  loadingMilestones ||
+                  contracts.length === 0
+                }
+                onClick={() => saveReport("approved")}
+              >
+                {savingAs === "approved" ? (
+                  <>
+                    <Loader2
+                      className="size-5 shrink-0 animate-spin"
+                      aria-hidden
+                    />
+                    מאשר ויוצר יומן…
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="size-5 shrink-0" aria-hidden />
+                    אשר דוח וצור פקודת יומן (טיוטה)
+                  </>
+                )}
+              </Button>
               <Button
                 type="button"
                 size="lg"

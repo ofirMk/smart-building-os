@@ -11,6 +11,12 @@ import type { PartialBillBaselineAIExtract } from "@/types/marker-ofek"
 
 export { MAX_BASELINE_PDF_BYTES }
 
+/** פריט מפה חשבונאית לפרומפט Gemini (קוד + שם בעברית) */
+export type ContractBoqGlAccountOption = {
+  code: string
+  name: string
+}
+
 const GEMINI_MODEL = "gemini-1.5-flash"
 
 const BOQ_SYSTEM_INSTRUCTION = `You are a strict Quantity Surveyor (כמת) parsing an Israeli construction bill (חשבון חלקי / כתב כמויות).
@@ -29,7 +35,14 @@ If execution is shown as a percentage (אחוז ביצוע מצטבר), put it i
 
 Never return an empty "items" array when the PDF contains BoQ tables.`
 
-const COMBINED_PROMPT = `Return **ONLY** valid JSON (no markdown, no commentary).
+function buildCombinedPrompt(glAccounts: readonly ContractBoqGlAccountOption[]): string {
+  const chartJson = JSON.stringify(glAccounts)
+  return `Return **ONLY** valid JSON (no markdown, no commentary).
+
+You are also acting as an expert bookkeeper. Below is the official Chart of Accounts for Marker Ofek. Based on the contract's scope of work, you MUST classify this expense under the most accurate account. Return the selected account code in the JSON response.
+
+Official Chart of Accounts (JSON):
+${chartJson}
 
 Shape (exact keys):
 
@@ -46,6 +59,7 @@ Shape (exact keys):
   "testing_amount": number,
   "subcontractor_deductions": number,
   "total_approved": number,
+  "glAccountCode": "string — The exact account_code from the provided Chart of Accounts that best fits this contract",
   "items": [
     {
       "section_number": "string — e.g. 08.01.001 or 01.08.01.0010",
@@ -59,6 +73,8 @@ Shape (exact keys):
   ]
 }
 
+- **glAccountCode**: MUST be exactly one \`account_code\` value from the Chart of Accounts JSON above (copy the string verbatim). If the list is empty, use an empty string.
+
 Per line rules:
 - **items** MUST list every BoQ row from the document (all pages). Minimum one object if any table exists.
 - **total_item_price**: מחיר מחוזה / סכום שורה מהחוזה (ILS) as printed; use 0 only if truly missing.
@@ -70,9 +86,11 @@ Per line rules:
 Financial summary fields: use document numbers; cumulative_work_value = cumulative work before indexation where applicable; total_approved = net payable on this bill.
 
 Use 0 for unknown numeric scalars only when the column is absent; use best guess for bill_month (e.g. "01/2026") if a period is visible.`
+}
 
 export async function extractContractBoqAndBaselineFromPdfBuffer(
-  buffer: Buffer
+  buffer: Buffer,
+  glAccounts: readonly ContractBoqGlAccountOption[]
 ): Promise<PartialBillBaselineAIExtract> {
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) {
@@ -92,10 +110,11 @@ export async function extractContractBoqAndBaselineFromPdfBuffer(
     model: GEMINI_MODEL,
     systemInstruction: BOQ_SYSTEM_INSTRUCTION,
   })
+  const combinedPrompt = buildCombinedPrompt(glAccounts)
   let text: string
   try {
     const result = await model.generateContent([
-      COMBINED_PROMPT,
+      combinedPrompt,
       {
         inlineData: {
           mimeType: "application/pdf",
