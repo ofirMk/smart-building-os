@@ -124,10 +124,7 @@ function buildHebrewCrumbs(pathname: string, erpRootLabel: string): Crumb[] {
 
 /**
  * Full dashboard chrome (workspace, command palette, nav drawer, **TopNavBar** + main).
- * **Not imported by `app/(dashboard)/layout.tsx` today** — the app layout uses
- * `DashboardLayoutClient` + `TopNavBar` instead.
- * If you mount `DashboardShell` *inside* that layout, remove the duplicate `TopNavBar`
- * from this component (or split a “page title strip” only) to avoid two headers.
+ * Mounted from `app/(dashboard)/layout.tsx` together with `DashboardProviders`.
  */
 export function DashboardShell({
   children,

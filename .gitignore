@@ -40,4 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# python (local tools / accidental commits)
+__pycache__/
+*.py[cod]
+*.pyc
