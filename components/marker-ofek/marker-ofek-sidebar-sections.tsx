@@ -17,8 +17,10 @@ import {
   FileEdit,
   LayoutGrid,
   LayoutDashboard,
+  Map,
   Megaphone,
   MessageSquare,
+  Package,
   Receipt,
   ReceiptText,
   Settings,
@@ -123,6 +125,11 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
         icon: Table2,
       },
       {
+        title: "קטלוג פריטים טכני (מאסטר)",
+        href: "/marker-ofek/catalog",
+        icon: Package,
+      },
+      {
         title: "הקמת ספק",
         href: "/marker-ofek/entities/new?kind=supplier&lock=1",
         icon: Building2,
@@ -132,6 +139,11 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
   {
     label: "מערכת",
     items: [
+      {
+        title: "מפת דרכים (Roadmap)",
+        href: "/marker-ofek/roadmap",
+        icon: Map,
+      },
       {
         title: "בריאות המערכת",
         href: "/marker-ofek/system/health",

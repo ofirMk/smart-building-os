@@ -131,6 +131,8 @@ export function pathnameToModule(pathname: string): ModuleId | null {
     if (p === prefix || p.startsWith(`${prefix}/`)) return null
   }
 
+  if (p.startsWith("/marker-ofek/roadmap")) return null
+
   if (p.startsWith("/marker-ofek/command-center")) return "executiveSummary"
   if (p === "/management" || p.startsWith("/management/")) return "executiveSummary"
   if (p.startsWith("/marker-ofek/execution/gantt")) return "gantt"
@@ -145,6 +147,7 @@ export function pathnameToModule(pathname: string): ModuleId | null {
   if (p.startsWith("/partner-metrics")) return "billing"
   if (p.startsWith("/marker-ofek/budget")) return "billing"
 
+  if (p.startsWith("/marker-ofek/catalog")) return "assets"
   if (p.startsWith("/marker-ofek/items")) return "assets"
   if (p.startsWith("/marker-ofek/supply-chain")) return "assets"
   if (p.startsWith("/marker-ofek/procurement")) return "assets"

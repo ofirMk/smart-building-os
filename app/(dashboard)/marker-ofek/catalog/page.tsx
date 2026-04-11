@@ -1,0 +1,17 @@
+import type { Metadata } from "next"
+
+import { TechnicalCatalogWorkspace } from "@/components/marker-ofek/catalog/technical-catalog-workspace"
+
+export const metadata: Metadata = {
+  title: "קטלוג פריטים טכני (מאסטר)",
+  description:
+    "Phase 2 — מרחב עבודה Master-Detail לקטלוג מאסטר (Priority-style)",
+}
+
+export default function TechnicalItemsCatalogPage() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col bg-white">
+      <TechnicalCatalogWorkspace />
+    </div>
+  )
+}

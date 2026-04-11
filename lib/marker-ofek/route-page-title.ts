@@ -45,6 +45,12 @@ export function titleForPath(pathname: string): string {
   if (pathname === "/marker-ofek/items/new") {
     return "פריט קטלוג חדש"
   }
+  if (pathname === "/marker-ofek/catalog" || pathname.startsWith("/marker-ofek/catalog/")) {
+    return "קטלוג פריטים טכני"
+  }
+  if (pathname === "/marker-ofek/roadmap" || pathname.startsWith("/marker-ofek/roadmap/")) {
+    return "מפת דרכים (פיתוח)"
+  }
   if (pathname === "/management" || pathname.startsWith("/management/")) {
     return "לוח ניהול בכיר"
   }

@@ -5,7 +5,8 @@ import type { BpEntityType } from "@/lib/marker-ofek/business-partner-entry-sche
 
 export const metadata: Metadata = {
   title: "שותף עסקי חדש",
-  description: "הקמת Business Partner — פרטים כלליים, כספים ואנשי קשר",
+  description:
+    "Phase 1.1 — הקמת Business Partner מאוחד (לקוח / ספק / קבלן משנה)",
 }
 
 function parseKind(raw: string | string[] | undefined): BpEntityType | undefined {
@@ -21,6 +22,13 @@ function parseLock(raw: string | string[] | undefined): boolean {
   return false
 }
 
+/**
+ * הקמת BP — שרת: קריאת `searchParams` בלבד; הטופס ב־`BusinessPartnerEntryForm` (RHF + Zod).
+ *
+ * Query:
+ * - `?kind=supplier|client|subcontractor` — בחירת סוג ישות ראשונית
+ * - `&lock=1` — נעילת בורר סוג הישות (מסלול ניווט)
+ */
 export default async function NewEntityPage({
   searchParams,
 }: {

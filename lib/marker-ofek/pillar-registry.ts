@@ -15,6 +15,8 @@ import {
   KeyRound,
   Landmark,
   Map,
+  Milestone,
+  Package,
   Percent,
   Calculator,
   Receipt,
@@ -73,14 +75,24 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
     icon: Database,
     defaultOpen: true,
     navItems: [
+      {
+        title: "קטלוג פריטים טכני (מאסטר)",
+        href: "/marker-ofek/catalog",
+        icon: Package,
+      },
       { title: "קטלוג פריטים", href: "/marker-ofek/items", icon: Tags },
       { title: "הגדרות חברה", href: "/marker-ofek/settings", icon: Settings },
       { title: "מפת המערכת", href: "/marker-ofek/system-map", icon: Map },
+      {
+        title: "מפת דרכים (פיתוח)",
+        href: "/marker-ofek/roadmap",
+        icon: Milestone,
+      },
     ],
     quickActions: [
+      { title: "קטלוג טכני (מאסטר)", href: "/marker-ofek/catalog" },
       { title: "קטלוג פריטים", href: "/marker-ofek/items" },
       { title: "הגדרות חברה", href: "/marker-ofek/settings" },
-      { title: "מפת מערכת", href: "/marker-ofek/system-map" },
     ],
   },
   {

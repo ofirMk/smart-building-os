@@ -5,6 +5,8 @@ import {
   Building2,
   CreditCard,
   FileEdit,
+  Map,
+  Package,
   Receipt,
   ShieldCheck,
   ShoppingCart,
@@ -81,6 +83,11 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Table2,
       },
       {
+        title: "קטלוג פריטים טכני (מאסטר)",
+        href: "/marker-ofek/catalog",
+        icon: Package,
+      },
+      {
         title: "הקמת ספק",
         href: "/marker-ofek/entities/new?kind=supplier&lock=1",
         icon: Building2,
@@ -92,6 +99,11 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
     label: "מערכת",
     defaultOpen: true,
     items: [
+      {
+        title: "מפת דרכים (Roadmap)",
+        href: "/marker-ofek/roadmap",
+        icon: Map,
+      },
       {
         title: "בריאות המערכת",
         href: "/marker-ofek/system/health",
