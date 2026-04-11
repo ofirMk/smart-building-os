@@ -185,7 +185,7 @@ export default function MarkerOfekItemMasterPage() {
       <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-700 dark:text-violet-400">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-700">
               <Tags className="size-6" aria-hidden />
             </div>
             <div className="min-w-0 space-y-2">
@@ -248,7 +248,7 @@ export default function MarkerOfekItemMasterPage() {
       <Card className="border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700">
               <Warehouse className="size-5" aria-hidden />
             </div>
             <div className="space-y-1">
@@ -289,7 +289,7 @@ export default function MarkerOfekItemMasterPage() {
                         key={s.id}
                         className={cn(
                           isCheapest &&
-                            "bg-emerald-500/12 hover:bg-emerald-500/18 dark:bg-emerald-500/10"
+                            "bg-emerald-500/12 hover:bg-emerald-500/18"
                         )}
                       >
                         <TableCell className="font-medium">
@@ -312,7 +312,7 @@ export default function MarkerOfekItemMasterPage() {
                         <TableCell
                           className={cn(
                             "font-semibold tabular-nums",
-                            isCheapest && "text-emerald-700 dark:text-emerald-400"
+                            isCheapest && "text-emerald-700"
                           )}
                         >
                           {currencyFormatter.format(net)}

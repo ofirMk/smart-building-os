@@ -11,7 +11,11 @@ import {
 } from "@/components/dashboard/command-palette"
 import { CommentNotificationBell } from "@/components/dashboard/comment-notification-bell"
 import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tracker"
-import { AppSidebar } from "@/components/app-sidebar"
+import { DashboardNavDrawerPanel } from "@/components/dashboard/dashboard-nav-drawer-panel"
+import { NavDrawerProvider } from "@/components/dashboard/nav-drawer-context"
+import { NavDrawerSheet } from "@/components/dashboard/nav-drawer-sheet"
+import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
+import { TopNavBar } from "@/components/layout/TopNavBar"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
 import { GlobalProjectSearch } from "@/components/marker-ofek/global-project-search"
 import { MarkerOfekModuleHeaderActions } from "@/components/marker-ofek/marker-ofek-module-header-actions"
@@ -20,11 +24,6 @@ import { WorkspaceEfficiencyHost } from "@/components/marker-ofek/workspace/work
 import { WorkspaceScenarioSwitcher } from "@/components/marker-ofek/workspace/workspace-scenario-switcher"
 import { WorkspaceScrollRestore } from "@/components/marker-ofek/workspace/workspace-scroll-restore"
 import { ThemeToggle } from "@/components/theme-toggle"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
 import {
   type AppUserRole,
   guyRahumimWelcomeMessage,
@@ -57,7 +56,6 @@ import type { HrWelcomePayload } from "@/lib/marker-ofek/diamond-navigator-curri
 import type { WorkspaceSettingsSnapshot } from "@/lib/marker-ofek/workspace-types"
 import { DEFAULT_WORKSPACE_SNAPSHOT } from "@/lib/marker-ofek/user-workspace-shared"
 import { cn } from "@/lib/utils"
-import type { CSSProperties } from "react"
 
 type Crumb = { label: string; href: string | null }
 
@@ -124,6 +122,13 @@ function buildHebrewCrumbs(pathname: string, erpRootLabel: string): Crumb[] {
   return crumbs
 }
 
+/**
+ * Full dashboard chrome (workspace, command palette, nav drawer, **TopNavBar** + main).
+ * **Not imported by `app/(dashboard)/layout.tsx` today** — the app layout uses
+ * `DashboardLayoutClient` + `TopNavBar` instead.
+ * If you mount `DashboardShell` *inside* that layout, remove the duplicate `TopNavBar`
+ * from this component (or split a “page title strip” only) to avoid two headers.
+ */
 export function DashboardShell({
   children,
   userEmail,
@@ -207,62 +212,31 @@ export function DashboardShell({
     <SmartWorkspaceProvider initial={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}>
     <CommandPaletteProvider>
     <AiAssistantScreenProvider>
-    <SidebarProvider
-      dir="rtl"
-      defaultOpen={initialWorkspace?.uiSettings?.sidebarExpanded ?? true}
-      style={
-        isMarkerOfekExecutiveContext(pathname ?? "")
-          ? ({ "--sidebar-width": "22rem" } as CSSProperties)
-          : undefined
-      }
-    >
+    <NavDrawerProvider>
       {mirrorBannerOn && mirrorBannerLabel ? (
         <MirrorModeBanner label={mirrorBannerLabel} />
       ) : null}
-      <AppSidebar
-        userEmail={userEmail}
-        userRole={userRole}
-        hostGreetingLine={hostGreetingLine}
-        showPartnerFinanceNav={showPartnerFinanceNav}
-        showHoldingExecutiveNav={showHoldingExecutiveNav}
-        showUserPermissionsNav={showUserPermissionsNav}
-        showAiUserSetupNav={showAiUserSetupNav}
-        scopedProjectCount={scopedProjectCount}
-        applyEmptyPortfolioNav={applyEmptyPortfolioNav}
-        mirrorBannerActive={mirrorBannerOn}
-      />
       <DashboardLastVisitTracker />
-      <SidebarInset
-        dir="rtl"
+      <div
         className={cn(
-          "relative z-0 min-h-svh min-w-0 flex-1 overflow-x-hidden text-foreground",
-          isHoldenErpShell ? "bg-slate-50" : "bg-background",
-          "lg:peer-data-[variant=inset]:m-0 lg:peer-data-[variant=inset]:rounded-none",
-          isHoldenErpShell
-            ? "lg:peer-data-[variant=inset]:bg-slate-50"
-            : "lg:peer-data-[variant=inset]:bg-background",
-          "lg:peer-data-[variant=inset]:shadow-none lg:peer-data-[variant=inset]:ring-0 lg:peer-data-[variant=inset]:backdrop-blur-none",
-          "print:pe-0 print:lg:pe-0",
+          "flex min-h-svh w-full max-w-none flex-1 flex-col bg-white text-slate-900 [color-scheme:light] dark:!bg-white dark:!text-slate-900",
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
         )}
+        data-dashboard-layout="topnav-main"
       >
-        <WorkspaceScrollRestore
-          initialWorkspace={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}
-        />
-        <header
-          className={cn(
-            "sticky z-20 flex min-h-[3.75rem] shrink-0 items-center justify-between gap-4 border-b bg-white px-4 py-3 print:hidden md:px-8",
-            isHoldenErpShell
-              ? "border-slate-200/90 shadow-[0_1px_0_0_rgb(15_23_42/0.04)]"
-              : "border-slate-100",
-            mirrorBannerOn ? MIRROR_BANNER_STICKY_TOP_CLASS : "top-0",
-            "text-slate-900"
-          )}
+        <TopNavBar
+          isHoldenErpShell={isHoldenErpShell}
+          stickyClassName={
+            mirrorBannerOn ? MIRROR_BANNER_STICKY_TOP_CLASS : "top-0"
+          }
         >
-          <SidebarTrigger
+          <NavDrawerTrigger
             className={cn(
-              "size-9 shrink-0 rounded-lg transition-all duration-200 ease-out",
-              "border border-border bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
+              "size-9 shrink-0 rounded-lg",
+              "border border-slate-200 bg-white text-slate-600 shadow-sm dark:!border-slate-200 dark:!bg-white",
+              "transition-[transform,box-shadow,background-color,color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              "hover:bg-slate-50 hover:text-slate-900 hover:shadow-md dark:hover:!bg-slate-50",
+              "active:scale-[0.96] motion-reduce:active:scale-100"
             )}
           />
           <div className="flex min-w-0 flex-1 flex-col text-start">
@@ -273,7 +247,10 @@ export function DashboardShell({
                   {crumb.href && idx < crumbs.length - 1 ? (
                     <Link
                       href={crumb.href}
-                      className="transition-colors duration-200 hover:text-foreground"
+                      className={cn(
+                        "group/crumb relative rounded-sm px-0.5 transition-colors duration-200 hover:text-foreground",
+                        "after:absolute after:inset-x-0 after:-bottom-px after:h-px after:origin-bottom after:scale-x-0 after:bg-foreground/45 after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.22,1,0.36,1)] hover:after:scale-x-100"
+                      )}
                     >
                       {crumb.label}
                     </Link>
@@ -313,7 +290,10 @@ export function DashboardShell({
             {isMarkerOfekPath(pathname) ? <WorkspaceEfficiencyHost enabled /> : null}
             {isMarkerOfekPath(pathname) ? <SaveWorkspaceButton /> : null}
           </div>
-        </header>
+        </TopNavBar>
+        <WorkspaceScrollRestore
+          initialWorkspace={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}
+        />
         {isMarkerOfekPath(pathname) ? (
           <>
             <WorkspaceTabBar />
@@ -321,30 +301,39 @@ export function DashboardShell({
           </>
         ) : null}
         <SmartWorkspaceChrome>
-          <div
-            className={cn(
-              "mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-10 px-6 py-10 print:p-0 md:px-10 md:py-12",
-              isHoldenErpShell ? "bg-transparent" : "bg-background"
-            )}
+          <main
+            dir="rtl"
+            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-4 overflow-x-hidden bg-white px-2 py-3 text-slate-900 print:bg-white print:p-0 md:px-4 md:py-4 dark:!bg-white dark:!text-slate-900"
           >
             {children}
-          </div>
+          </main>
         </SmartWorkspaceChrome>
         {isMarkerOfekExecutiveContext(pathname) ? (
           <footer
-            className="shrink-0 border-t border-slate-100 bg-white px-6 py-4 text-center print:hidden md:px-10"
+            className="shrink-0 border-t border-slate-200 bg-white px-6 py-3 text-center text-slate-600 print:hidden md:px-10 dark:!bg-white"
             dir="rtl"
           >
-            <p className="text-[11px] font-medium text-slate-500">
+            <p className="text-[11px] font-medium">
               {branding.organizationName}
             </p>
-            <p className="mt-1 font-currency-mono text-[10px] leading-relaxed text-slate-400">
+            <p className="mt-1 font-currency-mono text-[10px] leading-relaxed opacity-90">
               {branding.slogan}
             </p>
           </footer>
         ) : null}
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+      <NavDrawerSheet>
+        <DashboardNavDrawerPanel
+          userRole={userRole}
+          showPartnerFinanceNav={showPartnerFinanceNav}
+          showHoldingExecutiveNav={showHoldingExecutiveNav}
+          showUserPermissionsNav={showUserPermissionsNav}
+          showAiUserSetupNav={showAiUserSetupNav}
+          scopedProjectCount={scopedProjectCount}
+          applyEmptyPortfolioNav={applyEmptyPortfolioNav}
+        />
+      </NavDrawerSheet>
+    </NavDrawerProvider>
       <AiAssistant
         hostFirstName={hostFirstName}
         hrWelcome={hrWelcome}

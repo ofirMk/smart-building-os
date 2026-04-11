@@ -5,14 +5,13 @@ const titles: Record<string, string> = {
   "/dashboard": "לוח בקרה",
   "/partner-metrics": "שותפי ניהול",
   "/partner-finance": "מרכז שותפי ניהול",
-  "/dashboard/holden": "מרכז הפיקוד של הולדן",
+  "/holden": "מרכז הפיקוד של הולדן",
   "/facility": "לוח בקרה",
   "/announcements": "דוחות ונתונים",
   "/buildings": "בניינים",
   "/tenants": "ניהול דיירים",
   "/vendors": "ניהול חברות",
   "/maintenance": "תחזוקה מונעת",
-  "/billing": "ניהול כספים",
   "/documents": "כספת מסמכים",
   "/tickets": "קריאות שירות",
   "/ev-management": "ניהול טעינה",
@@ -45,9 +44,6 @@ export function titleForPath(pathname: string): string {
   }
   if (pathname === "/marker-ofek/items/new") {
     return "פריט קטלוג חדש"
-  }
-  if (pathname === "/marker-ofek/executive") {
-    return "דשבורד הנהלה"
   }
   if (pathname === "/management" || pathname.startsWith("/management/")) {
     return "לוח ניהול בכיר"

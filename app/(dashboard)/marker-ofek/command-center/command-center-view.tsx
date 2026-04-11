@@ -149,7 +149,7 @@ export function CommandCenterView({
             <div className="mt-1 flex justify-start">
               <Link
                 href={`/marker-ofek/projects/${savedDefaultProjectId}`}
-                className="text-[10px] font-medium text-emerald-700 underline-offset-2 hover:text-emerald-800 hover:underline dark:text-emerald-400 dark:hover:text-emerald-300"
+                className="text-[10px] font-medium text-emerald-700 underline-offset-2 hover:text-emerald-800 hover:underline"
               >
                 מעבר לפרויקט ברירת המחדל שלך
               </Link>

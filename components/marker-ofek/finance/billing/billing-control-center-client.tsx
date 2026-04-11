@@ -42,7 +42,7 @@ import type {
 const VAT_RATE = 0.17
 
 const glass =
-  "rounded-2xl border border-white/[0.07] bg-white/[0.035] shadow-[0_8px_44px_-16px_rgba(0,0,0,0.55)] backdrop-blur-2xl ring-1 ring-white/[0.06]"
+  "rounded-2xl border border-border bg-card/90 shadow-sm ring-1 ring-border/50 backdrop-blur-xl"
 
 function roundMoney(n: number) {
   return Math.round(n * 100) / 100
@@ -387,7 +387,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
   return (
     <div
       dir="rtl"
-      className="min-h-[calc(100vh-6rem)] bg-gradient-to-br from-[#04080f] via-[#0b1422] to-[#071a28] text-slate-100"
+      className="min-h-[calc(100vh-6rem)] bg-background text-foreground"
     >
       <div className="mx-auto max-w-[1920px] px-4 py-6 md:px-8">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -398,10 +398,10 @@ export function BillingControlCenterClient({ workspace }: Props) {
                 Billing Control Center
               </span>
             </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
               מרחב עבודת חיוב
             </h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-400">
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               A4 משמאל · לוח בקרה מימין · משיכה מדוחות מאושרים · שיוך WBS לכל שורה · יומן טיוטה
               מאוזן
             </p>
@@ -409,19 +409,19 @@ export function BillingControlCenterClient({ workspace }: Props) {
         </header>
 
         {projectId && budgetCtx ? (
-          <div className="mb-6 rounded-2xl border border-blue-500/20 bg-blue-950/20 px-4 py-3 text-sm text-slate-300 backdrop-blur-sm">
-            <span className="font-medium text-blue-200/90">הקשר תקציב פרויקט · </span>
-            <span className="text-slate-400">התחייבות רכש (PO) </span>
-            <span className="font-mono tabular-nums text-white">
+          <div className="mb-6 rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground backdrop-blur-sm">
+            <span className="font-medium text-primary">הקשר תקציב פרויקט · </span>
+            <span className="text-muted-foreground">התחייבות רכש (PO) </span>
+            <span className="font-mono tabular-nums text-foreground">
               {new Intl.NumberFormat("he-IL", {
                 style: "currency",
                 currency: "ILS",
                 maximumFractionDigits: 0,
               }).format(budgetCtx.committedPoIls)}
             </span>
-            <span className="mx-2 text-slate-600">|</span>
-            <span className="text-slate-400">הכרה מצטברת </span>
-            <span className="font-mono tabular-nums text-emerald-200/90">
+            <span className="mx-2 text-muted-foreground">|</span>
+            <span className="text-muted-foreground">הכרה מצטברת </span>
+            <span className="font-mono tabular-nums text-emerald-600">
               {new Intl.NumberFormat("he-IL", {
                 style: "currency",
                 currency: "ILS",
@@ -436,7 +436,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
           dir="ltr"
         >
           <div className="order-1 space-y-2" dir="rtl">
-            <p className="text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+            <p className="text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
               תצוגת A4 חיה
             </p>
             <A4LivePreview
@@ -460,7 +460,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
           <form onSubmit={onFinalize} className="space-y-4">
             <div className={cn(glass, "p-5")}>
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-sm font-semibold text-slate-300">
+                <h2 className="text-sm font-semibold text-foreground/90">
                   כותרת מסמך
                 </h2>
                 <Button
@@ -477,14 +477,14 @@ export function BillingControlCenterClient({ workspace }: Props) {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-slate-400">סוג מסמך</Label>
+                  <Label className="text-muted-foreground">סוג מסמך</Label>
                   <Select
                     value={documentKind}
                     onValueChange={(v) =>
                       setDocumentKind(v as BillingDocumentKind)
                     }
                   >
-                    <SelectTrigger className="border-white/10 bg-white/5">
+                    <SelectTrigger className="border-border bg-muted/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
@@ -495,16 +495,16 @@ export function BillingControlCenterClient({ workspace }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-400">תאריך הפקה</Label>
+                  <Label className="text-muted-foreground">תאריך הפקה</Label>
                   <Input
                     type="date"
                     value={issueDate}
                     onChange={(e) => setIssueDate(e.target.value)}
-                    className="border-white/10 bg-white/5"
+                    className="border-border bg-muted/50"
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-400">פרויקט / סניף · מרכז רווח</Label>
+                  <Label className="text-muted-foreground">פרויקט / סניף · מרכז רווח</Label>
                   <Select
                     value={projectId || "__none__"}
                     onValueChange={(v) => {
@@ -512,7 +512,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                       setProjectId(s === "__none__" ? "" : s)
                     }}
                   >
-                    <SelectTrigger className="border-white/10 bg-white/5">
+                    <SelectTrigger className="border-border bg-muted/50">
                       <SelectValue placeholder="בחרו פרויקט" />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
@@ -529,18 +529,18 @@ export function BillingControlCenterClient({ workspace }: Props) {
                     value={profitCenter}
                     onChange={(e) => setProfitCenter(e.target.value)}
                     placeholder="תווית מרכז רווח (ניתן לעריכה)"
-                    className="border-white/10 bg-white/5 text-sm"
+                    className="border-border bg-muted/50 text-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-400">סוג תנועה</Label>
+                  <Label className="text-muted-foreground">סוג תנועה</Label>
                   <Select
                     value={transactionMode}
                     onValueChange={(v) =>
                       setTransactionMode(v as BillingTransactionMode)
                     }
                   >
-                    <SelectTrigger className="border-white/10 bg-white/5">
+                    <SelectTrigger className="border-border bg-muted/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
@@ -550,7 +550,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-400">סוכן / מנהל פרויקט</Label>
+                  <Label className="text-muted-foreground">סוכן / מנהל פרויקט</Label>
                   <Select
                     value={agentId || "__none__"}
                     onValueChange={(v) => {
@@ -558,7 +558,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                       setAgentId(s === "__none__" ? "" : s)
                     }}
                   >
-                    <SelectTrigger className="border-white/10 bg-white/5">
+                    <SelectTrigger className="border-border bg-muted/50">
                       <SelectValue placeholder="—" />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
@@ -575,17 +575,17 @@ export function BillingControlCenterClient({ workspace }: Props) {
             </div>
 
             <div className={cn(glass, "p-5")}>
-              <h2 className="mb-4 text-sm font-semibold text-slate-300">
+              <h2 className="mb-4 text-sm font-semibold text-foreground/90">
                 מטבע ושער
               </h2>
               <Dialog open={pullOpen} onOpenChange={setPullOpen}>
                   <DialogContent
-                    className="max-h-[85vh] overflow-y-auto border-white/10 bg-[#0c1220] text-slate-100"
+                    className="max-h-[85vh] overflow-y-auto border-border bg-card text-card-foreground"
                     dir="rtl"
                   >
                     <DialogHeader>
                       <DialogTitle>בחירת מקור למילוי</DialogTitle>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         דוחות התקדמות: רק סטטוס <span className="text-emerald-400/90">מאושר</span>{" "}
                         (approved)
                       </p>
@@ -595,24 +595,24 @@ export function BillingControlCenterClient({ workspace }: Props) {
                     ) : (
                       <div className="space-y-6 text-sm">
                         <div>
-                          <p className="mb-2 font-medium text-slate-400">
+                          <p className="mb-2 font-medium text-muted-foreground">
                             דוחות התקדמות
                           </p>
                           <ul className="space-y-2">
                             {pullSources.progressReports.length === 0 ? (
-                              <li className="text-slate-500">אין דוחות</li>
+                              <li className="text-muted-foreground">אין דוחות</li>
                             ) : null}
                             {pullSources.progressReports.map((r) => (
                               <li key={r.id}>
                                 <button
                                   type="button"
-                                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-start hover:bg-white/10"
+                                  className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-start hover:bg-muted"
                                   onClick={() =>
                                     void runPull("progress_report", r.id)
                                   }
                                 >
                                   {r.label}{" "}
-                                  <span className="text-slate-500">
+                                  <span className="text-muted-foreground">
                                     ({r.status ?? "—"})
                                   </span>
                                 </button>
@@ -621,23 +621,23 @@ export function BillingControlCenterClient({ workspace }: Props) {
                           </ul>
                         </div>
                         <div>
-                          <p className="mb-2 font-medium text-slate-400">
+                          <p className="mb-2 font-medium text-muted-foreground">
                             הזמנות רכש (PO)
                           </p>
                           <ul className="space-y-2">
                             {pullSources.purchaseOrders.length === 0 ? (
-                              <li className="text-slate-500">אין הזמנות</li>
+                              <li className="text-muted-foreground">אין הזמנות</li>
                             ) : null}
                             {pullSources.purchaseOrders.map((p) => (
                               <li key={p.id}>
                                 <button
                                   type="button"
-                                  className="flex w-full items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-start hover:bg-white/10"
+                                  className="flex w-full items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-start hover:bg-muted"
                                   onClick={() =>
                                     void runPull("purchase_order", p.id)
                                   }
                                 >
-                                  <Truck className="size-4 shrink-0 text-slate-500" />
+                                  <Truck className="size-4 shrink-0 text-muted-foreground" />
                                   {p.label}
                                 </button>
                               </li>
@@ -650,12 +650,12 @@ export function BillingControlCenterClient({ workspace }: Props) {
               </Dialog>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label className="text-slate-400">מטבע</Label>
+                  <Label className="text-muted-foreground">מטבע</Label>
                   <Select
                     value={currencyCode}
                     onValueChange={(v) => setCurrencyCode(v ?? "ILS")}
                   >
-                    <SelectTrigger className="border-white/10 bg-white/5">
+                    <SelectTrigger className="border-border bg-muted/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
@@ -668,7 +668,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-400">שער ל-ILS (הצגה)</Label>
+                  <Label className="text-muted-foreground">שער ל-ILS (הצגה)</Label>
                   <div className="flex flex-wrap items-center gap-3">
                     <Input
                       type="number"
@@ -678,9 +678,9 @@ export function BillingControlCenterClient({ workspace }: Props) {
                       onChange={(e) =>
                         setFxRate(Number(e.target.value) || 1)
                       }
-                      className="max-w-[200px] border-white/10 bg-white/5 font-mono"
+                      className="max-w-[200px] border-border bg-muted/50 font-mono"
                     />
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       ייחוס: ILS 1 · USD {workspace.fx.USD ?? "—"} · EUR{" "}
                       {workspace.fx.EUR ?? "—"}
                     </span>
@@ -690,35 +690,35 @@ export function BillingControlCenterClient({ workspace }: Props) {
             </div>
 
             <div className={cn(glass, "p-5")}>
-              <h2 className="mb-4 text-sm font-semibold text-slate-300">
+              <h2 className="mb-4 text-sm font-semibold text-foreground/90">
                 לקוח וחשבון הכנסות
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-400">שם לקוח</Label>
+                  <Label className="text-muted-foreground">שם לקוח</Label>
                   <Input
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="border-white/10 bg-white/5"
+                    className="border-border bg-muted/50"
                     required
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-400">הערות כותרת</Label>
+                  <Label className="text-muted-foreground">הערות כותרת</Label>
                   <Input
                     value={headerMemo}
                     onChange={(e) => setHeaderMemo(e.target.value)}
-                    className="border-white/10 bg-white/5"
+                    className="border-border bg-muted/50"
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-slate-400">חשבון הכנסות</Label>
+                  <Label className="text-muted-foreground">חשבון הכנסות</Label>
                   <Select
                     value={incomeAccountId || undefined}
                     onValueChange={(v) => setIncomeAccountId(v ?? "")}
                     required
                   >
-                    <SelectTrigger className="border-white/10 bg-white/5">
+                    <SelectTrigger className="border-border bg-muted/50">
                       <SelectValue placeholder="בחרו חשבון" />
                     </SelectTrigger>
                     <SelectContent dir="rtl" className="max-h-64">
@@ -735,14 +735,14 @@ export function BillingControlCenterClient({ workspace }: Props) {
 
             <div className={cn(glass, "p-5")}>
               <div className="mb-4 flex items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold text-slate-300">
+                <h2 className="text-sm font-semibold text-foreground/90">
                   שורות חיוב
                 </h2>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="border-white/15 bg-white/5"
+                  className="border-border bg-muted/50"
                   onClick={() => setLines((p) => [...p, recalcLine(newLine())])}
                 >
                   <Plus className="size-4" />
@@ -765,10 +765,10 @@ export function BillingControlCenterClient({ workspace }: Props) {
                   return (
                     <div
                       key={line.id}
-                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 backdrop-blur-sm"
+                      className="rounded-xl border border-border/80 bg-muted/30 p-4 backdrop-blur-sm"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-[11px] text-muted-foreground">
                           שורה {idx + 1}
                         </span>
                         {lines.length > 1 ? (
@@ -776,7 +776,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                             type="button"
                             size="icon"
                             variant="ghost"
-                            className="size-8 text-slate-500 hover:text-red-400"
+                            className="size-8 text-muted-foreground hover:text-red-400"
                             onClick={() =>
                               setLines((p) => p.filter((x) => x.id !== line.id))
                             }
@@ -787,7 +787,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                       </div>
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">
+                          <Label className="text-[11px] text-muted-foreground">
                             מק״ט ספק
                           </Label>
                           <Input
@@ -799,7 +799,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                                 [line.id]: e.target.value,
                               }))
                             }
-                            className="mb-2 h-9 border-white/10 bg-white/5 text-xs"
+                            className="mb-2 h-9 border-border bg-muted/50 text-xs"
                           />
                           <Select
                             value={line.supplierPartId || "__none__"}
@@ -812,7 +812,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                               }
                             }}
                           >
-                            <SelectTrigger className="border-white/10 bg-white/5 text-xs">
+                            <SelectTrigger className="border-border bg-muted/50 text-xs">
                               <SelectValue placeholder="בחרו מק״ט" />
                             </SelectTrigger>
                             <SelectContent dir="rtl" className="max-h-56">
@@ -827,17 +827,17 @@ export function BillingControlCenterClient({ workspace }: Props) {
                           </Select>
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">תיאור</Label>
+                          <Label className="text-[11px] text-muted-foreground">תיאור</Label>
                           <Input
                             value={line.description}
                             onChange={(e) =>
                               updateLine(line.id, { description: e.target.value })
                             }
-                            className="border-white/10 bg-white/5"
+                            className="border-border bg-muted/50"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">יחידה</Label>
+                          <Label className="text-[11px] text-muted-foreground">יחידה</Label>
                           <Select
                             value={line.uomId || "__none__"}
                             onValueChange={(v) =>
@@ -846,7 +846,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                               })
                             }
                           >
-                            <SelectTrigger className="border-white/10 bg-white/5 text-xs">
+                            <SelectTrigger className="border-border bg-muted/50 text-xs">
                               <SelectValue placeholder="UOM" />
                             </SelectTrigger>
                             <SelectContent dir="rtl">
@@ -860,7 +860,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                           </Select>
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">כמות</Label>
+                          <Label className="text-[11px] text-muted-foreground">כמות</Label>
                           <Input
                             type="number"
                             step="0.0001"
@@ -870,11 +870,11 @@ export function BillingControlCenterClient({ workspace }: Props) {
                                 quantity: Number(e.target.value),
                               })
                             }
-                            className="border-white/10 bg-white/5 font-mono text-sm"
+                            className="border-border bg-muted/50 font-mono text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">
+                          <Label className="text-[11px] text-muted-foreground">
                             מחיר יחידה
                           </Label>
                           <Input
@@ -886,11 +886,11 @@ export function BillingControlCenterClient({ workspace }: Props) {
                                 unitPrice: Number(e.target.value),
                               })
                             }
-                            className="border-white/10 bg-white/5 font-mono text-sm"
+                            className="border-border bg-muted/50 font-mono text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">
+                          <Label className="text-[11px] text-muted-foreground">
                             הנחה %
                           </Label>
                           <Input
@@ -904,19 +904,19 @@ export function BillingControlCenterClient({ workspace }: Props) {
                                 discountPercent: Number(e.target.value),
                               })
                             }
-                            className="border-white/10 bg-white/5 font-mono text-sm"
+                            className="border-border bg-muted/50 font-mono text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500">
+                          <Label className="text-[11px] text-muted-foreground">
                             מחיר נטו
                           </Label>
-                          <div className="flex h-10 items-center rounded-md bg-white/5 px-3 font-mono text-sm text-emerald-200/90">
+                          <div className="flex h-10 items-center rounded-md bg-muted/60 px-3 font-mono text-sm text-emerald-700">
                             {roundMoney(line.netUnitPrice).toFixed(2)}
                           </div>
                         </div>
                         <div className="space-y-1 md:col-span-2">
-                          <Label className="text-[11px] text-slate-500">
+                          <Label className="text-[11px] text-muted-foreground">
                             משימת תקציב (WBS)
                           </Label>
                           {!projectId ? (
@@ -933,7 +933,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                               })
                             }
                           >
-                            <SelectTrigger className="border-white/10 bg-white/5 text-xs">
+                            <SelectTrigger className="border-border bg-muted/50 text-xs">
                               <SelectValue placeholder="אבן דרך / משימה" />
                             </SelectTrigger>
                             <SelectContent dir="rtl">
@@ -946,15 +946,15 @@ export function BillingControlCenterClient({ workspace }: Props) {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="md:col-span-2 space-y-1 border-t border-white/5 pt-2 text-[11px]">
+                        <div className="md:col-span-2 space-y-1 border-t border-border pt-2 text-[11px]">
                           <div className="flex justify-end text-sm">
-                            <span className="text-slate-500">סכום שורה · </span>
-                            <span className="ms-2 font-mono font-semibold text-white">
+                            <span className="text-muted-foreground">סכום שורה · </span>
+                            <span className="ms-2 font-mono font-semibold text-foreground">
                               {fmtMoney.format(line.lineTotal)}
                             </span>
                           </div>
                           {projectId && budgetCtx && subtotal > 0 ? (
-                            <div className="flex flex-wrap justify-between gap-2 text-slate-500">
+                            <div className="flex flex-wrap justify-between gap-2 text-muted-foreground">
                               <span>השפעה יחסית על התחייבות רכש (PO)</span>
                               <span className="font-mono text-blue-200/90">
                                 {new Intl.NumberFormat("he-IL", {
@@ -969,7 +969,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
                             </div>
                           ) : null}
                           {projectId && budgetCtx && subtotal > 0 ? (
-                            <div className="flex flex-wrap justify-between gap-2 text-slate-500">
+                            <div className="flex flex-wrap justify-between gap-2 text-muted-foreground">
                               <span>הכרה הכנסות (יחסי מסך זה, ILS)</span>
                               <span className="font-mono text-emerald-200/80">
                                 {new Intl.NumberFormat("he-IL", {
@@ -994,17 +994,17 @@ export function BillingControlCenterClient({ workspace }: Props) {
             <div
               className={cn(
                 glass,
-                "flex flex-wrap items-center justify-between gap-4 border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-slate-950/30 to-slate-950/50 p-5 shadow-[0_12px_48px_-12px_rgba(16,185,129,0.35)]"
+                "flex flex-wrap items-center justify-between gap-4 border border-primary/25 bg-muted/50 p-5 shadow-sm"
               )}
             >
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 <span>סה״כ לפני מע״מ · </span>
-                <span className="font-mono text-slate-100">
+                <span className="font-mono text-foreground">
                   {fmtMoney.format(subtotal)}
                 </span>
                 <span className="mx-2">|</span>
                 <span>מע״מ · </span>
-                <span className="font-mono text-slate-100">
+                <span className="font-mono text-foreground">
                   {fmtMoney.format(vatAmount)}
                 </span>
                 <span className="mx-2">|</span>
@@ -1016,7 +1016,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
               <Button
                 type="submit"
                 disabled={saving}
-                className="h-12 min-w-[220px] rounded-xl bg-gradient-to-l from-emerald-500 via-emerald-400 to-teal-500 px-8 text-base font-semibold text-white shadow-[0_0_48px_-6px_rgba(16,185,129,0.85)] transition-all hover:from-emerald-400 hover:via-emerald-300 hover:to-teal-400"
+                className="h-12 min-w-[220px] rounded-xl bg-gradient-to-l from-emerald-500 via-emerald-400 to-teal-500 px-8 text-base font-semibold text-primary-foreground shadow-md transition-all hover:from-emerald-400 hover:via-emerald-300 hover:to-teal-400"
               >
                 {saving ? (
                   <Loader2 className="size-5 animate-spin" />
@@ -1050,30 +1050,30 @@ function A4LivePreview(props: {
   return (
     <div className="flex min-h-[520px] flex-col items-center justify-start lg:sticky lg:top-6">
       <div
-        className="flex w-full max-w-md flex-col rounded-sm border border-white/60 bg-gradient-to-b from-white to-slate-50/98 p-10 text-slate-900 shadow-[0_28px_90px_-24px_rgba(16,185,129,0.18)] ring-1 ring-emerald-500/15"
+        className="flex w-full max-w-md flex-col rounded-sm border border-border bg-card p-10 text-card-foreground shadow-lg ring-1 ring-border/60"
         style={{ aspectRatio: "1 / 1.414", minHeight: 640 }}
         dir="rtl"
       >
         <header className="pb-6 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
             מרקר אופק יזמות בע״מ
           </p>
-          <h3 className="mt-3 text-xl font-bold tracking-tight text-slate-900">
+          <h3 className="mt-3 text-xl font-bold tracking-tight text-card-foreground">
             {title}
           </h3>
         </header>
-        <div className="space-y-3 border-b border-slate-200/60 pb-5 text-sm">
+        <div className="space-y-3 border-b border-border pb-5 text-sm">
           <div className="flex justify-between gap-4">
-            <span className="text-slate-500">לכבוד</span>
+            <span className="text-muted-foreground">לכבוד</span>
             <span className="max-w-[60%] text-left font-medium leading-snug">
               {props.customerName.trim() || "שם לקוח"}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-slate-500">תאריך</span>
+            <span className="text-muted-foreground">תאריך</span>
             <span className="tabular-nums">{props.issueDate || "—"}</span>
           </div>
-          <div className="flex justify-between gap-4 text-xs text-slate-500">
+          <div className="flex justify-between gap-4 text-xs text-muted-foreground">
             <span>מטבע</span>
             <span>{props.currencyLabel}</span>
           </div>
@@ -1081,12 +1081,12 @@ function A4LivePreview(props: {
         <div className="min-h-0 flex-1 overflow-hidden pt-5">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              <tr className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="pb-2 text-right font-medium">תיאור / WBS</th>
                 <th className="w-[28%] pb-2 text-left font-medium">סכום</th>
               </tr>
             </thead>
-            <tbody className="text-slate-800">
+            <tbody className="text-card-foreground">
               {props.lines.map((l) => {
                 const wbs =
                   l.wbsNodeId && props.wbsLabelById.has(l.wbsNodeId)
@@ -1097,7 +1097,7 @@ function A4LivePreview(props: {
                     <td className="py-2.5 pr-0 leading-snug">
                       <span className="block">{l.description.trim() || "—"}</span>
                       {wbs ? (
-                        <span className="mt-0.5 block text-[10px] font-medium text-slate-500">
+                        <span className="mt-0.5 block text-[10px] font-medium text-muted-foreground">
                           WBS · {wbs}
                         </span>
                       ) : null}
@@ -1112,19 +1112,19 @@ function A4LivePreview(props: {
           </table>
         </div>
         <div className="mt-auto space-y-2.5 pt-6 text-sm">
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-muted-foreground">
             <span>סכום לפני מע״מ</span>
-            <span className="font-mono tabular-nums font-medium text-slate-900">
+            <span className="font-mono tabular-nums font-medium text-card-foreground">
               {props.formatMoney(props.subtotal)}
             </span>
           </div>
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-muted-foreground">
             <span>מע״מ {Math.round(VAT_RATE * 100)}%</span>
-            <span className="font-mono tabular-nums font-medium text-slate-900">
+            <span className="font-mono tabular-nums font-medium text-card-foreground">
               {props.formatMoney(props.vatAmount)}
             </span>
           </div>
-          <div className="flex justify-between border-t border-slate-200/80 pt-3 text-base font-bold text-slate-900">
+          <div className="flex justify-between border-t border-border pt-3 text-base font-bold text-card-foreground">
             <span>סה״כ</span>
             <span className="font-mono tabular-nums">
               {props.formatMoney(props.totalAmount)}

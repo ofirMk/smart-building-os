@@ -405,12 +405,12 @@ export default function MarkerOfekSchedulePage() {
                           <span
                             className={cn(
                               "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-                              t.status === "done" && "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+                              t.status === "done" && "bg-emerald-500/15 text-emerald-700",
                               t.status === "in_progress" &&
-                                "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-                              t.status === "delayed" && "bg-red-500/15 text-red-700 dark:text-red-300",
+                                "bg-blue-500/15 text-blue-700",
+                              t.status === "delayed" && "bg-red-500/15 text-red-700",
                               t.status === "todo" &&
-                                "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300"
+                                "bg-zinc-500/15 text-zinc-700"
                             )}
                           >
                             {STATUS_LABELS[t.status]}

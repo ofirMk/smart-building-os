@@ -437,7 +437,7 @@ export function MarkerOfekSupplierDrawer() {
                   </div>
                   <div className="rounded-md border border-border/60 bg-background px-2 py-1.5">
                     <p className="text-[11px] text-muted-foreground">חוב נוכחי</p>
-                    <p className="text-sm font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                    <p className="text-sm font-semibold tabular-nums text-amber-700">
                       {currency.format(selectedSummary.currentDebt)}
                     </p>
                   </div>

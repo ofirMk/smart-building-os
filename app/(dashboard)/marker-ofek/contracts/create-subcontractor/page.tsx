@@ -160,11 +160,8 @@ export default function CreateSubcontractorContractPage() {
   )
 
   return (
-    <div
-      className="flex h-screen min-h-0 overflow-hidden bg-white"
-      dir="rtl"
-    >
-      <main className="ms-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-col bg-white" dir="rtl">
+      <main className="ms-2 flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-slate-50/50 p-6 lg:p-8">
           <div className="min-w-0">
             <div className="mb-1 flex items-center gap-2 text-sm text-slate-400">
@@ -205,7 +202,7 @@ export default function CreateSubcontractorContractPage() {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-visible">
           <div className="form-stack mx-auto w-full max-w-5xl p-8 lg:p-12">
             <section className="grid grid-cols-1 gap-12 overflow-visible border-b border-slate-100 pb-12 md:grid-cols-2">
               <div className="space-y-2">
@@ -545,7 +542,7 @@ export default function CreateSubcontractorContractPage() {
         onMouseLeave={() => setIsSidebarOpen(false)}
       >
         {isSidebarOpen ? (
-          <div className="h-full overflow-y-auto p-6 transition-opacity delay-200">
+          <div className="overflow-visible p-6 transition-opacity delay-200">
             <h2 className="mb-6 text-sm font-bold text-slate-600">
               בקרת סיכונים
             </h2>

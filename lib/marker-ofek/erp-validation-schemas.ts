@@ -143,7 +143,7 @@ export type MarkerProjectIntakeFormInput = z.infer<
   typeof markerProjectIntakeFormSchema
 >
 
-/** אשף יצירת חוזה מזמין (דף create-client) — נשמר כטיוטת ERP מינימלית */
+/** אשף יצירת חוזה מזמין (ישות לקוח ב־/entities/new) — נשמר כטיוטת ERP מינימלית */
 export const clientContractWizardSchema = z.object({
   projectId: uuid,
   clientEntityId: uuid,

@@ -131,13 +131,14 @@ export function pathnameToModule(pathname: string): ModuleId | null {
     if (p === prefix || p.startsWith(`${prefix}/`)) return null
   }
 
-  if (p.startsWith("/marker-ofek/executive")) return "executiveSummary"
+  if (p.startsWith("/marker-ofek/command-center")) return "executiveSummary"
   if (p === "/management" || p.startsWith("/management/")) return "executiveSummary"
   if (p.startsWith("/marker-ofek/execution/gantt")) return "gantt"
   if (p.startsWith("/marker-ofek/execution/resources")) return "gantt"
   if (p.startsWith("/marker-ofek/execution/progress-reports")) return "billing"
   if (p.startsWith("/marker-ofek/contracts")) return "billing"
   if (p.startsWith("/marker-ofek/finance")) return "billing"
+  if (p.startsWith("/marker-ofek/sales-orders")) return "billing"
   if (p.startsWith("/marker-ofek/billing")) return "billing"
   if (p.startsWith("/marker-ofek/partner-finance")) return "billing"
   if (p.startsWith("/partner-finance")) return "billing"
@@ -148,7 +149,7 @@ export function pathnameToModule(pathname: string): ModuleId | null {
   if (p.startsWith("/marker-ofek/supply-chain")) return "assets"
   if (p.startsWith("/marker-ofek/procurement")) return "assets"
 
-  if (p.startsWith("/dashboard/holden") || p === "/dashboard/holden") return "assets"
+  if (p.startsWith("/holden") || p === "/holden") return "assets"
   if (p.startsWith("/buildings")) return "assets"
   if (p.startsWith("/ev-management")) return "assets"
   if (p.startsWith("/facility")) return "assets"

@@ -133,15 +133,22 @@ export function MarkerOfekCommandPalette() {
 
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
-        const t = e.target as HTMLElement | null
-        if (t?.closest?.("[data-mo-cmdk-stop]")) return
-        e.preventDefault()
-        setCommandPaletteOpen(true)
-      }
+      const mod = e.metaKey || e.ctrlKey
+      const isK =
+        e.code === "KeyK" ||
+        e.key === "k" ||
+        e.key === "K"
+      if (!mod || !isK) return
+      const t = e.target as HTMLElement | null
+      if (t?.closest?.("[data-mo-cmdk-stop]")) return
+      // Capture + preventDefault stops the browser from hijacking Ctrl/Cmd+K (e.g. address bar).
+      e.preventDefault()
+      if (e.repeat) return
+      setCommandPaletteOpen(true)
     }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    document.addEventListener("keydown", onKey, { capture: true })
+    return () =>
+      document.removeEventListener("keydown", onKey, { capture: true })
   }, [setCommandPaletteOpen])
 
   const q = query.trim().toLowerCase()

@@ -309,10 +309,10 @@ export function JournalEntryClient({
   }
 
   const glassRow =
-    "rounded-2xl border border-white/25 bg-white/35 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+    "rounded-2xl border border-border bg-card/70 shadow-sm ring-1 ring-border/40 backdrop-blur-xl"
 
   const inputGhost =
-    "rounded-xl border-0 bg-transparent text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/60 dark:text-slate-100"
+    "rounded-xl border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
 
   return (
     <div className="w-full" dir="rtl">
@@ -322,19 +322,19 @@ export function JournalEntryClient({
             className={cn(
               "space-y-4 p-6",
               glassRow,
-              "ring-1 ring-slate-200/30 dark:ring-white/5"
+              "ring-1 ring-border/60"
             )}
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                 כותרת פקודה
               </p>
-              <kbd className="hidden rounded-md bg-slate-100/80 px-2 py-0.5 font-mono text-[10px] text-slate-500 ring-1 ring-slate-200/80 dark:bg-white/10 dark:text-slate-400 dark:ring-white/10 sm:inline-block">
+              <kbd className="hidden rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground ring-1 ring-border sm:inline-block">
                 ⌘K חיפוש
               </kbd>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-600 dark:text-slate-300">
+              <Label className="text-xs text-muted-foreground">
                 תאריך
               </Label>
               <Input
@@ -344,52 +344,52 @@ export function JournalEntryClient({
                 className={cn(
                   "h-11",
                   inputGhost,
-                  "bg-white/50 dark:bg-white/5 [color-scheme:light] dark:[color-scheme:dark]"
+                  "bg-muted/40 [color-scheme:light]"
                 )}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-600 dark:text-slate-300">
+              <Label className="text-xs text-muted-foreground">
                 אסמכתא / מספר הפניה
               </Label>
               <Input
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
                 placeholder="REF-2026-001"
-                className={cn("h-11", inputGhost, "bg-white/50 dark:bg-white/5")}
+                className={cn("h-11", inputGhost, "bg-muted/40")}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-600 dark:text-slate-300">
+              <Label className="text-xs text-muted-foreground">
                 תיאור
               </Label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="תיאור קצר לכותרת הפקודה"
-                className={cn("h-11", inputGhost, "bg-white/50 dark:bg-white/5")}
+                className={cn("h-11", inputGhost, "bg-muted/40")}
               />
             </div>
             {(masterCurrencies.length > 0 || masterUnitsOfMeasure.length > 0) ? (
-              <div className="space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] p-3 dark:border-emerald-500/25 dark:bg-emerald-950/20">
+              <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
                     נתוני מאסטר (אופציונלי)
                   </Label>
                   <Link
                     href="/marker-ofek/master-data?tab=suppliers"
-                    className="text-[11px] font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+                    className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
                   >
                     ניהול מאסטר
                   </Link>
                 </div>
                 {masterCurrencies.length > 0 ? (
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-slate-600 dark:text-slate-400">
+                    <Label className="text-[10px] text-muted-foreground">
                       מטבע (יוצג בתיאור)
                     </Label>
                     <select
-                      className="h-10 w-full rounded-lg border border-white/20 bg-white/60 px-3 text-sm dark:bg-slate-900/40 dark:text-slate-100"
+                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
                       value={masterCurrencyId}
                       onChange={(e) => setMasterCurrencyId(e.target.value)}
                     >
@@ -404,11 +404,11 @@ export function JournalEntryClient({
                 ) : null}
                 {masterUnitsOfMeasure.length > 0 ? (
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-slate-600 dark:text-slate-400">
+                    <Label className="text-[10px] text-muted-foreground">
                       יחידת מידה (יוצג בתיאור)
                     </Label>
                     <select
-                      className="h-10 w-full rounded-lg border border-white/20 bg-white/60 px-3 text-sm dark:bg-slate-900/40 dark:text-slate-100"
+                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
                       value={masterUomId}
                       onChange={(e) => setMasterUomId(e.target.value)}
                     >
@@ -425,7 +425,7 @@ export function JournalEntryClient({
             ) : null}
             <Link
               href="/marker-ofek/master-data?tab=suppliers"
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-0 bg-slate-900/5 text-sm font-medium text-slate-800 shadow-none ring-1 ring-slate-200/50 transition-colors hover:bg-slate-900/10 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-0 bg-muted/50 text-sm font-medium text-foreground shadow-none ring-1 ring-border transition-colors hover:bg-muted"
             >
               <Truck className="ms-1 size-4 shrink-0" aria-hidden />
               ניהול ספקים במאסטר
@@ -435,7 +435,7 @@ export function JournalEntryClient({
               variant="secondary"
               size="sm"
               disabled={glRefreshing}
-              className="w-full rounded-xl border-0 bg-slate-900/5 text-slate-800 shadow-none ring-1 ring-slate-200/50 hover:bg-slate-900/10 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10"
+              className="w-full rounded-xl border-0 bg-muted/50 text-foreground shadow-none ring-1 ring-border hover:bg-muted"
               onClick={() => void refreshGlAccounts()}
             >
               {glRefreshing ? (
@@ -451,17 +451,17 @@ export function JournalEntryClient({
             className={cn(
               "flex flex-col gap-3 p-5",
               glassRow,
-              "ring-1 ring-slate-900/5 dark:ring-white/10"
+              "ring-1 ring-border/70"
             )}
           >
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               פעולות
             </p>
             <Button
               type="button"
               disabled={isSaving}
               onClick={() => void handleSave("posted")}
-              className="h-12 w-full gap-2 rounded-xl bg-gradient-to-l from-blue-600 to-blue-500 text-base font-semibold text-white shadow-lg shadow-blue-500/30 hover:from-blue-500 hover:to-blue-600 disabled:opacity-50"
+              className="h-12 w-full gap-2 rounded-xl bg-gradient-to-l from-blue-600 to-blue-500 text-base font-semibold text-primary-foreground shadow-lg shadow-blue-500/30 hover:from-blue-500 hover:to-blue-600 disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="size-5 animate-spin" />
@@ -475,7 +475,7 @@ export function JournalEntryClient({
               variant="secondary"
               disabled={isSaving}
               onClick={() => void handleSave("draft")}
-              className="h-11 w-full gap-2 rounded-xl border-0 bg-white/60 text-slate-800 ring-1 ring-slate-200/60 hover:bg-white/90 dark:bg-white/10 dark:text-slate-100 dark:ring-white/10"
+              className="h-11 w-full gap-2 rounded-xl border-0 bg-muted/60 text-foreground ring-1 ring-border hover:bg-muted"
             >
               {isSaving ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -491,7 +491,7 @@ export function JournalEntryClient({
           <div className="flex flex-wrap items-center justify-center gap-3 px-1">
             {hasAmounts && !isBalanced ? (
               <div
-                className="inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700 shadow-[0_0_24px_-4px_rgba(239,68,68,0.55)] dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-200 dark:shadow-[0_0_28px_-6px_rgba(248,113,113,0.45)]"
+                className="inline-flex items-center gap-2 rounded-full border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive shadow-sm"
                 role="status"
               >
                 <span className="tabular-nums">
@@ -508,7 +508,7 @@ export function JournalEntryClient({
             ) : null}
             {isBalanced ? (
               <div
-                className="inline-flex items-center gap-2 rounded-full border border-emerald-400/45 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-[0_0_22px_-4px_rgba(16,185,129,0.5)] dark:border-emerald-500/35 dark:bg-emerald-950/35 dark:text-emerald-200 dark:shadow-[0_0_26px_-6px_rgba(52,211,153,0.45)]"
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm"
                 role="status"
               >
                 <CheckCircle2 className="size-4 shrink-0" aria-hidden />
@@ -516,7 +516,7 @@ export function JournalEntryClient({
               </div>
             ) : null}
             {!hasAmounts ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 הזינו סכומי חובה/זכות — האיזון יחושב אוטומטית
               </p>
             ) : null}
@@ -526,15 +526,15 @@ export function JournalEntryClient({
             className={cn(
               "overflow-hidden p-4 sm:p-5",
               glassRow,
-              "min-h-[420px] ring-1 ring-slate-200/25 dark:ring-white/10"
+              "min-h-[420px] ring-1 ring-border/60"
             )}
           >
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                <h3 className="text-lg font-semibold text-foreground">
                   שורות תנועה
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   חיפוש חשבון — הקלידו קוד או שם, או השתמשו ב־⌘K
                 </p>
               </div>
@@ -542,7 +542,7 @@ export function JournalEntryClient({
                 type="button"
                 onClick={addLine}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/15 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-500/25 disabled:opacity-40 dark:text-sky-300"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/20 disabled:opacity-40"
               >
                 <Plus className="size-4" />
                 שורה
@@ -556,11 +556,11 @@ export function JournalEntryClient({
                   className={cn(
                     "grid gap-3 p-4 sm:grid-cols-[1fr_minmax(0,8rem)_minmax(0,8rem)_minmax(0,7rem)_1fr_auto] sm:items-end",
                     glassRow,
-                    "ring-1 ring-white/20 dark:ring-white/5"
+                    "ring-1 ring-border/50"
                   )}
                 >
                   <div className="relative min-w-0 sm:col-span-1">
-                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
                       חשבון
                     </Label>
                     <Input
@@ -587,21 +587,21 @@ export function JournalEntryClient({
                     />
                     {focusAccountLineId === line.id ? (
                       <ul
-                        className="absolute start-0 z-40 mt-1 max-h-56 w-full min-w-[220px] max-w-md overflow-auto rounded-xl border border-white/40 bg-white/80 py-1 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/85"
+                        className="absolute start-0 z-40 mt-1 max-h-56 w-full min-w-[220px] max-w-md overflow-auto rounded-xl border border-border bg-popover py-1 text-popover-foreground shadow-lg backdrop-blur-sm"
                         role="listbox"
                       >
                         {filterAccounts(line.accountId).map((a) => (
                           <li key={a.id}>
                             <button
                               type="button"
-                              className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-right text-sm transition hover:bg-blue-500/15 dark:hover:bg-sky-500/15"
+                              className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-right text-sm transition hover:bg-accent"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => pickAccount(line.id, a)}
                             >
-                              <span className="font-mono text-xs font-medium text-blue-600 dark:text-sky-400">
+                              <span className="font-mono text-xs font-medium text-primary">
                                 {a.account_code}
                               </span>
-                              <span className="text-slate-800 dark:text-slate-100">
+                              <span className="text-foreground">
                                 {a.account_name_he}
                               </span>
                             </button>
@@ -611,7 +611,7 @@ export function JournalEntryClient({
                     ) : null}
                   </div>
                   <div>
-                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
                       חובה
                     </Label>
                     <Input
@@ -628,7 +628,7 @@ export function JournalEntryClient({
                     />
                   </div>
                   <div>
-                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
                       זכות
                     </Label>
                     <Input
@@ -645,7 +645,7 @@ export function JournalEntryClient({
                     />
                   </div>
                   <div>
-                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
                       אסמכתא
                     </Label>
                     <Input
@@ -657,7 +657,7 @@ export function JournalEntryClient({
                     />
                   </div>
                   <div className="min-w-0 sm:col-span-1">
-                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Label className="mb-1.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
                       פרטים
                     </Label>
                     <Input
@@ -674,14 +674,14 @@ export function JournalEntryClient({
                       type="button"
                       onClick={() => removeLine(line.id)}
                       disabled={lines.length <= 2 || isSaving}
-                      className="rounded-xl p-2 text-slate-400 transition hover:bg-red-500/15 hover:text-red-600 disabled:opacity-30 dark:hover:text-red-400"
+                      className="rounded-xl p-2 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
                       aria-label="מחק שורה"
                     >
                       <Trash2 className="size-4" />
                     </button>
                   </div>
                   {line.accountName ? (
-                    <p className="col-span-full -mt-1 text-xs text-slate-600 dark:text-slate-300">
+                    <p className="col-span-full -mt-1 text-xs text-muted-foreground">
                       {line.accountName}
                     </p>
                   ) : null}
@@ -689,8 +689,8 @@ export function JournalEntryClient({
               ))}
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/30 pt-4 text-sm dark:border-white/10">
-              <div className="flex flex-wrap gap-6 tabular-nums text-slate-700 dark:text-slate-200">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 text-sm">
+              <div className="flex flex-wrap gap-6 tabular-nums text-foreground">
                 <span>
                   סה״כ חובה:{" "}
                   <strong>
@@ -712,8 +712,8 @@ export function JournalEntryClient({
                 className={cn(
                   "font-mono text-xs font-medium tabular-nums",
                   hasAmounts && Math.abs(balance) >= 0.01
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-slate-500 dark:text-slate-400"
+                    ? "text-destructive"
+                    : "text-muted-foreground"
                 )}
               >
                 Δ ={" "}
@@ -728,8 +728,8 @@ export function JournalEntryClient({
               className={cn(
                 "rounded-2xl px-4 py-3 text-sm ring-1",
                 saveMessage.startsWith("נשמרה")
-                  ? "bg-emerald-500/10 text-emerald-900 ring-emerald-500/25 dark:text-emerald-100"
-                  : "bg-red-500/10 text-red-900 ring-red-500/25 dark:text-red-100"
+                  ? "bg-emerald-500/10 text-emerald-900 ring-emerald-500/25"
+                  : "bg-destructive/10 text-destructive ring-destructive/25"
               )}
             >
               {saveMessage}
@@ -740,7 +740,7 @@ export function JournalEntryClient({
 
       {paletteOpen ? (
         <div
-          className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/40 p-4 pt-[12vh] backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-start justify-center bg-background/80 p-4 pt-[12vh] backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="חיפוש חשבון"
@@ -750,12 +750,12 @@ export function JournalEntryClient({
             className={cn(
               "w-full max-w-lg overflow-hidden shadow-2xl",
               glassRow,
-              "ring-1 ring-slate-200/40 dark:ring-white/15"
+              "ring-1 ring-border"
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-2 border-b border-white/30 px-3 py-2 dark:border-white/10">
-              <Search className="size-4 shrink-0 text-slate-400" aria-hidden />
+            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+              <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <Input
                 autoFocus
                 value={paletteQuery}
@@ -769,7 +769,7 @@ export function JournalEntryClient({
             </div>
             <div className="max-h-72 overflow-auto p-2">
               {paletteFiltered.length === 0 ? (
-                <p className="px-3 py-6 text-center text-sm text-slate-500">
+                <p className="px-3 py-6 text-center text-sm text-muted-foreground">
                   אין תוצאות
                 </p>
               ) : (
@@ -778,13 +778,13 @@ export function JournalEntryClient({
                     <li key={a.id}>
                       <button
                         type="button"
-                        className="flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-right transition hover:bg-blue-500/15 dark:hover:bg-sky-500/15"
+                        className="flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-right transition hover:bg-accent"
                         onClick={() => pickAccount(commandLineId, a)}
                       >
-                        <span className="font-mono text-xs text-blue-600 dark:text-sky-400">
+                        <span className="font-mono text-xs text-primary">
                           {a.account_code}
                         </span>
-                        <span className="text-slate-800 dark:text-slate-100">
+                        <span className="text-foreground">
                           {a.account_name_he}
                         </span>
                       </button>
@@ -793,12 +793,12 @@ export function JournalEntryClient({
                 </ul>
               )}
             </div>
-            <div className="border-t border-white/30 px-3 py-2 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
               שיוך לשורה:{" "}
               <select
                 value={commandLineId}
                 onChange={(e) => setCommandLineId(e.target.value)}
-                className="rounded-lg bg-white/50 px-2 py-1 text-slate-800 ring-1 ring-slate-200/60 dark:bg-slate-800/80 dark:text-slate-100 dark:ring-white/10"
+                className="rounded-lg bg-muted/60 px-2 py-1 text-foreground ring-1 ring-border"
               >
                 {lines.map((l, i) => (
                   <option key={l.id} value={l.id}>

@@ -405,8 +405,8 @@ export function GlAccountsClient({
   const showPreview = mappingConfirmed && previewData.length >= 0
 
   const importCard = (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-950">
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2 border-b border-slate-100 pb-4">
         <button
           type="button"
           onClick={handleWipeData}
@@ -418,10 +418,10 @@ export function GlAccountsClient({
         </button>
       </div>
       <div
-        className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-10 transition-colors dark:border-slate-600 dark:bg-slate-900/40 ${
+        className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-10 transition-colors ${
           showDropzone
-            ? "hover:bg-slate-100 dark:hover:bg-slate-900/60"
-            : "border-slate-200/80 bg-slate-50/50 dark:bg-slate-900/20"
+            ? "hover:bg-slate-100"
+            : "border-slate-200/80 bg-slate-50/50"
         }`}
       >
         <input
@@ -432,10 +432,10 @@ export function GlAccountsClient({
           disabled={isPending}
         />
         <FileSpreadsheet className="mb-4 h-12 w-12 text-slate-400" />
-        <h3 className="text-lg font-medium text-slate-700 dark:text-slate-200">
+        <h3 className="text-lg font-medium text-slate-700">
           {showDropzone ? "העלאת קובץ כרטסת (CSV)" : "הקובץ נטען — המשיכו למיפוי עמודות"}
         </h3>
-        <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-center text-sm text-slate-500">
           {showDropzone
             ? "גרור לכאן או לחץ לבחירת קובץ"
             : "ניתן להעלות קובץ אחר אחרי סיום המיפוי או לאפס"}
@@ -447,7 +447,7 @@ export function GlAccountsClient({
               e.stopPropagation()
               resetCsvState()
             }}
-            className="relative z-20 mt-3 text-xs font-medium text-blue-600 underline hover:text-blue-800 dark:text-blue-400"
+            className="relative z-20 mt-3 text-xs font-medium text-blue-600 underline hover:text-blue-800"
           >
             נקה והעלה קובץ מחדש
           </button>
@@ -455,8 +455,8 @@ export function GlAccountsClient({
       </div>
 
       {showMapper && csvHeaders ? (
-        <div className="mt-8 space-y-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/50">
-          <div className="flex w-full flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-600">
+        <div className="mt-8 space-y-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+          <div className="flex w-full flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
             <button
               type="button"
               onClick={handleSmartMapping}
@@ -466,12 +466,12 @@ export function GlAccountsClient({
               מיפוי אוטומטי (AI)
             </button>
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <Columns3 className="h-5 w-5 shrink-0 text-slate-600 dark:text-slate-300" />
+              <Columns3 className="h-5 w-5 shrink-0 text-slate-600" />
               <div className="min-w-0">
-                <h4 className="font-semibold text-slate-800 dark:text-slate-100">
+                <h4 className="font-semibold text-slate-800">
                   מיפוי עמודות
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500">
                   קשרו כל שדה במערכת לעמודה המתאימה בקובץ (שורת כותרות:{" "}
                   {csvHeaders.join(" · ")})
                 </p>
@@ -483,9 +483,9 @@ export function GlAccountsClient({
             {MAPPING_FIELDS.map((field) => (
               <label
                 key={field.key}
-                className="flex flex-col gap-1.5 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-slate-950"
+                className="flex flex-col gap-1.5 rounded-md border border-slate-200 bg-white p-3"
               >
-                <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                <span className="text-sm font-medium text-slate-800">
                   {field.label}
                   {field.required ? (
                     <span className="text-red-500"> *</span>
@@ -500,7 +500,7 @@ export function GlAccountsClient({
                       [field.key]: e.target.value,
                     }))
                   }
-                  className="mt-1 rounded-md border border-slate-300 bg-white py-2 ps-3 pe-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  className="mt-1 rounded-md border border-slate-300 bg-white py-2 ps-3 pe-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">
                     {field.required ? "— בחר עמודה —" : "— ללא (ברירת מחדל) —"}
@@ -530,8 +530,8 @@ export function GlAccountsClient({
 
       {showPreview && previewData.length > 0 ? (
         <div className="mt-8 space-y-4">
-          <div className="flex flex-col justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4 sm:flex-row sm:items-center dark:border-blue-900/50 dark:bg-blue-950/40">
-            <span className="font-medium text-blue-800 dark:text-blue-200">
+          <div className="flex flex-col justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4 sm:flex-row sm:items-center">
+            <span className="font-medium text-blue-800">
               זוהו {previewData.length} שורות בקובץ (יימסרו לוולידציה בשרת)
             </span>
             <button
@@ -549,37 +549,37 @@ export function GlAccountsClient({
             </button>
           </div>
 
-          <div className="max-h-96 overflow-x-auto overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="max-h-96 overflow-x-auto overflow-y-auto rounded-lg border border-slate-200">
             <table className="w-full text-right text-sm">
-              <thead className="sticky top-0 bg-slate-50 shadow-sm dark:bg-slate-900">
+              <thead className="sticky top-0 bg-slate-50 shadow-sm">
                 <tr>
-                  <th className="p-3 font-medium text-slate-600 dark:text-slate-300">
+                  <th className="p-3 font-medium text-slate-600">
                     קוד
                   </th>
-                  <th className="p-3 font-medium text-slate-600 dark:text-slate-300">
+                  <th className="p-3 font-medium text-slate-600">
                     שם חשבון
                   </th>
-                  <th className="p-3 font-medium text-slate-600 dark:text-slate-300">
+                  <th className="p-3 font-medium text-slate-600">
                     קבוצת מאזן
                   </th>
-                  <th className="p-3 font-medium text-slate-600 dark:text-slate-300">
+                  <th className="p-3 font-medium text-slate-600">
                     קטגוריית דוח
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {previewData.slice(0, 10).map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="p-3 font-mono text-slate-900 dark:text-slate-100">
+                  <tr key={i} className="hover:bg-slate-50">
+                    <td className="p-3 font-mono text-slate-900">
                       {row.account_code}
                     </td>
-                    <td className="p-3 text-slate-700 dark:text-slate-300">
+                    <td className="p-3 text-slate-700">
                       {row.account_name_he}
                     </td>
-                    <td className="p-3 text-slate-600 dark:text-slate-400">
+                    <td className="p-3 text-slate-600">
                       {row.trial_balance_group}
                     </td>
-                    <td className="p-3 text-slate-600 dark:text-slate-400">
+                    <td className="p-3 text-slate-600">
                       {row.financial_statement_category}
                     </td>
                   </tr>
@@ -587,7 +587,7 @@ export function GlAccountsClient({
               </tbody>
             </table>
             {previewData.length > 10 ? (
-              <div className="border-t border-slate-100 bg-slate-50 p-3 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="border-t border-slate-100 bg-slate-50 p-3 text-center text-slate-500">
                 מציג 10 שורות ראשונות מתוך {previewData.length}
               </div>
             ) : null}
@@ -596,7 +596,7 @@ export function GlAccountsClient({
       ) : null}
 
       {mappingConfirmed && previewData.length === 0 ? (
-        <p className="mt-4 text-center text-sm text-amber-700 dark:text-amber-300">
+        <p className="mt-4 text-center text-sm text-amber-700">
           לא נוצרו שורות לתצוגה — חזרו למיפוי או העלו קובץ אחר.
         </p>
       ) : null}
@@ -604,7 +604,7 @@ export function GlAccountsClient({
       {importStats ? (
         <div className="mt-6 space-y-4">
           {importStats.success !== undefined ? (
-            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300">
+            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
               <span className="font-medium">
                 הייבוא הושלם! {importStats.success} חשבונות עודכנו במסד הנתונים.
@@ -612,7 +612,7 @@ export function GlAccountsClient({
             </div>
           ) : null}
           {importStats.errors && importStats.errors.length > 0 ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
               <div className="mb-2 flex items-center gap-2 font-medium">
                 <AlertCircle className="h-5 w-5 shrink-0" />
                 <span>שגיאות:</span>
@@ -635,13 +635,13 @@ export function GlAccountsClient({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-8">
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-700">
+      <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <BookOpen className="h-8 w-8 text-blue-600" />
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold text-slate-900">
             כרטסת ראשית (Chart of Accounts)
           </h1>
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-slate-500">
             ניהול עץ החשבונות וייבוא סעיפי מאזן מקובץ CSV
           </p>
         </div>
@@ -649,7 +649,7 @@ export function GlAccountsClient({
 
       {loadError ? (
         <div
-          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
           role="alert"
         >
           לא ניתן לטעון את רשימת החשבונות: {loadError}

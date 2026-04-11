@@ -268,7 +268,7 @@ export async function executeHoldenErpIntent(
         return {
           ok: true,
           message: "מעבר למרכז הפיקוח",
-          detail: { path: "/command-center" },
+          detail: { path: "/marker-ofek/command-center" },
         }
       }
       const { data: proj } = await supabase
@@ -289,7 +289,7 @@ export async function executeHoldenErpIntent(
       return {
         ok: true,
         message: "לא נמצא פרויקט — מוצג מרכז הפיקוח",
-        detail: { path: "/command-center" },
+        detail: { path: "/marker-ofek/command-center" },
       }
     }
     case "OPEN_PURCHASE_ORDER_SUPPLIER": {
@@ -319,7 +319,7 @@ export async function executeHoldenErpIntent(
       return {
         ok: true,
         message: "מרכז הפיקוח Holden",
-        detail: { path: "/command-center" },
+        detail: { path: "/marker-ofek/command-center" },
       }
     case "APPROVE_PARTIAL_ACCOUNT":
     case "SUBMIT_PARTIAL_ACCOUNT":

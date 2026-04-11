@@ -304,7 +304,7 @@ export const MARKER_OFEK_PILLARS: MarkerOfekPillar[] = [
     navTitle: "בקרה תקציבית",
     cardTitle: "בקרה תקציבית",
     tagline: "מגבלות, מעקב עומסים ותמונה כספית מול תכנון.",
-    href: "/marker-ofek/financial-control",
+    href: "/marker-ofek/budget",
     icon: Gauge,
     defaultOpen: false,
     navItems: [

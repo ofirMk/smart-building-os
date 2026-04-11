@@ -319,7 +319,7 @@ export default function NavPreviewPage() {
                 autoComplete="off"
               />
             </div>
-            <ul className="max-h-[min(50vh,320px)] overflow-y-auto p-1.5">
+            <ul className="p-1.5">
               {filteredCommands.length === 0 ? (
                 <li className="px-3 py-6 text-center text-sm text-slate-500">
                   אין תוצאות

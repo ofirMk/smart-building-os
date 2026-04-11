@@ -538,7 +538,7 @@ function BaselineBillDataPreview({
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+        <p className="mt-3 text-xs text-amber-600">
           לא חולצו שורות טבלה (items ריק) — נסו PDF עם כתב כמויות ברור.
         </p>
       )}
@@ -951,12 +951,12 @@ export function MarkerOfekProjectHubClient({
                     </p>
                   ) : null}
                   {selectedContractId.trim() && baselineItems.length === 0 ? (
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    <p className="text-xs font-medium text-amber-700">
                       אין שורות items בסריקה — הריצו מחדש את ה-AI או בדקו את ה-PDF.
                     </p>
                   ) : null}
                   {Object.keys(baselineFormErrors).length > 0 ? (
-                    <div className="mb-4 max-h-40 overflow-auto rounded border-2 border-red-500 bg-red-100 p-4 text-left font-mono text-sm text-red-900 dir-ltr dark:bg-red-950/50 dark:text-red-100">
+                    <div className="mb-4 max-h-40 overflow-auto rounded border-2 border-red-500 bg-red-100 p-4 text-left font-mono text-sm text-red-900 dir-ltr">
                       <strong>Form Validation Blocked Submission:</strong>
                       <pre className="mt-2 whitespace-pre-wrap break-words">
                         {JSON.stringify(baselineFormErrors, null, 2)}
@@ -1010,7 +1010,7 @@ export function MarkerOfekProjectHubClient({
           <CardContent className="space-y-4">
             <Badge
               variant="outline"
-              className="h-auto max-w-full whitespace-normal border-amber-500/55 bg-amber-500/10 px-3 py-2.5 text-start text-xs font-normal leading-relaxed text-amber-950 dark:border-amber-400/40 dark:bg-amber-950/40 dark:text-amber-50"
+              className="h-auto max-w-full whitespace-normal border-amber-500/55 bg-amber-500/10 px-3 py-2.5 text-start text-xs font-normal leading-relaxed text-amber-950"
             >
               ה-AI מבסס תשובות אך ורק על מסמכי הכספת. תשובות שאינן מבוססות סעיף
               יסומנו כהמלצה מסחרית בלבד.

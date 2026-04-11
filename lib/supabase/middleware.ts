@@ -23,7 +23,6 @@ function isProtectedPath(pathname: string): boolean {
     "/ev-management",
     "/amenities",
     "/announcements",
-    "/billing",
     "/documents",
     "/maintenance",
     "/tenants",

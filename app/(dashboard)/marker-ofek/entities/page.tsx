@@ -176,7 +176,7 @@ export default function MarkerOfekEntitiesPage() {
             </>
           }
         />
-        <p className="border-b border-slate-100 px-4 pb-3 text-[12px] text-muted-foreground dark:border-slate-800">
+        <p className="border-b border-slate-100 px-4 pb-3 text-[12px] text-muted-foreground">
           ליצירה מהירה ניתן גם להשתמש בכפתורי &quot;חדש&quot; בטפסי חוזה / הזמנת רכש.
         </p>
 

@@ -195,18 +195,18 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
   }
 
   const cardGlass =
-    "rounded-3xl border border-white/30 bg-white/40 shadow-xl shadow-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/40 dark:shadow-black/40"
+    "rounded-3xl border border-white/30 bg-white/40 shadow-xl shadow-slate-900/5 backdrop-blur-xl"
 
   const rowGlow = (on: boolean, side: "books" | "bank") =>
     cn(
       "cursor-pointer rounded-2xl border border-transparent px-3 py-2.5 transition-all duration-200 will-change-transform motion-safe:active:scale-[0.98]",
       on &&
         side === "books" &&
-        "border-sky-400/35 bg-sky-500/10 shadow-[0_0_24px_-4px_rgba(56,189,248,0.35)] dark:bg-sky-500/15",
+        "border-sky-400/35 bg-sky-500/10 shadow-[0_0_24px_-4px_rgba(56,189,248,0.35)]",
       on &&
         side === "bank" &&
-        "border-violet-400/35 bg-violet-500/10 shadow-[0_0_24px_-4px_rgba(167,139,250,0.35)] dark:bg-violet-500/15",
-      !on && "hover:bg-white/30 dark:hover:bg-white/5"
+        "border-violet-400/35 bg-violet-500/10 shadow-[0_0_24px_-4px_rgba(167,139,250,0.35)]",
+      !on && "hover:bg-white/30"
     )
 
   return (
@@ -218,13 +218,13 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
         )}
       >
         <div className="min-w-[220px] flex-1 space-y-2">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="text-xs font-medium text-slate-600">
             חשבון בנק בכרטסת (משטח התאמה)
           </label>
           <select
             value={selectedBankId}
             onChange={(e) => void handleBankSelection(e.target.value)}
-            className="w-full rounded-2xl border-0 bg-white/60 px-4 py-3 text-sm text-slate-900 shadow-inner ring-1 ring-slate-200/50 focus:ring-2 focus:ring-blue-500/50 dark:bg-slate-900/60 dark:text-slate-100 dark:ring-white/10"
+            className="w-full rounded-2xl border-0 bg-white/60 px-4 py-3 text-sm text-slate-900 shadow-inner ring-1 ring-slate-200/50 focus:ring-2 focus:ring-blue-500/50"
           >
             <option value="" disabled>
               בחרו חשבון…
@@ -237,8 +237,8 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
           </select>
         </div>
         {isLoading ? (
-          <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-sky-400">
-            <div className="size-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent dark:border-sky-400" />
+          <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+            <div className="size-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
             טוען…
           </div>
         ) : null}
@@ -249,14 +249,14 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
         dir="ltr"
       >
         <section className={cn("flex min-h-[420px] flex-1 flex-col overflow-hidden", cardGlass)}>
-          <header className="flex shrink-0 items-center justify-between border-b border-white/30 px-5 py-4 dark:border-white/10">
+          <header className="flex shrink-0 items-center justify-between border-b border-white/30 px-5 py-4">
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.7)]" />
-              <h2 className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+              <h2 className="text-sm font-semibold tracking-tight text-slate-800">
                 Bank Side
               </h2>
             </div>
-            <span className="rounded-full bg-violet-500/15 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:text-violet-200">
+            <span className="rounded-full bg-violet-500/15 px-2.5 py-0.5 text-[11px] font-medium text-violet-700">
               {bankLines.length} פתוחות
             </span>
           </header>
@@ -278,7 +278,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
                   className={rowGlow(isSelected, "bank")}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="tabular-nums text-slate-500 dark:text-slate-400">
+                    <span className="tabular-nums text-slate-500">
                       {new Date(line.transaction_date).toLocaleDateString(
                         "he-IL"
                       )}
@@ -287,8 +287,8 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
                       className={cn(
                         "font-mono text-sm font-semibold tabular-nums",
                         line.amount >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-rose-600 dark:text-rose-400"
+                          ? "text-emerald-600"
+                          : "text-rose-600"
                       )}
                     >
                       {Math.abs(line.amount).toLocaleString("he-IL", {
@@ -296,7 +296,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
                       })}
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-600">
                     {line.description || "—"}
                   </p>
                   {line.reference_number ? (
@@ -308,7 +308,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
               )
             })}
             {bankLines.length === 0 && !isLoading ? (
-              <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+              <p className="py-12 text-center text-sm text-slate-500">
                 {!selectedBankId
                   ? "בחרו חשבון בנק — או ייבאו שורות מקליטת דפי בנק"
                   : "אין שורות מיובאות — הוסיפו מקליטת דפי בנק"}
@@ -318,20 +318,20 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
         </section>
 
         <div className="hidden shrink-0 items-center justify-center lg:flex lg:w-12">
-          <div className="rounded-full border border-white/40 bg-white/30 p-3 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-slate-900/50">
-            <ArrowLeftRight className="size-6 text-slate-400 dark:text-slate-500" />
+          <div className="rounded-full border border-white/40 bg-white/30 p-3 shadow-lg backdrop-blur-md">
+            <ArrowLeftRight className="size-6 text-slate-400" />
           </div>
         </div>
 
         <section className={cn("flex min-h-[420px] flex-1 flex-col overflow-hidden", cardGlass)}>
-          <header className="flex shrink-0 items-center justify-between border-b border-white/30 px-5 py-4 dark:border-white/10">
+          <header className="flex shrink-0 items-center justify-between border-b border-white/30 px-5 py-4">
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.7)]" />
-              <h2 className="text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+              <h2 className="text-sm font-semibold tracking-tight text-slate-800">
                 Books Side
               </h2>
             </div>
-            <span className="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[11px] font-medium text-sky-800 dark:text-sky-200">
+            <span className="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[11px] font-medium text-sky-800">
               {journalLines.length} פתוחות
             </span>
           </header>
@@ -353,15 +353,15 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
                   className={rowGlow(isSelected, "books")}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="tabular-nums text-slate-500 dark:text-slate-400">
+                    <span className="tabular-nums text-slate-500">
                       {new Date(line.entry_date).toLocaleDateString("he-IL")}
                     </span>
                     <span
                       className={cn(
                         "font-mono text-sm font-semibold tabular-nums",
                         line.amount >= 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-rose-600 dark:text-rose-400"
+                          ? "text-emerald-600"
+                          : "text-rose-600"
                       )}
                     >
                       {Math.abs(line.amount).toLocaleString("he-IL", {
@@ -369,7 +369,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
                       })}
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-600">
                     {line.description || "—"}
                   </p>
                   {line.reference_1 ? (
@@ -381,7 +381,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
               )
             })}
             {journalLines.length === 0 && !isLoading ? (
-              <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+              <p className="py-12 text-center text-sm text-slate-500">
                 {!selectedBankId
                   ? "בחרו חשבון"
                   : "אין שורות יומן פתוחות לחשבון זה"}
@@ -394,7 +394,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
       <footer
         className={cn(
           "shrink-0 space-y-4 p-6",
-          "rounded-3xl border border-white/20 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950 text-white shadow-2xl shadow-slate-900/30 ring-1 ring-white/10 backdrop-blur-xl dark:from-slate-950 dark:via-slate-950"
+          "rounded-3xl border border-white/20 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950 text-white shadow-2xl shadow-slate-900/30 ring-1 ring-white/10 backdrop-blur-xl"
         )}
       >
         {matchMessage ? (

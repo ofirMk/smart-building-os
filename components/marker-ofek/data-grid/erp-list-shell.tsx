@@ -90,12 +90,12 @@ export function ErpListTitleBlock({
   return (
     <div className={cn("flex items-start gap-3", className)}>
       {icon ? (
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800 dark:bg-slate-800/80 dark:text-slate-100">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800">
           {icon}
         </span>
       ) : null}
       <div className="min-w-0">
-        <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-50">
+        <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
           {title}
         </h1>
         {description ? (
@@ -122,7 +122,7 @@ export function ErpListToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:border-slate-800/80",
+        "flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         className
       )}
     >
@@ -147,7 +147,7 @@ export function ErpDataCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-950",
+        "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
         className
       )}
     >

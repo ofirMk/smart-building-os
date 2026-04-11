@@ -27,7 +27,7 @@ export default function NewContractSelectionPage() {
       </div>
 
       <div className="grid w-full max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-        <Link href="/marker-ofek/contracts/create-client" className="group">
+        <Link href="/marker-ofek/entities/new?kind=client&lock=1" className="group">
           <Card className="h-full border-2 bg-white transition-all hover:border-blue-500 hover:shadow-xl">
             <CardHeader>
               <div className="mb-4 w-fit rounded-2xl bg-blue-50 p-4 transition-colors group-hover:bg-blue-600 group-hover:text-white">

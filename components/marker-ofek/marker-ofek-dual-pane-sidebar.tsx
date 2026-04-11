@@ -7,12 +7,16 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   Activity,
   ArrowLeftRight,
+  Building2,
   CreditCard,
   FileEdit,
+  FolderPlus,
   Receipt,
   ShieldCheck,
+  ShoppingBag,
   ShoppingCart,
   Table2,
+  Truck,
   Wallet,
 } from "lucide-react"
 import {
@@ -23,11 +27,7 @@ import {
   type MouseEvent,
 } from "react"
 
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
+import { sidebarMenuButtonVariants } from "@/components/ui/sidebar"
 import { isSidebarNavItemActive } from "@/lib/infrastructure/navigation/sidebar-routes"
 import {
   filterNavItemsByModules,
@@ -62,11 +62,15 @@ const PRIMARY: {
 function deriveContextFromPathname(pathname: string): NavContextId {
   if (
     pathname.startsWith("/marker-ofek/finance") ||
-    pathname.startsWith("/marker-ofek/holden-erp")
+    pathname.startsWith("/marker-ofek/holden-erp") ||
+    pathname.startsWith("/marker-ofek/sales-orders")
   ) {
     return "finance"
   }
   if (pathname.startsWith("/marker-ofek/master-data")) {
+    return "masterData"
+  }
+  if (pathname.startsWith("/marker-ofek/suppliers")) {
     return "masterData"
   }
   if (pathname.startsWith("/marker-ofek/system")) {
@@ -78,6 +82,9 @@ function deriveContextFromPathname(pathname: string): NavContextId {
     pathname.startsWith("/marker-ofek/items")
   ) {
     return "procurement"
+  }
+  if (pathname.startsWith("/marker-ofek/projects")) {
+    return "masterData"
   }
   return "procurement"
 }
@@ -100,17 +107,7 @@ function contextIsActive(pathname: string, ctx: NavContextId): boolean {
   return deriveContextFromPathname(pathname) === ctx
 }
 
-export function MarkerOfekDualPaneSidebar({
-  modules,
-  closeMobileNav,
-  markerSoftNav,
-  showPartnerFinanceNav: _showPartnerFinanceNav = false,
-  showHoldingExecutiveNav: _showHoldingExecutiveNav = false,
-  showUserPermissionsNav: _showUserPermissionsNav = false,
-  showAiUserSetupNav: _showAiUserSetupNav = false,
-  scopedProjectCount = null,
-  applyEmptyPortfolioNav = false,
-}: {
+type MarkerOfekDrawerNavProps = {
   modules: ModuleVisibilityState
   closeMobileNav: () => void
   markerSoftNav?: (href: string, title: string) => void
@@ -120,7 +117,20 @@ export function MarkerOfekDualPaneSidebar({
   showAiUserSetupNav?: boolean
   scopedProjectCount?: number | null
   applyEmptyPortfolioNav?: boolean
-}) {
+}
+
+/** Drawer / overlay navigation (no shadcn Sidebar shell). Used by `DashboardNavDrawerPanel`. */
+export function MarkerOfekDrawerNavContent({
+  modules,
+  closeMobileNav,
+  markerSoftNav,
+  showPartnerFinanceNav: _showPartnerFinanceNav = false,
+  showHoldingExecutiveNav: _showHoldingExecutiveNav = false,
+  showUserPermissionsNav: _showUserPermissionsNav = false,
+  showAiUserSetupNav: _showAiUserSetupNav = false,
+  scopedProjectCount = null,
+  applyEmptyPortfolioNav = false,
+}: MarkerOfekDrawerNavProps) {
   const pathname = usePathname() ?? ""
   const [activeContext, setActiveContext] = useState<NavContextId>(() =>
     deriveContextFromPathname(pathname)
@@ -138,8 +148,18 @@ export function MarkerOfekDualPaneSidebar({
           href: "/marker-ofek/procurement",
           icon: ShoppingCart,
         },
+        {
+          title: "רכש ותעודת משלוח",
+          href: "/marker-ofek/procurement/purchase-order-delivery-flow",
+          icon: Truck,
+        },
       ],
       finance: [
+        {
+          title: "הזמנת לקוח",
+          href: "/marker-ofek/sales-orders/new",
+          icon: ShoppingBag,
+        },
         {
           title: "הזנת פקודת יומן",
           href: "/marker-ofek/finance/journal-entries/new",
@@ -171,6 +191,16 @@ export function MarkerOfekDualPaneSidebar({
           title: "מרכז נתוני מאסטר",
           href: "/marker-ofek/master-data",
           icon: Table2,
+        },
+        {
+          title: "הקמת ספק",
+          href: "/marker-ofek/entities/new?kind=supplier&lock=1",
+          icon: Building2,
+        },
+        {
+          title: "הקמת פרויקט",
+          href: "/marker-ofek/projects/new",
+          icon: FolderPlus,
         },
       ],
       system: [
@@ -272,43 +302,50 @@ export function MarkerOfekDualPaneSidebar({
                 אין קישורים זמינים בהקשר הזה (בדוק מודולים או הרשאות).
               </p>
             ) : (
-              <SidebarMenu className="gap-0.5">
+              <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
                 {visibleContextual.map((item) => {
                   const Icon = item.icon
+                  const active = isSidebarNavItemActive(pathname, item.href)
                   return (
-                    <SidebarMenuItem key={`${activeContext}-${item.href}`}>
-                      <SidebarMenuButton
-                        isActive={isSidebarNavItemActive(pathname, item.href)}
-                        tooltip={item.title}
-                        size="default"
+                    <li
+                      key={`${activeContext}-${item.href}`}
+                      className="group/menu-item relative"
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={(e) => onNavClick(e, item.href, item.title)}
+                        dir="rtl"
+                        data-active={active ? "" : undefined}
                         className={cn(
+                          sidebarMenuButtonVariants({
+                            variant: "default",
+                            size: "default",
+                          }),
                           "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
                           "[&_svg]:size-4 [&_svg]:shrink-0",
                           "data-active:bg-emerald-500/20 data-active:text-emerald-50 data-active:shadow-sm",
-                          "hover:bg-slate-800/80 hover:text-emerald-100"
+                          "hover:bg-slate-800/80 hover:text-emerald-100",
+                          "flex w-full items-center justify-start text-start"
                         )}
-                        render={
-                          <Link
-                            href={item.href}
-                            onClick={(e) => onNavClick(e, item.href, item.title)}
-                            dir="rtl"
-                            className="flex w-full items-center justify-start gap-2 text-start"
-                          >
-                            <Icon aria-hidden />
-                            <span className="truncate font-currency-mono text-[13px]">
-                              {item.title}
-                            </span>
-                          </Link>
-                        }
-                      />
-                    </SidebarMenuItem>
+                      >
+                        <Icon aria-hidden />
+                        <span className="truncate font-currency-mono text-[13px]">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </li>
                   )
                 })}
-              </SidebarMenu>
+              </ul>
             )}
           </motion.div>
         </AnimatePresence>
       </div>
     </div>
   )
+}
+
+/** @deprecated Prefer `MarkerOfekDrawerNavContent` in new code; kept for legacy imports. */
+export function MarkerOfekDualPaneSidebar(props: MarkerOfekDrawerNavProps) {
+  return <MarkerOfekDrawerNavContent {...props} />
 }

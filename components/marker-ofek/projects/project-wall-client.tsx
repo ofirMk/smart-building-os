@@ -37,15 +37,15 @@ function AiBadge({ category }: { category: ProjectWallPostRow["ai_category"] }) 
       variant="outline"
       title={L.he}
       className={cn(
-        "shrink-0 border font-mono text-[10px] font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-[11px]",
+        "shrink-0 border font-mono text-[10px] font-semibold tracking-tight text-slate-900 sm:text-[11px]",
         category === "technical" &&
-          "border-slate-400/80 bg-slate-100 dark:border-slate-600 dark:bg-slate-900/80",
+          "border-slate-400/80 bg-slate-100",
         category === "safety" &&
-          "border-amber-400/90 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/50",
+          "border-amber-400/90 bg-amber-50",
         category === "delay" &&
-          "border-rose-400/90 bg-rose-50 dark:border-rose-800 dark:bg-rose-950/50",
+          "border-rose-400/90 bg-rose-50",
         category === "finance" &&
-          "border-emerald-500/80 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40"
+          "border-emerald-500/80 bg-emerald-50"
       )}
     >
       {L.bracket}
@@ -90,21 +90,21 @@ export function ProjectWallClient({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 pb-20 pt-2 sm:gap-6 sm:pb-16" dir="rtl" lang="he">
-      <header className="space-y-3 rounded-2xl border border-slate-200 bg-gradient-to-bl from-slate-50 to-white p-5 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 sm:p-6">
-        <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-300 sm:text-xs sm:tracking-[0.22em]">
-          <Building2 className="size-4 text-slate-800 dark:text-slate-200" aria-hidden />
+      <header className="space-y-3 rounded-2xl border border-slate-200 bg-gradient-to-bl from-slate-50 to-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700 sm:text-xs sm:tracking-[0.22em]">
+          <Building2 className="size-4 text-slate-800" aria-hidden />
           The Box Group
-          <span className="text-slate-400 dark:text-slate-600">·</span>
-          <span className="text-slate-600 dark:text-slate-400">Diamond Standard</span>
+          <span className="text-slate-400">·</span>
+          <span className="text-slate-600">Diamond Standard</span>
         </div>
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
             קיר הפרויקט
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{projectName}</p>
-          <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-500">
+          <p className="text-sm text-slate-600">{projectName}</p>
+          <p className="text-sm leading-relaxed text-slate-500">
             פיד עדכונים מהשטח — חלופה נקייה לווטסאפ. כל פרסום מקבל תגית AI:{" "}
-            <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
+            <span className="font-mono text-[11px] text-slate-700">
               [Technical] · [Safety] · [Delay] · [Back-charge]
             </span>
           </p>
@@ -112,25 +112,25 @@ export function ProjectWallClient({
       </header>
 
       {canPost ? (
-        <Card className="border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-950/30">
+        <Card className="border-slate-200 shadow-sm">
           <CardHeader className="space-y-1 pb-2">
-            <CardTitle className="text-lg text-slate-900 dark:text-slate-100">פרסום עדכון</CardTitle>
+            <CardTitle className="text-lg text-slate-900">פרסום עדכון</CardTitle>
             <CardDescription>טקסט או תמונה (אחסון מאובטח) — סיווג AI אוטומטי.</CardDescription>
           </CardHeader>
           <CardContent>
             <form action={onSubmit} className="space-y-4">
               <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-                <TabsList className="grid w-full grid-cols-2 bg-slate-100 dark:bg-slate-900">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-100">
                   <TabsTrigger
                     value="text"
-                    className="gap-2 text-xs data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 sm:text-sm"
+                    className="gap-2 text-xs data-[state=active]:bg-slate-900 data-[state=active]:text-white sm:text-sm"
                   >
                     <MessageSquare className="size-4" aria-hidden />
                     טקסט
                   </TabsTrigger>
                   <TabsTrigger
                     value="photo"
-                    className="gap-2 text-xs data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900 sm:text-sm"
+                    className="gap-2 text-xs data-[state=active]:bg-slate-900 data-[state=active]:text-white sm:text-sm"
                   >
                     <Camera className="size-4" aria-hidden />
                     תמונה
@@ -155,7 +155,7 @@ export function ProjectWallClient({
                       type="file"
                       accept="image/*"
                       capture="environment"
-                      className="block w-full min-h-[44px] text-sm text-slate-600 file:me-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800 dark:text-slate-400 dark:file:bg-slate-100 dark:file:text-slate-900 dark:hover:file:bg-slate-200"
+                      className="block w-full min-h-[44px] text-sm text-slate-600 file:me-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
                     />
                   </div>
                   <div className="space-y-2">
@@ -172,7 +172,7 @@ export function ProjectWallClient({
               </Tabs>
 
               {error ? (
-                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                <p className="text-sm text-red-600" role="alert">
                   {error}
                 </p>
               ) : null}
@@ -180,7 +180,7 @@ export function ProjectWallClient({
               <Button
                 type="submit"
                 disabled={pending}
-                className="w-full min-h-[44px] gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto"
+                className="w-full min-h-[44px] gap-2 bg-slate-900 hover:bg-slate-800 sm:w-auto"
               >
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -193,29 +193,29 @@ export function ProjectWallClient({
           </CardContent>
         </Card>
       ) : (
-        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
+        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-600">
           צפייה בלבד — פרסום לקיר זמין למנהלי מערכת, מנהלי נכסים ושותפים מנהלי פרויקט.
         </p>
       )}
 
       <section aria-labelledby="wall-feed-heading" className="flex min-h-0 flex-1 flex-col gap-3">
-        <h2 id="wall-feed-heading" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h2 id="wall-feed-heading" className="text-lg font-semibold text-slate-900">
           ציר זמן
         </h2>
-        <ScrollArea className="max-h-[min(85dvh,720px)] rounded-2xl border border-slate-200 bg-white pr-1 shadow-sm dark:border-slate-800 dark:bg-slate-950/50 sm:rounded-2xl">
+        <ScrollArea className="max-h-[min(85dvh,720px)] rounded-2xl border border-slate-200 bg-white pr-1 shadow-sm sm:rounded-2xl">
           <ul className="flex flex-col gap-3 p-3 sm:p-4">
             {posts.length === 0 ? (
-              <li className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+              <li className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center text-sm text-slate-500">
                 עדיין אין עדכונים בקיר.{" "}
                 {canPost ? "פרסמו את העדכון הראשון — הוא יופיע כאן." : null}
               </li>
             ) : (
               posts.map((p) => (
-                <li key={p.id} className="relative ps-3 before:absolute before:start-0 before:top-2 before:h-[calc(100%-0.5rem)] before:w-px before:bg-slate-200 before:content-[''] last:before:hidden dark:before:bg-slate-700">
-                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                <li key={p.id} className="relative ps-3 before:absolute before:start-0 before:top-2 before:h-[calc(100%-0.5rem)] before:w-px before:bg-slate-200 before:content-[''] last:before:hidden">
+                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
                     <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0 text-start">
-                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <p className="truncate text-sm font-semibold text-slate-900">
                           {p.author_full_name?.trim() || "משתמש"}
                         </p>
                         <p className="text-xs text-slate-500 tabular-nums">{formatWallTime(p.created_at)}</p>
@@ -223,7 +223,7 @@ export function ProjectWallClient({
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         <Badge
                           variant="secondary"
-                          className="border-slate-200 bg-white text-[10px] font-normal text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
+                          className="border-slate-200 bg-white text-[10px] font-normal text-slate-700"
                         >
                           {p.post_kind === "text"
                             ? "טקסט"
@@ -235,7 +235,7 @@ export function ProjectWallClient({
                       </div>
                     </div>
                     {p.post_kind === "photo" && p.image_signed_url ? (
-                      <div className="mb-3 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                      <div className="mb-3 overflow-hidden rounded-lg border border-slate-200">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={p.image_signed_url}
@@ -245,7 +245,7 @@ export function ProjectWallClient({
                       </div>
                     ) : null}
                     {p.body?.trim() ? (
-                      <p className="whitespace-pre-wrap text-start text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                      <p className="whitespace-pre-wrap text-start text-sm leading-relaxed text-slate-700">
                         {p.body}
                       </p>
                     ) : null}
@@ -261,7 +261,7 @@ export function ProjectWallClient({
                         })}
                       </ul>
                     ) : null}
-                    <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-500">
+                    <p className="mt-2 text-[11px] text-slate-500">
                       סיווג AI · {PROJECT_WALL_AI_LABELS[p.ai_category].he}
                     </p>
                   </article>

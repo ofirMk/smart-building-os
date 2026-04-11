@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-/** יהלום F2 — מפנה לטופס לקוח קיים */
+/** נתיב יחיד לשותפים עסקיים — ישות מסוג לקוח */
 export default function FinanceCustomersNewRedirectPage() {
-  redirect("/marker-ofek/customers/new")
+  redirect("/marker-ofek/entities/new?kind=client&lock=1")
 }

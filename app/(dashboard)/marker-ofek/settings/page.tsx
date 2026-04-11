@@ -217,7 +217,7 @@ export default function MarkerOfekSettingsPage() {
           <Card className="border-border/70 shadow-sm">
             <CardHeader className="border-b border-border/60 pb-4">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600">
                   <Building2 className="size-5" aria-hidden />
                 </div>
                 <div className="space-y-1">

@@ -32,10 +32,10 @@ export function ErpMasterDetailLayout({
       )}
     >
       {title ? (
-        <header className="border-b border-slate-100 pb-4 text-start dark:border-slate-800">
+        <header className="border-b border-slate-100 pb-4 text-start">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-50">
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
                 {title}
               </h1>
               {subtitle ? (
@@ -43,7 +43,7 @@ export function ErpMasterDetailLayout({
               ) : null}
             </div>
             {status ? (
-              <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+              <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm">
                 {status}
               </span>
             ) : null}
@@ -110,14 +110,14 @@ export function ErpMasterDetailPageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-3 border-b border-slate-100 pb-4 dark:border-slate-800",
+        "flex flex-col gap-3 border-b border-slate-100 pb-4",
         className
       )}
     >
       <ErpMasterDetailBreadcrumbs items={breadcrumbs} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 text-start">
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-50">
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
             {title}
           </h1>
           {subtitle ? (
@@ -148,7 +148,7 @@ export function ErpMasterCard({
   return (
     <section
       className={cn(
-        "rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700/80 dark:bg-slate-950",
+        "rounded-lg border border-slate-200 bg-white p-6 shadow-sm",
         className
       )}
       aria-labelledby={title ? headingId : undefined}
@@ -156,7 +156,7 @@ export function ErpMasterCard({
       {title ? (
         <h2
           id={headingId}
-          className="mb-4 text-[13px] font-semibold text-slate-800 dark:text-slate-100"
+          className="mb-4 text-[13px] font-semibold text-slate-800"
         >
           {title}
         </h2>
@@ -177,7 +177,7 @@ export function ErpTabsWrapper({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-950",
+        "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
         className
       )}
     >

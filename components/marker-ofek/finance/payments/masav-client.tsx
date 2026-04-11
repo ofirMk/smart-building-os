@@ -116,10 +116,10 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-950">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="max-h-[min(60vh,520px)] overflow-auto">
           <table className="w-full text-right text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-50 text-xs text-slate-500 shadow-sm dark:bg-slate-900 dark:text-slate-400">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-xs text-slate-500 shadow-sm">
               <tr>
                 <th className="w-10 p-2" />
                 <th className="p-2">תאריך</th>
@@ -131,12 +131,12 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
                 <th className="p-2 text-left">סכום לתשלום</th>
               </tr>
             </thead>
-            <tbody className="divide-y dark:divide-slate-800">
+            <tbody className="divide-y">
               {pendingPayments.length === 0 ? (
                 <tr>
                   <td
                     colSpan={8}
-                    className="p-10 text-center text-slate-400 dark:text-slate-500"
+                    className="p-10 text-center text-slate-400"
                   >
                     אין דוחות מאושרים ממתינים לתשלום
                   </td>
@@ -150,8 +150,8 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
                       onClick={() => toggleRow(row.id)}
                       className={`cursor-pointer transition-colors ${
                         checked
-                          ? "bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/30 dark:hover:bg-sky-950/50"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                          ? "bg-sky-50 hover:bg-sky-100"
+                          : "hover:bg-slate-50"
                       }`}
                     >
                       <td className="p-2">
@@ -160,7 +160,7 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
                           checked={checked}
                           readOnly
                           tabIndex={-1}
-                          className="pointer-events-none h-4 w-4 rounded border-slate-300 text-sky-600 dark:border-slate-600"
+                          className="pointer-events-none h-4 w-4 rounded border-slate-300 text-sky-600"
                         />
                       </td>
                       <td className="whitespace-nowrap p-2">
@@ -172,15 +172,15 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
                         {row.contractorName}
                       </td>
                       <td className="p-2">{row.contractNumber || "—"}</td>
-                      <td className="max-w-[160px] truncate p-2 text-slate-600 dark:text-slate-400">
+                      <td className="max-w-[160px] truncate p-2 text-slate-600">
                         {row.projectName}
                       </td>
                       <td className="p-2">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
                             row.paymentSource === "procurement_masav"
-                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                              : "bg-sky-500/15 text-sky-700 dark:text-sky-300"
+                              ? "bg-emerald-500/15 text-emerald-700"
+                              : "bg-sky-500/15 text-sky-700"
                           }`}
                         >
                           {row.paymentSource === "procurement_masav"
@@ -188,7 +188,7 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
                             : "דוח"}
                         </span>
                       </td>
-                      <td className="font-mono text-xs p-2 text-slate-600 dark:text-slate-400">
+                      <td className="font-mono text-xs p-2 text-slate-600">
                         {row.glAccountCode ?? "—"}
                       </td>
                       <td className="p-2 text-left font-medium tabular-nums">
@@ -203,22 +203,22 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/50">
-        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-center gap-2 text-slate-600">
           <Landmark className="size-5 text-slate-400" aria-hidden />
           <span className="text-sm">
             נבחרו{" "}
-            <strong className="text-slate-900 dark:text-slate-100">
+            <strong className="text-slate-900">
               {selectedCount}
             </strong>{" "}
             דוחות
           </span>
         </div>
         <div className="text-start">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             סה״כ לריצת תשלום
           </p>
-          <p className="text-xl font-bold tabular-nums text-slate-900 dark:text-slate-100">
+          <p className="text-xl font-bold tabular-nums text-slate-900">
             {ils.format(selectedTotal)}
           </p>
         </div>

@@ -18,7 +18,7 @@ export default function MarkerOfekHomePage() {
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           מרקר אופק
         </p>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">
           דף הבית
         </h1>
         <p className="text-sm text-muted-foreground">

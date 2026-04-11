@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react"
 import {
   Activity,
   ArrowLeftRight,
+  Building2,
   CreditCard,
   FileEdit,
   Receipt,
@@ -78,6 +79,11 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "מרכז נתוני מאסטר",
         href: "/marker-ofek/master-data",
         icon: Table2,
+      },
+      {
+        title: "הקמת ספק",
+        href: "/marker-ofek/entities/new?kind=supplier&lock=1",
+        icon: Building2,
       },
     ],
   },

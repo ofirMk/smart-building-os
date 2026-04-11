@@ -153,7 +153,7 @@ export function UserPermissionsClient() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#0f172a] rtl" dir="rtl">
+    <div className="bg-white font-sans text-[#0f172a] rtl" dir="rtl">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">
         <header className="pharmacy-hero-card p-6 md:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">

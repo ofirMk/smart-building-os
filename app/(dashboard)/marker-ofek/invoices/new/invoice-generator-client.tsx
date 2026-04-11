@@ -509,7 +509,7 @@ export function InvoiceGeneratorClient({
 
         <div
           className={cn(
-            "order-1 min-h-0 overflow-y-auto p-6 lg:order-2 lg:p-10",
+            "order-1 min-h-0 overflow-visible p-6 lg:order-2 lg:p-10",
             diamond && "bg-slate-950"
           )}
         >

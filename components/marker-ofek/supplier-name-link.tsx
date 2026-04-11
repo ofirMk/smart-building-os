@@ -35,7 +35,7 @@ export function SupplierNameLink({
     <button
       type="button"
       className={cn(
-        "text-start underline-offset-4 transition-colors hover:text-emerald-700 hover:underline dark:hover:text-emerald-400",
+        "text-start underline-offset-4 transition-colors hover:text-emerald-700 hover:underline",
         className
       )}
       onClick={onClick}

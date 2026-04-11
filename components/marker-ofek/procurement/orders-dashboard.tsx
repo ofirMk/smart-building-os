@@ -476,7 +476,7 @@ export function OrdersDashboard() {
                           {(row.status === "partial_receipt" ||
                             shortageNotePoIds.has(row.id)) ? (
                             <span
-                              className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 bg-amber-500/12 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:text-amber-100"
+                              className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 bg-amber-500/12 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900"
                               title="משלוח חלקי או נרשמו הערות חוסר בקבלה"
                             >
                               <AlertTriangle className="size-3" aria-hidden />

@@ -445,7 +445,7 @@ export default function EditMarkerOfekContractPage() {
   const referencePanel = (
     <div className="space-y-4 text-sm leading-relaxed">
       <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">
-        <p className="flex items-center gap-2 font-semibold text-cyan-900 dark:text-cyan-200">
+        <p className="flex items-center gap-2 font-semibold text-cyan-900">
           <BookOpen className="size-4 shrink-0" aria-hidden />
           כתב כמויות (BoQ)
         </p>
@@ -540,7 +540,7 @@ export default function EditMarkerOfekContractPage() {
           <Card className="border-border/70 shadow-sm">
             <CardHeader className="border-b border-border/60 pb-4">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600">
                   <FileSignature className="size-5" aria-hidden />
                 </div>
                 <div className="space-y-1">
@@ -642,7 +642,7 @@ export default function EditMarkerOfekContractPage() {
           <Card className="border-border/70 shadow-sm">
             <CardHeader className="border-b border-border/60 pb-4">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700">
                   <Calculator className="size-5" aria-hidden />
                 </div>
                 <div className="space-y-1">
@@ -731,7 +731,7 @@ export default function EditMarkerOfekContractPage() {
           <Card dir="rtl" className="border-border/70 shadow-sm">
             <CardHeader className="flex flex-col gap-4 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-700 dark:text-violet-400">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-700">
                   <ListPlus className="size-5" aria-hidden />
                 </div>
                 <div className="space-y-1">
@@ -944,7 +944,7 @@ export default function EditMarkerOfekContractPage() {
                     <span className="text-sm font-medium text-foreground">
                       סכום כולל (מחושב מכתב הכמויות)
                     </span>
-                    <span className="text-lg font-bold tabular-nums text-cyan-700 dark:text-cyan-400">
+                    <span className="text-lg font-bold tabular-nums text-cyan-700">
                       {currencyFormatter.format(boqTotal)}
                     </span>
                   </div>
@@ -1093,8 +1093,8 @@ export default function EditMarkerOfekContractPage() {
                         className={cn(
                           "text-lg font-bold tabular-nums",
                           paushalWeightsOk
-                            ? "text-emerald-700 dark:text-emerald-400"
-                            : "text-amber-800 dark:text-amber-300"
+                            ? "text-emerald-700"
+                            : "text-amber-800"
                         )}
                       >
                         {paushalWeightSum}%

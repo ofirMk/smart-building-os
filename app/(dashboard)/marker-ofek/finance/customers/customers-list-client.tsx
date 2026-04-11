@@ -40,7 +40,7 @@ export function CustomersListClient({
           </p>
         </div>
         <Link
-          href="/marker-ofek/customers/new"
+          href="/marker-ofek/entities/new?kind=client&lock=1"
           className={buttonVariants({
             variant: "outline",
             className: "border-slate-200 bg-white shadow-sm",

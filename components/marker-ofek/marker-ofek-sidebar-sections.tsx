@@ -4,7 +4,7 @@
  * תפריט צד — הגדרות עם אייקונים (חייב מודול Client).
  * נתיבים טהורים: `lib/infrastructure/navigation/sidebar-routes`
  * סדר זהב (כרונולוגיית בנייה): ראשי → רכש → מכרזים → פרויקטים → חוזה וחשבונות → הנהלת חשבונות → כספים.
- * אקורדיון קטגוריות (מרקר אופק): `AppSidebar` ב־`components/app-sidebar.tsx`.
+ * אקורדיון קטגוריות (מרקר אופק): מגירת ניווט (`DashboardNavDrawerPanel`).
  */
 import type { LucideIcon } from "lucide-react"
 import {
@@ -122,6 +122,11 @@ export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
         href: "/marker-ofek/master-data",
         icon: Table2,
       },
+      {
+        title: "הקמת ספק",
+        href: "/marker-ofek/entities/new?kind=supplier&lock=1",
+        icon: Building2,
+      },
     ],
   },
   {
@@ -143,7 +148,7 @@ export const HOLDEN_NAV_SECTIONS: SidebarNavSection[] = [
     items: [
       {
         title: "מרכז פיקוד הולדן",
-        href: "/dashboard/holden",
+        href: "/holden",
         icon: Building2,
       },
       { title: "ניהול אנרגיה וטעינה", href: "/ev-management", icon: Zap },

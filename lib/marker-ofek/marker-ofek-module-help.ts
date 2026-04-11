@@ -103,11 +103,11 @@ const PREFIX_HELP: { prefix: string; block: ModuleHelpBlock }[] = [
     },
   },
   {
-    prefix: "/marker-ofek/executive",
+    prefix: "/marker-ofek/command-center",
     block: {
-      title: "דשבורד הנהלה",
+      title: "מרכז הפיקוד",
       paragraphs: [
-        "מדדי תיק פרויקטים, תזרים וסיכונים — לצוות הנהלה.",
+        "מודולים, KPI ומבט תפעולי — נקודת הכניסה המרכזית למרקר אופק.",
       ],
     },
   },

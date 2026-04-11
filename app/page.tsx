@@ -39,7 +39,7 @@ export default function RootPage() {
           </a>
 
           <a
-            href="/dashboard/holden"
+            href="/holden"
             onClick={() => setSelectedCompanyCookie("holden_group")}
             className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-xl hover:shadow-cyan-500/10"
           >

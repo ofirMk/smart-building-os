@@ -56,7 +56,7 @@ type Props = {
 }
 
 const glass =
-  "rounded-2xl border border-white/10 bg-slate-950/40 shadow-[0_0_40px_-12px_rgba(16,185,129,0.35)] backdrop-blur-xl dark:bg-slate-950/60"
+  "rounded-2xl border border-white/10 bg-slate-950/40 shadow-[0_0_40px_-12px_rgba(16,185,129,0.35)] backdrop-blur-xl"
 
 export function MasterDataDashboard({
   initialTab,

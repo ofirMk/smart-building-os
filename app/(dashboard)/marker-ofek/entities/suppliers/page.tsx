@@ -178,7 +178,7 @@ export default function MarkerOfekSuppliersCompliancePage() {
             </>
           }
         />
-        <p className="border-b border-slate-100 px-4 pb-3 text-[12px] text-muted-foreground dark:border-slate-800">
+        <p className="border-b border-slate-100 px-4 pb-3 text-[12px] text-muted-foreground">
           עדכון שדות בזרימת &quot;ספק חדש&quot; בהזמנת רכש או במסך ישות.
         </p>
 
@@ -231,8 +231,8 @@ export default function MarkerOfekSuppliersCompliancePage() {
                           <span
                             className={
                               w === "ok"
-                                ? "text-emerald-700 dark:text-emerald-400"
-                                : "text-orange-700 dark:text-orange-400"
+                                ? "text-emerald-700"
+                                : "text-orange-700"
                             }
                           >
                             {fmtDate(r.withholding_tax_expiry)}
@@ -242,8 +242,8 @@ export default function MarkerOfekSuppliersCompliancePage() {
                           <span
                             className={
                               b === "ok"
-                                ? "text-emerald-700 dark:text-emerald-400"
-                                : "text-orange-700 dark:text-orange-400"
+                                ? "text-emerald-700"
+                                : "text-orange-700"
                             }
                           >
                             {fmtDate(r.bookkeeping_auth_expiry)}

@@ -527,14 +527,14 @@ export default function ProcurementPoDetailPage() {
 
       {pendingCeoApproval ? (
         <section className="rounded-2xl border border-red-500/35 bg-red-500/[0.08] p-4 shadow-sm sm:p-5">
-          <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
+          <div className="flex items-center gap-2 text-red-700">
             <AlertTriangle className="size-5 shrink-0" aria-hidden />
             <h2 className="text-lg font-semibold">Pending CEO Approval</h2>
           </div>
-          <p className="mt-2 text-sm text-red-700/90 dark:text-red-200/90">
+          <p className="mt-2 text-sm text-red-700/90">
             ההזמנה חורגת ממחיר אולטימטיבי ודורשת שתי חתימות לפני הדפסה/שליחה לספק.
           </p>
-          <p className="mt-1 text-xs text-red-700/90 dark:text-red-200/90">
+          <p className="mt-1 text-xs text-red-700/90">
             סטייה: {currencyFormatter.format(Number(po.price_deviation_amount) || 0)} (
             {(Number(po.price_deviation_percent) || 0).toFixed(2)}%)
           </p>
@@ -603,7 +603,7 @@ export default function ProcurementPoDetailPage() {
           role="region"
           aria-label="פריטים בחוסר"
         >
-          <div className="mb-3 flex items-center gap-2 text-amber-900 dark:text-amber-100">
+          <div className="mb-3 flex items-center gap-2 text-amber-900">
             <AlertTriangle className="size-5 shrink-0" aria-hidden />
             <h2 className="text-lg font-semibold">פריטים בחוסר (ממתינים לאספקה)</h2>
           </div>
@@ -651,7 +651,7 @@ export default function ProcurementPoDetailPage() {
                     <TableCell className="text-end tabular-nums">
                       {qtyDisplay.format(got)}
                     </TableCell>
-                    <TableCell className="text-end font-semibold tabular-nums text-amber-800 dark:text-amber-300">
+                    <TableCell className="text-end font-semibold tabular-nums text-amber-800">
                       {qtyDisplay.format(pending)}
                     </TableCell>
                     <TableCell className="text-end tabular-nums">
@@ -676,10 +676,10 @@ export default function ProcurementPoDetailPage() {
                   <dd className="text-end tabular-nums">{qtyDisplay.format(ordered)}</dd>
                   <dt className="text-muted-foreground">התקבל</dt>
                   <dd className="text-end tabular-nums">{qtyDisplay.format(got)}</dd>
-                  <dt className="font-medium text-amber-800 dark:text-amber-300">
+                  <dt className="font-medium text-amber-800">
                     בחוסר
                   </dt>
-                  <dd className="text-end font-semibold tabular-nums text-amber-800 dark:text-amber-300">
+                  <dd className="text-end font-semibold tabular-nums text-amber-800">
                     {qtyDisplay.format(pending)}
                   </dd>
                   <dt className="text-muted-foreground">שווי בחוסר</dt>
@@ -802,7 +802,7 @@ export default function ProcurementPoDetailPage() {
                       className={cn(
                         "text-end tabular-nums",
                         rem > 0 &&
-                          "font-medium text-amber-700 dark:text-amber-400"
+                          "font-medium text-amber-700"
                       )}
                     >
                       {qtyDisplay.format(rem)}

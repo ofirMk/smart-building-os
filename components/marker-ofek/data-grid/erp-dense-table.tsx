@@ -14,14 +14,14 @@ import { cn } from "@/lib/utils"
 
 /** Header cells sit on `ErpDenseHeaderRow` background — no second bg on th. */
 const denseHead =
-  "h-9 px-2 py-1.5 text-start text-[11px] font-semibold normal-case tracking-normal text-slate-700 dark:text-slate-200 [&:has([role=checkbox])]:pe-0"
+  "h-9 px-2 py-1.5 text-start text-[11px] font-semibold normal-case tracking-normal text-slate-700 [&:has([role=checkbox])]:pe-0"
 const denseCell =
   "px-2 py-1.5 text-[13px] leading-snug text-foreground [&:has([role=checkbox])]:pe-0"
 const interactiveRow =
-  "cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/80"
+  "cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
 
 const staticRow =
-  "border-b border-slate-100 hover:bg-transparent dark:border-slate-800 dark:hover:bg-transparent"
+  "border-b border-slate-100 hover:bg-transparent"
 
 /** Dense ERP table — 13px body, compact header. Use inside `ErpDataCard`. */
 export function ErpDenseTable({
@@ -43,7 +43,7 @@ export function ErpDenseHeaderRow({
   return (
     <TableRow
       className={cn(
-        "border-b border-slate-200 bg-slate-100/50 hover:bg-slate-100/50 dark:border-slate-800 dark:bg-slate-800/60 dark:hover:bg-slate-800/60",
+        "border-b border-slate-200 bg-slate-100/50 hover:bg-slate-100/50",
         className
       )}
       {...props}

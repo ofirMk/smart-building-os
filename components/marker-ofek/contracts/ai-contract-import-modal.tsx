@@ -202,8 +202,8 @@ export function AiContractImportModal({
               className={cn(
                 "flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors",
                 isDragging
-                  ? "border-blue-500 bg-blue-50/80 dark:bg-blue-950/30"
-                  : "border-slate-300 bg-slate-50/50 hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900/40",
+                  ? "border-blue-500 bg-blue-50/80"
+                  : "border-slate-300 bg-slate-50/50 hover:border-slate-400",
                 (isPending || isSavingDraft) && "pointer-events-none opacity-60"
               )}
             >
@@ -224,7 +224,7 @@ export function AiContractImportModal({
                 ) : (
                   <Upload className="size-10 text-slate-400" />
                 )}
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                <span className="text-sm font-medium text-slate-700">
                   {isPending
                     ? "ה-AI מנתח את החוזה..."
                     : "גררו קובץ לכאן או לחצו לבחירה"}
@@ -236,14 +236,14 @@ export function AiContractImportModal({
             </div>
 
             {loadError ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
                 {loadError}
               </p>
             ) : null}
 
             {draft ? (
-              <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-start dark:border-slate-700 dark:bg-slate-950">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-start">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                   <FileUp className="size-4" />
                   טיוטה לביקור (Human in the Loop)
                 </h3>
@@ -288,7 +288,7 @@ export function AiContractImportModal({
                     </p>
                     <table className="w-full min-w-[480px] border-collapse text-[11px]">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-start dark:border-slate-700 dark:bg-slate-900">
+                        <tr className="border-b border-slate-200 bg-slate-50 text-start">
                           <th className="p-1.5">סעיף</th>
                           <th className="p-1.5">תיאור</th>
                           <th className="p-1.5">יח׳</th>
@@ -300,7 +300,7 @@ export function AiContractImportModal({
                         {draft.boqRows.map((row, i) => (
                           <tr
                             key={`${row.sectionCode}-${i}`}
-                            className="border-b border-slate-100 dark:border-slate-800"
+                            className="border-b border-slate-100"
                           >
                             <td className="p-1.5 font-mono">{row.sectionCode}</td>
                             <td className="p-1.5">{row.description}</td>
@@ -321,7 +321,7 @@ export function AiContractImportModal({
                     </p>
                     <table className="w-full min-w-[400px] border-collapse text-[11px]">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-start dark:border-slate-700 dark:bg-slate-900">
+                        <tr className="border-b border-slate-200 bg-slate-50 text-start">
                           <th className="p-1.5">סעיף</th>
                           <th className="p-1.5">תיאור</th>
                           <th className="p-1.5">משקל %</th>
@@ -331,7 +331,7 @@ export function AiContractImportModal({
                         {draft.paushalRows.map((row, i) => (
                           <tr
                             key={`${row.sectionCode}-${i}`}
-                            className="border-b border-slate-100 dark:border-slate-800"
+                            className="border-b border-slate-100"
                           >
                             <td className="p-1.5 font-mono">{row.sectionCode}</td>
                             <td className="p-1.5">{row.description}</td>
@@ -343,7 +343,7 @@ export function AiContractImportModal({
                   </div>
                 ) : null}
 
-                <details className="rounded border border-slate-100 dark:border-slate-800">
+                <details className="rounded border border-slate-100">
                   <summary className="cursor-pointer px-2 py-1.5 text-[11px] text-slate-500">
                     JSON מלא (למפתחים)
                   </summary>
@@ -396,7 +396,7 @@ function ReviewRow({
   return (
     <div className={cn("flex flex-col gap-0.5", className)}>
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-mono text-[11px] text-slate-900 break-all dark:text-slate-100" dir="ltr">
+      <dd className="font-mono text-[11px] text-slate-900 break-all" dir="ltr">
         {value}
       </dd>
     </div>

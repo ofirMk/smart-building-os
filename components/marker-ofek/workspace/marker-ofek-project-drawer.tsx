@@ -281,7 +281,7 @@ export function MarkerOfekProjectDrawer() {
                   </div>
                   <div className="flex justify-between gap-2">
                     <dt className="text-muted-foreground">עלות רכש (הזמנות)</dt>
-                    <dd className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                    <dd className="font-semibold tabular-nums text-amber-700">
                       {actualCost != null ? currency.format(actualCost) : "—"}
                     </dd>
                   </div>
@@ -292,7 +292,7 @@ export function MarkerOfekProjectDrawer() {
                         "font-bold tabular-nums",
                         variance != null && variance < 0
                           ? "text-destructive"
-                          : "text-emerald-600 dark:text-emerald-400"
+                          : "text-emerald-600"
                       )}
                     >
                       {variance != null ? currency.format(variance) : "—"}
@@ -305,7 +305,7 @@ export function MarkerOfekProjectDrawer() {
                 <ClipboardList className="mt-0.5 size-5 shrink-0 text-violet-600" />
                 <div>
                   <p className="text-sm font-medium">משימות פתוחות</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums text-violet-700 dark:text-violet-300">
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-violet-700">
                     {pendingTasks ?? "—"}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">

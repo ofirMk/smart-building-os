@@ -97,7 +97,7 @@ export async function upsertOverheadRegistryItem(input: {
       const { error } = await supabase.from("mo_overhead_registry").update(payload).eq("id", id)
       if (error) return { ok: false, error: error.message }
       revalidatePath("/marker-ofek/finance/overhead")
-      revalidatePath("/marker-ofek/executive")
+      revalidatePath("/marker-ofek/command-center")
       revalidatePath("/management")
       return { ok: true, id }
     }
@@ -108,7 +108,7 @@ export async function upsertOverheadRegistryItem(input: {
       .single()
     if (error || !data?.id) return { ok: false, error: error?.message ?? "שמירה נכשלה" }
     revalidatePath("/marker-ofek/finance/overhead")
-    revalidatePath("/marker-ofek/executive")
+    revalidatePath("/marker-ofek/command-center")
     revalidatePath("/management")
     return { ok: true, id: data.id as string }
   } catch (e) {
@@ -127,7 +127,7 @@ export async function deleteOverheadRegistryItem(
     const { error } = await gate.supabase.from("mo_overhead_registry").delete().eq("id", tid)
     if (error) return { ok: false, error: error.message }
     revalidatePath("/marker-ofek/finance/overhead")
-    revalidatePath("/marker-ofek/executive")
+    revalidatePath("/marker-ofek/command-center")
     revalidatePath("/management")
     return { ok: true }
   } catch (e) {

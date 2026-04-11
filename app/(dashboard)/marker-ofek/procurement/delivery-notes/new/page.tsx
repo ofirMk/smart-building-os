@@ -156,25 +156,25 @@ export default function NewDeliveryNotePage() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-white p-8 font-sans text-slate-900 dark:bg-background dark:text-foreground"
+      className="bg-white p-8 font-sans text-slate-900"
     >
-      <div className="mx-auto mb-8 flex max-w-4xl items-center justify-between border-b border-slate-100 pb-6 dark:border-border">
+      <div className="mx-auto mb-8 flex max-w-4xl items-center justify-between border-b border-slate-100 pb-6">
         <div className="flex items-center gap-4">
-          <div className="rounded-full bg-slate-50 p-3 text-indigo-600 dark:bg-muted dark:text-indigo-400">
+          <div className="rounded-full bg-slate-50 p-3 text-indigo-600">
             <Package size={24} aria-hidden />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-foreground">
+            <h1 className="text-xl font-bold text-slate-900">
               קליטת סחורה - תעודת משלוח
             </h1>
-            <p className="text-sm text-slate-400 dark:text-muted-foreground">
+            <p className="text-sm text-slate-400">
               רישום ומעקב מלאי פרויקטלי
             </p>
           </div>
         </div>
         <Button
           variant="ghost"
-          className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+          className="text-slate-400 hover:text-indigo-600"
           render={
             <Link href="/marker-ofek/procurement" className="inline-flex items-center gap-2">
               <ArrowRight className="size-[18px]" aria-hidden />
@@ -185,12 +185,12 @@ export default function NewDeliveryNotePage() {
       </div>
 
       <form onSubmit={onSubmit} className="mx-auto grid max-w-4xl gap-8">
-        <Card className="border-slate-100 bg-white p-8 shadow-sm dark:border-border dark:bg-card">
+        <Card className="border-slate-100 bg-white p-8 shadow-sm">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label
                 htmlFor="projectId"
-                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500"
               >
                 בחירת פרויקט
               </Label>
@@ -201,7 +201,7 @@ export default function NewDeliveryNotePage() {
               >
                 <SelectTrigger
                   id="projectId"
-                  className="h-10 border-slate-200 bg-white dark:border-input dark:bg-background"
+                  className="h-10 border-slate-200 bg-white"
                 >
                   <SelectValue placeholder="בחר פרויקט..." />
                 </SelectTrigger>
@@ -221,13 +221,13 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="itemSearch"
-                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500"
               >
                 חיפוש פריט מהקטלוג
               </Label>
               <div className="relative">
                 <Search
-                  className="pointer-events-none absolute right-3 top-1/2 size-[18px] -translate-y-1/2 text-slate-300 dark:text-muted-foreground"
+                  className="pointer-events-none absolute right-3 top-1/2 size-[18px] -translate-y-1/2 text-slate-300"
                   aria-hidden
                 />
                 <Input
@@ -235,7 +235,7 @@ export default function NewDeliveryNotePage() {
                   value={itemSearch}
                   onChange={(e) => setItemSearch(e.target.value)}
                   placeholder="חפש לפי תיאור או SKU..."
-                  className="border-slate-200 pe-10 dark:border-input"
+                  className="border-slate-200 pe-10"
                   disabled={loading || submitting}
                 />
               </div>
@@ -244,7 +244,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2 md:col-span-2">
               <Label
                 htmlFor="itemCatalogId"
-                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500"
               >
                 פריט מלאי
               </Label>
@@ -255,7 +255,7 @@ export default function NewDeliveryNotePage() {
               >
                 <SelectTrigger
                   id="itemCatalogId"
-                  className="h-10 border-slate-200 bg-white dark:border-input dark:bg-background"
+                  className="h-10 border-slate-200 bg-white"
                 >
                   <SelectValue placeholder="בחר פריט מהקטלוג" />
                 </SelectTrigger>
@@ -273,7 +273,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="quantity"
-                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500"
               >
                 כמות
               </Label>
@@ -286,7 +286,7 @@ export default function NewDeliveryNotePage() {
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="0.00"
-                className="border-slate-200 dark:border-input"
+                className="border-slate-200"
                 disabled={submitting}
               />
             </div>
@@ -294,7 +294,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2">
               <Label
                 htmlFor="unit"
-                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500"
               >
                 יחידה
               </Label>
@@ -303,7 +303,7 @@ export default function NewDeliveryNotePage() {
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 placeholder={'יח\', ק"ג, מ"ק...'}
-                className="border-slate-200 dark:border-input"
+                className="border-slate-200"
                 disabled={submitting}
               />
             </div>
@@ -311,7 +311,7 @@ export default function NewDeliveryNotePage() {
             <div className="space-y-2 md:col-span-2">
               <Label
                 htmlFor="notes"
-                className="me-1 text-xs font-bold uppercase text-slate-500 dark:text-muted-foreground"
+                className="me-1 text-xs font-bold uppercase text-slate-500"
               >
                 הערות / אסמכתא
               </Label>
@@ -320,13 +320,13 @@ export default function NewDeliveryNotePage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="מספר תעודה, ספק, הערות קליטה..."
-                className="min-h-[100px] rounded-md border-slate-200 bg-white text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-input dark:bg-background"
+                className="min-h-[100px] rounded-md border-slate-200 bg-white text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 disabled={submitting}
               />
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end border-t border-slate-50 pt-6 dark:border-border">
+          <div className="mt-8 flex justify-end border-t border-slate-50 pt-6">
             <Button
               type="submit"
               disabled={submitting || loading}

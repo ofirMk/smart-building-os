@@ -7,9 +7,9 @@ begin
       'pending',
       'authorized',
       'rejected'
-    )
-  end if
-end
+    );
+  end if;
+end;
 $$;
 
 do $$
@@ -19,9 +19,9 @@ begin
       'pending',
       'synced',
       'failed'
-    )
-  end if
-end
+    );
+  end if;
+end;
 $$;
 
 alter table public.warehouse_receipts

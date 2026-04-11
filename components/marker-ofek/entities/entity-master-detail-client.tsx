@@ -108,14 +108,14 @@ export function EntityMasterDetailClient({
       status={initialData.status || "פעיל"}
     >
       <div className="flex h-full flex-col space-y-4">
-        <div className="flex items-center space-x-1 space-x-reverse border-b border-slate-200 pb-px dark:border-slate-700">
+        <div className="flex items-center space-x-1 space-x-reverse border-b border-slate-200 pb-px">
           <button
             type="button"
             onClick={() => setActiveTab("financials")}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
               activeTab === "financials"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400"
+                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
             }`}
           >
             <Wallet className="h-4 w-4" />
@@ -127,13 +127,13 @@ export function EntityMasterDetailClient({
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
               activeTab === "contracts"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400"
+                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
             }`}
           >
             <FileText className="h-4 w-4" />
             חוזים
             {contractRows.length > 0 ? (
-              <span className="mr-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <span className="mr-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                 {contractRows.length}
               </span>
             ) : null}
@@ -144,7 +144,7 @@ export function EntityMasterDetailClient({
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
               activeTab === "contacts"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400"
+                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
             }`}
           >
             <Users className="h-4 w-4" />
@@ -156,7 +156,7 @@ export function EntityMasterDetailClient({
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
               activeTab === "invoices"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400"
+                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
             }`}
           >
             <FileDigit className="h-4 w-4" />
@@ -164,11 +164,11 @@ export function EntityMasterDetailClient({
           </button>
         </div>
 
-        <div className="flex-1 rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-950">
+        <div className="flex-1 rounded-lg border border-slate-200 bg-white shadow-sm">
           {activeTab === "financials" ? (
             <form onSubmit={handleSubmit(onSubmit)} className="p-6">
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+                <h2 className="text-xl font-semibold text-slate-800">
                   הגדרות ספק/לקוח במערכת
                 </h2>
                 <button
@@ -187,12 +187,12 @@ export function EntityMasterDetailClient({
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-medium text-slate-700">
                     תנאי תשלום
                   </label>
                   <input
                     {...register("payment_term_code")}
-                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="למשל: +30"
                   />
                   {errors.payment_term_code ? (
@@ -202,12 +202,12 @@ export function EntityMasterDetailClient({
                   ) : null}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-medium text-slate-700">
                     מספר ספק ERP
                   </label>
                   <input
                     {...register("erp_supplier_number")}
-                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="מזהה מערכת קודמת"
                   />
                   {errors.erp_supplier_number ? (
@@ -217,12 +217,12 @@ export function EntityMasterDetailClient({
                   ) : null}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-medium text-slate-700">
                     ח.פ / ע.מ
                   </label>
                   <input
                     {...register("legal_id")}
-                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="ח.פ או ת.ז תקין"
                   />
                   {errors.legal_id ? (
@@ -230,7 +230,7 @@ export function EntityMasterDetailClient({
                   ) : null}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-medium text-slate-700">
                     % ניכוי מס במקור
                   </label>
                   <input
@@ -243,7 +243,7 @@ export function EntityMasterDetailClient({
                         return Number.isFinite(n) ? n : null
                       },
                     })}
-                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+                    className="rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0 עד 100"
                   />
                   {errors.withholding_tax_pct ? (
@@ -262,7 +262,7 @@ export function EntityMasterDetailClient({
           {activeTab === "contracts" ? (
             <div className="p-6">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+                <h2 className="text-xl font-semibold text-slate-800">
                   ניהול חוזים
                 </h2>
                 <button
@@ -279,16 +279,16 @@ export function EntityMasterDetailClient({
               </div>
 
               {contractRows.length === 0 ? (
-                <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40">
+                <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50">
                   <div className="text-center">
                     <FileText className="mx-auto mb-2 h-10 w-10 text-slate-400" />
-                    <p className="font-medium text-slate-600 dark:text-slate-300">
+                    <p className="font-medium text-slate-600">
                       אין חוזים מקושרים לישות זו
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
                   <ErpDenseTable>
                     <ErpDenseTableHeader>
                       <ErpDenseHeaderRow>
@@ -317,7 +317,7 @@ export function EntityMasterDetailClient({
                             <ErpDenseTableCell>
                               <Link
                                 href={`/marker-ofek/contracts/${c.id}`}
-                                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                className="font-medium text-blue-600 hover:underline"
                               >
                                 {label}
                               </Link>

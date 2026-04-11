@@ -1369,8 +1369,8 @@ export default function NewPurchaseOrderFromBoqPage() {
 
   const warningLevelText = isCriticalWarning ? "אזהרה קריטית" : "אזהרה מתונה"
   const warningLevelStyles = isCriticalWarning
-    ? "border-red-500/35 bg-red-500/[0.08] text-red-700 dark:text-red-300"
-    : "border-amber-500/35 bg-amber-500/[0.08] text-amber-700 dark:text-amber-300"
+    ? "border-red-500/35 bg-red-500/[0.08] text-red-700"
+    : "border-amber-500/35 bg-amber-500/[0.08] text-amber-700"
 
   const warningMessage = `שים לב: הזמנה זו יקרה ב-${warningDiffRaw.toLocaleString(
     "he-IL",
@@ -1414,7 +1414,7 @@ export default function NewPurchaseOrderFromBoqPage() {
 
       <header className="space-y-2 text-start">
         <div className="flex items-center gap-3">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-700">
             <ShoppingCart className="size-6" aria-hidden />
           </span>
           <div>
@@ -1481,7 +1481,7 @@ export default function NewPurchaseOrderFromBoqPage() {
             </div>
             {supplierTaxUi.alertMessage ? (
               <div
-                className="rounded-lg border border-orange-500/45 bg-orange-500/10 px-4 py-3 text-sm text-orange-950 dark:text-orange-50 md:col-span-2"
+                className="rounded-lg border border-orange-500/45 bg-orange-500/10 px-4 py-3 text-sm text-orange-950 md:col-span-2"
                 role="status"
               >
                 <p className="font-medium">{supplierTaxUi.alertMessage}</p>
@@ -1861,7 +1861,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                                 {currencyFormatter.format(row.lastPrice)}
                               </p>
                               {idx === 0 ? (
-                                <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <p className="text-[10px] font-semibold text-emerald-600">
                                   ספק מועדף
                                 </p>
                               ) : null}
@@ -1881,7 +1881,7 @@ export default function NewPurchaseOrderFromBoqPage() {
           <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-start">
               <p className="text-sm text-muted-foreground">סה״כ ערך ההזמנה</p>
-              <p className="text-2xl font-bold tabular-nums text-emerald-800 dark:text-emerald-300">
+              <p className="text-2xl font-bold tabular-nums text-emerald-800">
                 {currencyFormatter.format(poTotal)}
               </p>
               {selectedCount > 0 ? (
@@ -1901,7 +1901,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                   className={cn(
                     "tabular-nums",
                     costSummary.potentialSavings > 0
-                      ? "font-semibold text-red-600 dark:text-red-400"
+                      ? "font-semibold text-red-600"
                       : "text-muted-foreground"
                   )}
                 >
@@ -1949,7 +1949,7 @@ export default function NewPurchaseOrderFromBoqPage() {
           <Card className="border-violet-500/25 bg-violet-500/[0.04] shadow-sm">
             <CardHeader className="pb-2 text-start">
               <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingDown className="size-4 text-violet-600 dark:text-violet-400" />
+                <TrendingDown className="size-4 text-violet-600" />
                 ניתוח אופטימיזציה (כלל 8%)
               </CardTitle>
             </CardHeader>
@@ -2053,9 +2053,9 @@ export default function NewPurchaseOrderFromBoqPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {isCriticalWarning ? (
-                <AlertTriangle className="size-4 text-red-600 dark:text-red-400" />
+                <AlertTriangle className="size-4 text-red-600" />
               ) : (
-                <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+                <AlertTriangle className="size-4 text-amber-600" />
               )}
               Price Guard - אישור חריגה
             </DialogTitle>
@@ -2153,7 +2153,7 @@ export default function NewPurchaseOrderFromBoqPage() {
               יצירה מהירה מתוך מסך ההזמנה (F2). הספק יישמר ב־MDM וייבחר בטופס.
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          <div className="min-h-0 flex-1 overflow-visible px-6 py-4">
             <div className="space-y-6">
               <div className="space-y-4">
                 <p className="text-sm font-semibold text-foreground">

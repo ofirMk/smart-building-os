@@ -97,7 +97,7 @@ export function GlobalProjectSearch() {
               onMouseDown={() => navigateToProject(project.id)}
               className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-start text-sm hover:bg-violet-500/10"
             >
-              <span className="truncate text-slate-800 dark:text-slate-100">
+              <span className="truncate text-slate-800">
                 {project.name}
               </span>
               <span className="shrink-0 text-xs text-slate-500">

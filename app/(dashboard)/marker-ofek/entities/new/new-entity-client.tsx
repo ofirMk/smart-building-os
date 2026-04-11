@@ -23,6 +23,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  ERP_DENSE_INPUT_CLASS,
+  ERP_DENSE_LABEL_CLASS,
+} from "@/components/layout/DenseMasterDetailTemplate"
+import {
   listErpPaymentTermsForEntityForm,
   quickCreateEntity,
 } from "@/lib/marker-ofek/erp-quick-create-actions"
@@ -34,9 +38,15 @@ const FINANCIAL_KINDS: EntityKind[] = ["supplier", "subcontractor", "client"]
 
 export function NewEntityClient({
   initialKind,
+  embedded = false,
+  lockKind = false,
 }: {
-  /** מסלול הקמת מזמין (לקוח) — מ־/marker-ofek/customers/new */
+  /** מסלול הקמת מזמין (לקוח) — `?kind=client` מ־/marker-ofek/entities/new */
   initialKind?: EntityKind
+  /** ללא כותרת/קישור חיצוניים — לשימוש בתוך DenseMasterDetailTemplate */
+  embedded?: boolean
+  /** מסתיר בחירת סוג — `?kind=supplier&lock=1` */
+  lockKind?: boolean
 } = {}) {
   const [kind, setKind] = React.useState<EntityKind>(initialKind ?? "supplier")
   const [name, setName] = React.useState("")
@@ -105,6 +115,9 @@ export function NewEntityClient({
     }
   }
 
+  const denseIn = embedded ? ERP_DENSE_INPUT_CLASS : undefined
+  const denseLbl = embedded ? ERP_DENSE_LABEL_CLASS : undefined
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!canSave) {
@@ -146,44 +159,60 @@ export function NewEntityClient({
     }
   }
 
+  const shellClass = embedded
+    ? "flex w-full min-w-0 flex-col gap-2"
+    : "mx-auto flex w-full max-w-5xl flex-col gap-6 pb-12 pt-2"
+
   return (
-    <div
-      dir="rtl"
-      lang="he"
-      className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-12 pt-2"
-    >
-      <Link
-        href="/marker-ofek/entities"
-        className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+    <div dir="rtl" lang="he" className={shellClass}>
+      {!embedded ? (
+        <>
+          <Link
+            href="/marker-ofek/entities"
+            className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            חזרה לישויות
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">ישות חדשה</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              לקוח או ספק — מזהים רק דרך FK (לא טקסט חופשי בשדות קשר).
+            </p>
+          </div>
+        </>
+      ) : null}
+      <form
+        onSubmit={(e) => void handleSave(e)}
+        className={embedded ? "space-y-2" : "space-y-6"}
       >
-        חזרה לישויות
-      </Link>
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">ישות חדשה</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          לקוח או ספק — מזהים רק דרך FK (לא טקסט חופשי בשדות קשר).
-        </p>
-      </div>
-      <form onSubmit={(e) => void handleSave(e)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>סוג ופרטים</CardTitle>
-            <CardDescription>
+        <Card className={embedded ? "border-border/70 shadow-sm" : undefined}>
+          <CardHeader
+            className={embedded ? "space-y-0.5 px-3 py-2" : undefined}
+          >
+            <CardTitle className={embedded ? "text-sm" : undefined}>
+              סוג ופרטים
+            </CardTitle>
+            <CardDescription
+              className={embedded ? "text-[11px] leading-snug" : undefined}
+            >
               ספק וקבלן משנה דורשים ח.פ / ע.מ (אכיפת שרת + DB).
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>סוג</Label>
-              <Select
-                value={kind}
-                onValueChange={(v) =>
-                  setKind((v as EntityKind) ?? "supplier")
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
+          <CardContent
+            className={embedded ? "space-y-2 px-3 pb-3 pt-0" : "space-y-4"}
+          >
+            {!lockKind ? (
+              <div className={embedded ? "space-y-1" : "space-y-2"}>
+                <Label className={denseLbl}>סוג</Label>
+                <Select
+                  value={kind}
+                  onValueChange={(v) =>
+                    setKind((v as EntityKind) ?? "supplier")
+                  }
+                >
+                  <SelectTrigger className={cn("w-full", denseIn)}>
+                    <SelectValue />
+                  </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="supplier">ספק</SelectItem>
                   <SelectItem value="subcontractor">קבלן משנה</SelectItem>
@@ -191,14 +220,18 @@ export function NewEntityClient({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="ent-name">שם (חובה)</Label>
+            ) : null}
+            <div className={embedded ? "space-y-1" : "space-y-2"}>
+              <Label htmlFor="ent-name" className={denseLbl}>
+                שם (חובה)
+              </Label>
               <Input
                 id="ent-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 dir="rtl"
                 className={cn(
+                  denseIn,
                   !canSave &&
                     name.length > 0 &&
                     name.trim().length < 2 &&
@@ -206,32 +239,42 @@ export function NewEntityClient({
                 )}
               />
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="ent-email">אימייל</Label>
+            <div
+              className={
+                embedded
+                  ? "grid grid-cols-1 gap-2 sm:grid-cols-2"
+                  : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+              }
+            >
+              <div className={embedded ? "space-y-1" : "space-y-2"}>
+                <Label htmlFor="ent-email" className={denseLbl}>
+                  אימייל
+                </Label>
                 <Input
                   id="ent-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   dir="ltr"
-                  className="font-mono text-sm"
+                  className={cn("font-mono text-sm", denseIn)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="ent-phone">טלפון</Label>
+              <div className={embedded ? "space-y-1" : "space-y-2"}>
+                <Label htmlFor="ent-phone" className={denseLbl}>
+                  טלפון
+                </Label>
                 <Input
                   id="ent-phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   dir="ltr"
-                  className="font-mono text-sm"
+                  className={cn("font-mono text-sm", denseIn)}
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="ent-legal">
+            <div className={embedded ? "space-y-1" : "space-y-2"}>
+              <Label htmlFor="ent-legal" className={denseLbl}>
                 ח.פ / ע.מ {supplierNeedsLegal ? "(חובה)" : "(אופציונלי)"}
               </Label>
               <Input
@@ -241,6 +284,7 @@ export function NewEntityClient({
                 dir="ltr"
                 className={cn(
                   "font-mono",
+                  denseIn,
                   supplierNeedsLegal &&
                     !legalId.trim() &&
                     name.trim().length >= 2 &&
@@ -248,43 +292,80 @@ export function NewEntityClient({
                 )}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="ent-addr">כתובת</Label>
+            <div className={embedded ? "space-y-1" : "space-y-2"}>
+              <Label htmlFor="ent-addr" className={denseLbl}>
+                כתובת
+              </Label>
               <Input
                 id="ent-addr"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 dir="rtl"
+                className={cn(denseIn)}
               />
             </div>
           </CardContent>
         </Card>
 
         {showFinancialDetails && (
-          <Card className="border-2 border-primary/20 shadow-sm">
-            <CardHeader className="space-y-1 border-b bg-muted/50 pb-4">
-              <CardTitle className="text-xl font-bold tracking-tight text-foreground">
+          <Card
+            className={
+              embedded
+                ? "border border-primary/25 shadow-sm"
+                : "border-2 border-primary/20 shadow-sm"
+            }
+          >
+            <CardHeader
+              className={
+                embedded
+                  ? "space-y-0.5 border-b bg-muted/40 px-3 py-2"
+                  : "space-y-1 border-b bg-muted/50 pb-4"
+              }
+            >
+              <CardTitle
+                className={
+                  embedded
+                    ? "text-sm font-semibold text-foreground"
+                    : "text-xl font-bold tracking-tight text-foreground"
+                }
+              >
                 פרטים פיננסיים והנהלת חשבונות
               </CardTitle>
-              <CardDescription>
+              <CardDescription
+                className={embedded ? "text-[11px] leading-snug" : undefined}
+              >
                 כל השדות למטה ניתנים לעריכה — נשמרים ב-MDM יחד עם הישות.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-                  <Label htmlFor="ent-tax-id">ח.פ / ע.מ (tax_id)</Label>
+            <CardContent className={embedded ? "px-3 pb-3 pt-2" : "pt-6"}>
+              <div
+                className={
+                  embedded
+                    ? "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+                    : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                }
+              >
+                <div
+                  className={
+                    embedded
+                      ? "space-y-1 sm:col-span-2 lg:col-span-3"
+                      : "space-y-2 sm:col-span-2 lg:col-span-3"
+                  }
+                >
+                  <Label htmlFor="ent-tax-id" className={denseLbl}>
+                    ח.פ / ע.מ (tax_id)
+                  </Label>
                   <Input
                     id="ent-tax-id"
                     value={taxId}
                     onChange={(e) => setTaxId(e.target.value)}
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                     placeholder="מזהה מס / עוסק מורשה"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ent-erp-sup">
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label htmlFor="ent-erp-sup" className={denseLbl}>
                     מספר ספק פריוריטי (erp_supplier_number)
                   </Label>
                   <Input
@@ -292,11 +373,11 @@ export function NewEntityClient({
                     value={erpSupplierNumber}
                     onChange={(e) => setErpSupplierNumber(e.target.value)}
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ent-erp-cust">
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label htmlFor="ent-erp-cust" className={denseLbl}>
                     מספר לקוח פריוריטי (erp_customer_number)
                   </Label>
                   <Input
@@ -304,11 +385,13 @@ export function NewEntityClient({
                     value={erpCustomerNumber}
                     onChange={(e) => setErpCustomerNumber(e.target.value)}
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>תנאי תשלום (payment_term_code)</Label>
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label className={denseLbl}>
+                    תנאי תשלום (payment_term_code)
+                  </Label>
                   <Select
                     value={paymentTermCode || "__none__"}
                     onValueChange={(v) =>
@@ -317,7 +400,7 @@ export function NewEntityClient({
                       )
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className={cn("w-full", denseIn)}>
                       <SelectValue placeholder="בחרו קוד" />
                     </SelectTrigger>
                     <SelectContent>
@@ -330,8 +413,8 @@ export function NewEntityClient({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ent-wh-pct">
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label htmlFor="ent-wh-pct" className={denseLbl}>
                     % ניכוי מס במקור (withholding_tax_pct)
                   </Label>
                   <Input
@@ -344,12 +427,12 @@ export function NewEntityClient({
                     value={withholdingTaxPct}
                     onChange={(e) => setWithholdingTaxPct(e.target.value)}
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                     placeholder="0–100"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ent-gl">
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label htmlFor="ent-gl" className={denseLbl}>
                     כרטיס הנה״ח (gl_account_code)
                   </Label>
                   <Input
@@ -357,11 +440,11 @@ export function NewEntityClient({
                     value={glAccountCode}
                     onChange={(e) => setGlAccountCode(e.target.value)}
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ent-book-exp">
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label htmlFor="ent-book-exp" className={denseLbl}>
                     תוקף אישור ניהול ספרים (bookkeeping_cert_expiry)
                   </Label>
                   <Input
@@ -372,11 +455,11 @@ export function NewEntityClient({
                       setBookkeepingCertExpiresAt(e.target.value)
                     }
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ent-wh-exp">
+                <div className={embedded ? "space-y-1" : "space-y-2"}>
+                  <Label htmlFor="ent-wh-exp" className={denseLbl}>
                     תוקף אישור ניכוי מס (withholding_tax_expiry)
                   </Label>
                   <Input
@@ -387,14 +470,19 @@ export function NewEntityClient({
                       setWithholdingTaxExpiresAt(e.target.value)
                     }
                     dir="ltr"
-                    className="font-mono text-sm"
+                    className={cn("font-mono text-sm", denseIn)}
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
-        <Button type="submit" disabled={pending || !canSave} className="gap-2">
+        <Button
+          type="submit"
+          disabled={pending || !canSave}
+          size={embedded ? "sm" : "default"}
+          className="gap-2"
+        >
           {pending ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (

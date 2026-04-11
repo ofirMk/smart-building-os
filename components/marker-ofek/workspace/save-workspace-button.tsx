@@ -6,7 +6,6 @@ import { Save } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { useSidebar } from "@/components/ui/sidebar"
 import { saveMyWorkspaceSettings } from "@/lib/marker-ofek/user-workspace-actions"
 
 import { useSmartWorkspace } from "./smart-workspace-context"
@@ -15,7 +14,6 @@ export function SaveWorkspaceButton() {
   const ws = useSmartWorkspace()
   const pathname = usePathname()
   const router = useRouter()
-  const { open } = useSidebar()
   const [pending, startTransition] = React.useTransition()
 
   function onSave() {
@@ -44,7 +42,7 @@ export function SaveWorkspaceButton() {
         ...(ws.commandCenterLayout != null
           ? { commandCenterLayout: ws.commandCenterLayout }
           : {}),
-        sidebarExpanded: open,
+        sidebarExpanded: false,
         persistScrollForPath: {
           path: pathname ?? "/",
           y: typeof window !== "undefined" ? window.scrollY : 0,

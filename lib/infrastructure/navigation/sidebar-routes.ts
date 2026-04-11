@@ -39,8 +39,7 @@ const FACILITY_CONTEXT_PATH_PREFIXES: readonly string[] = [
   "/tenants",
   "/settings",
   "/portal",
-  "/dashboard/holden",
-  "/billing",
+  "/holden",
   "/documents",
   "/vendors",
   "/ev-management",
@@ -55,7 +54,7 @@ function pathnameMatchesFacilityPrefixes(pathname: string): boolean {
 export function isFacilityManagementContext(pathname: string | null): boolean {
   if (pathname == null || pathname === "") return false
   if (isMarkerOfekExecutiveContext(pathname)) return false
-  if (pathname === "/dashboard/holden") return true
+  if (pathname === "/holden") return true
   return pathnameMatchesFacilityPrefixes(pathname)
 }
 

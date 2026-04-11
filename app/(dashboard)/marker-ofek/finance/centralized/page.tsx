@@ -466,7 +466,7 @@ export default function MarkerOfekCentralizedInvoicePage() {
               תצוגת סיכום לדוגמה (מוק) — לפי פרויקט וחודש נבחרים במסננים למעלה
             </p>
           </div>
-          <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-900 dark:text-amber-100">
+          <span className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-900">
             דמו
           </span>
         </div>

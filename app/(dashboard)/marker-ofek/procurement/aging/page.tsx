@@ -382,7 +382,7 @@ export default function ProcurementAgingPage() {
                       className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3"
                     >
                       <span className="min-w-0 truncate font-medium">{s.name}</span>
-                      <span className="shrink-0 text-base font-bold tabular-nums text-amber-800 dark:text-amber-300">
+                      <span className="shrink-0 text-base font-bold tabular-nums text-amber-800">
                         {currencyFormatter.format(s.balance)}
                       </span>
                     </li>
@@ -402,7 +402,7 @@ export default function ProcurementAgingPage() {
                       {supplierDebt.map((s) => (
                         <TableRow key={s.supplierId}>
                           <TableCell className="font-medium">{s.name}</TableCell>
-                          <TableCell className="text-end text-base font-bold tabular-nums text-amber-800 dark:text-amber-300">
+                          <TableCell className="text-end text-base font-bold tabular-nums text-amber-800">
                             {currencyFormatter.format(s.balance)}
                           </TableCell>
                         </TableRow>
@@ -416,7 +416,7 @@ export default function ProcurementAgingPage() {
 
           <section className="rounded-2xl border border-border/60 bg-card/90 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-3 py-3 sm:px-6 sm:py-4">
-              <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+              <AlertTriangle className="size-5 shrink-0 text-amber-600" aria-hidden />
               <h2 className="text-base font-semibold sm:text-lg">
                 חשבונות פתוחים
               </h2>
@@ -440,7 +440,7 @@ export default function ProcurementAgingPage() {
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <Link
                           href={`/marker-ofek/procurement/${r.poId}`}
-                          className="font-mono text-sm font-semibold text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+                          className="font-mono text-sm font-semibold text-emerald-700 underline-offset-4 hover:underline"
                         >
                           {r.poNumber}
                         </Link>
@@ -463,10 +463,10 @@ export default function ProcurementAgingPage() {
                         <dd className="text-end tabular-nums text-muted-foreground">
                           {currencyFormatter.format(r.pendingOnPo)}
                         </dd>
-                        <dt className="font-semibold text-amber-900 dark:text-amber-200">
+                        <dt className="font-semibold text-amber-900">
                           יתרה
                         </dt>
-                        <dd className="text-end text-base font-bold tabular-nums text-amber-800 dark:text-amber-300">
+                        <dd className="text-end text-base font-bold tabular-nums text-amber-800">
                           {currencyFormatter.format(r.balance)}
                         </dd>
                       </dl>
@@ -497,7 +497,7 @@ export default function ProcurementAgingPage() {
                         <TableCell className="font-mono text-sm">
                           <Link
                             href={`/marker-ofek/procurement/${r.poId}`}
-                            className="text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+                            className="text-emerald-700 underline-offset-4 hover:underline"
                           >
                             {r.poNumber}
                           </Link>
@@ -520,7 +520,7 @@ export default function ProcurementAgingPage() {
                         <TableCell className="text-end tabular-nums text-muted-foreground">
                           {currencyFormatter.format(r.pendingOnPo)}
                         </TableCell>
-                        <TableCell className="text-end font-semibold tabular-nums text-amber-800 dark:text-amber-300">
+                        <TableCell className="text-end font-semibold tabular-nums text-amber-800">
                           {currencyFormatter.format(r.balance)}
                         </TableCell>
                       </TableRow>
@@ -534,7 +534,7 @@ export default function ProcurementAgingPage() {
 
           <section className="rounded-2xl border border-border/60 bg-card/90 shadow-sm">
             <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-3 py-3 sm:px-6 sm:py-4">
-              <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              <CheckCircle2 className="size-5 shrink-0 text-emerald-600" aria-hidden />
               <h2 className="text-base font-semibold sm:text-lg">
                 חשבונות סגורים (תשלומים ששולמו)
               </h2>
@@ -555,7 +555,7 @@ export default function ProcurementAgingPage() {
                       <p className="mt-1 font-mono text-sm">
                         <Link
                           href={`/marker-ofek/procurement/${inv.po_id}`}
-                          className="text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+                          className="text-emerald-700 underline-offset-4 hover:underline"
                         >
                           {inv.poNumber}
                         </Link>
@@ -595,7 +595,7 @@ export default function ProcurementAgingPage() {
                         <TableCell className="font-mono text-sm">
                           <Link
                             href={`/marker-ofek/procurement/${inv.po_id}`}
-                            className="text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+                            className="text-emerald-700 underline-offset-4 hover:underline"
                           >
                             {inv.poNumber}
                           </Link>

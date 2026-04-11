@@ -20,7 +20,10 @@ export function MarkerOfekGlobalShortcuts() {
         tag === "select" ||
         (t && (t as HTMLElement).isContentEditable)
 
-      if (mod && (e.key === "k" || e.key === "K")) {
+      if (
+        mod &&
+        (e.code === "KeyK" || e.key === "k" || e.key === "K")
+      ) {
         e.preventDefault()
         document.getElementById("global-project-search-input")?.focus()
         return
@@ -38,8 +41,9 @@ export function MarkerOfekGlobalShortcuts() {
       }
     }
 
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
+    document.addEventListener("keydown", onKeyDown, { capture: true })
+    return () =>
+      document.removeEventListener("keydown", onKeyDown, { capture: true })
   }, [])
 
   return null

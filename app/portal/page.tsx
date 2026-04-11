@@ -26,7 +26,7 @@ const item = {
 const cards = [
   {
     title: "הולדן ניהול מבנים",
-    href: "/dashboard/holden",
+    href: "/holden",
     icon: Building,
     status: "פעיל",
     level: "green",

@@ -12,7 +12,7 @@ export function navItemHiddenWhenNoManagedProjects(href: string): boolean {
   if (h.startsWith("/marker-ofek/contracts")) return true
   if (h.startsWith("/marker-ofek/partner-finance")) return true
   if (h.startsWith("/partner-finance")) return true
-  if (h.startsWith("/marker-ofek/executive")) return true
+  if (h.startsWith("/marker-ofek/command-center")) return true
   if (h.startsWith("/management")) return true
   if (h.startsWith("/partner-metrics")) return true
   return false

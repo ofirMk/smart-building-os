@@ -14,10 +14,10 @@ export default async function DashboardHomePage() {
     redirect("/")
   }
   if (selectedCompany === "holden_group") {
-    redirect("/dashboard/holden")
+    redirect("/holden")
   }
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-white">
+    <div className="min-h-[calc(100vh-4rem)] bg-background text-foreground">
       <DiamondStandardDashboardV1 />
     </div>
   )

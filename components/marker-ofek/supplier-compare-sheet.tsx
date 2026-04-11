@@ -178,7 +178,7 @@ export function SupplierCompareSheet({
                       className={cn(
                         "h-auto min-h-[4.5rem] w-full flex-col items-stretch gap-2 py-3 text-start whitespace-normal",
                         isCheapest &&
-                          "border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/15 dark:border-emerald-500/50"
+                          "border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/15"
                       )}
                       onClick={() => {
                         onPick({

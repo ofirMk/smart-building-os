@@ -114,7 +114,7 @@ export default function MarkerOfekSystemRulesPage() {
       </Link>
 
       <div className="flex items-center gap-3">
-        <span className="flex size-11 items-center justify-center rounded-xl bg-violet-500/15 text-violet-700 dark:text-violet-400">
+        <span className="flex size-11 items-center justify-center rounded-xl bg-violet-500/15 text-violet-700">
           <Shield className="size-5" aria-hidden />
         </span>
         <div>

@@ -551,7 +551,7 @@ export default function GoodsReceiptPage() {
       <Card className="border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
               <ClipboardCheck className="size-5" aria-hidden />
             </div>
             <div>
@@ -775,7 +775,7 @@ export default function GoodsReceiptPage() {
                         <TableCell className="text-end tabular-nums">
                           {qtyDisplay.format(prior)}
                         </TableCell>
-                        <TableCell className="text-end font-medium tabular-nums text-emerald-700 dark:text-emerald-400">
+                        <TableCell className="text-end font-medium tabular-nums text-emerald-700">
                           {qtyDisplay.format(remaining)}
                         </TableCell>
                         <TableCell className="text-end">
@@ -835,10 +835,10 @@ export default function GoodsReceiptPage() {
                     <span className="text-end tabular-nums text-foreground">
                       {qtyDisplay.format(prior)}
                     </span>
-                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                    <span className="font-medium text-emerald-700">
                       יתרה
                     </span>
-                    <span className="text-end font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    <span className="text-end font-semibold tabular-nums text-emerald-700">
                       {qtyDisplay.format(remaining)}
                     </span>
                   </div>

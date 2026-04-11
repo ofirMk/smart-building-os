@@ -1020,7 +1020,7 @@ export default function MarkerOfekAiImportPage() {
                                 <Badge className="w-fit bg-blue-600 text-white hover:bg-blue-600">
                                   חדש
                                 </Badge>
-                                <span className="text-xs text-amber-700 dark:text-amber-400">
+                                <span className="text-xs text-amber-700">
                                   דורש יצירה (F2)
                                 </span>
                               </div>
@@ -1059,7 +1059,7 @@ export default function MarkerOfekAiImportPage() {
               פרויקט יתבצע רק אחרי שיוך מרכז רווח.
               </p>
               {savedImportId ? (
-                <p className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                <p className="inline-flex items-center gap-1.5 text-xs text-emerald-700">
                   <CheckCircle2 className="size-3.5" aria-hidden />
                   נשמר במסד הנתונים (Import ID: {savedImportId.slice(0, 8)}…)
                 </p>

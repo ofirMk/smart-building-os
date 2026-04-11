@@ -226,7 +226,7 @@ export function MoContextCommentButton({
         className={cn(
           "size-8 shrink-0 rounded-full",
           hasComment
-            ? "text-sky-600 hover:bg-sky-500/15 hover:text-sky-700 dark:text-sky-400"
+            ? "text-sky-600 hover:bg-sky-500/15 hover:text-sky-700"
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
         aria-label={`הערות לסעיף ${contextLabel}`}

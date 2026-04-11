@@ -65,13 +65,13 @@ function WorkspaceChromeInner({ children }: { children: React.ReactNode }) {
     split && pinned ? pinned : split ? secondaryHref : null
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col bg-slate-50">
-      <div className="flex min-h-0 flex-1 flex-col border-t border-slate-200/80 lg:flex-row">
+    <div className="flex min-h-0 w-full max-w-none flex-1 flex-col bg-white">
+      <div className="flex min-h-0 flex-1 flex-col border-t border-slate-200/90 lg:flex-row">
         <motion.div
           layout
           className={cn(
-            "min-h-0 min-w-0 flex-1 bg-slate-50",
-            split && "lg:max-w-[50%] lg:border-e lg:border-slate-200/80"
+            "min-h-0 min-w-0 flex-1 bg-white",
+            split && "lg:max-w-[50%] lg:border-e lg:border-slate-200/90"
           )}
         >
           {children}

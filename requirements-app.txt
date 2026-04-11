@@ -1,0 +1,5 @@
+# Optional: pip install -r requirements-app.txt
+numpy>=1.24
+# GPU (pick one matching your CUDA):
+# cupy-cuda12x>=13.0
+# torch --index-url https://download.pytorch.org/whl/cu124

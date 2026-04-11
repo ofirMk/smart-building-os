@@ -223,9 +223,9 @@ export default function MarkerOfekResourcesPage() {
                       </td>
                       <td className="px-3 py-2">
                         {hasConflict ? (
-                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-950 dark:text-amber-100">
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-950">
                             <div className="font-semibold">התנגשות ({row.conflict_count})</div>
-                            <div className="truncate text-amber-900/90 dark:text-amber-200/90">
+                            <div className="truncate text-amber-900/90">
                               פרויקטים: {row.conflict_projects.join(", ")}
                             </div>
                           </div>

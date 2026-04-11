@@ -8,10 +8,10 @@ export default async function MasavPage() {
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-7xl flex-col p-6 md:p-8">
       <div className="mb-6 shrink-0">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <h1 className="text-2xl font-bold text-slate-900">
           מסלקת תשלומים (מס״ב)
         </h1>
-        <p className="text-slate-500 dark:text-slate-400">
+        <p className="text-slate-500">
           הכנת קובץ תשלומים מרוכז לקבלני משנה וספקים
         </p>
       </div>

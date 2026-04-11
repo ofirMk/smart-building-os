@@ -47,6 +47,10 @@ create table if not exists public.suppliers (
 );
 
 create index if not exists suppliers_name_idx on public.suppliers (name);
+
+alter table if exists public.suppliers
+  add column if not exists tax_id text;
+
 create index if not exists suppliers_tax_id_idx on public.suppliers (tax_id)
   where tax_id is not null;
 

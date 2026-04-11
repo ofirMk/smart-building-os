@@ -139,7 +139,7 @@ export default function MarkerOfekCompanyMdmPage() {
       </Link>
 
       <div className="flex items-center gap-3">
-        <span className="flex size-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-700 dark:text-sky-400">
+        <span className="flex size-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-700">
           <Building2 className="size-5" aria-hidden />
         </span>
         <div>
@@ -151,7 +151,7 @@ export default function MarkerOfekCompanyMdmPage() {
       </div>
 
       {!canEdit ? (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950">
           צפייה בלבד. עריכת שדות מס ובנק מיועדת לאופיר (מנהל מערכת).
         </p>
       ) : null}

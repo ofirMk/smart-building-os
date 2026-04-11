@@ -38,9 +38,9 @@ function defaultExpandedIds(
 function statusBadgeClass(status: SystemMapStatus): string {
   switch (status) {
     case "active":
-      return "border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"
+      return "border-emerald-500/40 bg-emerald-500/15 text-emerald-800"
     case "in-progress":
-      return "border-amber-500/45 bg-amber-500/15 text-amber-900 dark:text-amber-100"
+      return "border-amber-500/45 bg-amber-500/15 text-amber-900"
     case "planned":
       return "border-border/70 bg-muted/50 text-muted-foreground"
     default:

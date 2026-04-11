@@ -129,7 +129,7 @@ export function AiCopilotModal({
             <Sparkles className="size-5 text-violet-500" aria-hidden />
             עוזר קליטת רכש (מנהל)
           </DialogTitle>
-          <p className="text-start text-sm font-medium text-violet-950 dark:text-violet-100">
+          <p className="text-start text-sm font-medium text-violet-950">
             אופיר, נתקלתי בפריט לא מוכר:{" "}
             <span className="text-foreground">{productLabel(payload.item)}</span>
             . האם ליצור קטגוריה/מק״ט מאסטר חדש או לשייך לקיים?

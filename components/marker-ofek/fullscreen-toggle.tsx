@@ -79,7 +79,6 @@ export function FullscreenToggle({ className }: { className?: string }) {
           "inline-flex size-10 shrink-0 items-center justify-center rounded-full p-2 text-slate-500 transition-all duration-300",
           "hover:bg-slate-100 hover:text-slate-900",
           "outline-none focus-visible:ring-2 focus-visible:ring-slate-400/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
-          "dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 dark:focus-visible:ring-slate-500/40",
           className
         )}
       >

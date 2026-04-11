@@ -665,7 +665,7 @@ function NewProgressReportPageInner() {
 
       <header className="space-y-2 text-start">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-900 dark:text-sky-200">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-900">
             <TrendingUp className="size-6" aria-hidden />
           </span>
           <div>
@@ -753,12 +753,12 @@ function NewProgressReportPageInner() {
             {(masterCurrencies.length > 0 || masterUom.length > 0) ? (
               <div className="space-y-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 sm:col-span-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                  <p className="text-sm font-medium text-emerald-900">
                     מטבע ויחידת מידה (מנתוני מאסטר)
                   </p>
                   <Link
                     href="/marker-ofek/master-data?tab=suppliers"
-                    className="text-xs font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+                    className="text-xs font-medium text-blue-600 underline-offset-2 hover:underline"
                   >
                     ניהול מאסטר
                   </Link>
@@ -857,9 +857,9 @@ function NewProgressReportPageInner() {
             ) : contractState === "empty" ? (
               <div className="space-y-4 px-4 py-6 sm:px-6">
                 {hasProgressReportHistory ? (
-                  <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-start text-sm text-amber-950 dark:text-amber-100">
+                  <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-start text-sm text-amber-950">
                     <p className="font-medium">שימו לב</p>
-                    <p className="mt-1 text-muted-foreground dark:text-amber-200/90">
+                    <p className="mt-1 text-muted-foreground">
                       לחוזה זה קיימת היסטוריית דוחות, אך אין כרגע אבני דרך במערכת.
                       יש לשחזר או להגדיר סעיפים מחדש.
                     </p>
@@ -876,7 +876,7 @@ function NewProgressReportPageInner() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-6 sm:grid-cols-2">
-                    <Card className="border-violet-500/40 bg-violet-950/20 dark:bg-violet-950/35">
+                    <Card className="border-violet-500/40 bg-violet-950/20">
                       <CardHeader className="pb-2 text-start">
                         <div className="flex items-center gap-2">
                           <Sparkles
@@ -1255,7 +1255,7 @@ function NewProgressReportPageInner() {
                 type="button"
                 size="lg"
                 variant="default"
-                className="min-h-12 w-full gap-2 border border-emerald-600/40 bg-emerald-700 text-white hover:bg-emerald-600 dark:bg-emerald-800 dark:hover:bg-emerald-700"
+                className="min-h-12 w-full gap-2 border border-emerald-600/40 bg-emerald-700 text-white hover:bg-emerald-600"
                 disabled={
                   savingAs !== null ||
                   saveReportPending ||

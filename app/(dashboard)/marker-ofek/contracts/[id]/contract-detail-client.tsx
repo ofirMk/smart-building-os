@@ -689,7 +689,7 @@ export function MarkerOfekContractDetailClient({
           </Link>
           <Link
             href={`/marker-ofek/contracts/${id}/edit`}
-            className="inline-flex w-fit items-center gap-2 text-sm font-medium text-cyan-600 transition-colors hover:text-cyan-500 dark:text-cyan-400"
+            className="inline-flex w-fit items-center gap-2 text-sm font-medium text-cyan-600 transition-colors hover:text-cyan-500"
           >
             עריכת פרטי חוזה ואבני דרך
           </Link>
@@ -751,7 +751,7 @@ export function MarkerOfekContractDetailClient({
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="border-b border-border/60 bg-muted/20">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-400">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-700">
                 <Wallet className="size-5" aria-hidden />
               </div>
               <div className="min-w-0 space-y-1">
@@ -843,7 +843,7 @@ export function MarkerOfekContractDetailClient({
                 <p className="text-xs font-medium text-muted-foreground">
                   סה״כ מאושר (שווי)
                 </p>
-                <p className="text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                <p className="text-lg font-semibold tabular-nums text-emerald-700">
                   {currencyFormatter.format(totals.totalApproved)}
                 </p>
               </div>

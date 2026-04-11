@@ -186,7 +186,7 @@ export default function MarkerOfekFinancePage() {
               href="/marker-ofek/finance/centralized"
               className={cn(
                 buttonVariants({ size: "sm", variant: "outline" }),
-                "gap-2 border-emerald-500/40 text-emerald-800 hover:bg-emerald-500/10 dark:text-emerald-200"
+                "gap-2 border-emerald-500/40 text-emerald-800 hover:bg-emerald-500/10"
               )}
             >
               <FileStack className="size-4" aria-hidden />

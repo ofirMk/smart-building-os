@@ -419,7 +419,7 @@ export default function MarkerOfekItemsCatalogPage() {
       <Card className="border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-700 dark:text-cyan-400">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-700">
               <Package className="size-5" aria-hidden />
             </div>
             <div className="space-y-1">
@@ -523,7 +523,7 @@ export default function MarkerOfekItemsCatalogPage() {
       <Card className="border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700">
               <TrendingDown className="size-5" aria-hidden />
             </div>
             <div className="space-y-1">

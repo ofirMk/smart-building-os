@@ -79,7 +79,7 @@ export async function setCompanyOverheadAllocationMethod(
 
     if (error) return { ok: false, error: error.message }
 
-    revalidatePath("/marker-ofek/executive")
+    revalidatePath("/marker-ofek/command-center")
     revalidatePath("/management")
     revalidatePath("/marker-ofek/finance/overhead")
     return { ok: true }

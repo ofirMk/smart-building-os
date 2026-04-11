@@ -213,7 +213,7 @@ export default function PendingAllocationPage() {
             </div>
           )}
           {!loading && rows.length > 0 ? (
-            <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+            <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-emerald-700">
               <CheckCircle2 className="size-3.5" aria-hidden />
               לאחר שיוך, המסמך עובר מ־Pending Allocation.
             </p>

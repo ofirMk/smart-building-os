@@ -552,7 +552,7 @@ export default function NewInvoiceAiPage() {
 
       <header className="space-y-2 text-start">
         <div className="flex items-center gap-3">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-800 dark:text-violet-300">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-800">
             <Receipt className="size-6" aria-hidden />
           </span>
           <div>
@@ -770,10 +770,10 @@ export default function NewInvoiceAiPage() {
               <CardContent className="space-y-3 text-sm">
                 {syncSummary.priceIncreases.length > 0 ? (
                   <div className="rounded-md border border-red-400/50 bg-red-500/10 p-3">
-                    <p className="font-medium text-red-700 dark:text-red-300">
+                    <p className="font-medium text-red-700">
                       זוהו עליות מחיר מעל 5%:
                     </p>
-                    <ul className="mt-2 space-y-1 text-red-700 dark:text-red-300">
+                    <ul className="mt-2 space-y-1 text-red-700">
                       {syncSummary.priceIncreases.map((p) => (
                         <li key={`${p.lineIndex}-${p.description}`}>
                           {p.description}: {p.increasePct.toFixed(2)}%+

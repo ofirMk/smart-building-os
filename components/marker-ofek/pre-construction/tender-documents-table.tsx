@@ -50,14 +50,14 @@ const TYPE_OPTIONS: { value: MoTenderDocumentType; label: string }[] = [
 function statusBadgeClass(s: MoTenderDocumentStatus) {
   switch (s) {
     case "to_execution":
-      return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-300"
+      return "bg-emerald-600/15 text-emerald-800"
     case "for_tender":
-      return "bg-amber-600/15 text-amber-900 dark:text-amber-200"
+      return "bg-amber-600/15 text-amber-900"
     case "ai_failed":
       return "bg-destructive/15 text-destructive"
     case "for_review":
     default:
-      return "bg-slate-600/10 text-slate-800 dark:text-slate-200"
+      return "bg-slate-600/10 text-slate-800"
   }
 }
 

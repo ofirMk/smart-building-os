@@ -65,10 +65,8 @@ const MARKER_OFEK_DIAMOND_FORM_PATHS = new Set<string>([
   "/marker-ofek/procurement/purchase-orders/new",
   "/marker-ofek/execution/progress-reports/new",
   "/marker-ofek/execution/daily-logs/new",
-  "/marker-ofek/contracts/create-client",
   "/marker-ofek/contracts/create-subcontractor",
-  "/marker-ofek/customers/new",
-  "/marker-ofek/finance/customers/new",
+  "/marker-ofek/entities/new",
   "/marker-ofek/invoices/new",
 ])
 

@@ -262,7 +262,7 @@ export default function MoInvoicePrintPage() {
     <div
       dir="rtl"
       lang="he"
-      className="min-h-screen bg-slate-50 text-slate-900 print:bg-white print:p-0"
+      className="bg-slate-50 text-slate-900 print:bg-white print:p-0"
     >
       <div className="mx-auto max-w-3xl px-4 py-6 print:max-w-none print:px-8 print:py-6 print:shadow-none">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">

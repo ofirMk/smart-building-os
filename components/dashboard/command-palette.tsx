@@ -86,7 +86,7 @@ const QUICK_ROUTES: {
 }[] = [
   {
     title: "Holden Command Center",
-    href: "/command-center",
+    href: "/marker-ofek/command-center",
     subtitle: "ERP · KPIs · ביצוע",
     icon: LayoutDashboard,
   },

@@ -300,7 +300,7 @@ export function IssueClientInvoiceDialog({
               </SelectContent>
             </Select>
             {clients.length === 0 ? (
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+              <p className="text-xs text-amber-700">
                 אין ישויות מסוג ׳לקוח׳. הוסיפו לקוח בטבלת הישויות לפני הפקת חשבונית.
               </p>
             ) : null}
@@ -364,7 +364,7 @@ export function IssueClientInvoiceDialog({
 
           {needsPayment ? (
             <div className="space-y-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+              <p className="text-sm font-medium text-emerald-900">
                 פרטי תשלום (חובה למסמך קבלה)
               </p>
               <div className="space-y-2">

@@ -138,7 +138,7 @@ export default function NewDailyLogPage() {
 
       <header className="space-y-2 text-start">
         <div className="flex items-center gap-3">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-900 dark:text-amber-200">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-900">
             <ScrollText className="size-6" aria-hidden />
           </span>
           <div>

@@ -39,8 +39,8 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
   }, [initialAccounts, searchTerm, filterGroup])
 
   return (
-    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-950">
-      <div className="flex flex-col items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row dark:border-slate-700 dark:bg-slate-900/40">
+    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row">
         <div className="relative w-full sm:w-72">
           <Search className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -48,7 +48,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
             placeholder="חיפוש לפי קוד או שם חשבון..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-md border border-slate-200 py-2 pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-md border border-slate-200 py-2 pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -57,7 +57,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
           <select
             value={filterGroup}
             onChange={(e) => setFilterGroup(e.target.value)}
-            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 sm:w-auto"
+            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
           >
             <option value="all">כל קבוצות המאזן</option>
             {uniqueGroups.map((group) => (
@@ -71,7 +71,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
 
       <div className="min-h-0 flex-1 overflow-x-auto">
         <table className="w-full text-right text-sm">
-          <thead className="border-b border-slate-200 bg-slate-100 font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          <thead className="border-b border-slate-200 bg-slate-100 font-medium text-slate-600">
             <tr>
               <th className="p-3">קוד חשבון</th>
               <th className="p-3">שם החשבון</th>
@@ -80,14 +80,14 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
               <th className="p-3 text-center">סטטוס</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800 dark:text-slate-200">
+          <tbody className="divide-y divide-slate-100 text-slate-700">
             {filteredAccounts.length > 0 ? (
               filteredAccounts.map((account) => (
                 <tr
                   key={account.id}
-                  className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                  className="transition-colors hover:bg-slate-50"
                 >
-                  <td className="p-3 font-mono font-medium text-slate-900 dark:text-slate-100">
+                  <td className="p-3 font-mono font-medium text-slate-900">
                     {account.account_code}
                   </td>
                   <td className="p-3">
@@ -100,11 +100,11 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
                   <td className="p-3">{account.financial_statement_category}</td>
                   <td className="p-3 text-center">
                     {account.is_active ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-xs font-medium text-green-700 dark:border-green-800 dark:bg-green-950/50 dark:text-green-300">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
                         <Activity className="h-3 w-3" /> פעיל
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                         <Archive className="h-3 w-3" /> ארכיון
                       </span>
                     )}
@@ -121,7 +121,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
           </tbody>
         </table>
       </div>
-      <div className="border-t border-slate-200 bg-slate-50 p-3 text-left text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/60">
+      <div className="border-t border-slate-200 bg-slate-50 p-3 text-left text-xs text-slate-500">
         סה״כ חשבונות מוצגים: {filteredAccounts.length}
       </div>
     </div>

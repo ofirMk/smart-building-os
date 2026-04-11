@@ -40,6 +40,8 @@ type SidebarContextProps = {
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
+  /** When true, no persistent rail — navigation is only a slide-over sheet (all breakpoints). */
+  drawerOnly: boolean
   toggleSidebar: () => void
 }
 
@@ -61,11 +63,14 @@ function SidebarProvider({
   className,
   style,
   children,
+  drawerOnly = false,
   ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  /** Overlay drawer only — no fixed desktop sidebar column */
+  drawerOnly?: boolean
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
@@ -91,8 +96,12 @@ function SidebarProvider({
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
+    if (drawerOnly) {
+      setOpenMobile((o) => !o)
+      return
+    }
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+  }, [drawerOnly, isMobile, setOpen, setOpenMobile])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -122,9 +131,10 @@ function SidebarProvider({
       isMobile,
       openMobile,
       setOpenMobile,
+      drawerOnly,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, drawerOnly, toggleSidebar]
   )
 
   return (
@@ -163,7 +173,45 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { isMobile, drawerOnly, state, openMobile, setOpenMobile } = useSidebar()
+
+  if (drawerOnly) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <SheetContent
+          dir={dir}
+          data-sidebar="sidebar"
+          data-slot="sidebar"
+          data-mobile="true"
+          data-drawer-only="true"
+          overlayClassName="cursor-pointer bg-black/50 backdrop-blur-md supports-[backdrop-filter]:backdrop-blur-md"
+          className={cn(
+            "z-[60] w-(--sidebar-width) border-0 bg-sidebar p-0 text-sidebar-foreground shadow-2xl [&>button]:hidden",
+            "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform motion-reduce:duration-200"
+          )}
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+            } as React.CSSProperties
+          }
+          side={side}
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>תפריט צד</SheetTitle>
+            <SheetDescription>תפריט ניווט.</SheetDescription>
+          </SheetHeader>
+          <motion.div
+            className="flex h-full w-full flex-col"
+            initial={{ opacity: 0.92, x: 28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.36, ease: [0.32, 0.72, 0, 1] }}
+          >
+            {children}
+          </motion.div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
 
   if (collapsible === "none") {
     return (
@@ -191,7 +239,7 @@ function Sidebar({
           overlayClassName="cursor-pointer bg-black/50 backdrop-blur-md supports-[backdrop-filter]:backdrop-blur-md"
           className={cn(
             "z-[60] w-(--sidebar-width) border-0 bg-sidebar p-0 text-sidebar-foreground shadow-2xl [&>button]:hidden",
-            "duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+            "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform motion-reduce:duration-200"
           )}
           style={
             {
@@ -208,7 +256,7 @@ function Sidebar({
             className="flex h-full w-full flex-col"
             initial={{ opacity: 0.92, x: 28 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.36, ease: [0.32, 0.72, 0, 1] }}
           >
             {children}
           </motion.div>
@@ -232,8 +280,8 @@ function Sidebar({
       {/* This is what handles the sidebar gap on desktop */}
       <div
         data-slot="sidebar-gap"
-        className={cn(
-          "relative shrink-0 w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+          className={cn(
+            "relative shrink-0 w-(--sidebar-width) bg-transparent transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:duration-200",
           "group-data-[collapsible=offcanvas]:w-0",
           "group-data-[side=right]:rotate-180",
           variant === "floating" || variant === "inset"
@@ -245,7 +293,7 @@ function Sidebar({
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          "fixed inset-y-0 z-50 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] lg:flex",
+          "fixed inset-y-0 z-50 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[left,right,width] data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] motion-reduce:duration-200 lg:flex",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -495,7 +543,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-start text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding,colors] duration-200 group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-semibold data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+  "peer/menu-button group/menu-button relative flex w-full items-center gap-2 overflow-hidden rounded-lg p-2 text-start text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding,colors,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-has-data-[sidebar=menu-action]/menu-item:pe-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:scale-[0.99] active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-semibold data-active:text-sidebar-accent-foreground motion-reduce:active:scale-100 data-active:after:pointer-events-none data-active:after:absolute data-active:after:inset-y-2 data-active:after:start-1 data-active:after:w-0.5 data-active:after:rounded-full data-active:after:bg-sidebar-primary-foreground/35 data-active:after:content-[''] data-active:after:transition-opacity [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   {
     variants: {
       variant: {
@@ -739,5 +787,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  sidebarMenuButtonVariants,
   useSidebar,
 }

@@ -166,17 +166,17 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+              <h2 className="text-lg font-semibold text-slate-800">
                 פרטי דף בנק
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-slate-500">
                 בחר חשבון והזן את יתרות הדף
               </p>
             </div>
           </div>
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg border bg-slate-100 py-2 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="flex items-center gap-2 rounded-lg border bg-slate-100 py-2 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200"
           >
             <UploadCloud className="h-4 w-4" />
             ייבוא מקובץ בנק (CSV)
@@ -185,13 +185,13 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               חשבון בנק
             </label>
             <select
               value={selectedBank}
               onChange={(e) => setSelectedBank(e.target.value)}
-              className="w-full rounded-md border bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-md border bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="" disabled>
                 בחר חשבון...
@@ -204,36 +204,36 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               תאריך הדף
             </label>
             <input
               type="date"
               value={statementDate}
               onChange={(e) => setStatementDate(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               יתרת פתיחה
             </label>
             <input
               type="number"
               value={startingBalance}
               onChange={(e) => setStartingBalance(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               יתרת סגירה
             </label>
             <input
               type="number"
               value={endingBalance}
               onChange={(e) => setEndingBalance(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -244,23 +244,23 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
           role="status"
           className={`rounded-lg border px-4 py-3 text-sm ${
             saveMessage.startsWith("נשמר")
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
-              : "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              : "border-red-200 bg-red-50 text-red-800"
           }`}
         >
           {saveMessage}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border bg-white shadow-sm dark:border-slate-700 dark:bg-slate-950">
-        <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/50">
-          <h3 className="font-medium text-slate-700 dark:text-slate-200">
+      <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3">
+          <h3 className="font-medium text-slate-700">
             תנועות דף הבנק
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm">
-            <thead className="border-b bg-slate-50 font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
+            <thead className="border-b bg-slate-50 font-medium text-slate-600">
               <tr>
                 <th className="w-40 px-4 py-3">תאריך תנועה</th>
                 <th className="w-40 px-4 py-3">אסמכתא</th>
@@ -270,11 +270,11 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
                 <th className="w-12 px-4 py-3 text-center" />
               </tr>
             </thead>
-            <tbody className="divide-y dark:divide-slate-800">
+            <tbody className="divide-y">
               {lines.map((line) => (
                 <tr
                   key={line.id}
-                  className="group hover:bg-slate-50/50 focus-within:bg-blue-50/30 dark:hover:bg-slate-900/40"
+                  className="group hover:bg-slate-50/50 focus-within:bg-blue-50/30"
                 >
                   <td className="p-1.5">
                     <input
@@ -316,7 +316,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
                         updateLine(line.id, "debit", e.target.value)
                       }
                       placeholder="0.00"
-                      className="w-full rounded border-0 bg-transparent px-2 py-1.5 text-left font-medium text-red-600 outline-none focus:ring-1 focus:ring-red-500 dark:text-red-400"
+                      className="w-full rounded border-0 bg-transparent px-2 py-1.5 text-left font-medium text-red-600 outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </td>
                   <td className="p-1.5">
@@ -327,7 +327,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
                         updateLine(line.id, "credit", e.target.value)
                       }
                       placeholder="0.00"
-                      className="w-full rounded border-0 bg-transparent px-2 py-1.5 text-left font-medium text-emerald-600 outline-none focus:ring-1 focus:ring-emerald-500 dark:text-emerald-400"
+                      className="w-full rounded border-0 bg-transparent px-2 py-1.5 text-left font-medium text-emerald-600 outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </td>
                   <td className="p-1.5 text-center">
@@ -335,7 +335,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
                       type="button"
                       onClick={() => removeLine(line.id)}
                       disabled={lines.length <= 1 || isSaving}
-                      className="rounded p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-30 dark:hover:bg-red-950/40"
+                      className="rounded p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-30"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -346,12 +346,12 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+        <div className="flex items-center justify-between border-t bg-slate-50 p-4">
           <button
             type="button"
             onClick={addLine}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-950/50"
+            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
             הוסף תנועה

@@ -153,7 +153,7 @@ export function PreConstructionDashboard({ data }: PreConstructionDashboardProps
       ) : null}
 
       {boqLoadWarning ? (
-        <p className="text-start text-xs text-amber-700 dark:text-amber-400">
+        <p className="text-start text-xs text-amber-700">
           לא ניתן לחשב שווי צנרת מלא: {boqLoadWarning}
         </p>
       ) : null}
