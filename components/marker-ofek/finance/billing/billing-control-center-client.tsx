@@ -44,6 +44,14 @@ const VAT_RATE = 0.17
 const glass =
   "rounded-2xl border border-border bg-card/90 shadow-sm ring-1 ring-border/50 backdrop-blur-xl"
 
+function notifySuccess(title: string, description?: string) {
+  toast.success(title, { description })
+}
+
+function notifyError(title: string, description?: string) {
+  toast.error(title, { description })
+}
+
 function roundMoney(n: number) {
   return Math.round(n * 100) / 100
 }
@@ -216,6 +224,14 @@ export function BillingControlCenterClient({ workspace }: Props) {
     () => workspace.accounts.filter((a) => a.is_active),
     [workspace.accounts]
   )
+  const missingWorkspaceData = React.useMemo(() => {
+    const missing: string[] = []
+    if (workspace.projects.length === 0) missing.push("פרויקטים")
+    if (workspace.parts.length === 0) missing.push("פריטי ספק")
+    if (workspace.uoms.length === 0) missing.push("יחידות מידה")
+    if (incomeAccounts.length === 0) missing.push("חשבונות הכנסות")
+    return missing
+  }, [workspace.projects.length, workspace.parts.length, workspace.uoms.length, incomeAccounts.length])
 
   function updateLine(id: string, patch: Partial<LineState>) {
     setLines((prev) =>
@@ -264,7 +280,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
     sourceId: string
   ) {
     if (!projectId) {
-      toast.error("בחרו פרויקט לפני משיכה")
+      notifyError("משיכת נתונים נכשלה", "יש לבחור פרויקט לפני משיכה.")
       return
     }
     setPullLoading(true)
@@ -275,7 +291,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
     })
     setPullLoading(false)
     if (!res.ok) {
-      toast.error(res.error)
+      notifyError("משיכת נתונים נכשלה", res.error)
       return
     }
     setCustomerName(res.customerName)
@@ -304,21 +320,21 @@ export function BillingControlCenterClient({ workspace }: Props) {
       setSourceProgressReportId(null)
     }
     setPullOpen(false)
-    toast.success("הושלם מילוי מהפרויקט")
+    notifySuccess("משיכת נתונים הושלמה", "שורות החיוב עודכנו מהמקור שנבחר.")
   }
 
   async function onFinalize(e: React.FormEvent) {
     e.preventDefault()
     if (!customerName.trim()) {
-      toast.error("נא להזין שם לקוח")
+      notifyError("לא ניתן להפיק מסמך", "נא להזין שם לקוח.")
       return
     }
     if (!incomeAccountId) {
-      toast.error("נא לבחור חשבון הכנסות")
+      notifyError("לא ניתן להפיק מסמך", "נא לבחור חשבון הכנסות.")
       return
     }
     if (lines.length === 0) {
-      toast.error("נדרשות שורות")
+      notifyError("לא ניתן להפיק מסמך", "נדרשת לפחות שורת חיוב אחת.")
       return
     }
     setSaving(true)
@@ -353,11 +369,12 @@ export function BillingControlCenterClient({ workspace }: Props) {
     })
     setSaving(false)
     if (!res.success) {
-      toast.error(res.error)
+      notifyError("הפקה סופית נכשלה", res.error)
       return
     }
-    toast.success(
-      `הופקה חשבונית — יומן טיוטה ${res.draftJournalEntryId.slice(0, 8)} · הכרה ₪${res.recognizedRevenueIls.toFixed(2)}`
+    notifySuccess(
+      "הפקה סופית הושלמה",
+      `יומן טיוטה ${res.draftJournalEntryId.slice(0, 8)} · הכרה ₪${res.recognizedRevenueIls.toFixed(2)}`
     )
     setLines([recalcLine(newLine())])
     setSourceProgressReportId(null)
@@ -428,6 +445,12 @@ export function BillingControlCenterClient({ workspace }: Props) {
                 maximumFractionDigits: 0,
               }).format(budgetCtx.recognizedRevenueIls)}
             </span>
+          </div>
+        ) : null}
+        {missingWorkspaceData.length > 0 ? (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+            חסרים נתוני בסיס במרחב החיוב: {missingWorkspaceData.join(" · ")}.
+            ניתן להמשיך, אך פעולות מסוימות עשויות להיות מוגבלות.
           </div>
         ) : null}
 

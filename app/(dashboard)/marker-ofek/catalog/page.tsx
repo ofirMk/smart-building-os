@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { TechnicalCatalogWorkspace } from "@/components/marker-ofek/catalog/technical-catalog-workspace"
 
@@ -8,10 +9,23 @@ export const metadata: Metadata = {
     "Phase 2 — מרחב עבודה Master-Detail לקטלוג מאסטר (Priority-style)",
 }
 
+function CatalogFallback() {
+  return (
+    <div
+      className="flex min-h-[min(420px,50vh)] items-center justify-center bg-white text-sm text-slate-500"
+      dir="rtl"
+    >
+      טוען קטלוג…
+    </div>
+  )
+}
+
 export default function TechnicalItemsCatalogPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-white">
-      <TechnicalCatalogWorkspace />
+      <Suspense fallback={<CatalogFallback />}>
+        <TechnicalCatalogWorkspace />
+      </Suspense>
     </div>
   )
 }

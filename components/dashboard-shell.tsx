@@ -92,6 +92,7 @@ function buildHebrewCrumbs(pathname: string, erpRootLabel: string): Crumb[] {
     invoices: "חשבוניות",
     reconciliation: "בקרת התאמות",
     "delivery-notes": "תעודות משלוח",
+    "goods-receipt": "קליטת סחורה",
     items: "פריטים",
     "supply-chain": "שרשרת אספקה",
     "daily-logs": "יומני עבודה",
@@ -216,7 +217,7 @@ export function DashboardShell({
       <DashboardLastVisitTracker />
       <div
         className={cn(
-          "flex min-h-svh w-full max-w-none flex-1 flex-col bg-white text-slate-900 [color-scheme:light] dark:!bg-white dark:!text-slate-900",
+          "flex h-full min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden bg-white text-slate-900 [color-scheme:light] dark:!bg-white dark:!text-slate-900",
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
         )}
         data-dashboard-layout="topnav-main"
@@ -300,7 +301,7 @@ export function DashboardShell({
         <SmartWorkspaceChrome>
           <main
             dir="rtl"
-            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-4 overflow-x-hidden bg-white px-2 py-3 text-slate-900 print:bg-white print:p-0 md:px-4 md:py-4 dark:!bg-white dark:!text-slate-900"
+            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-4 overflow-x-hidden overflow-y-auto bg-white px-2 py-3 text-slate-900 print:bg-white print:p-0 md:px-4 md:py-4 dark:!bg-white dark:!text-slate-900"
           >
             {children}
           </main>

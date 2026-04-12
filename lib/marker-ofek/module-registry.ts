@@ -151,6 +151,7 @@ export function pathnameToModule(pathname: string): ModuleId | null {
   if (p.startsWith("/marker-ofek/items")) return "assets"
   if (p.startsWith("/marker-ofek/supply-chain")) return "assets"
   if (p.startsWith("/marker-ofek/procurement")) return "assets"
+  if (p.startsWith("/marker-ofek/logistics")) return "assets"
 
   if (p.startsWith("/holden") || p === "/holden") return "assets"
   if (p.startsWith("/buildings")) return "assets"

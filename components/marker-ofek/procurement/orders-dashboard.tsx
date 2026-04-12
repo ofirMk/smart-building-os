@@ -338,7 +338,10 @@ export function OrdersDashboard() {
           aria-label="קישורים מהירים — רכש"
         >
           <span className="font-medium text-slate-400">כלים:</span>
-          <Link className="text-indigo-600 hover:underline" href="/marker-ofek/procurement/purchase-orders/new">
+          <Link
+            className="text-indigo-600 hover:underline"
+            href="/marker-ofek/procurement/purchase-orders/from-boq"
+          >
             הזמנה מכתב כמויות
           </Link>
           <Link className="text-indigo-600 hover:underline" href="/marker-ofek/procurement/delivery-notes/new">
@@ -455,24 +458,21 @@ export function OrdersDashboard() {
                   return (
                     <TableRow
                       key={row.id}
-                      onClick={() => setSelectedPoId(row.id)}
+                      onClick={() =>
+                        router.push(`/marker-ofek/procurement/${row.id}`)
+                      }
                       onContextMenu={(e) => {
                         e.preventDefault()
                         setCtxMenu({ x: e.clientX, y: e.clientY, row })
                       }}
                       className={cn(
-                        "cursor-pointer",
+                        "cursor-pointer hover:bg-indigo-50/40",
                         selectedPoId === row.id ? "bg-indigo-50/60" : ""
                       )}
                     >
                       <TableCell className="font-mono text-sm font-medium">
                         <span className="inline-flex flex-wrap items-center gap-2">
-                          <Link
-                            href={`/marker-ofek/procurement/${row.id}`}
-                            className="text-indigo-700 underline-offset-4 hover:underline"
-                          >
-                            {row.po_number}
-                          </Link>
+                          <span className="text-indigo-800">{row.po_number}</span>
                           {(row.status === "partial_receipt" ||
                             shortageNotePoIds.has(row.id)) ? (
                             <span
@@ -493,7 +493,10 @@ export function OrdersDashboard() {
                           </span>
                         ) : null}
                       </TableCell>
-                      <TableCell className="max-w-[180px] truncate">
+                      <TableCell
+                        className="max-w-[180px] truncate"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <SupplierNameLink
                           supplierId={row.supplier_id}
                           supplierName={supplier?.name ?? "—"}
@@ -512,7 +515,10 @@ export function OrdersDashboard() {
                       <TableCell className="text-end font-currency-mono tabular-nums text-indigo-950">
                         {currencyFormatter.format(Number(row.total_amount) || 0)}
                       </TableCell>
-                      <TableCell className="align-top">
+                      <TableCell
+                        className="align-top"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {canRecordGoodsReceipt(row.status) ? (
                           <Link
                             href={`/marker-ofek/procurement/receipt/${row.id}`}

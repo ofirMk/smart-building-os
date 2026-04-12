@@ -3,18 +3,37 @@
  */
 
 export type CatalogMasterRow = {
+  /** מק״ט פנימי (מפתח מאסטר) */
   sku: string
+  /** מק״ט אצל הספק המוביל */
+  supplierSku: string
   name: string
   category: string
+  /** יחידת מידה */
   uom: string
+  /** מחיר בסיס (₪) */
   basePriceNis: number
   active: boolean
+}
+
+export function createEmptyCatalogRow(): CatalogMasterRow {
+  const id = `NEW-${Date.now()}`
+  return {
+    sku: id,
+    supplierSku: "",
+    name: "פריט חדש",
+    category: "כללי",
+    uom: "יחידה",
+    basePriceNis: 0,
+    active: true,
+  }
 }
 
 /** נתוני דמה — תשתיות חשמל; יוחלף ב-API */
 export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   {
     sku: "CBL-XLPE-3x150+75",
+    supplierSku: "ELK-XLPE-315075",
     name: "כבל נחושת XLPE 0.6/1kV — 3×150+מסילת עפר 75",
     category: "כבלים",
     uom: "מטר",
@@ -23,6 +42,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "ACB-3200-3P",
+    supplierSku: "SW-ACB-3200",
     name: "מפסק אוויר מגנטי 3200A — 3 פאזות, ICW 50kA",
     category: "מפסקים",
     uom: "יחידה",
@@ -31,6 +51,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "TRAY-P200x50-PG",
+    supplierSku: "ENC-TR20050",
     name: "תעלת פח מחוררת גלוונית 200×50 מ״מ",
     category: "תעלות",
     uom: "מטר",
@@ -39,6 +60,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "SWG-LV-2500A",
+    supplierSku: "SWG-MAIN-2500",
     name: "לוח חלוקה ראשי תת-תחנתי — 2500A, תאורה ומזגנים",
     category: "לוחות",
     uom: "יחידה",
@@ -47,6 +69,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "RPDU-32A-C19",
+    supplierSku: "PDU-32-C19-12",
     name: "יחידת אספקה ממותגת 32A — 12×C19, מדידת אנרגיה",
     category: "ציוד קצה",
     uom: "יחידה",
@@ -55,6 +78,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "BUSBAR-CU-2000A",
+    supplierSku: "BB-CU-2K-10010",
     name: "מוביל נחושת דוחף 2000A — מקטע 100×10 מ״מ",
     category: "לוחות",
     uom: "מטר",
@@ -63,6 +87,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "LADDER-600-HDG",
+    supplierSku: "LD-HDG-600",
     name: "סולם כבלים מגולוון 600 מ״מ — משקל עצמי גבוה",
     category: "תעלות",
     uom: "מטר",
@@ -71,6 +96,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "EARTH-CU-95",
+    supplierSku: "GND-CU-95-GY",
     name: "כבל הארה נחושת 95 מ״מ² — ירוק-צהוב",
     category: "כבלים",
     uom: "מטר",
@@ -79,6 +105,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "ATS-1600A",
+    supplierSku: "ATS-1600-3P",
     name: "מעביר אוטומטי 1600A — מעבר גנרטור/רשת",
     category: "מפסקים",
     uom: "יחידה",
@@ -87,6 +114,7 @@ export const TECHNICAL_CATALOG_MASTER_MOCK: CatalogMasterRow[] = [
   },
   {
     sku: "JBOX-IP65-400",
+    supplierSku: "JB-IP65-400300",
     name: "קופסת חיבור אטומה IP65 — 400×300 מ״מ",
     category: "ציוד קצה",
     uom: "יחידה",

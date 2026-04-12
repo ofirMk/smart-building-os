@@ -137,6 +137,13 @@ export const markerProjectIntakeFormSchema = z.object({
     .optional()
     .transform((s) => s ?? ""),
   tender_id: z.union([z.string().uuid("מזהה מכרז לא תקין"), z.null()]).optional(),
+  /** קוד פנימי ‎PR…‎ — Phase 8.3 ‎Unified Project Setup */
+  internal_project_code: z
+    .string()
+    .trim()
+    .max(64, "קוד פרויקט ארוך מדי")
+    .optional()
+    .transform((s) => s ?? ""),
 })
 
 export type MarkerProjectIntakeFormInput = z.infer<

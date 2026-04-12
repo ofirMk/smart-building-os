@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Package, Plus } from "lucide-react"
 
@@ -18,95 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  PROCUREMENT_DASHBOARD_MOCK_ORDERS,
+  type PoStatusEn,
+} from "@/lib/marker-ofek/procurement-mock-dashboard-pos"
 import { cn } from "@/lib/utils"
-
-type PoStatusEn = "Draft" | "Sent" | "Received"
-
-type MockPurchaseOrder = {
-  id: string
-  poNumber: string
-  date: string
-  project: string
-  supplier: string
-  totalAmount: number
-  status: PoStatusEn
-}
-
-/** Mock — אשקלון, סביון, שדה דב + תשתיות חשמל */
-const MOCK_RECENT_PURCHASE_ORDERS: MockPurchaseOrder[] = [
-  {
-    id: "1",
-    poNumber: "PO-2025-0152",
-    date: "2025-12-01",
-    project: "רמת עיר היין",
-    supplier: "חשמל ישיר",
-    totalAmount: 224_800,
-    status: "Sent",
-  },
-  {
-    id: "2",
-    poNumber: "PO-2025-0148",
-    date: "2025-11-28",
-    project: "גינדי סביון",
-    supplier: 'א.א. מערכות בע"מ',
-    totalAmount: 318_400,
-    status: "Received",
-  },
-  {
-    id: "3",
-    poNumber: "PO-2025-0141",
-    date: "2025-11-22",
-    project: "ריינבו שדה דב",
-    supplier: "תאורת חירום וכבלי נחושת",
-    totalAmount: 96_200,
-    status: "Draft",
-  },
-  {
-    id: "4",
-    poNumber: "PO-2025-0138",
-    date: "2025-11-18",
-    project: "רמת עיר היין",
-    supplier: "מסגרות תאורה — אגף B",
-    totalAmount: 72_500,
-    status: "Draft",
-  },
-  {
-    id: "5",
-    poNumber: "PO-2025-0124",
-    date: "2025-10-30",
-    project: "גינדי סביון",
-    supplier: "כבישים ותשתיות דרום בע״מ",
-    totalAmount: 512_000,
-    status: "Received",
-  },
-  {
-    id: "6",
-    poNumber: "PO-2025-0110",
-    date: "2025-10-12",
-    project: "ריינבו שדה דב",
-    supplier: "תקשורת וסיבים אופטיים",
-    totalAmount: 188_900,
-    status: "Sent",
-  },
-  {
-    id: "7",
-    poNumber: "PO-2025-0097",
-    date: "2025-09-05",
-    project: "רמת עיר היין",
-    supplier: "מסגרות ודלתות תעשייתיות",
-    totalAmount: 128_400,
-    status: "Received",
-  },
-  {
-    id: "8",
-    poNumber: "PO-2025-0083",
-    date: "2025-08-21",
-    project: "גינדי סביון",
-    supplier: "מיזוג ואוורור — צוות 3",
-    totalAmount: 265_750,
-    status: "Sent",
-  },
-]
 
 function statusHe(s: PoStatusEn): string {
   switch (s) {
@@ -143,6 +60,8 @@ function formatIls(n: number) {
 }
 
 export default function ProcurementDashboardPage() {
+  const router = useRouter()
+
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
@@ -154,7 +73,7 @@ export default function ProcurementDashboardPage() {
       backLink={{ href: "/marker-ofek/command-center", label: "מרכז הפיקוד" }}
       headerActions={
         <Link
-          href="/marker-ofek/procurement/purchase-order-delivery-flow"
+          href="/marker-ofek/procurement/purchase-orders/new"
           className={cn(
             "inline-flex h-8 items-center gap-1.5 rounded-md bg-slate-900 px-3 text-xs font-medium text-white",
             "transition-colors duration-200 hover:bg-slate-800"
@@ -172,7 +91,7 @@ export default function ProcurementDashboardPage() {
           <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-slate-900">
             <span>
               <span className="font-semibold tabular-nums">
-                {MOCK_RECENT_PURCHASE_ORDERS.length}
+                {PROCUREMENT_DASHBOARD_MOCK_ORDERS.length}
               </span>
               <span className="text-slate-600"> רשומות אחרונות</span>
             </span>
@@ -190,7 +109,8 @@ export default function ProcurementDashboardPage() {
               הזמנות רכש אחרונות
             </h2>
             <p className="text-[11px] text-slate-600">
-              מספר הזמנה · תאריך · פרויקט · ספק · סה״כ · סטטוס
+              מספר הזמנה · תאריך · פרויקט · ספק · סה״כ · סטטוס — לחיצה פותחת טיוטה
+              לעריכה במנוע הזמנה
             </p>
           </div>
           <div className="w-full overflow-x-auto bg-white">
@@ -218,9 +138,11 @@ export default function ProcurementDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOCK_RECENT_PURCHASE_ORDERS.map((row, i) => (
+                {PROCUREMENT_DASHBOARD_MOCK_ORDERS.map((row, i) => (
                   <motion.tr
                     key={row.id}
+                    role="link"
+                    tabIndex={0}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -228,7 +150,20 @@ export default function ProcurementDashboardPage() {
                       duration: 0.28,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="h-9 border-slate-100 hover:bg-slate-50/80"
+                    className="h-9 cursor-pointer border-slate-100 hover:bg-slate-50/80"
+                    onClick={() =>
+                      router.push(
+                        `/marker-ofek/procurement/purchase-orders/new?mockPo=${encodeURIComponent(row.poNumber)}`
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        router.push(
+                          `/marker-ofek/procurement/purchase-orders/new?mockPo=${encodeURIComponent(row.poNumber)}`
+                        )
+                      }
+                    }}
                   >
                     <TableCell className="px-2 py-1.5 font-mono text-xs font-medium text-slate-900">
                       {row.poNumber}

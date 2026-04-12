@@ -73,6 +73,9 @@ export function titleForPath(pathname: string): string {
   if (pathname.startsWith("/marker-ofek/procurement/assets")) {
     return "נכסי חברה"
   }
+  if (pathname.startsWith("/marker-ofek/procurement/goods-receipt")) {
+    return "קליטת סחורה (GR)"
+  }
   if (pathname === "/marker-ofek/tenders" || pathname === "/marker-ofek/tenders/") {
     return "מכרזים והערכות"
   }

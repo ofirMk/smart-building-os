@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   AlertTriangle,
@@ -50,6 +51,7 @@ import {
   type PurchaseOrderEngineInput,
   type PurchaseOrderEngineOutput,
 } from "@/lib/marker-ofek/po-engine-schema"
+import { purchaseOrderEngineDefaultsFromMockPo } from "@/lib/marker-ofek/procurement-mock-dashboard-pos"
 
 const fieldClass =
   "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15 md:text-sm"
@@ -65,7 +67,13 @@ function formatNis(n: number): string {
 }
 
 export function PurchaseOrderEngineForm() {
-  const defaults = React.useMemo(() => defaultPurchaseOrderEngineValues(), [])
+  const searchParams = useSearchParams()
+  const mockPo = searchParams.get("mockPo")?.trim() ?? ""
+
+  const defaults = React.useMemo((): PurchaseOrderEngineInput => {
+    const fromBoard = purchaseOrderEngineDefaultsFromMockPo(mockPo)
+    return fromBoard ?? defaultPurchaseOrderEngineValues()
+  }, [mockPo])
 
   const form = useForm<
     PurchaseOrderEngineInput,
@@ -77,7 +85,11 @@ export function PurchaseOrderEngineForm() {
     mode: "onBlur",
   })
 
-  const { control, register, handleSubmit, formState, getValues } = form
+  const { control, register, handleSubmit, formState, getValues, reset } = form
+
+  React.useEffect(() => {
+    reset(defaults)
+  }, [defaults, reset])
 
   const { fields, append, remove } = useFieldArray({
     control,

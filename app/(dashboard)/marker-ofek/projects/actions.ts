@@ -12,6 +12,7 @@ export async function createProject(formData: FormData): Promise<
 > {
   const nameRaw = formData.get("name")?.toString() ?? ""
   const client_nameRaw = formData.get("client_name")?.toString() ?? ""
+  const codeRaw = formData.get("internal_project_code")?.toString() ?? ""
   const tenderRaw = formData.get("tender_id")?.toString().trim()
   const tender_id =
     tenderRaw == null ||
@@ -24,13 +25,14 @@ export async function createProject(formData: FormData): Promise<
     name: nameRaw,
     client_name: client_nameRaw,
     tender_id,
+    internal_project_code: codeRaw,
   })
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => i.message).join(" · ")
     return { ok: false, error: msg || "נתונים לא תקינים" }
   }
 
-  const { name, client_name, tender_id: tid } = parsed.data
+  const { name, client_name, tender_id: tid, internal_project_code } = parsed.data
 
   try {
     const supabase = await createSupabaseServerAuthClient()
@@ -40,7 +42,7 @@ export async function createProject(formData: FormData): Promise<
         name,
         client_name: client_name || null,
         tender_id: tid ?? null,
-        internal_project_code: "",
+        internal_project_code: internal_project_code.trim() || "",
         address: null,
         status: "planning",
       })
@@ -55,7 +57,13 @@ export async function createProject(formData: FormData): Promise<
       action_type: "INSERT",
       table_name: "projects",
       project_id: pid,
-      new_data: { id: pid, name, client_name: client_name || null, tender_id: tid },
+      new_data: {
+        id: pid,
+        name,
+        client_name: client_name || null,
+        tender_id: tid,
+        internal_project_code: internal_project_code.trim() || "",
+      },
     })
 
     revalidatePath("/marker-ofek/projects")

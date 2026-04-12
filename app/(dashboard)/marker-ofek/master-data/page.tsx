@@ -1,3 +1,5 @@
+import { Suspense } from "react"
+
 import { MasterDataDashboard } from "@/components/marker-ofek/master-data/master-data-dashboard"
 import {
   fetchCurrenciesAction,
@@ -45,15 +47,26 @@ export default async function MasterDataPage({
   if (!terms.ok) loadErrors.push(terms.error)
 
   return (
-    <MasterDataDashboard
-      initialTab={initialTab}
-      initialCurrencies={cur.ok ? cur.data : []}
-      initialUom={uom.ok ? uom.data : []}
-      initialParts={parts.ok ? parts.data : []}
-      initialSuppliers={sup.ok ? sup.data : []}
-      paymentTerms={terms.ok ? terms.data : []}
-      loadErrors={loadErrors}
-    />
+    <Suspense
+      fallback={
+        <div
+          className="flex min-h-[40vh] items-center justify-center bg-white text-sm text-slate-500"
+          dir="rtl"
+        >
+          טוען נתוני מאסטר…
+        </div>
+      }
+    >
+      <MasterDataDashboard
+        initialTab={initialTab}
+        initialCurrencies={cur.ok ? cur.data : []}
+        initialUom={uom.ok ? uom.data : []}
+        initialParts={parts.ok ? parts.data : []}
+        initialSuppliers={sup.ok ? sup.data : []}
+        paymentTerms={terms.ok ? terms.data : []}
+        loadErrors={loadErrors}
+      />
+    </Suspense>
   )
 }
 

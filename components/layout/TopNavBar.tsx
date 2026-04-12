@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import {
-  Bell,
   ChevronDown,
   ClipboardList,
   LayoutDashboard,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
+import { NotificationBell } from "@/components/marker-ofek/layout/notification-bell"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -345,11 +345,9 @@ export function TopNavBar({
   const navClusterRef = React.useRef<HTMLDivElement>(null)
 
   const [profileOpen, setProfileOpen] = React.useState(false)
-  const [notifOpen, setNotifOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
   const [searchQ, setSearchQ] = React.useState("")
   const profileRef = React.useRef<HTMLDivElement>(null)
-  const notifRef = React.useRef<HTMLDivElement>(null)
 
   const clearCloseTimer = React.useCallback(() => {
     if (closeTimer.current) {
@@ -383,7 +381,6 @@ export function TopNavBar({
     function onDoc(e: MouseEvent) {
       const t = e.target as Node
       if (profileRef.current && !profileRef.current.contains(t)) setProfileOpen(false)
-      if (notifRef.current && !notifRef.current.contains(t)) setNotifOpen(false)
     }
     document.addEventListener("mousedown", onDoc)
     return () => document.removeEventListener("mousedown", onDoc)
@@ -509,7 +506,7 @@ export function TopNavBar({
           {/* Mega navigation cluster — hover bridge keeps panel open */}
           <div
             ref={navClusterRef}
-            className="relative hidden min-w-0 flex-[1.2] justify-center lg:flex"
+            className="hidden"
             onMouseLeave={scheduleCloseMega}
           >
             <nav
@@ -593,29 +590,11 @@ export function TopNavBar({
               </kbd>
             </Button>
 
-            <div className="relative" ref={notifRef}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="size-9 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                aria-label="התראות"
-                onClick={() => {
-                  setNotifOpen((o) => !o)
-                  setProfileOpen(false)
-                }}
-              >
-                <Bell className="size-[18px]" aria-hidden />
-              </Button>
-              <MotionDropdown open={notifOpen} align="end">
-                <div className="px-3 py-3 text-start">
-                  <p className="text-xs font-semibold text-slate-900">התראות</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                    אין התראות חדשות. תזכורות אישור תשלום יופיעו כאן.
-                  </p>
-                </div>
-              </MotionDropdown>
-            </div>
+            <NotificationBell
+              onOpenChange={(next) => {
+                if (next) setProfileOpen(false)
+              }}
+            />
 
             <div className="relative" ref={profileRef}>
               <Button
@@ -625,7 +604,6 @@ export function TopNavBar({
                 className="h-9 gap-1 rounded-lg ps-2 pe-1.5 text-slate-800 hover:bg-slate-100"
                 onClick={() => {
                   setProfileOpen((o) => !o)
-                  setNotifOpen(false)
                 }}
                 aria-expanded={profileOpen}
                 aria-haspopup="menu"

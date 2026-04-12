@@ -8,25 +8,14 @@
  */
 import type { LucideIcon } from "lucide-react"
 import {
-  Activity,
-  ArrowLeftRight,
-  BarChart3,
   Building2,
   CalendarDays,
-  CreditCard,
-  FileEdit,
   LayoutGrid,
   LayoutDashboard,
-  Map,
   Megaphone,
   MessageSquare,
-  Package,
-  Receipt,
   ReceiptText,
   Settings,
-  ShieldCheck,
-  ShoppingCart,
-  Table2,
   Ticket,
   Users,
   Wrench,
@@ -34,6 +23,7 @@ import {
 } from "lucide-react"
 
 import { FACILITY_HOME_PATH } from "@/lib/infrastructure/navigation/sidebar-routes"
+import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
 import { getMarkerOfekFlatNavHrefs } from "@/lib/marker-ofek/pillar-registry"
 
 export { FACILITY_HOME_PATH, MARKER_OFEK_HREFS } from "@/lib/infrastructure/navigation/sidebar-routes"
@@ -74,84 +64,18 @@ function uniqueNavHrefsFromSections(
 /** נתיבי ERP — נגזרים מ־pillar-registry (אקורדיון מרקר אופק) */
 export const MARKER_OFEK_ROUTES: readonly string[] = getMarkerOfekFlatNavHrefs()
 
-/** ניווט מרקר אופק — ארבעה עמודים (מסונכרן עם marker-ofek-sidebar-nav-config) */
-export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] = [
-  {
-    label: "ניהול רכש",
-    items: [
-      {
-        title: "מרכז רכש אחוד",
-        href: "/marker-ofek/procurement",
-        icon: ShoppingCart,
-      },
-    ],
-  },
-  {
-    label: "ניהול כספים",
-    items: [
-      {
-        title: "הזנת פקודת יומן",
-        href: "/marker-ofek/finance/journal-entries/new",
-        icon: FileEdit,
-      },
-      {
-        title: "בקרת תשלומים",
-        href: "/marker-ofek/finance/clearance",
-        icon: ShieldCheck,
-      },
-      {
-        title: "התאמות בנקים",
-        href: "/marker-ofek/finance/reconciliations",
-        icon: ArrowLeftRight,
-      },
-      {
-        title: "הפקת חשבונית מס",
-        href: "/marker-ofek/finance/billing/new",
-        icon: Receipt,
-      },
-      {
-        title: "ניהול מס״ב",
-        href: "/marker-ofek/finance/payments",
-        icon: CreditCard,
-      },
-    ],
-  },
-  {
-    label: "ניהול נתונים",
-    items: [
-      {
-        title: "מרכז נתוני מאסטר",
-        href: "/marker-ofek/master-data",
-        icon: Table2,
-      },
-      {
-        title: "קטלוג פריטים טכני (מאסטר)",
-        href: "/marker-ofek/catalog",
-        icon: Package,
-      },
-      {
-        title: "הקמת ספק",
-        href: "/marker-ofek/entities/new?kind=supplier&lock=1",
-        icon: Building2,
-      },
-    ],
-  },
-  {
-    label: "מערכת",
-    items: [
-      {
-        title: "מפת דרכים (Roadmap)",
-        href: "/marker-ofek/roadmap",
-        icon: Map,
-      },
-      {
-        title: "בריאות המערכת",
-        href: "/marker-ofek/system/health",
-        icon: Activity,
-      },
-    ],
-  },
-]
+/**
+ * ניווט מרקר אופק — נגזר מ־`MARKER_OFEK_SIDEBAR_SECTIONS` (מקור אמת: `marker-ofek-sidebar-nav-config.ts`).
+ */
+export const MARKER_OFEK_CONTRACTING_NAV_SECTIONS: SidebarNavSection[] =
+  MARKER_OFEK_SIDEBAR_SECTIONS.map((s) => ({
+    label: s.label,
+    items: s.items.map((it) => ({
+      title: it.title,
+      href: it.href,
+      icon: it.icon,
+    })),
+  }))
 
 /** ניווט הולדן — ניהול נכסים (לא כולל מרקר אופק). */
 export const HOLDEN_NAV_SECTIONS: SidebarNavSection[] = [

@@ -55,13 +55,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" suppressHydrationWarning>
+    <html lang="he" dir="rtl" className="h-full" suppressHydrationWarning>
       <body
         className={cn(
           heebo.variable,
           rubik.variable,
           jetbrainsMono.variable,
-          "h-full min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100"
+          "h-[100dvh] min-h-0 w-full overflow-hidden bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100"
         )}
         dir="rtl"
         suppressHydrationWarning
@@ -75,8 +75,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delay={0}>
-            <div className="flex min-h-screen min-h-[100dvh] flex-col">
-              {children}
+            <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+              <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+                {children}
+              </div>
             </div>
             <Toaster
               position="top-center"

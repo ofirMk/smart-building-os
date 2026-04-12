@@ -26,6 +26,7 @@ import {
   MarkerOfekWorkspaceProvider,
   useMarkerOfekWorkspace,
 } from "./marker-ofek-workspace-context"
+import { MarkerOfekHeaderNav } from "@/components/marker-ofek/layout/header"
 
 /** רק כשאין פרויקט במגירה ולא בדף שכבר רושם ניווט יהלום בדף */
 function MarkerOfekWorkspaceProjectShortcutInner() {
@@ -55,59 +56,69 @@ function MarkerOfekWorkspaceChrome({
   return (
     <>
       <MarkerOfekProjectContextShortcut />
+      <div
+        className="sticky top-0 z-20 mb-2 border-b border-slate-200 bg-white px-2 py-2 shadow-sm md:px-3"
+        dir="rtl"
+      >
+        <div className="w-full overflow-x-auto">
+          <MarkerOfekHeaderNav className="w-max min-w-full" />
+        </div>
+      </div>
       <motion.div
         layout
-        className="sticky top-0 z-10 mb-3 flex w-full max-w-none flex-wrap items-center gap-2 border-b border-slate-200 bg-white/95 px-2 py-2 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-white/90 md:px-3"
+        className="mb-3 flex w-full max-w-none flex-col gap-1.5 border-b border-slate-200 bg-white/95 px-2 py-2 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-white/90 md:px-3"
         dir="rtl"
         transition={{ type: "spring", stiffness: 400, damping: 38 }}
       >
-        <nav
-          aria-label="כרטיסיות אחרונות"
-          className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
-        >
-          <span className="me-1 hidden text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
-            אחרונים
-          </span>
-          {recentTabs.map((tab) => (
-            <motion.div
-              key={tab.href}
-              layout
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 500, damping: 32 }}
-            >
-              <Link
-                href={tab.href}
-                prefetch
-                scroll
-                className={cn(
-                  "inline-flex max-w-[11rem] truncate rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
-                  pathname === tab.href
-                    ? "bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/20"
-                    : "text-muted-foreground hover:bg-muted/90 hover:text-foreground"
-                )}
-              >
-                {tab.label}
-              </Link>
-            </motion.div>
-          ))}
-        </nav>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 border-border bg-card shadow-sm transition-all duration-200"
-            onClick={openCommandPalette}
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <nav
+            aria-label="כרטיסיות אחרונות"
+            className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
           >
-            <Search className="size-4 shrink-0" aria-hidden />
-            <span className="hidden sm:inline">חיפוש מהיר</span>
-            <kbd className="hidden rounded border border-border/80 bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
-              Ctrl+K
-            </kbd>
-          </Button>
-          <MarkerOfekProjectDrawerTrigger />
-          <MarkerOfekSupplierDrawerTrigger />
+            <span className="me-1 hidden text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
+              אחרונים
+            </span>
+            {recentTabs.map((tab) => (
+              <motion.div
+                key={tab.href}
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 32 }}
+              >
+                <Link
+                  href={tab.href}
+                  prefetch
+                  scroll
+                  className={cn(
+                    "inline-flex max-w-[11rem] truncate rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
+                    pathname === tab.href
+                      ? "bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/20"
+                      : "text-muted-foreground hover:bg-muted/90 hover:text-foreground"
+                  )}
+                >
+                  {tab.label}
+                </Link>
+              </motion.div>
+            ))}
+          </nav>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 border-border bg-card shadow-sm transition-all duration-200"
+              onClick={openCommandPalette}
+            >
+              <Search className="size-4 shrink-0" aria-hidden />
+              <span className="hidden sm:inline">חיפוש מהיר</span>
+              <kbd className="hidden rounded border border-border/80 bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+                Ctrl+K
+              </kbd>
+            </Button>
+            <MarkerOfekProjectDrawerTrigger />
+            <MarkerOfekSupplierDrawerTrigger />
+          </div>
         </div>
       </motion.div>
       <AnimatePresence mode="wait" initial={false}>

@@ -100,6 +100,7 @@ export function DashboardNavDrawerPanel({
     return filterSidebarSectionsByModules(raw, modules)
   }, [userRole, modules])
 
+  /** מרקר אופק / דשבורד ראשי: המגירה נטענת אך ורק מ־`MARKER_OFEK_SIDEBAR_SECTIONS` דרך `MarkerOfekDrawerNavContent`. */
   const isMarker = isMarkerOfekExecutiveContext(pathname)
 
   if (isMarker) {

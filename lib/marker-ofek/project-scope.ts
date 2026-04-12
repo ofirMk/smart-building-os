@@ -1,18 +1,19 @@
-import { pathnameToModule, type SidebarNavItemShape } from "@/lib/marker-ofek/module-registry"
+import type { SidebarNavItemShape } from "@/lib/marker-ofek/module-registry"
 
 /**
  * When Guy/Samer have zero managed projects, hide ERP links that assume an assigned portfolio.
+ * Do **not** use `pathnameToModule` here — that maps kill-switch modules, not “needs a project”,
+ * and was incorrectly hiding the entire procurement/finance/logistics drawer.
  * Settings (e.g. module switchboard) stay reachable via paths not listed here.
  */
 export function navItemHiddenWhenNoManagedProjects(href: string): boolean {
-  const m = pathnameToModule(href)
-  if (m != null) return true
   const h = (href.split("?")[0] ?? "").replace(/\/+$/, "") || "/"
+  /** הקמת פרויקט ראשון — תמיד גלוי גם ללא פורטפוליו */
+  if (h === "/marker-ofek/projects/new") return false
   if (h.startsWith("/marker-ofek/projects")) return true
   if (h.startsWith("/marker-ofek/contracts")) return true
   if (h.startsWith("/marker-ofek/partner-finance")) return true
   if (h.startsWith("/partner-finance")) return true
-  if (h.startsWith("/marker-ofek/command-center")) return true
   if (h.startsWith("/management")) return true
   if (h.startsWith("/partner-metrics")) return true
   return false

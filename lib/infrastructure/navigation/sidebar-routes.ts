@@ -58,22 +58,32 @@ export function isFacilityManagementContext(pathname: string | null): boolean {
   return pathnameMatchesFacilityPrefixes(pathname)
 }
 
+function pathPrefixForNavMatch(hrefOrPath: string): string {
+  const noHash = hrefOrPath.split("#")[0] ?? hrefOrPath
+  const noQuery = noHash.split("?")[0] ?? noHash
+  const trimmed = noQuery.replace(/\/+$/, "")
+  return trimmed === "" ? "/" : trimmed
+}
+
 /** התאמת קישור תפריט צד — תואם ל־AppSidebar (דשבורד, מרכז מודולים, קידומת נתיב). */
 export function isSidebarNavItemActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard") {
-    return pathname === "/" || pathname === "/dashboard"
+  const pathNorm = pathPrefixForNavMatch(pathname)
+  const hrefNorm = pathPrefixForNavMatch(href)
+
+  if (hrefNorm === "/dashboard") {
+    return pathNorm === "/" || pathNorm === "/dashboard"
   }
-  if (href === "/marker-ofek" || href === "/marker-ofek/command-center") {
+  if (hrefNorm === "/marker-ofek" || hrefNorm === "/marker-ofek/command-center") {
     return (
-      pathname === "/marker-ofek/command-center" ||
-      pathname === "/marker-ofek" ||
-      pathname === "/marker-ofek/"
+      pathNorm === "/marker-ofek/command-center" ||
+      pathNorm === "/marker-ofek" ||
+      pathNorm === "/marker-ofek/"
     )
   }
-  if (href === "/") {
-    return pathname === "/" || pathname === "/dashboard"
+  if (hrefNorm === "/") {
+    return pathNorm === "/" || pathNorm === "/dashboard"
   }
-  return pathname === href || pathname.startsWith(`${href}/`)
+  return pathNorm === hrefNorm || pathNorm.startsWith(`${hrefNorm}/`)
 }
 
 /** אינדקס קבוצת הניווט הראשונה שמכילה את הנתיב הנוכחי (או 0). */

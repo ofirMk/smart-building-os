@@ -3,32 +3,11 @@
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
-import {
-  Activity,
-  ArrowLeftRight,
-  Building2,
-  CreditCard,
-  FileEdit,
-  FolderPlus,
-  Receipt,
-  ShieldCheck,
-  ShoppingBag,
-  ShoppingCart,
-  Table2,
-  Truck,
-  Wallet,
-} from "lucide-react"
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type MouseEvent,
-} from "react"
+import { useCallback, useMemo, type MouseEvent } from "react"
 
 import { sidebarMenuButtonVariants } from "@/components/ui/sidebar"
 import { isSidebarNavItemActive } from "@/lib/infrastructure/navigation/sidebar-routes"
+import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
 import {
   filterNavItemsByModules,
   type ModuleVisibilityState,
@@ -36,65 +15,18 @@ import {
 import { navItemHiddenWhenNoManagedProjects } from "@/lib/marker-ofek/project-scope"
 import { cn } from "@/lib/utils"
 
-export type NavContextId =
-  | "procurement"
-  | "finance"
-  | "masterData"
-  | "system"
-
-type ContextualItem = {
+type DrawerNavItem = {
   title: string
   href: string
   icon: LucideIcon
 }
 
-const PRIMARY: {
-  id: NavContextId
-  label: string
-  icon: LucideIcon
-}[] = [
-  { id: "procurement", label: "ניהול רכש", icon: ShoppingCart },
-  { id: "finance", label: "ניהול כספים", icon: Wallet },
-  { id: "masterData", label: "ניהול נתונים", icon: Table2 },
-  { id: "system", label: "מערכת", icon: Activity },
-]
-
-function deriveContextFromPathname(pathname: string): NavContextId {
-  if (
-    pathname.startsWith("/marker-ofek/finance") ||
-    pathname.startsWith("/marker-ofek/holden-erp") ||
-    pathname.startsWith("/marker-ofek/sales-orders")
-  ) {
-    return "finance"
-  }
-  if (pathname.startsWith("/marker-ofek/master-data")) {
-    return "masterData"
-  }
-  if (pathname.startsWith("/marker-ofek/suppliers")) {
-    return "masterData"
-  }
-  if (pathname.startsWith("/marker-ofek/system")) {
-    return "system"
-  }
-  if (
-    pathname.startsWith("/marker-ofek/procurement") ||
-    pathname.startsWith("/marker-ofek/supply-chain") ||
-    pathname.startsWith("/marker-ofek/items")
-  ) {
-    return "procurement"
-  }
-  if (pathname.startsWith("/marker-ofek/projects")) {
-    return "masterData"
-  }
-  return "procurement"
-}
-
-function filterItems(
-  items: ContextualItem[],
+function filterDrawerItems(
+  items: DrawerNavItem[],
   modules: ModuleVisibilityState,
   scopedProjectCount: number | null,
   applyEmptyPortfolioNav: boolean
-): ContextualItem[] {
+): DrawerNavItem[] {
   const modFiltered = filterNavItemsByModules(items, modules)
   if (!applyEmptyPortfolioNav) return modFiltered
   if (scopedProjectCount === null || scopedProjectCount > 0) return modFiltered
@@ -103,11 +35,7 @@ function filterItems(
   )
 }
 
-function contextIsActive(pathname: string, ctx: NavContextId): boolean {
-  return deriveContextFromPathname(pathname) === ctx
-}
-
-type MarkerOfekDrawerNavProps = {
+export type MarkerOfekDrawerNavProps = {
   modules: ModuleVisibilityState
   closeMobileNav: () => void
   markerSoftNav?: (href: string, title: string) => void
@@ -119,122 +47,37 @@ type MarkerOfekDrawerNavProps = {
   applyEmptyPortfolioNav?: boolean
 }
 
-/** Drawer / overlay navigation (no shadcn Sidebar shell). Used by `DashboardNavDrawerPanel`. */
+/**
+ * מגירת ניווט מרקר אופק — נבנה מ־`MARKER_OFEK_SIDEBAR_SECTIONS` (מקור אמת יחיד).
+ * עדכון `marker-ofek-sidebar-nav-config.ts` משתקף כאן אוטומטית.
+ *
+ * התראות גלובליות (פעמון) — ב־`components/layout/TopNavBar.tsx` דרך `NotificationBell`, לא בסרגל צד.
+ */
 export function MarkerOfekDrawerNavContent({
   modules,
   closeMobileNav,
   markerSoftNav,
-  showPartnerFinanceNav: _showPartnerFinanceNav = false,
-  showHoldingExecutiveNav: _showHoldingExecutiveNav = false,
-  showUserPermissionsNav: _showUserPermissionsNav = false,
-  showAiUserSetupNav: _showAiUserSetupNav = false,
   scopedProjectCount = null,
   applyEmptyPortfolioNav = false,
 }: MarkerOfekDrawerNavProps) {
   const pathname = usePathname() ?? ""
-  const [activeContext, setActiveContext] = useState<NavContextId>(() =>
-    deriveContextFromPathname(pathname)
-  )
 
-  useEffect(() => {
-    setActiveContext(deriveContextFromPathname(pathname))
-  }, [pathname])
-
-  const contextualById = useMemo(
-    (): Record<NavContextId, ContextualItem[]> => ({
-      procurement: [
-        {
-          title: "מרכז רכש אחוד",
-          href: "/marker-ofek/procurement",
-          icon: ShoppingCart,
-        },
-        {
-          title: "רכש ותעודת משלוח",
-          href: "/marker-ofek/procurement/purchase-order-delivery-flow",
-          icon: Truck,
-        },
-      ],
-      finance: [
-        {
-          title: "הזמנת לקוח",
-          href: "/marker-ofek/sales-orders/new",
-          icon: ShoppingBag,
-        },
-        {
-          title: "הזנת פקודת יומן",
-          href: "/marker-ofek/finance/journal-entries/new",
-          icon: FileEdit,
-        },
-        {
-          title: "בקרת תשלומים",
-          href: "/marker-ofek/finance/clearance",
-          icon: ShieldCheck,
-        },
-        {
-          title: "התאמות בנקים",
-          href: "/marker-ofek/finance/reconciliations",
-          icon: ArrowLeftRight,
-        },
-        {
-          title: "הפקת חשבונית מס",
-          href: "/marker-ofek/finance/billing/new",
-          icon: Receipt,
-        },
-        {
-          title: "ניהול מס״ב",
-          href: "/marker-ofek/finance/payments",
-          icon: CreditCard,
-        },
-      ],
-      masterData: [
-        {
-          title: "מרכז נתוני מאסטר",
-          href: "/marker-ofek/master-data",
-          icon: Table2,
-        },
-        {
-          title: "הקמת ספק",
-          href: "/marker-ofek/entities/new?kind=supplier&lock=1",
-          icon: Building2,
-        },
-        {
-          title: "הקמת פרויקט",
-          href: "/marker-ofek/projects/new",
-          icon: FolderPlus,
-        },
-      ],
-      system: [
-        {
-          title: "בריאות המערכת",
-          href: "/marker-ofek/system/health",
-          icon: Activity,
-        },
-      ],
-    }),
-    []
-  )
-
-  const visibleContextual = useMemo(
-    () =>
-      filterItems(
-        contextualById[activeContext],
+  const navSections = useMemo(() => {
+    return MARKER_OFEK_SIDEBAR_SECTIONS.map((section) => ({
+      id: section.id,
+      label: section.label,
+      items: filterDrawerItems(
+        section.items.map((it) => ({
+          title: it.title,
+          href: it.href,
+          icon: it.icon,
+        })),
         modules,
         scopedProjectCount,
         applyEmptyPortfolioNav
       ),
-    [
-      activeContext,
-      contextualById,
-      modules,
-      scopedProjectCount,
-      applyEmptyPortfolioNav,
-    ]
-  )
-
-  const contextTitle = useMemo(() => {
-    const p = PRIMARY.find((x) => x.id === activeContext)
-    return p?.label ?? "ניווט"
-  }, [activeContext])
+    })).filter((s) => s.items.length > 0)
+  }, [modules, scopedProjectCount, applyEmptyPortfolioNav])
 
   const onNavClick = useCallback(
     (e: MouseEvent<HTMLAnchorElement>, href: string, title: string) => {
@@ -251,96 +94,54 @@ export function MarkerOfekDrawerNavContent({
 
   return (
     <div
-      className="flex min-h-0 flex-1 gap-0 border-t border-slate-800/40 pt-2"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-slate-800/40 pt-2"
       dir="rtl"
     >
       <nav
-        className="flex w-[52px] shrink-0 flex-col items-center gap-1 border-e border-slate-800/50 bg-slate-950/40 py-2 pe-0.5 group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent"
-        aria-label="ארבעת העמודים"
+        className="flex min-h-0 flex-1 flex-col gap-4 px-1 pb-3"
+        aria-label="ניווט מרקר אופק"
       >
-        {PRIMARY.map((p) => {
-          const Icon = p.icon
-          const active = contextIsActive(pathname, p.id)
-          const selected = activeContext === p.id
-          return (
-            <button
-              key={p.id}
-              type="button"
-              title={p.label}
-              onClick={() => setActiveContext(p.id)}
-              className={cn(
-                "flex size-10 items-center justify-center rounded-lg transition-all duration-200",
-                selected || active
-                  ? "bg-emerald-500/15 text-emerald-400 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.35)]"
-                  : "text-slate-500 hover:bg-slate-800/90 hover:text-slate-100"
-              )}
-            >
-              <Icon className="size-[18px]" strokeWidth={1.75} aria-hidden />
-              <span className="sr-only">{p.label}</span>
-            </button>
-          )
-        })}
-      </nav>
-
-      <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-        <div className="border-b border-slate-800/50 px-2 pb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            {contextTitle}
-          </p>
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeContext}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="px-1 py-1"
-          >
-            {visibleContextual.length === 0 ? (
-              <p className="px-3 py-6 text-center text-[11px] leading-relaxed text-slate-500">
-                אין קישורים זמינים בהקשר הזה (בדוק מודולים או הרשאות).
-              </p>
-            ) : (
-              <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
-                {visibleContextual.map((item) => {
-                  const Icon = item.icon
-                  const active = isSidebarNavItemActive(pathname, item.href)
-                  return (
-                    <li
-                      key={`${activeContext}-${item.href}`}
-                      className="group/menu-item relative"
+        {navSections.map((section) => (
+          <div key={section.id} className="min-w-0">
+            <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {section.label}
+            </p>
+            <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
+              {section.items.map((item) => {
+                const Icon = item.icon
+                const active = isSidebarNavItemActive(pathname, item.href)
+                return (
+                  <li
+                    key={`${section.id}-${item.href}`}
+                    className="group/menu-item relative"
+                  >
+                    <Link
+                      href={item.href}
+                      onClick={(e) => onNavClick(e, item.href, item.title)}
+                      dir="rtl"
+                      data-active={active ? "" : undefined}
+                      className={cn(
+                        sidebarMenuButtonVariants({
+                          variant: "default",
+                          size: "default",
+                        }),
+                        "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
+                        "[&_svg]:size-4 [&_svg]:shrink-0",
+                        "data-active:bg-emerald-500/20 data-active:text-emerald-50 data-active:shadow-sm",
+                        "hover:bg-slate-800/80 hover:text-emerald-100",
+                        "flex w-full items-center justify-start text-start"
+                      )}
                     >
-                      <Link
-                        href={item.href}
-                        onClick={(e) => onNavClick(e, item.href, item.title)}
-                        dir="rtl"
-                        data-active={active ? "" : undefined}
-                        className={cn(
-                          sidebarMenuButtonVariants({
-                            variant: "default",
-                            size: "default",
-                          }),
-                          "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
-                          "[&_svg]:size-4 [&_svg]:shrink-0",
-                          "data-active:bg-emerald-500/20 data-active:text-emerald-50 data-active:shadow-sm",
-                          "hover:bg-slate-800/80 hover:text-emerald-100",
-                          "flex w-full items-center justify-start text-start"
-                        )}
-                      >
-                        <Icon aria-hidden />
-                        <span className="truncate font-currency-mono text-[13px]">
-                          {item.title}
-                        </span>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+                      <Icon aria-hidden />
+                      <span className="truncate text-[13px]">{item.title}</span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
     </div>
   )
 }

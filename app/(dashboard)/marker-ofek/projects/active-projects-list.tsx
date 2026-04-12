@@ -27,6 +27,14 @@ export type ActiveProjectRow = Pick<
   "id" | "internal_project_code" | "name" | "client_name" | "status" | "created_at"
 >
 
+function notifySuccess(title: string, description?: string) {
+  toast.success(title, { description })
+}
+
+function notifyError(title: string, description?: string) {
+  toast.error(title, { description })
+}
+
 export function ActiveProjectsList({ projects }: { projects: ActiveProjectRow[] }) {
   const router = useRouter()
   const [deleteOpenId, setDeleteOpenId] = React.useState<string | null>(null)
@@ -37,14 +45,14 @@ export function ActiveProjectsList({ projects }: { projects: ActiveProjectRow[] 
       try {
         const res = await deleteProject(projectId)
         if (!res.ok) {
-          toast.error(res.error)
+          notifyError("מחיקת פרויקט נכשלה", res.error)
           return
         }
-        toast.success("הפרויקט נמחק מהרשימה")
+        notifySuccess("מחיקת פרויקט הושלמה", "הפרויקט הוסר מרשימת הפעילים.")
         setDeleteOpenId(null)
         router.refresh()
       } catch (e) {
-        toast.error(formatError(e))
+        notifyError("מחיקת פרויקט נכשלה", formatError(e))
       }
     })
   }

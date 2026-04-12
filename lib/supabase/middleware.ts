@@ -11,8 +11,49 @@ import {
   MARKER_ONBOARDING_SANDBOX_PATH,
 } from "@/lib/marker-ofek/hr-qualification-gate"
 import { canViewHoldingExecutive } from "@/lib/marker-ofek/partner-metrics/access"
-/** נתיבים הדורשים משתמש מחובר */
+
+/** מרחב ERP מרקר אופק (דשבורד, סרגל, מודולים פנימיים) — דורש סשן + כללי שכבה זו בלבד. */
+export const MARKER_OFEK_ERP_PATH_PREFIX = "/marker-ofek" as const
+
+/**
+ * פורטל קבלנים חיצוני — `app/(external)/subcontractor-portal` (ללא מעטפת דשבורד).
+ * לא נכלל ב־`isProtectedPath` כברירת מחדל (דמו ציבורי); חשיפת API רגישה נחסמת ע"י רשימת `/api/*` פנימית.
+ */
+export const SUBCONTRACTOR_PORTAL_PATH_PREFIX = "/subcontractor-portal" as const
+
+function isSubcontractorPortalPath(pathname: string): boolean {
+  return (
+    pathname === SUBCONTRACTOR_PORTAL_PATH_PREFIX ||
+    pathname.startsWith(`${SUBCONTRACTOR_PORTAL_PATH_PREFIX}/`)
+  )
+}
+
+function isMarkerOfekErpPath(pathname: string): boolean {
+  return (
+    pathname === MARKER_OFEK_ERP_PATH_PREFIX ||
+    pathname.startsWith(`${MARKER_OFEK_ERP_PATH_PREFIX}/`)
+  )
+}
+
+/**
+ * API פנימיים (Holden / רכש / HR / צ'אט ERP) — לא זמינים ללא סשן, גם אם הדפדפן בפורטל חיצוני.
+ * לא כוללים webhooks כמו `/api/cron` או סורקים — יש לאמת מפתח נפרד בנתיב עצמו.
+ */
+function isSensitiveInternalApiPath(pathname: string): boolean {
+  const prefixes = [
+    "/api/holden-erp",
+    "/api/purchase-orders",
+    "/api/ocr-invoice",
+    "/api/hr/analyze-contract",
+    "/api/hr-onboarding-chat",
+    "/api/chat",
+  ] as const
+  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+/** נתיבים הדורשים משתמש מחובר (או API פנימי רגיש). */
 function isProtectedPath(pathname: string): boolean {
+  if (isSensitiveInternalApiPath(pathname)) return true
   if (pathname === "/" || pathname === "/dashboard") return true
   if (pathname === "/facility" || pathname.startsWith("/facility/")) return true
   if (pathname.startsWith("/tenant")) return true
@@ -29,7 +70,7 @@ function isProtectedPath(pathname: string): boolean {
     "/vendors",
     "/chat",
     "/portal",
-    "/marker-ofek",
+    MARKER_OFEK_ERP_PATH_PREFIX,
     "/management",
     "/hh-panels",
     "/hq",
@@ -105,7 +146,12 @@ async function getProfileRole(
 }
 
 /**
- * רענון סשן Supabase + הגנת נתיבים. אחרי התחברות — פורטל מרכזי (קבוצת הולדן).
+ * רענון סשן Supabase + הגנת נתיבים (RBAC שכבת Edge):
+ * - `/marker-ofek/*` — הקשר ERP פנימי בלבד; דורש משתמש מחובר + שער הכשרה (Diamond) כשמוגדר.
+ * - `/subcontractor-portal` — משטח נפרד; ללא מעטפת דשבורד (קביעה ב־`app/(external)/`).
+ * - API רגישים — רשימה ב־`isSensitiveInternalApiPath`; אימות סכימות בצד שרת חובה בנוסף (ראו הערות Zod).
+ * אחרי התחברות — פורטל מרכזי (קבוצת הולדן) לפי תפקיד.
+ * נקרא מ־`proxy.ts` (שורש הפרויקט; Next.js 16+).
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -155,7 +201,7 @@ export async function updateSession(request: NextRequest) {
 
   if (
     user &&
-    (pathname.startsWith("/marker-ofek") ||
+    (isMarkerOfekErpPath(pathname) ||
       pathname === "/management" ||
       pathname.startsWith("/management/"))
   ) {
@@ -194,6 +240,15 @@ export async function updateSession(request: NextRequest) {
     const redirectResponse = NextResponse.redirect(redirectUrl)
     applyCookies(supabaseResponse, redirectResponse)
     return redirectResponse
+  }
+
+  if (isSubcontractorPortalPath(pathname)) {
+    supabaseResponse.headers.set(
+      "X-Marker-Ofek-Surface",
+      "external-subcontractor-portal"
+    )
+  } else if (isMarkerOfekErpPath(pathname)) {
+    supabaseResponse.headers.set("X-Marker-Ofek-Surface", "internal-erp")
   }
 
   return supabaseResponse
