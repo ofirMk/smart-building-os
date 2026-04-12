@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { AttendanceWorkspace } from "@/components/marker-ofek/execution/attendance-workspace"
 
@@ -11,7 +12,19 @@ export const metadata: Metadata = {
 export default function AttendancePage() {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
-      <AttendanceWorkspace />
+      {/* הוספת Suspense מבטיחה ש-Vercel יוכל לקמפל את הדף לסביבת הייצור */}
+      <Suspense
+        fallback={
+          <div
+            className="flex flex-1 items-center justify-center p-8 text-center text-slate-500"
+            dir="rtl"
+          >
+            טוען מערכת נוכחות...
+          </div>
+        }
+      >
+        <AttendanceWorkspace />
+      </Suspense>
     </div>
   )
 }
