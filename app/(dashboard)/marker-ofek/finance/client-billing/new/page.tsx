@@ -1,16 +1,8 @@
 import type { Metadata } from "next"
-import dynamic from "next/dynamic"
 import { Suspense } from "react"
 
+import { ClientBillingWorkspace } from "@/components/marker-ofek/finance/client-billing-workspace"
 import { FinanceBillingWorkspaceSkeleton } from "@/components/marker-ofek/finance/billing-workspace-skeleton"
-
-const ClientBillingWorkspace = dynamic(
-  () =>
-    import("@/components/marker-ofek/finance/client-billing-workspace").then(
-      (m) => ({ default: m.ClientBillingWorkspace })
-    ),
-  { loading: () => <FinanceBillingWorkspaceSkeleton />, ssr: false }
-)
 
 export const metadata: Metadata = {
   title: "הגשת חשבון יזם (מצטבר)",
