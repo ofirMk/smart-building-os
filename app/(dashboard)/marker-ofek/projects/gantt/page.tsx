@@ -1,38 +1,25 @@
 import { GanttChartSquare } from "lucide-react"
 
+import { fetchGanttManagementList } from "@/app/actions/gantt-actions"
 import { DenseMasterDetailTemplate } from "@/components/layout/DenseMasterDetailTemplate"
-import { GanttBoard } from "@/components/marker-ofek/projects/gantt-board"
-import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
-
-const FALLBACK_PROJECT_ID = "00000000-0000-0000-0000-000000000000"
+import { GanttPortfolioClient } from "@/components/marker-ofek/projects/gantt-portfolio-client"
 
 export default async function MarkerOfekProjectsGanttPage() {
-  const supabase = await createSupabaseServerAuthClient()
-  const { data: project } = await supabase
-    .schema("public")
-    .from("projects")
-    .select("id, name")
-    .eq("is_deleted", false)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  const projectId = String(project?.id ?? "").trim() || FALLBACK_PROJECT_ID
-  const projectName = String(project?.name ?? "").trim()
+  const rows = await fetchGanttManagementList()
 
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
       eyebrow="Marker Ofek · Projects"
-      title="מערכת ניהול גאנט"
-      description={`פרויקט פעיל: ${projectName || "פרויקט בדיקה"}`}
+      title="ניהול תרשימי גאנט"
+      description="יצירה, פתיחה וניהול לוחות זמנים מרובים לכל פרויקט."
       leading={<GanttChartSquare aria-hidden />}
       master={
         <div className="flex items-center justify-between gap-2 px-1 py-0.5">
-          <p className="text-xs text-slate-600">לוח זמנים, תלותים ותצוגת TreeGrid בסגנון MS Project.</p>
+          <p className="text-xs text-slate-600">ארכיטקטורת Multi-Gantt — כל פרויקט יכול להחזיק מספר לוחות זמנים.</p>
         </div>
       }
-      detail={<GanttBoard projectId={projectId} />}
+      detail={<GanttPortfolioClient initialRows={rows} />}
     />
   )
 }

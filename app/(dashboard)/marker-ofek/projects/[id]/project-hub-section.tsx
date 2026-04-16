@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { fetchGanttsByProject } from "@/app/actions/gantt-actions"
 import { ProjectMasterHub360 } from "@/components/marker-ofek/projects/project-master-hub-360"
 import {
   getProjectMasterHubMock,
@@ -59,6 +60,7 @@ export async function MarkerOfekProjectHubSection({ id }: { id: string }) {
     null
 
   const mock = getProjectMasterHubMock(project.id)
+  const ganttCharts = await fetchGanttsByProject(project.id)
 
   return (
     <ProjectMasterHub360
@@ -68,6 +70,7 @@ export async function MarkerOfekProjectHubSection({ id }: { id: string }) {
       status={project.status}
       addressLine={addressLine}
       mock={mock}
+      ganttCharts={ganttCharts}
     />
   )
 }
