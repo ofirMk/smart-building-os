@@ -7,6 +7,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Banknote,
+  BarChart3,
   CalendarClock,
   CloudSun,
   FileUp,
@@ -21,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { ProjectMasterHubMock } from "@/lib/marker-ofek/project-master-hub-mock"
+import type { GanttRecord } from "@/types/gantt"
 import type { MoProjectStatus } from "@/types/marker-ofek"
 
 const ils = new Intl.NumberFormat("he-IL", {
@@ -209,8 +211,9 @@ export function ProjectMasterHub360(props: {
   status: MoProjectStatus
   addressLine: string | null
   mock: ProjectMasterHubMock
+  ganttCharts?: GanttRecord[]
 }) {
-  const { projectId, displayName, internalCode, status, addressLine, mock } =
+  const { projectId, displayName, internalCode, status, addressLine, mock, ganttCharts } =
     props
   const reduce = useReducedMotion()
   const [now, setNow] = React.useState(() => new Date())
@@ -541,6 +544,38 @@ export function ProjectMasterHub360(props: {
           </section>
 
           <aside className="order-2 space-y-3 lg:col-span-4 xl:col-span-3">
+            {ganttCharts && ganttCharts.length > 0 ? (
+              <HubCard className="p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <BarChart3 className="size-4 text-indigo-600" aria-hidden />
+                  <p className="text-sm font-bold text-slate-900">תרשימי גאנט</p>
+                </div>
+                <ul className="space-y-2">
+                  {ganttCharts.map((g) => (
+                    <li key={g.id}>
+                      <Link
+                        href={`/marker-ofek/projects/gantt/${g.id}`}
+                        className="block rounded-lg border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:border-indigo-300 hover:from-indigo-50/60"
+                      >
+                        {g.name}
+                        <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
+                          {g.status === "active" ? "פעיל" : g.status}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  <Link
+                    href="/marker-ofek/projects/gantt"
+                    className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-900"
+                  >
+                    כל הגאנטים בארגון ←
+                  </Link>
+                </div>
+              </HubCard>
+            ) : null}
+
             <HubCard className="p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="size-4 text-amber-500" aria-hidden />

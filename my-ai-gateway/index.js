@@ -1,17 +1,20 @@
 const { streamText } = require("ai")
 const { createOpenAI } = require("@ai-sdk/openai")
-require("dotenv").config()
+const path = require("node:path")
+require("dotenv").config({
+  path: path.resolve(process.cwd(), "..", ".env.local")
+})
 
 // ספק OpenAI תואם Gateway (OpenAI-compatible endpoint)
 const gateway = createOpenAI({
   // לדוגמה:
   // baseURL: "https://gateway.ai.cloudflare.com/v1/MY_ACCOUNT/MY_GATEWAY/openai",
-  apiKey: process.env.AI_GATEWAY_API_KEY
+  apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY
 })
 
 async function main() {
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    throw new Error("Missing AI_GATEWAY_API_KEY in environment variables")
+  if (!process.env.AI_GATEWAY_API_KEY && !process.env.OPENAI_API_KEY) {
+    throw new Error("Missing AI_GATEWAY_API_KEY or OPENAI_API_KEY in root .env.local")
   }
 
   console.log("...מייצר תשובה\n")

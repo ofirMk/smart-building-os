@@ -26,7 +26,6 @@ import {
   MarkerOfekWorkspaceProvider,
   useMarkerOfekWorkspace,
 } from "./marker-ofek-workspace-context"
-import { MarkerOfekHeaderNav } from "@/components/marker-ofek/layout/header"
 
 /** רק כשאין פרויקט במגירה ולא בדף שכבר רושם ניווט יהלום בדף */
 function MarkerOfekWorkspaceProjectShortcutInner() {
@@ -56,14 +55,6 @@ function MarkerOfekWorkspaceChrome({
   return (
     <>
       <MarkerOfekProjectContextShortcut />
-      <div
-        className="sticky top-0 z-20 mb-2 border-b border-slate-200 bg-white px-2 py-2 shadow-sm md:px-3"
-        dir="rtl"
-      >
-        <div className="w-full overflow-x-auto">
-          <MarkerOfekHeaderNav className="w-max min-w-full" />
-        </div>
-      </div>
       <motion.div
         layout
         className="mb-3 flex w-full max-w-none flex-col gap-1.5 border-b border-slate-200 bg-white/95 px-2 py-2 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-white/90 md:px-3"

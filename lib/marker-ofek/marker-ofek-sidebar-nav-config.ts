@@ -3,10 +3,12 @@ import {
   Activity,
   AlertTriangle,
   ArrowLeftRight,
+  Bot,
   Building2,
   ClipboardList,
   Clock,
   CreditCard,
+  GanttChartSquare,
   FileEdit,
   FileText,
   FolderKanban,
@@ -16,6 +18,7 @@ import {
   LineChart,
   ListOrdered,
   Map,
+  MessageSquare,
   Package,
   PackageOpen,
   PieChart,
@@ -67,9 +70,24 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
     defaultOpen: true,
     items: [
       {
+        title: "אתרים פעילים",
+        href: "/marker-ofek/projects",
+        icon: FolderKanban,
+      },
+      {
         title: "הקמת פרויקט / מכרז",
         href: "/marker-ofek/projects/new",
         icon: FolderKanban,
+      },
+      {
+        title: "ניהול משימות",
+        href: "/marker-ofek/execution/daily-logs/new",
+        icon: ClipboardList,
+      },
+      {
+        title: "גאנט פרויקטים",
+        href: "/marker-ofek/projects/gantt",
+        icon: GanttChartSquare,
       },
     ],
   },
@@ -107,6 +125,11 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "קטלוג ברכש (מחובר)",
         href: "/marker-ofek/procurement/catalog",
         icon: Table2,
+      },
+      {
+        title: "ספקים",
+        href: "/marker-ofek/procurement/suppliers",
+        icon: Building2,
       },
       {
         title: "קליטת סחורה (GR)",
@@ -169,6 +192,16 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         href: "/marker-ofek/hr/timesheets",
         icon: ClipboardList,
       },
+      {
+        title: "ספר עובדים",
+        href: "/marker-ofek/entities/new?kind=worker",
+        icon: Building2,
+      },
+      {
+        title: "נוכחות עובדים",
+        href: "/marker-ofek/execution/attendance",
+        icon: Clock,
+      },
     ],
   },
   {
@@ -190,6 +223,16 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "חשבונות יזם (Client Billing)",
         href: "/marker-ofek/finance/client-billing/new",
         icon: Landmark,
+      },
+      {
+        title: "חשבוניות מס",
+        href: "/marker-ofek/finance/invoices",
+        icon: Receipt,
+      },
+      {
+        title: "תשלומים",
+        href: "/marker-ofek/finance/payments",
+        icon: CreditCard,
       },
     ],
   },
@@ -239,6 +282,23 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "הקמת ספק",
         href: "/marker-ofek/entities/new?kind=supplier&lock=1",
         icon: Building2,
+      },
+    ],
+  },
+  {
+    id: "ai-agent",
+    label: "AI Agent",
+    defaultOpen: true,
+    items: [
+      {
+        title: "צ׳אט עוזר חכם",
+        href: "/chat",
+        icon: MessageSquare,
+      },
+      {
+        title: "סוכן תפעול ארגוני",
+        href: "/chat",
+        icon: Bot,
       },
     ],
   },

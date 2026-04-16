@@ -5,16 +5,25 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import {
+  Bot,
   ChevronDown,
   ClipboardList,
+  FileStack,
   LayoutDashboard,
+  ListChecks,
+  PackageSearch,
+  Receipt,
   Package,
+  ScanLine,
   Search,
   Sparkles,
+  Users,
+  WalletCards,
   UserRound,
 } from "lucide-react"
 
 import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
+import { MarkerOfekHeaderNav } from "@/components/marker-ofek/layout/header"
 import { NotificationBell } from "@/components/marker-ofek/layout/notification-bell"
 import { Button } from "@/components/ui/button"
 import {
@@ -42,7 +51,7 @@ type TopNavBarProps = {
 
 type DomainId = "marker_ofek" | "holden_group"
 
-type MegaId = "supply" | "finance" | "execution"
+type MegaId = "procurement" | "finance" | "projects" | "hr" | "ai"
 
 type MegaItem = {
   href: string
@@ -53,10 +62,11 @@ type MegaItem = {
 
 const MEGA_MENUS: Record<
   MegaId,
-  { label: string; items: MegaItem[] }
+  { label: string; rootHref: string; items: MegaItem[] }
 > = {
-  supply: {
-    label: "שרשרת אספקה",
+  procurement: {
+    label: "רכש",
+    rootHref: "/marker-ofek/procurement",
     items: [
       {
         href: "/marker-ofek/procurement/orders",
@@ -65,50 +75,118 @@ const MEGA_MENUS: Record<
         icon: Package,
       },
       {
-        href: "/marker-ofek/procurement/receive",
-        title: "קבלת סחורה",
-        subtitle: "רישום אספקה ותעודות",
-        icon: ClipboardList,
+        href: "/marker-ofek/procurement/purchase-orders/from-boq",
+        title: "BoQ (כתב כמויות)",
+        subtitle: "הפקת הזמנות מתוך מכרז",
+        icon: FileStack,
+      },
+      {
+        href: "/marker-ofek/procurement/suppliers",
+        title: "ספקים",
+        subtitle: "ניהול ספקים והסכמי מסגרת",
+        icon: Users,
       },
       {
         href: "/marker-ofek/procurement/catalog",
-        title: "קטלוג פריטים",
-        subtitle: "מקטים, יחידות ומחירונים",
-        icon: LayoutDashboard,
+        title: "קטלוגים",
+        subtitle: "מחירונים, פריטים ומקטים",
+        icon: PackageSearch,
       },
     ],
   },
   finance: {
     label: "כספים",
+    rootHref: "/marker-ofek/finance",
     items: [
       {
-        href: "/marker-ofek/finance/subcontractor-accounts",
-        title: "חשבונות קבלני משנה",
-        subtitle: "תשלומים חלקיים וקיזוזים",
+        href: "/marker-ofek/finance/budget-control",
+        title: "תקציבים",
+        subtitle: "תקציב מול ביצוע וחריגות",
+        icon: WalletCards,
+      },
+      {
+        href: "/marker-ofek/finance/invoices",
+        title: "חשבוניות",
+        subtitle: "ניהול חשבוניות ומעקב",
+        icon: Receipt,
+      },
+      {
+        href: "/marker-ofek/finance/payments",
+        title: "תשלומים",
+        subtitle: "מס״ב, התאמות ובקרה",
         icon: ClipboardList,
       },
       {
-        href: "/marker-ofek/budget",
-        title: "בקרה תקציבית",
-        subtitle: "WBS · תקציב מול ביצוע",
+        href: "/marker-ofek/finance/billing",
+        title: "Billing",
+        subtitle: "חשבונות יזם וקבלנים",
         icon: LayoutDashboard,
       },
     ],
   },
-  execution: {
-    label: "ביצוע",
+  projects: {
+    label: "פרויקטים",
+    rootHref: "/marker-ofek/projects",
     items: [
       {
-        href: "/marker-ofek/execution/daily-logs",
-        title: "יומני עבודה",
-        subtitle: "דיווחי אתר יומיים",
-        icon: ClipboardList,
+        href: "/marker-ofek/projects",
+        title: "אתרים פעילים",
+        subtitle: "תמונת מצב לכלל הפרויקטים",
+        icon: LayoutDashboard,
+      },
+      {
+        href: "/marker-ofek/execution/daily-logs/new",
+        title: "ניהול משימות",
+        subtitle: "יומן ביצוע ומשימות שטח",
+        icon: ListChecks,
       },
       {
         href: "/marker-ofek/execution/gantt",
-        title: "גאנט תכנון",
-        subtitle: "לוחות זמנים ובקרה",
-        icon: LayoutDashboard,
+        title: "גאנט",
+        subtitle: "תכנון ובקרת לוחות זמנים",
+        icon: ScanLine,
+      },
+    ],
+  },
+  hr: {
+    label: "משאבי אנוש",
+    rootHref: "/marker-ofek/hr/timesheets",
+    items: [
+      {
+        href: "/marker-ofek/entities/new?kind=worker",
+        title: "ספר עובדים",
+        subtitle: "כרטיסי עובד והרשאות",
+        icon: Users,
+      },
+      {
+        href: "/marker-ofek/execution/attendance",
+        title: "נוכחות",
+        subtitle: "שעון נוכחות יומי",
+        icon: ClipboardList,
+      },
+      {
+        href: "/marker-ofek/hr/timesheets",
+        title: "שכר ושעות",
+        subtitle: "ניהול timesheets ותלושי שכר",
+        icon: WalletCards,
+      },
+    ],
+  },
+  ai: {
+    label: "AI Agent",
+    rootHref: "/chat",
+    items: [
+      {
+        href: "/chat",
+        title: "עוזר AI ראשי",
+        subtitle: "צ׳אט חכם ארגוני",
+        icon: Bot,
+      },
+      {
+        href: "/marker-ofek/procurement/goods-receipt/new",
+        title: "AI OCR למסמכים",
+        subtitle: "Magic Extract לתעודות משלוח",
+        icon: ScanLine,
       },
     ],
   },
@@ -135,6 +213,11 @@ const QUICK_SEARCH_LINKS: { href: string; title: string; subtitle: string }[] =
       href: "/holden",
       title: "הולדן — ניהול נכסים",
       subtitle: "מתקנים",
+    },
+    {
+      href: "/chat",
+      title: "AI Agent",
+      subtitle: "צ'אט חכם",
     },
   ]
 
@@ -235,10 +318,10 @@ function MegaMenuPanel({
             </p>
           </div>
           <ul className="flex flex-col gap-0.5 p-1">
-            {data.items.map((item) => {
+            {data.items.map((item, index) => {
               const Icon = item.icon
               return (
-                <li key={item.href}>
+                <li key={`${id}-${item.title}-${index}`}>
                   <Link
                     href={item.href}
                     onClick={onLinkNavigate}
@@ -271,14 +354,14 @@ function MegaMenuPanel({
 }
 
 function BreathingNavTrigger({
-  id,
+  href,
   label,
   open,
   active,
   onEnter,
   onLeaveIntent,
 }: {
-  id: MegaId
+  href: string
   label: string
   open: boolean
   active: boolean
@@ -291,8 +374,8 @@ function BreathingNavTrigger({
       onMouseEnter={onEnter}
       onMouseLeave={onLeaveIntent}
     >
-      <button
-        type="button"
+      <Link
+        href={href}
         aria-expanded={open}
         aria-haspopup="true"
         onFocus={onEnter}
@@ -322,7 +405,7 @@ function BreathingNavTrigger({
             (open || active) && "scale-x-100 opacity-100"
           )}
         />
-      </button>
+      </Link>
     </div>
   )
 }
@@ -426,6 +509,7 @@ export function TopNavBar({
     pathname === "/marker-ofek/command-center" ||
     pathname === "/marker-ofek" ||
     pathname === "/marker-ofek/"
+  const isMarkerWorkspace = pathname.startsWith("/marker-ofek")
 
   return (
     <>
@@ -435,7 +519,7 @@ export function TopNavBar({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "sticky z-[50] flex min-h-[3.75rem] shrink-0 flex-col border-b border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur-md print:hidden dark:!border-slate-200 dark:!bg-white dark:!text-slate-900",
+          "sticky z-[50] flex min-h-[3.75rem] shrink-0 flex-col border-b border-white/70 bg-white/80 text-slate-900 shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden dark:!border-white/70 dark:!bg-white/80 dark:!text-slate-900",
           isHoldenErpShell ? "shadow-[0_1px_0_0_rgb(226_232_240/0.9)]" : "",
           stickyClassName,
           className
@@ -503,76 +587,86 @@ export function TopNavBar({
             </div>
           </div>
 
-          {/* Mega navigation cluster — hover bridge keeps panel open */}
-          <div
-            ref={navClusterRef}
-            className="hidden"
-            onMouseLeave={scheduleCloseMega}
-          >
-            <nav
-              className="relative flex flex-wrap items-center justify-center gap-1"
-              aria-label="ניווט ראשי — תפריטי עומק"
-            >
-              <div className="relative px-0.5">
-                <Link
-                  href="/marker-ofek/command-center"
-                  className={cn(
-                    "group/cc relative block rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
-                    commandCenterActive
-                      ? "text-slate-900"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                >
-                  מרכז פיקוד
-                  <span
-                    aria-hidden
-                    className={cn(
-                      BREATHING_LINE_CLASS,
-                      "pointer-events-none absolute inset-x-2 -bottom-px origin-center transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                      commandCenterActive
-                        ? "scale-x-100 opacity-100"
-                        : "scale-x-0 opacity-0 group-hover/cc:scale-x-100 group-hover/cc:opacity-100"
-                    )}
-                  />
-                </Link>
-              </div>
-
-              {(["supply", "finance", "execution"] as const).map((mid) => (
-                <div
-                  key={mid}
-                  className="relative"
-                  onMouseEnter={() => openMegaId(mid)}
-                >
-                  <BreathingNavTrigger
-                    id={mid}
-                    label={MEGA_MENUS[mid].label}
-                    open={openMega === mid}
-                    active={megaActive(pathname, mid)}
-                    onEnter={() => openMegaId(mid)}
-                    onLeaveIntent={() => {}}
-                  />
-                </div>
-              ))}
-            </nav>
-
-            {/* Single portal for mega panel — positioned under nav */}
+          {/* Main top navigation — single source for Marker Ofek from sidebar config */}
+          {isMarkerWorkspace ? (
+            <div className="hidden min-w-0 flex-1 overflow-x-auto lg:block" dir="rtl">
+              <MarkerOfekHeaderNav className="w-max min-w-full" />
+            </div>
+          ) : (
             <div
-              className="pointer-events-none absolute start-0 end-0 top-full z-[54] flex justify-center"
-              onMouseEnter={clearCloseTimer}
+              ref={navClusterRef}
+              className="hidden lg:block"
               onMouseLeave={scheduleCloseMega}
             >
-              <div className="pointer-events-auto relative h-0 w-full max-w-3xl">
-                {(["supply", "finance", "execution"] as const).map((mid) => (
-                  <MegaMenuPanel
-                    key={mid}
-                    id={mid}
-                    open={openMega === mid}
-                    onLinkNavigate={() => setOpenMega(null)}
-                  />
-                ))}
+              <nav
+                className="relative flex flex-wrap items-center justify-center gap-1"
+                aria-label="ניווט ראשי — תפריטי עומק"
+              >
+                <div className="relative px-0.5">
+                  <Link
+                    href="/marker-ofek/command-center"
+                    className={cn(
+                      "group/cc relative block rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
+                      commandCenterActive
+                        ? "text-slate-900"
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    מרכז פיקוד
+                    <span
+                      aria-hidden
+                      className={cn(
+                        BREATHING_LINE_CLASS,
+                        "pointer-events-none absolute inset-x-2 -bottom-px origin-center transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                        commandCenterActive
+                          ? "scale-x-100 opacity-100"
+                          : "scale-x-0 opacity-0 group-hover/cc:scale-x-100 group-hover/cc:opacity-100"
+                      )}
+                    />
+                  </Link>
+                </div>
+
+                {(["procurement", "finance", "projects", "hr", "ai"] as const).map(
+                  (mid) => (
+                    <div
+                      key={mid}
+                      className="relative"
+                      onMouseEnter={() => openMegaId(mid)}
+                    >
+                      <BreathingNavTrigger
+                        href={MEGA_MENUS[mid].rootHref}
+                        label={MEGA_MENUS[mid].label}
+                        open={openMega === mid}
+                        active={megaActive(pathname, mid)}
+                        onEnter={() => openMegaId(mid)}
+                        onLeaveIntent={() => {}}
+                      />
+                    </div>
+                  )
+                )}
+              </nav>
+
+              {/* Single portal for mega panel — positioned under nav */}
+              <div
+                className="pointer-events-none absolute start-0 end-0 top-full z-[54] flex justify-center"
+                onMouseEnter={clearCloseTimer}
+                onMouseLeave={scheduleCloseMega}
+              >
+                <div className="pointer-events-auto relative h-0 w-full max-w-3xl">
+                  {(["procurement", "finance", "projects", "hr", "ai"] as const).map(
+                    (mid) => (
+                      <MegaMenuPanel
+                        key={mid}
+                        id={mid}
+                        open={openMega === mid}
+                        onLinkNavigate={() => setOpenMega(null)}
+                      />
+                    )
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
             <Button
@@ -687,8 +781,8 @@ export function TopNavBar({
                 autoFocus
               />
               <ul className="mt-3 max-h-[min(50vh,20rem)] space-y-0.5 overflow-y-auto">
-                {filteredQuick.map((item) => (
-                  <li key={item.href}>
+                {filteredQuick.map((item, index) => (
+                  <li key={`${item.title}-${index}`}>
                     <Link
                       href={item.href}
                       className="flex flex-col rounded-lg px-3 py-2 text-start transition-colors hover:bg-slate-50"
