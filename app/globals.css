@@ -61,85 +61,85 @@
    * Pharmacy White (day) · Harmonious Night (dark) — HSL components for hsl(var(--token))
    */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 40% 98%;
+    --foreground: 240 10% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 243.4 75.4% 58.6%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 222 47% 11%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 215 14% 40%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 243.4 75.4% 58.6%;
-    --chart-1: 243.4 75.4% 58.6%;
-    --chart-2: 239.6 68.4% 59.2%;
-    --chart-3: 215.4 16.3% 46.9%;
-    --chart-4: 215 20.2% 65.1%;
-    --chart-5: 217.2 32.6% 17.5%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 47% 11%;
+    --chart-1: 222 47% 11%;
+    --chart-2: 226 71% 40%;
+    --chart-3: 220 14% 32%;
+    --chart-4: 216 12% 58%;
+    --chart-5: 215 20% 65%;
     --radius: 0.75rem;
     --sidebar: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 243.4 75.4% 58.6%;
+    --sidebar-foreground: 240 10% 4%;
+    --sidebar-primary: 222 47% 11%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 243.4 75.4% 58.6%;
-    --bg-main: 0 0% 100%;
-    --bg-grid: 0 0% 100%;
-    --text-primary: 222.2 84% 4.9%;
-    --border-muted: 214.3 31.8% 91.4%;
-    --accent-primary: 243.4 75.4% 58.6%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 222 47% 11%;
+    --bg-main: 210 40% 98%;
+    --bg-grid: 210 40% 98%;
+    --text-primary: 240 10% 4%;
+    --border-muted: 0 0% 92%;
+    --accent-primary: 222 47% 11%;
     --radius-tokens: 0.75rem;
     /** מרווח מינימלי בין סקשנים בטפסים (= gap-8) */
     --form-section-gap: 2rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 243.4 75.4% 58.6%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 242 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 9%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 220 9% 62%;
+    --accent: 242 40% 14%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 243.4 75.4% 58.6%;
-    --chart-1: 243.4 75.4% 58.6%;
-    --chart-2: 239.6 68.4% 59.2%;
-    --chart-3: 215 20.2% 65.1%;
-    --chart-4: 217.2 32.6% 17.5%;
-    --chart-5: 215.3 25% 26.7%;
-    --sidebar: 222.2 47.4% 11.2%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 242 75% 59%;
+    --chart-1: 242 75% 59%;
+    --chart-2: 224 80% 62%;
+    --chart-3: 227 25% 76%;
+    --chart-4: 231 16% 38%;
+    --chart-5: 0 0% 62%;
+    --sidebar: 0 0% 4%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 243.4 75.4% 58.6%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-primary: 242 75% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 9%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 243.4 75.4% 58.6%;
-    --bg-main: 222.2 84% 4.9%;
-    --bg-grid: 222.2 84% 10%;
-    --text-primary: 210 40% 98%;
-    --border-muted: 217.2 32.6% 17.5%;
-    --accent-primary: 243.4 75.4% 58.6%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 242 75% 59%;
+    --bg-main: 0 0% 0%;
+    --bg-grid: 0 0% 4%;
+    --text-primary: 0 0% 98%;
+    --border-muted: 0 0% 16%;
+    --accent-primary: 242 75% 59%;
   }
 
   * {
@@ -167,6 +167,12 @@
   /** Module page H1 — same scale as dashboard shell title (24px at md+) */
   .module-page-title {
     @apply text-xl font-semibold tracking-tight text-foreground md:text-2xl;
+  }
+  :where(button, a, .hover-effect, [role="button"]) {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :where(button, .hover-effect, [role="button"]):not(:disabled):active {
+    transform: scale(0.98);
   }
   :where(a, button, [role="button"], summary, input, select, textarea, label[for]) {
     @apply transition-colors duration-200;
@@ -263,6 +269,34 @@
 
   .radius-tokens {
     border-radius: var(--radius-tokens);
+  }
+
+  .glass-panel {
+    position: relative;
+    border-radius: var(--radius-xl);
+    border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+    background:
+      linear-gradient(135deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.04)) border-box,
+      color-mix(in srgb, var(--card) 86%, transparent) padding-box;
+    backdrop-filter: blur(12px) saturate(130%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 10px 26px rgb(2 6 23 / 0.08);
+  }
+
+  .shadow-bento {
+    box-shadow:
+      0px 4px 20px rgba(15, 23, 42, 0.04),
+      0px 1px 3px rgba(15, 23, 42, 0.02);
+  }
+  .dark .glass-panel {
+    border-color: rgb(255 255 255 / 0.08);
+    background:
+      linear-gradient(135deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.02)) border-box,
+      color-mix(in srgb, var(--card) 82%, transparent) padding-box;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 16px 38px rgb(0 0 0 / 0.55);
   }
 
   /** Gantt: smooth horizontal/vertical navigation without affecting global html scroll */

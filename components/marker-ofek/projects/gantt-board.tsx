@@ -279,7 +279,7 @@ function MsProjectRibbonGroup({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-[52px] flex-col justify-between border-s border-slate-200/90 px-3 py-1.5 first:border-s-0">
+    <div className="flex min-h-[52px] flex-col justify-between border-s border-slate-200 px-3 py-1.5 first:border-s-0">
       <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{title}</span>
       <div className="flex flex-wrap items-center gap-1 pt-0.5">{children}</div>
     </div>
@@ -1155,24 +1155,24 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
     if (!isResizingSplitter) return
     const minWidth = 360
     const maxWidth = 1400
-    const onPointerMove = (event: PointerEvent) => {
+    const onMouseMove = (event: MouseEvent) => {
       const start = resizeStartRef.current
       if (!start) return
       const deltaX = event.clientX - start.startX
       const nextWidth = Math.max(minWidth, Math.min(maxWidth, start.startWidth - deltaX))
       setListWidth(nextWidth)
     }
-    const onPointerUp = () => {
+    const onMouseUp = () => {
       setIsResizingSplitter(false)
       resizeStartRef.current = null
       document.body.style.cursor = ""
       document.body.style.userSelect = ""
     }
-    window.addEventListener("pointermove", onPointerMove)
-    window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
     return () => {
-      window.removeEventListener("pointermove", onPointerMove)
-      window.removeEventListener("pointerup", onPointerUp)
+      window.removeEventListener("mousemove", onMouseMove)
+      window.removeEventListener("mouseup", onMouseUp)
     }
   }, [isResizingSplitter])
 
@@ -2446,7 +2446,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-300/90 bg-gradient-to-b from-slate-100/90 to-white shadow-sm ring-1 ring-slate-200/60">
+      <div className="overflow-hidden rounded-lg border border-slate-300/90 bg-gradient-to-b from-slate-100/90 to-white text-slate-900 shadow-sm ring-1 ring-slate-200/60">
         <div
           dir="rtl"
           className="flex w-full flex-wrap items-stretch justify-start border-b border-slate-200/80 bg-slate-50/95"
@@ -2644,7 +2644,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
             </Button>
           </MsProjectRibbonGroup>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2 bg-white/80 px-2 py-1.5 text-[11px] text-slate-600">
+        <div className="flex flex-wrap items-center justify-end gap-2 bg-white/95 px-2 py-1.5 text-[11px] text-slate-600">
           <Button
             type="button"
             size="sm"
@@ -2678,7 +2678,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-slate-50/90 px-3 py-2.5">
             <div className="grid gap-1">
-              <Label htmlFor="gantt-snapshot-type" className="text-[11px] text-slate-600">
+              <Label htmlFor="gantt-snapshot-type" className="text-[11px] text-muted-foreground">
                 סוג גרסה
               </Label>
               <Select
@@ -2698,7 +2698,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               </Select>
             </div>
             <div className="grid min-w-[200px] max-w-md flex-1 gap-1">
-              <Label htmlFor="gantt-snapshot-name" className="text-[11px] text-slate-600">
+              <Label htmlFor="gantt-snapshot-name" className="text-[11px] text-muted-foreground">
                 שם גרסה
               </Label>
               <Input
@@ -2732,22 +2732,26 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
 
           <div
             ref={ganttShellRef}
-            className="gantt-board-enterprise gantt-container relative min-h-[560px] w-full overflow-auto"
+            className="gantt-board-enterprise gantt-container relative grid min-h-[560px] w-full overflow-auto bg-white text-slate-900"
             dir="rtl"
-            style={{ "--mo-task-list-width": `${listWidth}px` } as React.CSSProperties}
+            style={
+              {
+                "--mo-task-list-width": `${listWidth}px`,
+                gridTemplateColumns: `${listWidth}px auto 1fr`,
+              } as React.CSSProperties
+            }
           >
             <div
               role="separator"
               aria-orientation="vertical"
               aria-label="שנה את רוחב רשימת המשימות והתרשים"
-              className={`absolute bottom-0 top-0 z-30 w-2 cursor-col-resize rounded-sm bg-slate-200/70 transition-colors hover:bg-blue-400 ${
+              className={`absolute bottom-0 top-0 z-10 w-2 cursor-col-resize rounded-sm bg-slate-200 transition-colors hover:bg-blue-400 ${
                 isResizingSplitter ? "bg-blue-500" : ""
               }`}
               style={{ right: `${Math.max(0, listWidth - 4)}px` }}
-              onPointerDown={(event) => {
+              onMouseDown={(event) => {
                 event.preventDefault()
                 event.stopPropagation()
-                ;(event.currentTarget as HTMLDivElement).setPointerCapture(event.pointerId)
                 resizeStartRef.current = {
                   startX: event.clientX,
                   startWidth: listWidth,
@@ -3108,6 +3112,8 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
           direction: rtl !important;
           align-items: start !important;
           width: 100% !important;
+          background: #ffffff !important;
+          color: #0f172a !important;
         }
         .gantt-board-enterprise .gantt-task-react-root .mo-gantt-task-col {
           grid-column: 1 !important;
@@ -3115,6 +3121,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
           margin: 0 !important;
           width: var(--mo-task-list-width, 980px) !important;
           border-inline-end: 1px solid #e2e8f0 !important;
+          background: #ffffff !important;
         }
         .gantt-board-enterprise .gantt-task-react-root .mo-gantt-vscroll {
           grid-column: 1 !important;
@@ -3125,6 +3132,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
           grid-column: 3 !important;
           grid-row: 1 !important;
           min-width: 0 !important;
+          background: #ffffff !important;
         }
         .gantt-board-enterprise .gantt-task-react-root .mo-gantt-hscroll {
           grid-column: 1 / span 3 !important;
@@ -3137,6 +3145,15 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
         }
         .gantt-board-enterprise ._2k9Ys {
           direction: rtl !important;
+        }
+        .gantt-board-enterprise .gantt-task-react-root .mo-gantt-timeline-col svg text,
+        .gantt-board-enterprise .gantt-task-react-root .mo-gantt-task-col svg text {
+          fill: #0f172a !important;
+        }
+        /* Force gantt-task-react header bands/grid to Light mode. */
+        .gantt-board-enterprise .gantt-task-react-root .mo-gantt-timeline-col svg rect,
+        .gantt-board-enterprise .gantt-task-react-root .mo-gantt-task-col svg rect {
+          stroke: #e2e8f0 !important;
         }
         .gantt-board-enterprise .mo-gantt-timeline-col g[data-task-id] rect:not([data-baseline-ghost="true"]) {
           transition: opacity 120ms ease, stroke-width 120ms ease;
