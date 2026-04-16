@@ -156,25 +156,25 @@ export function CommandCenterLightman() {
   return (
     <div
       dir="rtl"
-      className="flex w-full min-w-0 max-w-none flex-col gap-4 bg-white text-slate-900"
+      className="flex w-full min-w-0 max-w-none flex-col gap-6 bg-background text-foreground"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Lightman ERP · Holden Group
           </p>
-          <h1 className="text-lg font-semibold tracking-tight text-slate-900 md:text-xl">
+          <h1 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
             מרכז הפיקוד
           </h1>
-          <p className="mt-0.5 max-w-2xl text-xs text-slate-600">
+          <p className="mt-0.5 max-w-2xl text-xs text-muted-foreground">
             תמונת מצב תפעולית — נתוני דמו; חיבור למסד יופעל בהמשך.
           </p>
         </div>
         <Link
           href="/marker-ofek/procurement"
           className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800",
-            "shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow"
+            "hover-effect inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground shadow-sm",
+            "transition-all duration-200 active:scale-[0.98] hover:border-primary/30 hover:shadow"
           )}
         >
           <ArrowLeft className="size-3.5 rotate-180" aria-hidden />
@@ -183,25 +183,25 @@ export function CommandCenterLightman() {
       </div>
 
       <motion.section
-        className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
         variants={container}
         initial="hidden"
         animate="show"
       >
         {KPI.map((k) => (
           <motion.div key={k.key} variants={item} layout={false}>
-            <Card className="border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <Card className="rounded-2xl border border-border bg-card text-card-foreground shadow-bento transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-1.5 pt-3">
-                <CardTitle className="text-[11px] font-medium text-slate-500">
+                <CardTitle className="text-[11px] font-medium text-muted-foreground">
                   {k.label}
                 </CardTitle>
-                <k.icon className="size-4 text-slate-400" aria-hidden />
+                <k.icon className="size-4 text-muted-foreground" aria-hidden />
               </CardHeader>
               <CardContent className="pb-3">
-                <p className="text-2xl font-semibold tabular-nums tracking-tight text-slate-900">
+                <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
                   {k.value}
                 </p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{k.sub}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{k.sub}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -213,18 +213,18 @@ export function CommandCenterLightman() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-lg border border-slate-200 bg-white shadow-sm"
+          className="rounded-2xl border border-border bg-card text-card-foreground shadow-bento"
         >
-          <div className="border-b border-slate-200 px-3 py-2">
-            <h2 className="text-sm font-semibold text-slate-900">
+          <div className="border-b border-border px-3 py-2">
+            <h2 className="text-sm font-semibold text-foreground">
               חשבונות קבלני משנה — אחרונים
             </h2>
-            <p className="text-[11px] text-slate-500">דמו · ללא מסד נתונים</p>
+            <p className="text-[11px] text-muted-foreground">דמו · ללא מסד נתונים</p>
           </div>
           <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="h-9 border-slate-200 hover:bg-transparent">
+                <TableRow className="h-9 border-border hover:bg-transparent">
                   <TableHead className="px-2 text-[11px] font-semibold">מספר</TableHead>
                   <TableHead className="px-2 text-[11px] font-semibold">פרויקט</TableHead>
                   <TableHead className="px-2 text-[11px] font-semibold">קבלן</TableHead>
@@ -243,7 +243,7 @@ export function CommandCenterLightman() {
                       duration: 0.25,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="h-9 border-slate-100 hover:bg-slate-50/90"
+                    className="hover-effect h-9 border-border/70 transition-all duration-200 active:scale-[0.98] hover:bg-muted/45"
                   >
                     <TableCell className="px-2 py-1.5 font-mono text-[11px]">
                       {r.billNo}
@@ -256,7 +256,7 @@ export function CommandCenterLightman() {
                       {formatIls(r.amount)}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-800 ring-1 ring-slate-200">
+                      <span className="rounded-md bg-muted/55 px-1.5 py-0.5 text-[10px] font-medium text-foreground ring-1 ring-border">
                         {r.status}
                       </span>
                     </TableCell>
@@ -271,34 +271,34 @@ export function CommandCenterLightman() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-lg border border-slate-200 bg-white shadow-sm"
+          className="rounded-2xl border border-border bg-card text-card-foreground shadow-bento"
         >
-          <div className="border-b border-slate-200 px-3 py-2">
-            <h2 className="text-sm font-semibold text-slate-900">התראות תקציב</h2>
-            <p className="text-[11px] text-slate-500">
+          <div className="border-b border-border px-3 py-2">
+            <h2 className="text-sm font-semibold text-foreground">התראות תקציב</h2>
+            <p className="text-[11px] text-muted-foreground">
               פרויקטים הקרובים לתקרת ביצוע
             </p>
           </div>
-          <ul className="divide-y divide-slate-100 p-2">
+          <ul className="divide-y divide-border p-2">
             {MOCK_BUDGET_ALERTS.map((a, i) => (
               <motion.li
                 key={a.id}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + i * 0.05 }}
-                className="flex flex-wrap items-start gap-2 rounded-md px-2 py-2 transition-colors hover:bg-slate-50"
+                className="hover-effect flex flex-wrap items-start gap-2 rounded-md px-2 py-2 transition-all duration-200 active:scale-[0.98] hover:bg-muted/45"
               >
                 <AlertTriangle
-                  className="mt-0.5 size-4 shrink-0 text-slate-600"
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                   aria-hidden
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-slate-900">{a.project}</p>
-                  <p className="text-[11px] text-slate-600">{a.phase}</p>
+                  <p className="text-xs font-semibold text-foreground">{a.project}</p>
+                  <p className="text-[11px] text-muted-foreground">{a.phase}</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                    <div className="h-1.5 min-w-[6rem] flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-1.5 min-w-[6rem] flex-1 overflow-hidden rounded-full bg-slate-200">
                       <motion.div
-                        className="h-full rounded-full bg-slate-700"
+                        className="h-full rounded-full bg-slate-900"
                         initial={{ width: 0 }}
                         animate={{ width: `${a.pct}%` }}
                         transition={{
@@ -308,7 +308,7 @@ export function CommandCenterLightman() {
                         }}
                       />
                     </div>
-                    <span className="text-[11px] tabular-nums text-slate-700">
+                    <span className="text-[11px] tabular-nums text-muted-foreground">
                       {a.pct}% · תקרה {a.cap}
                     </span>
                   </div>

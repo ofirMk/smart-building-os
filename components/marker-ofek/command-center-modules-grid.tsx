@@ -54,8 +54,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
 
-const tileIcons = [ShoppingCart, FileSearch, Briefcase, Landmark, Wallet] as const
-
 /** ידית גרירה בסגנון נקודות (6) — ללא תלות חיצונית */
 function DotsSixDragIcon({ className }: { className?: string }) {
   const dots = [
@@ -87,29 +85,47 @@ function statusMeta(level: CommandCenterTile["level"]) {
     return {
       label: "תקין",
       dot: "bg-emerald-500",
-      badge:
-        "border border-emerald-200/90 bg-emerald-50/90 text-slate-900 shadow-sm",
+      badge: "border border-border bg-card text-card-foreground shadow-sm",
     }
   }
   if (level === "yellow") {
     return {
       label: "למעקב",
       dot: "bg-amber-400",
-      badge: "border border-amber-200/90 bg-amber-50 text-slate-900 shadow-sm",
+      badge: "border border-border bg-card text-card-foreground shadow-sm",
     }
   }
   return {
     label: "סיכון",
     dot: "bg-red-500",
-    badge: "border border-red-200/90 bg-red-50 text-slate-900 shadow-sm",
+    badge: "border border-border bg-card text-card-foreground shadow-sm",
   }
 }
 
-function iconForTile(masterTiles: CommandCenterTile[], tile: CommandCenterTile) {
+function TileIconForModule({
+  masterTiles,
+  tile,
+  className,
+}: {
+  masterTiles: CommandCenterTile[]
+  tile: CommandCenterTile
+  className?: string
+}) {
   const idx = masterTiles.findIndex((t) => t.href === tile.href)
-  const Icon =
-    idx >= 0 && idx < tileIcons.length ? tileIcons[idx]! : FileSearch
-  return Icon
+  switch (idx) {
+    case 0:
+      return <ShoppingCart className={className} aria-hidden />
+    case 1:
+      return <FileSearch className={className} aria-hidden />
+    case 2:
+      return <Briefcase className={className} aria-hidden />
+    case 3:
+      return <Landmark className={className} aria-hidden />
+    case 4:
+      return <Wallet className={className} aria-hidden />
+    default:
+      return <FileSearch className={className} aria-hidden />
+  }
 }
 
 type ModuleCardShellProps = {
@@ -134,7 +150,6 @@ function ModuleCardShell({
   onRestore,
 }: ModuleCardShellProps) {
   const meta = statusMeta(tile.level)
-  const Icon = iconForTile(masterTiles, tile)
 
   return (
     <motion.article
@@ -142,12 +157,12 @@ function ModuleCardShell({
       animate={isDragging ? { scale: 1.04 } : { scale: 1 }}
       transition={{ type: "spring", stiffness: 520, damping: 38 }}
       className={cn(
-        "relative flex h-full min-h-0 flex-col justify-between rounded-xl border bg-white px-6 pb-6 pt-4 transition-[border-color,box-shadow,opacity] duration-200",
+        "relative flex h-full min-h-0 flex-col justify-between rounded-xl border border-border bg-card px-6 pb-6 pt-4 text-card-foreground transition-[border-color,box-shadow,opacity] duration-200",
         isDragging
           ? "z-30 border-emerald-300/80 shadow-2xl ring-2 ring-emerald-500/15"
           : editMode
-            ? "border-dashed border-slate-300/90 shadow-md hover:border-slate-400"
-            : "border-slate-200/90 shadow-md hover:border-slate-300 hover:shadow-lg",
+            ? "border-dashed border-border shadow-md hover:border-primary/45"
+            : "shadow-sm hover:border-primary/35 hover:shadow-lg",
         isHidden && editMode && "opacity-55",
         tile.articleClassName
       )}
@@ -158,7 +173,7 @@ function ModuleCardShell({
             <button
               type="button"
               onClick={onRestore}
-              className="rounded-md border border-slate-200 bg-white/95 p-1 text-slate-600 shadow-sm hover:bg-slate-50"
+              className="hover-effect rounded-md border border-border bg-card/95 p-1 text-muted-foreground shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-muted/40"
               aria-label="הצג מודול"
             >
               <RotateCcw className="size-3.5" aria-hidden />
@@ -167,7 +182,7 @@ function ModuleCardShell({
             <button
               type="button"
               onClick={onHide}
-              className="rounded-md border border-slate-200 bg-white/95 p-1 text-slate-600 shadow-sm hover:bg-red-50 hover:text-red-700"
+              className="hover-effect rounded-md border border-border bg-card/95 p-1 text-muted-foreground shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-destructive/10 hover:text-destructive"
               aria-label="הסתר מודול"
             >
               <X className="size-3.5" aria-hidden />
@@ -190,8 +205,12 @@ function ModuleCardShell({
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 {dragHandleSlot}
                 <div className="shrink-0">
-                  <span className="flex size-12 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm">
-                    <Icon className="size-6 stroke-[1.5]" aria-hidden />
+                  <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-sm">
+                    <TileIconForModule
+                      masterTiles={masterTiles}
+                      tile={tile}
+                      className="size-6 stroke-[1.5]"
+                    />
                   </span>
                 </div>
               </div>
@@ -210,13 +229,13 @@ function ModuleCardShell({
               </Badge>
             </div>
             <div className="mb-3 flex h-14 items-start">
-              <h2 className="line-clamp-2 w-full text-start text-base font-bold leading-snug text-slate-900 lg:text-lg">
+              <h2 className="line-clamp-2 w-full text-start text-base font-bold leading-snug text-foreground lg:text-lg">
                 {tile.title}
               </h2>
             </div>
             <p
               className={cn(
-                "text-[12px] leading-relaxed text-slate-600",
+                "text-[12px] leading-relaxed text-muted-foreground",
                 tile.summaryMono && "font-currency-mono tabular-nums"
               )}
             >
@@ -225,7 +244,7 @@ function ModuleCardShell({
           </Link>
           <ul
             className={cn(
-              "mt-3 min-h-0 flex-1 space-y-1.5 text-[11px] text-slate-600",
+              "mt-3 min-h-0 flex-1 space-y-1.5 text-[11px] text-muted-foreground",
               editMode && "pointer-events-none"
             )}
           >
@@ -234,7 +253,7 @@ function ModuleCardShell({
                 {hidx === 0 ? (
                   <Clock3 className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden />
                 ) : hidx === 1 ? (
-                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden />
+                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                 ) : (
                   <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600" aria-hidden />
                 )}
@@ -253,7 +272,7 @@ function ModuleCardShell({
           <a
             href={tile.quickActionHref}
             className={cn(
-              "flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-500",
+              "hover-effect flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-primary/35 bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all duration-200 active:scale-[0.98] hover:bg-primary/90",
               editMode && "pointer-events-none opacity-90"
             )}
           >
@@ -303,7 +322,7 @@ function SortableModuleCard({
   const dragHandle = (
     <button
       type="button"
-      className="touch-none pointer-events-auto cursor-grab rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 active:cursor-grabbing"
+      className="hover-effect touch-none pointer-events-auto cursor-grab rounded-md p-1.5 text-muted-foreground transition-all duration-200 active:cursor-grabbing active:scale-[0.98] hover:bg-muted hover:text-foreground"
       aria-label="גרירה לשינוי סדר"
       {...attributes}
       {...listeners}
@@ -349,13 +368,20 @@ export function CommandCenterModulesGrid({
   )
   const hiddenRef = useRef(hidden)
   const orderRef = useRef(order)
-  hiddenRef.current = hidden
-  orderRef.current = order
 
   const layoutOrderKey = layout?.order?.join("\0") ?? ""
   const layoutHiddenKey = layout?.hidden?.join("\0") ?? ""
 
   useEffect(() => {
+    hiddenRef.current = hidden
+  }, [hidden])
+
+  useEffect(() => {
+    orderRef.current = order
+  }, [order])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrder(
       normalizeCommandCenterOrder(
         layout?.order?.length ? layout.order : masterTiles.map((t) => t.href),
@@ -363,7 +389,7 @@ export function CommandCenterModulesGrid({
       )
     )
     setHidden(new Set(layout?.hidden ?? []))
-  }, [masterTiles, layoutOrderKey, layoutHiddenKey])
+  }, [masterTiles, layout, layoutOrderKey, layoutHiddenKey])
 
   const byHref = useMemo(
     () => new Map(masterTiles.map((t) => [t.href, t])),
@@ -441,7 +467,7 @@ export function CommandCenterModulesGrid({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 md:text-start">
+        <h2 className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground md:text-start">
           ליבת המערכת
         </h2>
         <Button
@@ -464,7 +490,7 @@ export function CommandCenterModulesGrid({
             aria-label="מודולי המערכת"
           >
             {visibleTiles.length === 0 ? (
-              <p className="col-span-full text-center text-sm text-slate-500">
+              <p className="col-span-full text-center text-sm text-muted-foreground">
                 אין מודולים מוצגים. לחצו על &quot;עריכת פריסה&quot; כדי להחזיר מודולים.
               </p>
             ) : (

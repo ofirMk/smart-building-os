@@ -13,7 +13,7 @@ export function CommandCenterHeaderClient() {
       type="button"
       variant="outline"
       size="sm"
-      className="h-7 shrink-0 gap-1 border-slate-200 bg-white px-2 font-currency-mono text-[10px] text-slate-900 hover:border-emerald-500/35 hover:bg-emerald-500/5 sm:h-7 sm:text-[11px]"
+      className="hover-effect h-7 shrink-0 gap-1 border-border bg-card px-2 font-currency-mono text-[10px] text-foreground transition-all duration-200 active:scale-[0.98] hover:border-primary/35 hover:bg-primary/10 sm:h-7 sm:text-[11px]"
       onClick={() => diamond?.openNavigator()}
     >
       <Sparkles className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
