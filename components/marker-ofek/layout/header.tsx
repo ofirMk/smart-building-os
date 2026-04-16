@@ -63,6 +63,11 @@ const TOP_MODULES: TopModule[] = [
     label: "נתונים ומערכת",
     sectionIds: ["master-data-mgmt", "system-ops"],
   },
+  {
+    id: "ai-agent",
+    label: "AI Agent",
+    sectionIds: ["ai-agent"],
+  },
 ]
 
 function normalizeHrefPath(href: string): string {
@@ -151,6 +156,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
                   </div>
                   {module.extraItems.map((item) => {
                     const Icon = item.icon
+                    const navigateToItem = () => router.push(item.href)
                     return (
                       <DropdownMenuItem
                         key={`extra-${item.href}`}
@@ -158,9 +164,10 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
                           "cursor-pointer rounded-md px-2 py-1 text-[11px] font-medium text-slate-800",
                           isActivePath(pathname, item.href) && "bg-sky-50 text-sky-900"
                         )}
+                        onClick={navigateToItem}
                         onSelect={(event) => {
                           event.preventDefault()
-                          router.push(item.href)
+                          navigateToItem()
                         }}
                       >
                         <Icon className="size-3.5 text-slate-500" aria-hidden />
@@ -177,18 +184,20 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
                   <div className="px-2 py-1 text-[10px] font-bold text-slate-500">
                     {section.label}
                   </div>
-                  {section.items.map((item) => {
+                  {section.items.map((item, index) => {
                     const Icon = item.icon
+                    const navigateToItem = () => router.push(item.href)
                     return (
                       <DropdownMenuItem
-                        key={item.href}
+                        key={`${item.title}-${index}`}
                         className={cn(
                           "cursor-pointer rounded-md px-2 py-1 text-[11px] font-medium text-slate-800",
                           isActivePath(pathname, item.href) && "bg-sky-50 text-sky-900"
                         )}
+                        onClick={navigateToItem}
                         onSelect={(event) => {
                           event.preventDefault()
-                          router.push(item.href)
+                          navigateToItem()
                         }}
                       >
                         <Icon className="size-3.5 text-slate-500" aria-hidden />

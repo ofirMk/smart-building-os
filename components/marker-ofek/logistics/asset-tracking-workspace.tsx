@@ -94,7 +94,11 @@ export function AssetTrackingWorkspace() {
     AssetCheckoutFormOutput
   >({
     resolver: zodResolver(assetCheckoutFormSchema),
-    defaultValues: defaults,
+    defaultValues: {
+      ...defaults,
+      assetId: defaults.assetId ?? "",
+      assignedTo: defaults.assignedTo ?? "",
+    },
     mode: "onChange",
   })
 
@@ -174,7 +178,7 @@ export function AssetTrackingWorkspace() {
                   control={control}
                   render={({ field }) => (
                     <Select
-                      value={field.value || undefined}
+                      value={field.value || ""}
                       onValueChange={(v) => {
                         if (v) field.onChange(v)
                       }}
@@ -215,7 +219,7 @@ export function AssetTrackingWorkspace() {
                   control={control}
                   render={({ field }) => (
                     <Select
-                      value={field.value || undefined}
+                      value={field.value || ""}
                       onValueChange={(v) => {
                         if (v) field.onChange(v)
                       }}

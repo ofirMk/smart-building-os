@@ -4,7 +4,19 @@ import * as React from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { usePathname, useRouter } from "next/navigation"
-import { Bot, Columns2, Loader2, Mic, Send, Sparkles, X } from "lucide-react"
+import {
+  Bot,
+  Columns2,
+  FileText,
+  Loader2,
+  Mic,
+  Paperclip,
+  Send,
+  Square,
+  Sparkles,
+  Volume2,
+  X,
+} from "lucide-react"
 import Draggable from "react-draggable"
 import { toast } from "sonner"
 
@@ -31,6 +43,9 @@ import { cn } from "@/lib/utils"
 const SPEECH_LANG = "he-IL"
 
 const AI_PANEL_POSITION_KEY = "ai-panel-position"
+const MAX_CHAT_FILE_BYTES = 4 * 1024 * 1024
+const FILE_SIZE_ERROR_MESSAGE =
+  "הקובץ גדול מדי. העלו קבצים עד 4MB או השתמשו בצילום מסך."
 
 function DotsSixHandle({ className }: { className?: string }) {
   const dots = [
@@ -75,6 +90,34 @@ function renderAssistantMessageText(text: string) {
   })
 }
 
+function filesToFileList(files: File[]): FileList {
+  const dt = new DataTransfer()
+  for (const file of files) dt.items.add(file)
+  return dt.files
+}
+
+function pickHebrewVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const hebrewVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith("he"))
+  if (hebrewVoices.length === 0) return null
+
+  const scoreVoice = (voice: SpeechSynthesisVoice) => {
+    let score = 0
+    const normalizedName = voice.name.toLowerCase()
+    if (voice.lang.toLowerCase() === "he-il") score += 4
+    if (!voice.localService) score += 2
+    if (
+      normalizedName.includes("natural") ||
+      normalizedName.includes("premium") ||
+      normalizedName.includes("carmit")
+    ) {
+      score += 1
+    }
+    return score
+  }
+
+  return [...hebrewVoices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null
+}
+
 export function AiAssistant({
   hostFirstName = null,
   hrWelcome = null,
@@ -96,8 +139,11 @@ export function AiAssistant({
     )
   const [open, setOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
+  const [attachments, setAttachments] = React.useState<File[]>([])
+  const [fileError, setFileError] = React.useState<string | null>(null)
   const [speechSupported, setSpeechSupported] = React.useState(false)
   const [listening, setListening] = React.useState(false)
+  const [speakingMessageId, setSpeakingMessageId] = React.useState<string | null>(null)
   const [oracleBullets, setOracleBullets] = React.useState<string[] | null>(null)
   const [oracleFetched, setOracleFetched] = React.useState(false)
   const [panelSavedPos, setPanelSavedPos] = React.useState({ x: 0, y: 0 })
@@ -141,11 +187,20 @@ export function AiAssistant({
 
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const panelNodeRef = React.useRef<HTMLDivElement>(null)
   const recognitionRef = React.useRef<SpeechRecognition | null>(null)
+  const activeUtteranceRef = React.useRef<SpeechSynthesisUtterance | null>(null)
   /** טקסט שהיה בשדה בעת התחלת ההקלטה + תוצאות סופיות מצטברות */
   const speechPrefixRef = React.useRef("")
   const speechFinalsRef = React.useRef("")
+  const previewUrls = React.useMemo(
+    () =>
+      attachments.map((file) =>
+        file.type.startsWith("image/") ? URL.createObjectURL(file) : null
+      ),
+    [attachments]
+  )
 
   React.useEffect(() => {
     setSpeechSupported(getSpeechRecognitionConstructor() !== null)
@@ -232,6 +287,98 @@ export function AiAssistant({
     }
   }, [])
 
+  React.useEffect(() => {
+    return () => {
+      for (const url of previewUrls) {
+        if (url) URL.revokeObjectURL(url)
+      }
+    }
+  }, [previewUrls])
+
+  const stopSpeaking = React.useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return
+    window.speechSynthesis.cancel()
+    activeUtteranceRef.current = null
+    setSpeakingMessageId(null)
+  }, [])
+
+  const speakMessage = React.useCallback(
+    (messageId: string, text: string) => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) return
+      const normalizedText = text.trim()
+      if (!normalizedText) return
+
+      if (speakingMessageId === messageId) {
+        stopSpeaking()
+        return
+      }
+
+      const synth = window.speechSynthesis
+      synth.cancel()
+
+      const utterance = new SpeechSynthesisUtterance(normalizedText)
+      utterance.lang = "he-IL"
+      utterance.pitch = 1
+      utterance.rate = 0.95
+
+      const voice = pickHebrewVoice(synth.getVoices())
+      if (voice) utterance.voice = voice
+
+      utterance.onend = () => {
+        setSpeakingMessageId((current) => (current === messageId ? null : current))
+        activeUtteranceRef.current = null
+      }
+      utterance.onerror = () => {
+        setSpeakingMessageId((current) => (current === messageId ? null : current))
+        activeUtteranceRef.current = null
+      }
+
+      activeUtteranceRef.current = utterance
+      setSpeakingMessageId(messageId)
+      synth.speak(utterance)
+    },
+    [speakingMessageId, stopSpeaking]
+  )
+
+  React.useEffect(() => {
+    stopSpeaking()
+  }, [messages.length, stopSpeaking])
+
+  React.useEffect(() => {
+    return () => {
+      stopSpeaking()
+    }
+  }, [stopSpeaking])
+
+  function onFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+
+    const oversizedFiles = files.filter((file) => file.size > MAX_CHAT_FILE_BYTES)
+    const validFiles = files.filter((file) => {
+      const isImage = file.type.startsWith("image/")
+      const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+      return (isImage || isPdf) && file.size <= MAX_CHAT_FILE_BYTES
+    })
+
+    if (oversizedFiles.length > 0) {
+      setFileError(FILE_SIZE_ERROR_MESSAGE)
+      toast.error(FILE_SIZE_ERROR_MESSAGE)
+    } else {
+      setFileError(null)
+    }
+
+    if (validFiles.length > 0) {
+      setAttachments((prev) => [...prev, ...validFiles])
+    }
+
+    e.target.value = ""
+  }
+
+  function removeAttachment(indexToRemove: number) {
+    setAttachments((prev) => prev.filter((_, index) => index !== indexToRemove))
+  }
+
   function stopSpeechRecognition() {
     try {
       recognitionRef.current?.stop()
@@ -297,14 +444,17 @@ export function AiAssistant({
 
   function handleSend() {
     const text = input.trim()
-    if (!text || busy) return
+    if ((!text && attachments.length === 0) || busy) return
 
     if (listening) {
       stopSpeechRecognition()
     }
 
-    void sendMessage({ text })
+    setFileError(null)
+    void sendMessage({ text, files: filesToFileList(attachments) })
     setInput("")
+    setAttachments([])
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   const cardClassName = cn(
@@ -416,6 +566,37 @@ export function AiAssistant({
                           : "border border-border/60 bg-muted/60 text-foreground"
                       )}
                     >
+                      {m.role === "assistant" ? (
+                        <div className="mb-1 flex justify-end">
+                          <button
+                            type="button"
+                            className="inline-flex size-6 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-200/80 hover:text-slate-700"
+                            onClick={() => {
+                              const text = m.parts
+                                .filter((part) => part.type === "text")
+                                .map((part) => part.text)
+                                .join("\n")
+                              speakMessage(m.id, text)
+                            }}
+                            aria-label={
+                              speakingMessageId === m.id
+                                ? "עצירת הקראה"
+                                : "הקראת תשובת העוזר"
+                            }
+                            title={
+                              speakingMessageId === m.id
+                                ? "עצירת הקראה"
+                                : "השמעת תשובת העוזר"
+                            }
+                          >
+                            {speakingMessageId === m.id ? (
+                              <Square className="size-3.5" aria-hidden />
+                            ) : (
+                              <Volume2 className="size-3.5" aria-hidden />
+                            )}
+                          </button>
+                        </div>
+                      ) : null}
                       {m.parts.map((part, index) =>
                         part.type === "text" ? (
                           <span key={`${m.id}-p-${index}`}>
@@ -423,6 +604,13 @@ export function AiAssistant({
                               ? renderAssistantMessageText(part.text)
                               : part.text}
                           </span>
+                        ) : part.type === "file" ? (
+                          <div
+                            key={`${m.id}-file-${index}`}
+                            className="mt-2 rounded-lg border border-slate-300/70 bg-white/70 px-2 py-1.5 text-[11px] text-slate-600"
+                          >
+                            קובץ מצורף
+                          </div>
                         ) : null
                       )}
                     </div>
@@ -482,6 +670,11 @@ export function AiAssistant({
                 סיימתי את סיור הקליטה
               </Button>
             ) : null}
+            {fileError ? (
+              <div className="w-full rounded-lg border border-amber-500/50 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                {fileError}
+              </div>
+            ) : null}
             <form
               className="flex w-full gap-2"
               onSubmit={(e) => {
@@ -489,6 +682,14 @@ export function AiAssistant({
                 handleSend()
               }}
             >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,application/pdf"
+                className="hidden"
+                onChange={onFileSelect}
+              />
               <Input
                 ref={inputRef}
                 value={input}
@@ -499,6 +700,18 @@ export function AiAssistant({
                 className="min-w-0 flex-1 border-border/60 bg-background/80 read-only:opacity-95"
                 autoComplete="off"
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60"
+                disabled={busy}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="צירוף קובץ"
+                title="צירוף תמונה או PDF"
+              >
+                <Paperclip className="size-4" aria-hidden />
+              </Button>
               {speechSupported ? (
                 <Button
                   type="button"
@@ -524,12 +737,51 @@ export function AiAssistant({
                 type="submit"
                 size="icon"
                 className="shrink-0"
-                disabled={busy || !input.trim()}
+                disabled={busy || (!input.trim() && attachments.length === 0)}
                 aria-label="שליחה"
               >
                 <Send className="size-4" />
               </Button>
             </form>
+            {attachments.length > 0 ? (
+              <div className="flex w-full flex-wrap gap-2">
+                {attachments.map((file, index) => {
+                  const previewUrl = previewUrls[index]
+                  return (
+                    <div
+                      key={`${file.name}-${index}`}
+                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-2 py-1.5"
+                    >
+                      {previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt={file.name}
+                          className="size-9 rounded-md border border-slate-200 object-cover"
+                        />
+                      ) : (
+                        <span className="inline-flex size-9 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-slate-600">
+                          <FileText className="size-4" aria-hidden />
+                        </span>
+                      )}
+                      <div className="max-w-[150px]">
+                        <p className="truncate text-[11px] font-medium text-slate-700">{file.name}</p>
+                        <p className="text-[10px] text-slate-500">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="inline-flex size-6 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                        onClick={() => removeAttachment(index)}
+                        aria-label={`הסרת קובץ ${file.name}`}
+                      >
+                        <X className="size-3.5" aria-hidden />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
           </CardFooter>
     </Card>
   )

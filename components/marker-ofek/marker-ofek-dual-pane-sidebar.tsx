@@ -107,12 +107,12 @@ export function MarkerOfekDrawerNavContent({
               {section.label}
             </p>
             <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
-              {section.items.map((item) => {
+              {section.items.map((item, index) => {
                 const Icon = item.icon
                 const active = isSidebarNavItemActive(pathname, item.href)
                 return (
                   <li
-                    key={`${section.id}-${item.href}`}
+                    key={`${section.id}-${item.title}-${index}`}
                     className="group/menu-item relative"
                   >
                     <Link

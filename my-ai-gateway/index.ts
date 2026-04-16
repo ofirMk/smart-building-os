@@ -1,4 +1,3 @@
-import "dotenv/config"
 import dotenv from "dotenv"
 import path from "node:path"
 
@@ -6,7 +5,7 @@ import { streamText } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
 
 dotenv.config({
-  path: path.resolve(process.cwd(), ".env.local"),
+  path: path.resolve(process.cwd(), "..", ".env.local"),
   override: true,
 })
 
@@ -35,10 +34,8 @@ async function main() {
     const tokenUsage = await result.usage
 
     console.log("\n\n--- צריכת טוקנים ---")
-    console.log(`טוקנים של הבקשה (Prompt):     ${tokenUsage.promptTokens ?? 0}`)
-    console.log(
-      `טוקנים של התשובה (Completion): ${tokenUsage.completionTokens ?? 0}`
-    )
+    console.log(`טוקנים של הבקשה (Prompt):     ${tokenUsage.inputTokens ?? 0}`)
+    console.log(`טוקנים של התשובה (Completion): ${tokenUsage.outputTokens ?? 0}`)
     console.log(`סך הכל טוקנים:                 ${tokenUsage.totalTokens ?? 0}`)
   } catch (error) {
     console.error("\nשגיאה במהלך יצירת הטקסט:", error)
