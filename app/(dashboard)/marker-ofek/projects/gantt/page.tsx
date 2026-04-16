@@ -1,5 +1,6 @@
 import { GanttChartSquare } from "lucide-react"
 
+import { DenseMasterDetailTemplate } from "@/components/layout/DenseMasterDetailTemplate"
 import { GanttBoard } from "@/components/marker-ofek/projects/gantt-board"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
@@ -20,21 +21,18 @@ export default async function MarkerOfekProjectsGanttPage() {
   const projectName = String(project?.name ?? "").trim()
 
   return (
-    <main className="min-h-[calc(100dvh-4rem)] bg-slate-50 p-4 sm:p-6" dir="rtl">
-      <section className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-start gap-3">
-          <span className="inline-flex size-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
-            <GanttChartSquare className="size-5" aria-hidden />
-          </span>
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-indigo-700">Marker Ofek · Projects</p>
-            <h1 className="text-xl font-bold text-slate-900">מערכת ניהול גאנט</h1>
-            <p className="text-sm text-slate-600">פרויקט פעיל: {projectName || "פרויקט בדיקה"}</p>
-          </div>
+    <DenseMasterDetailTemplate
+      dir="rtl"
+      eyebrow="Marker Ofek · Projects"
+      title="מערכת ניהול גאנט"
+      description={`פרויקט פעיל: ${projectName || "פרויקט בדיקה"}`}
+      leading={<GanttChartSquare aria-hidden />}
+      master={
+        <div className="flex items-center justify-between gap-2 px-1 py-0.5">
+          <p className="text-xs text-slate-600">לוח זמנים, תלותים ותצוגת TreeGrid בסגנון MS Project.</p>
         </div>
-
-        <GanttBoard projectId={projectId} />
-      </section>
-    </main>
+      }
+      detail={<GanttBoard projectId={projectId} />}
+    />
   )
 }
