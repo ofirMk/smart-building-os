@@ -300,7 +300,7 @@ function EditableTaskListHeader({ headerHeight, rowWidth }: EditableTaskListHead
         <div className="text-right">משך</div>
         <div className="text-right">התחלה</div>
         <div className="text-right">סיום</div>
-        <div className="text-right">סטייה (Variance)</div>
+        <div className="text-right">סטייה</div>
         <div className="text-right">משאבים</div>
         <div className="text-right">עלות</div>
       </div>
@@ -1543,6 +1543,33 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
   React.useEffect(() => {
     const root = ganttShellRef.current
     if (!root) return
+    const dictionary: Record<string, string> = {
+      Duration: "משך",
+      Start: "התחלה",
+      End: "סיום",
+      Progress: "התקדמות",
+    }
+    const localizeTooltipText = () => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+      const textNodes: Text[] = []
+      while (walker.nextNode()) {
+        if (walker.currentNode instanceof Text) textNodes.push(walker.currentNode)
+      }
+      textNodes.forEach((node) => {
+        const raw = node.nodeValue?.trim()
+        if (!raw || !(raw in dictionary)) return
+        node.nodeValue = dictionary[raw]
+      })
+    }
+    localizeTooltipText()
+    const observer = new MutationObserver(() => localizeTooltipText())
+    observer.observe(root, { childList: true, subtree: true, characterData: true })
+    return () => observer.disconnect()
+  }, [chartTasks, listWidth])
+
+  React.useEffect(() => {
+    const root = ganttShellRef.current
+    if (!root) return
     const timelineCol = root.querySelector(".mo-gantt-timeline-col")
     if (!timelineCol) return
 
@@ -2425,7 +2452,12 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
           className="flex w-full flex-wrap items-stretch justify-start border-b border-slate-200/80 bg-slate-50/95"
         >
           <MsProjectRibbonGroup title="ניהול גאנט">
-            <Select value={ganttId} onValueChange={onActiveGanttSelect}>
+            <Select
+              value={ganttId}
+              onValueChange={(val) => {
+                if (val) onActiveGanttSelect(val)
+              }}
+            >
               <SelectTrigger className="h-8 w-[220px] border-slate-200 bg-white text-xs">
                 <span className="truncate text-right" title={currentGanttName}>
                   {currentGanttName || "בחר גאנט..."}
@@ -2582,7 +2614,12 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
             </DropdownMenu>
           </MsProjectRibbonGroup>
           <MsProjectRibbonGroup title="צילומי מצב">
-            <Select value={selectedSnapshotId} onValueChange={setSelectedSnapshotId}>
+            <Select
+              value={selectedSnapshotId}
+              onValueChange={(val) => {
+                if (val) setSelectedSnapshotId(val)
+              }}
+            >
               <SelectTrigger className="h-8 w-[220px] border-slate-200 bg-white text-xs">
                 <SelectValue placeholder="בחר היסטוריה" />
               </SelectTrigger>
@@ -2646,9 +2683,9 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               </Label>
               <Select
                 value={snapshotType}
-                onValueChange={(value) =>
-                  setSnapshotType(value as GanttSnapshotRow["snapshot_type"])
-                }
+                onValueChange={(value) => {
+                  if (value) setSnapshotType(value as GanttSnapshotRow["snapshot_type"])
+                }}
               >
                 <SelectTrigger id="gantt-snapshot-type" className="h-8 w-[168px] text-xs">
                   <SelectValue />
@@ -2702,7 +2739,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
             <div
               role="separator"
               aria-orientation="vertical"
-              aria-label="Resize task list and timeline"
+              aria-label="שנה את רוחב רשימת המשימות והתרשים"
               className={`absolute bottom-0 top-0 z-30 w-2 cursor-col-resize rounded-sm bg-slate-200/70 transition-colors hover:bg-blue-400 ${
                 isResizingSplitter ? "bg-blue-500" : ""
               }`}
@@ -2765,7 +2802,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
           <DialogHeader>
             <DialogTitle>{editorMode === "create" ? "יצירת משימה חדשה" : "עריכת משימת גאנט"}</DialogTitle>
             <DialogDescription>
-              עדכון שדות MS Project: ערסל, אבן דרך ותזמון אוטומטי/ידני.
+              עדכון שדות ניהול לוח זמנים: ערסל, אבן דרך ותזמון אוטומטי/ידני.
             </DialogDescription>
           </DialogHeader>
 
@@ -2856,7 +2893,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label htmlFor="gantt-task-baseline-start">התחלה מתוכננת (Baseline)</Label>
+                <Label htmlFor="gantt-task-baseline-start">התחלה מתוכננת (תוכנית בסיס)</Label>
                 <Input
                   id="gantt-task-baseline-start"
                   type="date"
@@ -2867,7 +2904,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="gantt-task-baseline-end">סיום מתוכנן (Baseline)</Label>
+                <Label htmlFor="gantt-task-baseline-end">סיום מתוכנן (תוכנית בסיס)</Label>
                 <Input
                   id="gantt-task-baseline-end"
                   type="date"
@@ -2904,12 +2941,13 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                 <Label>תזמון אוטומטי/ידני</Label>
                 <Select
                   value={editForm.schedule_mode}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
+                    if (!value) return
                     setEditForm((prev) => ({
                       ...prev,
                       schedule_mode: value === "manual" ? "manual" : "auto",
                     }))
-                  }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -2925,12 +2963,13 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                 <Label>משימת אב</Label>
                 <Select
                   value={editForm.parent_id ?? "__none__"}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
+                    if (!value) return
                     setEditForm((prev) => ({
                       ...prev,
                       parent_id: value === "__none__" ? null : value,
                     }))
-                  }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="ללא הורה" />
@@ -2964,7 +3003,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                   שומר...
                 </>
               ) : (
-                editorMode === "create" ? "יצירת משימה" : "שמירה"
+                editorMode === "create" ? "יצירת משימה" : "שמור"
               )}
             </Button>
           </DialogFooter>
@@ -3027,7 +3066,13 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
             </div>
             <div className="grid gap-1.5">
               <Label>פרויקט</Label>
-              <Select value={newGanttProjectId} onValueChange={setNewGanttProjectId} disabled>
+              <Select
+                value={newGanttProjectId}
+                onValueChange={(val) => {
+                  if (val) setNewGanttProjectId(val)
+                }}
+                disabled
+              >
                 <SelectTrigger>
                   <span className="truncate text-right" title={currentProjectName}>
                     {currentProjectName}
