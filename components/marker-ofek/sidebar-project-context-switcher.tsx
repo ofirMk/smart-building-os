@@ -114,7 +114,9 @@ export function SidebarProjectContextSwitcher() {
         disabled={loading || projects.length === 0}
       >
         <SelectTrigger size="sm" className="h-8 border-slate-200 bg-card text-xs">
-          <SelectValue placeholder="בחר פרויקט פעיל" />
+          <SelectValue placeholder="בחר פרויקט פעיל">
+            {activeProject?.name}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {projects.length === 0 ? (

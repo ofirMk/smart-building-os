@@ -50,7 +50,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
     <nav
       dir="rtl"
       aria-label="ניווט מודולים עליון"
-      className={cn("flex flex-wrap items-center gap-1", className)}
+      className={cn("flex flex-wrap items-center justify-center gap-1", className)}
     >
       <Link
         href="/marker-ofek/command-center"

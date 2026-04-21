@@ -386,8 +386,8 @@ function BreathingNavTrigger({
         onFocus={onEnter}
         className={cn(
           "group/trigger relative flex items-center gap-0.5 rounded-md px-2.5 py-2 text-[13px] font-medium outline-none transition-colors duration-200",
-          "text-slate-700 hover:text-foreground",
-          (open || active) && "text-foreground"
+          "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
+          (open || active) && "bg-accent text-accent-foreground"
         )}
       >
         <span className="relative z-10">{label}</span>
@@ -545,11 +545,11 @@ export function TopNavBar({
       >
         <div
           className={cn(
-            "relative flex w-full items-center gap-2 px-2 py-1.5 md:px-3",
-            children ? "border-b border-slate-100/90" : ""
+            "relative grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 py-1.5 md:gap-3 md:px-3",
+            children ? "border-b border-border/70" : ""
           )}
         >
-          <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
+          <div className="flex min-w-0 items-center gap-2 justify-self-start md:gap-3">
             <NavDrawerTrigger
               className={cn(
                 "size-9 shrink-0 rounded-lg border border-slate-200 bg-card text-slate-600 shadow-sm",
@@ -614,13 +614,13 @@ export function TopNavBar({
 
           {/* Main top navigation — single source for Marker Ofek from sidebar config */}
           {isMarkerWorkspace ? (
-            <div className="hidden min-w-0 flex-1 overflow-hidden lg:block" dir="rtl">
-              <MarkerOfekHeaderNav className="w-full" />
+            <div className="hidden min-w-0 justify-self-center overflow-hidden lg:block" dir="rtl">
+              <MarkerOfekHeaderNav className="mx-auto w-fit max-w-[min(56rem,100%)]" />
             </div>
           ) : (
             <div
               ref={navClusterRef}
-              className="hidden lg:block"
+              className="hidden min-w-0 justify-self-center lg:block"
               onMouseLeave={scheduleCloseMega}
             >
               <nav
@@ -633,8 +633,8 @@ export function TopNavBar({
                     className={cn(
                       "group/cc relative block rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
                       commandCenterActive
-                        ? "text-foreground"
-                        : "text-slate-600 hover:text-foreground"
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
                     )}
                   >
                     מרכז פיקוד
@@ -693,7 +693,7 @@ export function TopNavBar({
             </div>
           )}
 
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center justify-self-end gap-1">
             <Button
               type="button"
               variant="outline"

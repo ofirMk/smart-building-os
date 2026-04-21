@@ -127,7 +127,7 @@ export function MarkerOfekDrawerNavContent({
 
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-slate-200 pt-2"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-border/70 pt-2"
       dir="rtl"
     >
       <div className="px-1">
@@ -148,16 +148,16 @@ export function MarkerOfekDrawerNavContent({
               key={section.id}
               value={section.id}
               className={cn(
-                "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-card px-1",
+                "mb-2 overflow-hidden rounded-xl border border-border bg-card px-1",
                 "shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
               )}
             >
               <AccordionHeader>
-                <AccordionTrigger className="rounded-lg px-2 py-3 text-xs font-semibold tracking-[0.04em] text-slate-700 hover:text-foreground">
+                <AccordionTrigger className="rounded-lg px-2 py-3 text-xs font-semibold tracking-[0.04em] text-muted-foreground transition-all duration-200 data-[state=open]:text-foreground hover:bg-accent hover:text-accent-foreground">
                   {section.label}
                 </AccordionTrigger>
               </AccordionHeader>
-              <AccordionContent className="border-t border-slate-100 pb-2 pt-2">
+              <AccordionContent className="border-t border-border/70 pb-2 pt-2">
                 <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
                   {section.items.map((item, index) => {
                     const Icon = item.icon
@@ -179,9 +179,9 @@ export function MarkerOfekDrawerNavContent({
                             }),
                             "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
                             "[&_svg]:size-4 [&_svg]:shrink-0",
-                            "data-active:border data-active:border-sky-200 data-active:bg-sky-50 data-active:text-sky-900 data-active:shadow-sm",
-                            "border border-transparent hover:border-slate-200 hover:bg-background hover:text-foreground",
-                            "flex w-full items-center justify-start text-start text-slate-700",
+                            "data-active:border data-active:border-border data-active:bg-accent data-active:text-accent-foreground data-active:shadow-sm",
+                            "border border-transparent hover:border-border hover:bg-accent hover:text-accent-foreground",
+                            "flex w-full items-center justify-start text-start text-muted-foreground",
                             "active:scale-[0.99]"
                           )}
                         >
