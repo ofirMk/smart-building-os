@@ -141,6 +141,12 @@ type ContractLineBillHistory = {
   approvedAmount: number
 }
 
+type ProgressReportDetailPaneProps = {
+  open: boolean
+  selectedContractId: string
+  selectedMilestone: MilestoneRow | null
+}
+
 /** מצב תצוגת שלב 2 אחרי בחירת חוזה */
 type ContractFlowState = "idle" | "loading" | "empty" | "has_baseline"
 
@@ -205,6 +211,366 @@ function milestoneDescriptionText(m: MilestoneRow): string {
   return cleanDescription(d.description || d.sectionCode)
 }
 
+function ProgressReportDetailPane({
+  open,
+  selectedContractId,
+  selectedMilestone,
+}: ProgressReportDetailPaneProps) {
+  const [detailLoading, setDetailLoading] = React.useState(false)
+  const [detailError, setDetailError] = React.useState<string | null>(null)
+  const [detailLine, setDetailLine] = React.useState<MatchedContractLine | null>(null)
+  const [detailHistory, setDetailHistory] = React.useState<
+    ContractLineBillHistory[]
+  >([])
+  const detailRequestIdRef = React.useRef(0)
+
+  React.useEffect(() => {
+    const milestone = selectedMilestone
+    if (!open || !milestone) {
+      setDetailLoading(false)
+      setDetailError(null)
+      setDetailLine(null)
+      setDetailHistory([])
+      return
+    }
+
+    const requestId = detailRequestIdRef.current + 1
+    detailRequestIdRef.current = requestId
+    setDetailLoading(true)
+    setDetailError(null)
+    setDetailLine(null)
+    setDetailHistory([])
+
+    if (!selectedContractId.trim()) {
+      setDetailLoading(false)
+      setDetailError("לא נבחר חוזה להצגת פירוט.")
+      return
+    }
+
+    void (async () => {
+      try {
+        const supabase = createSupabaseBrowserClient()
+        const { data: rawLines, error: lineError } = await supabase
+          .from("erp_client_contract_lines")
+          .select(
+            "id,line_number,boq_ref,description,quantity,unit_price,total_price,expected_unit_cost,expected_total_cost,supplier_id,erp_md_suppliers(id,supplier_number,supplier_name,supplier_type)"
+          )
+          .eq("client_contract_id", selectedContractId)
+          .order("line_number", { ascending: true })
+
+        if (lineError) throw lineError
+        if (detailRequestIdRef.current !== requestId) return
+
+        const lines = ((rawLines ?? []) as Array<Record<string, unknown>>).map(
+          (line) => {
+            const supplierRaw = embedOne(
+              line.erp_md_suppliers as
+                | {
+                    id: string
+                    supplier_number: string | null
+                    supplier_name: string | null
+                    supplier_type: string | null
+                  }
+                | {
+                    id: string
+                    supplier_number: string | null
+                    supplier_name: string | null
+                    supplier_type: string | null
+                  }[]
+                | null
+            )
+            return {
+              id: String(line.id),
+              lineNumber:
+                line.line_number == null ? null : Number(line.line_number) || null,
+              boqRef:
+                line.boq_ref == null ? null : String(line.boq_ref).trim() || null,
+              description: String(line.description ?? ""),
+              quantity: Number(line.quantity) || 0,
+              unitPrice: Number(line.unit_price) || 0,
+              totalPrice: Number(line.total_price) || 0,
+              expectedUnitCost:
+                line.expected_unit_cost == null
+                  ? null
+                  : Number(line.expected_unit_cost),
+              expectedTotalCost:
+                line.expected_total_cost == null
+                  ? null
+                  : Number(line.expected_total_cost),
+              supplier: supplierRaw
+                ? {
+                    id: String(supplierRaw.id),
+                    supplierNumber: supplierRaw.supplier_number,
+                    supplierName: supplierRaw.supplier_name,
+                    supplierType: supplierRaw.supplier_type,
+                  }
+                : null,
+            } satisfies MatchedContractLine
+          }
+        )
+
+        const sectionCode = decodeMilestoneStoredName(milestone.name).sectionCode
+        const fallbackCode = decodeMilestoneDisplayName(milestone.name).sectionCode
+        const effectiveSectionCode = sectionCode || fallbackCode
+        const sectionLineNumber = extractFirstPositiveInt(effectiveSectionCode)
+        const normalizedDescription = milestoneDescriptionText(milestone)
+          .trim()
+          .toLowerCase()
+
+        const matchedLine =
+          lines.find(
+            (line) =>
+              sectionLineNumber != null && line.lineNumber === sectionLineNumber
+          ) ??
+          lines.find(
+            (line) =>
+              !!line.boqRef &&
+              !!effectiveSectionCode &&
+              line.boqRef.trim() === effectiveSectionCode.trim()
+          ) ??
+          lines.find((line) => {
+            const lineDescription = line.description.trim().toLowerCase()
+            return (
+              normalizedDescription.length >= 6 &&
+              (lineDescription.includes(normalizedDescription) ||
+                normalizedDescription.includes(lineDescription))
+            )
+          }) ??
+          null
+
+        if (!matchedLine) {
+          setDetailError(
+            "לא נמצאה שורת כתב כמויות תואמת ב־client_contract_lines לסעיף זה."
+          )
+          setDetailLoading(false)
+          return
+        }
+
+        setDetailLine(matchedLine)
+
+        const { data: rawHistory, error: historyError } = await supabase
+          .from("erp_client_progress_bill_lines")
+          .select(
+            "id,submitted_qty,submitted_amount,approved_qty,approved_amount,erp_client_progress_bills!inner(id,bill_number,status,period_start,period_end,created_at)"
+          )
+          .eq("contract_line_id", matchedLine.id)
+
+        if (historyError) throw historyError
+        if (detailRequestIdRef.current !== requestId) return
+
+        const mappedHistory: ContractLineBillHistory[] = (
+          (rawHistory ?? []) as Array<Record<string, unknown>>
+        )
+          .map((entry) => {
+            const bill = embedOne(
+              entry.erp_client_progress_bills as
+                | {
+                    id: string
+                    bill_number: string | null
+                    status: string | null
+                    period_start: string | null
+                    period_end: string | null
+                    created_at: string | null
+                  }
+                | {
+                    id: string
+                    bill_number: string | null
+                    status: string | null
+                    period_start: string | null
+                    period_end: string | null
+                    created_at: string | null
+                  }[]
+                | null
+            )
+
+            return {
+              id: String(entry.id),
+              billNumber: bill?.bill_number ?? null,
+              status: bill?.status ?? null,
+              periodStart: bill?.period_start ?? null,
+              periodEnd: bill?.period_end ?? null,
+              createdAt: bill?.created_at ?? null,
+              submittedQty: Number(entry.submitted_qty) || 0,
+              submittedAmount: Number(entry.submitted_amount) || 0,
+              approvedQty: Number(entry.approved_qty) || 0,
+              approvedAmount: Number(entry.approved_amount) || 0,
+            }
+          })
+          .sort((a, b) => {
+            const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0
+            const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0
+            return bTime - aTime
+          })
+
+        setDetailHistory(mappedHistory)
+        if (mappedHistory.length === 0) {
+          setDetailError("אין היסטוריית חשבונות קודמת עבור סעיף זה.")
+        }
+      } catch (error) {
+        if (detailRequestIdRef.current !== requestId) return
+        setDetailError(formatError(error))
+      } finally {
+        if (detailRequestIdRef.current === requestId) {
+          setDetailLoading(false)
+        }
+      }
+    })()
+  }, [open, selectedContractId, selectedMilestone])
+
+  if (detailLoading) {
+    return (
+      <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-slate-200 bg-card shadow-sm">
+        <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          טוען היסטוריית חיובים וקבלן מבצע…
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="pb-2 text-start">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <PanelRightOpen className="size-4 text-slate-500" />
+            פירוט שורת client_contract_lines
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {detailLine ? (
+            <>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <p>
+                  <span className="text-muted-foreground">שורה:</span>{" "}
+                  <span className="font-mono">{detailLine.lineNumber ?? "—"}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">BOQ Ref:</span>{" "}
+                  <span className="font-mono">{detailLine.boqRef ?? "—"}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">כמות חוזית:</span>{" "}
+                  <span className="tabular-nums">{detailLine.quantity}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">מחיר יח׳:</span>{" "}
+                  <span className="tabular-nums">
+                    {currencyFormatter.format(detailLine.unitPrice)}
+                  </span>
+                </p>
+                <p className="sm:col-span-2">
+                  <span className="text-muted-foreground">תיאור:</span>{" "}
+                  {detailLine.description}
+                </p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-background px-2 py-1.5 text-xs">
+                עלות צפויה מבסיס ספק:{" "}
+                <span className="font-medium tabular-nums">
+                  {detailLine.expectedTotalCost != null
+                    ? currencyFormatter.format(detailLine.expectedTotalCost)
+                    : "—"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              אין שורת כתב כמויות תואמת עבור הסעיף שנבחר.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="pb-2 text-start">
+          <CardTitle className="text-base">קבלן מבצע מקושר</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          {detailLine?.supplier ? (
+            <div className="grid gap-1">
+              <p>
+                <span className="text-muted-foreground">שם:</span>{" "}
+                {detailLine.supplier.supplierName ?? "—"}
+              </p>
+              <p>
+                <span className="text-muted-foreground">מספר ספק:</span>{" "}
+                <span className="font-mono">
+                  {detailLine.supplier.supplierNumber ?? "—"}
+                </span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">סוג:</span>{" "}
+                {detailLine.supplier.supplierType ?? "—"}
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              לא נמצא קבלן משנה מקושר לשורה זו.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="pb-2 text-start">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock3 className="size-4 text-slate-500" />
+            היסטוריית חשבונות קודמים לסעיף
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {detailHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              אין היסטוריית חיובים עבור סעיף זה.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border border-slate-200 bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">חשבון</TableHead>
+                    <TableHead className="text-right">תקופה</TableHead>
+                    <TableHead className="text-right">כמות מבוקשת</TableHead>
+                    <TableHead className="text-right">סכום מבוקש</TableHead>
+                    <TableHead className="text-right">כמות מאושרת</TableHead>
+                    <TableHead className="text-right">סכום מאושר</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailHistory.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">
+                        חשבון {entry.billNumber ?? "—"} · {entry.status ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {entry.periodStart ?? "—"} עד {entry.periodEnd ?? "—"}
+                      </TableCell>
+                      <TableCell>{entry.submittedQty}</TableCell>
+                      <TableCell>
+                        {currencyFormatter.format(entry.submittedAmount)}
+                      </TableCell>
+                      <TableCell>{entry.approvedQty}</TableCell>
+                      <TableCell>
+                        {currencyFormatter.format(entry.approvedAmount)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {detailError ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {detailError}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 function NewProgressReportPageInner() {
   const router = useRouter()
   useDiamondNavigation("contracts")
@@ -263,15 +629,6 @@ function NewProgressReportPageInner() {
   const [selectedMilestoneId, setSelectedMilestoneId] =
     React.useState<string | null>(null)
   const [detailOpen, setDetailOpen] = React.useState(false)
-  const [detailLoading, setDetailLoading] = React.useState(false)
-  const [detailError, setDetailError] = React.useState<string | null>(null)
-  const [detailLine, setDetailLine] = React.useState<MatchedContractLine | null>(
-    null
-  )
-  const [detailHistory, setDetailHistory] = React.useState<
-    ContractLineBillHistory[]
-  >([])
-  const detailRequestIdRef = React.useRef(0)
 
   React.useEffect(() => {
     let cancelled = false
@@ -351,9 +708,6 @@ function NewProgressReportPageInner() {
       setBaselineMeta(null)
       setSelectedMilestoneId(null)
       setDetailOpen(false)
-      setDetailLine(null)
-      setDetailHistory([])
-      setDetailError(null)
       return
     }
     let cancelled = false
@@ -745,186 +1099,9 @@ function NewProgressReportPageInner() {
         100
     ) / 100
 
-  async function openMilestoneDetail(row: BoqListRow) {
-    const requestId = detailRequestIdRef.current + 1
-    detailRequestIdRef.current = requestId
+  function openMilestoneDetail(row: BoqListRow) {
     setSelectedMilestoneId(row.milestone.id)
     setDetailOpen(true)
-    setDetailLoading(true)
-    setDetailError(null)
-    setDetailLine(null)
-    setDetailHistory([])
-
-    if (!selectedContractId.trim()) {
-      setDetailLoading(false)
-      setDetailError("לא נבחר חוזה להצגת פירוט.")
-      return
-    }
-
-    try {
-      const supabase = createSupabaseBrowserClient()
-      const { data: rawLines, error: lineError } = await supabase
-        .from("erp_client_contract_lines")
-        .select(
-          "id,line_number,boq_ref,description,quantity,unit_price,total_price,expected_unit_cost,expected_total_cost,supplier_id,erp_md_suppliers(id,supplier_number,supplier_name,supplier_type)"
-        )
-        .eq("client_contract_id", selectedContractId)
-        .order("line_number", { ascending: true })
-
-      if (lineError) throw lineError
-      if (detailRequestIdRef.current !== requestId) return
-
-      const lines = ((rawLines ?? []) as Array<Record<string, unknown>>).map(
-        (line) => {
-          const supplierRaw = embedOne(
-            line.erp_md_suppliers as
-              | {
-                  id: string
-                  supplier_number: string | null
-                  supplier_name: string | null
-                  supplier_type: string | null
-                }
-              | {
-                  id: string
-                  supplier_number: string | null
-                  supplier_name: string | null
-                  supplier_type: string | null
-                }[]
-              | null
-          )
-          return {
-            id: String(line.id),
-            lineNumber:
-              line.line_number == null ? null : Number(line.line_number) || null,
-            boqRef:
-              line.boq_ref == null ? null : String(line.boq_ref).trim() || null,
-            description: String(line.description ?? ""),
-            quantity: Number(line.quantity) || 0,
-            unitPrice: Number(line.unit_price) || 0,
-            totalPrice: Number(line.total_price) || 0,
-            expectedUnitCost:
-              line.expected_unit_cost == null
-                ? null
-                : Number(line.expected_unit_cost),
-            expectedTotalCost:
-              line.expected_total_cost == null
-                ? null
-                : Number(line.expected_total_cost),
-            supplier: supplierRaw
-              ? {
-                  id: String(supplierRaw.id),
-                  supplierNumber: supplierRaw.supplier_number,
-                  supplierName: supplierRaw.supplier_name,
-                  supplierType: supplierRaw.supplier_type,
-                }
-              : null,
-          } satisfies MatchedContractLine
-        }
-      )
-
-      const sectionCode = decodeMilestoneStoredName(row.milestone.name).sectionCode
-      const fallbackCode = decodeMilestoneDisplayName(row.milestone.name).sectionCode
-      const effectiveSectionCode = sectionCode || fallbackCode
-      const sectionLineNumber = extractFirstPositiveInt(effectiveSectionCode)
-      const normalizedDescription = row.description.trim().toLowerCase()
-
-      const matchedLine =
-        lines.find(
-          (line) =>
-            sectionLineNumber != null && line.lineNumber === sectionLineNumber
-        ) ??
-        lines.find(
-          (line) =>
-            !!line.boqRef &&
-            !!effectiveSectionCode &&
-            line.boqRef.trim() === effectiveSectionCode.trim()
-        ) ??
-        lines.find((line) => {
-          const lineDescription = line.description.trim().toLowerCase()
-          return (
-            normalizedDescription.length >= 6 &&
-            (lineDescription.includes(normalizedDescription) ||
-              normalizedDescription.includes(lineDescription))
-          )
-        }) ??
-        null
-
-      if (!matchedLine) {
-        setDetailError(
-          "לא נמצאה שורת כתב כמויות תואמת ב־client_contract_lines לסעיף זה."
-        )
-        setDetailLoading(false)
-        return
-      }
-
-      setDetailLine(matchedLine)
-
-      const { data: rawHistory, error: historyError } = await supabase
-        .from("erp_client_progress_bill_lines")
-        .select(
-          "id,submitted_qty,submitted_amount,approved_qty,approved_amount,erp_client_progress_bills!inner(id,bill_number,status,period_start,period_end,created_at)"
-        )
-        .eq("contract_line_id", matchedLine.id)
-
-      if (historyError) throw historyError
-      if (detailRequestIdRef.current !== requestId) return
-
-      const mappedHistory: ContractLineBillHistory[] = (
-        (rawHistory ?? []) as Array<Record<string, unknown>>
-      )
-        .map((entry) => {
-          const bill = embedOne(
-            entry.erp_client_progress_bills as
-              | {
-                  id: string
-                  bill_number: string | null
-                  status: string | null
-                  period_start: string | null
-                  period_end: string | null
-                  created_at: string | null
-                }
-              | {
-                  id: string
-                  bill_number: string | null
-                  status: string | null
-                  period_start: string | null
-                  period_end: string | null
-                  created_at: string | null
-                }[]
-              | null
-          )
-
-          return {
-            id: String(entry.id),
-            billNumber: bill?.bill_number ?? null,
-            status: bill?.status ?? null,
-            periodStart: bill?.period_start ?? null,
-            periodEnd: bill?.period_end ?? null,
-            createdAt: bill?.created_at ?? null,
-            submittedQty: Number(entry.submitted_qty) || 0,
-            submittedAmount: Number(entry.submitted_amount) || 0,
-            approvedQty: Number(entry.approved_qty) || 0,
-            approvedAmount: Number(entry.approved_amount) || 0,
-          }
-        })
-        .sort((a, b) => {
-          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0
-          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0
-          return bTime - aTime
-        })
-
-      setDetailHistory(mappedHistory)
-      if (mappedHistory.length === 0) {
-        setDetailError("אין היסטוריית חשבונות קודמת עבור סעיף זה.")
-      }
-    } catch (error) {
-      if (detailRequestIdRef.current !== requestId) return
-      setDetailError(formatError(error))
-    } finally {
-      if (detailRequestIdRef.current === requestId) {
-        setDetailLoading(false)
-      }
-    }
   }
 
   function resetForm() {
@@ -947,9 +1124,6 @@ function NewProgressReportPageInner() {
     setBaselineMeta(null)
     setSelectedMilestoneId(null)
     setDetailOpen(false)
-    setDetailLine(null)
-    setDetailHistory([])
-    setDetailError(null)
   }
 
   function saveReport(reportStatus: "draft" | "submitted" | "approved") {
@@ -1104,7 +1278,7 @@ function NewProgressReportPageInner() {
                   </p>
                   <Link
                     href="/marker-ofek/master-data?tab=suppliers"
-                    className="text-xs font-medium text-blue-600 underline-offset-2 hover:underline"
+                    className="text-xs font-medium text-primary underline-offset-2 hover:underline"
                   >
                     ניהול מאסטר
                   </Link>
@@ -1570,150 +1744,11 @@ function NewProgressReportPageInner() {
           </SheetHeader>
 
           <div className="h-full overflow-y-auto bg-background p-4">
-            {detailLoading ? (
-              <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-slate-200 bg-card shadow-sm">
-                <span className="inline-flex items-center gap-2 text-sm text-slate-500">
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                  טוען היסטוריית חיובים וקבלן מבצע…
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Card className="border-slate-200 shadow-sm">
-                  <CardHeader className="pb-2 text-start">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <PanelRightOpen className="size-4 text-slate-500" />
-                      פירוט שורת client_contract_lines
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    {detailLine ? (
-                      <>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <p>
-                            <span className="text-muted-foreground">שורה:</span>{" "}
-                            <span className="font-mono">{detailLine.lineNumber ?? "—"}</span>
-                          </p>
-                          <p>
-                            <span className="text-muted-foreground">BOQ Ref:</span>{" "}
-                            <span className="font-mono">{detailLine.boqRef ?? "—"}</span>
-                          </p>
-                          <p>
-                            <span className="text-muted-foreground">כמות חוזית:</span>{" "}
-                            <span className="tabular-nums">{detailLine.quantity}</span>
-                          </p>
-                          <p>
-                            <span className="text-muted-foreground">מחיר יח׳:</span>{" "}
-                            <span className="tabular-nums">
-                              {currencyFormatter.format(detailLine.unitPrice)}
-                            </span>
-                          </p>
-                          <p className="sm:col-span-2">
-                            <span className="text-muted-foreground">תיאור:</span>{" "}
-                            {detailLine.description}
-                          </p>
-                        </div>
-                        <div className="rounded-md border border-slate-200 bg-background px-2 py-1.5 text-xs">
-                          עלות צפויה מבסיס ספק:{" "}
-                          <span className="font-medium tabular-nums">
-                            {detailLine.expectedTotalCost != null
-                              ? currencyFormatter.format(detailLine.expectedTotalCost)
-                              : "—"}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        אין שורת כתב כמויות תואמת עבור הסעיף שנבחר.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 shadow-sm">
-                  <CardHeader className="pb-2 text-start">
-                    <CardTitle className="text-base">קבלן מבצע מקושר</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm">
-                    {detailLine?.supplier ? (
-                      <div className="grid gap-1">
-                        <p>
-                          <span className="text-muted-foreground">שם:</span>{" "}
-                          {detailLine.supplier.supplierName ?? "—"}
-                        </p>
-                        <p>
-                          <span className="text-muted-foreground">מספר ספק:</span>{" "}
-                          <span className="font-mono">
-                            {detailLine.supplier.supplierNumber ?? "—"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="text-muted-foreground">סוג:</span>{" "}
-                          {detailLine.supplier.supplierType ?? "—"}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        לא נמצא קבלן משנה מקושר לשורה זו.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 shadow-sm">
-                  <CardHeader className="pb-2 text-start">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Clock3 className="size-4 text-slate-500" />
-                      היסטוריית חשבונות קודמים לסעיף
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {detailHistory.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        אין היסטוריית חיובים עבור סעיף זה.
-                      </p>
-                    ) : (
-                      <div className="overflow-x-auto rounded-md border border-slate-200 bg-card">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right">חשבון</TableHead>
-                              <TableHead className="text-right">תקופה</TableHead>
-                              <TableHead className="text-right">כמות מבוקשת</TableHead>
-                              <TableHead className="text-right">סכום מבוקש</TableHead>
-                              <TableHead className="text-right">כמות מאושרת</TableHead>
-                              <TableHead className="text-right">סכום מאושר</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {detailHistory.map((entry) => (
-                              <TableRow key={entry.id}>
-                                <TableCell className="font-medium">
-                                  חשבון {entry.billNumber ?? "—"} · {entry.status ?? "—"}
-                                </TableCell>
-                                <TableCell className="text-xs text-muted-foreground">
-                                  {entry.periodStart ?? "—"} עד {entry.periodEnd ?? "—"}
-                                </TableCell>
-                                <TableCell>{entry.submittedQty}</TableCell>
-                                <TableCell>{currencyFormatter.format(entry.submittedAmount)}</TableCell>
-                                <TableCell>{entry.approvedQty}</TableCell>
-                                <TableCell>{currencyFormatter.format(entry.approvedAmount)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {detailError ? (
-                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                    {detailError}
-                  </p>
-                ) : null}
-              </div>
-            )}
+            <ProgressReportDetailPane
+              open={detailOpen}
+              selectedContractId={selectedContractId}
+              selectedMilestone={selectedMilestone}
+            />
           </div>
         </SheetContent>
       </Sheet>
