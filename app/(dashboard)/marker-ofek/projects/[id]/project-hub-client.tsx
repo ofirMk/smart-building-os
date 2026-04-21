@@ -756,7 +756,7 @@ export function MarkerOfekProjectHubClient({
           </CardContent>
         </Card>
 
-        <Card className="border-slate-100 bg-white">
+        <Card className="border-slate-100 bg-card">
           <CardHeader>
             <CardTitle className="text-base text-indigo-900">לו״ז וביצוע (גאנט)</CardTitle>
             <CardDescription className="text-slate-600">
@@ -1022,7 +1022,7 @@ export function MarkerOfekProjectHubClient({
                   value={vaultDocumentKind}
                   onValueChange={(v) => setVaultDocumentKind(v ?? "תוכניות")}
                 >
-                  <SelectTrigger className="w-[min(100%,14rem)] border-slate-100 bg-white">
+                  <SelectTrigger className="w-[min(100%,14rem)] border-slate-100 bg-card">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1038,7 +1038,7 @@ export function MarkerOfekProjectHubClient({
                 type="button"
                 variant="outline"
                 disabled={uploading}
-                className="relative gap-2 border-slate-100 bg-white"
+                className="relative gap-2 border-slate-100 bg-card"
               >
                 {uploading ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />

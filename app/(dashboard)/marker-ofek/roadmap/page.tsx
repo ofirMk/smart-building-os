@@ -168,7 +168,7 @@ function statusBadgeHe(s: PhaseStatus): { label: string; className: string } {
     default:
       return {
         label: "מתוכנן",
-        className: "border-slate-200 bg-slate-50 text-slate-800 shadow-none",
+        className: "border-slate-200 bg-background text-slate-800 shadow-none",
       }
   }
 }
@@ -224,7 +224,7 @@ export default function LightmanRoadmapPage() {
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
               Lightman · פיתוח המערכת
             </p>
-            <h1 className="text-balance text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+            <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground md:text-3xl">
               Roadmap &amp; Development Gantt
             </h1>
           </div>
@@ -239,11 +239,11 @@ export default function LightmanRoadmapPage() {
       {/* Horizontal Gantt strip */}
       <section
         aria-label="ציר שלבים אופקי"
-        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5"
+        className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5"
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-slate-900">ציר שלבים (V1)</h2>
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600">
+          <h2 className="text-sm font-bold text-foreground">ציר שלבים (V1)</h2>
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-background px-2 py-1 text-[11px] font-medium text-slate-600">
             <GitBranch className="size-3.5 text-slate-500" aria-hidden />
             תלות: כל שלב נשען על השלב שקדם לו
           </span>
@@ -264,21 +264,21 @@ export default function LightmanRoadmapPage() {
                   ease: [0.22, 1, 0.36, 1] as const,
                 }}
                 className={cn(
-                  "flex flex-col rounded-lg border border-slate-200 bg-slate-50/50 p-3",
+                  "flex flex-col rounded-lg border border-slate-200 bg-background/50 p-3",
                   phase.status === "in_progress" &&
                     "border-sky-200/80 bg-sky-50/30 ring-1 ring-sky-100"
                 )}
               >
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-card text-slate-700 shadow-sm ring-1 ring-slate-200">
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold text-slate-500">
                         שלב {phase.index}
                       </p>
-                      <p className="truncate text-xs font-bold text-slate-900">
+                      <p className="truncate text-xs font-bold text-foreground">
                         {phase.title}
                       </p>
                     </div>
@@ -369,7 +369,7 @@ export default function LightmanRoadmapPage() {
         className="space-y-4"
         aria-label="פירוט משימות לפי שלב"
       >
-        <h2 className="text-sm font-bold text-slate-900">פירוט משימות</h2>
+        <h2 className="text-sm font-bold text-foreground">פירוט משימות</h2>
         {PHASES.map((phase) => {
           const Icon = phase.icon
           const phaseBadge = statusBadgeHe(phase.status)
@@ -377,15 +377,15 @@ export default function LightmanRoadmapPage() {
             <motion.article
               key={phase.id}
               variants={rowVariants}
-              className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+              className="overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm"
             >
-              <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-                <span className="flex size-9 items-center justify-center rounded-lg bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
+              <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-background/80 px-4 py-3">
+                <span className="flex size-9 items-center justify-center rounded-lg bg-card text-slate-700 shadow-sm ring-1 ring-slate-200">
                   <Icon className="size-4" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-bold text-foreground">
                       שלב {phase.index}: {phase.title}
                     </h3>
                     <Badge
@@ -426,7 +426,7 @@ export default function LightmanRoadmapPage() {
                           <span className="font-mono text-[11px] font-bold text-slate-400">
                             {task.code}
                           </span>
-                          <span className="text-sm font-semibold text-slate-900">
+                          <span className="text-sm font-semibold text-foreground">
                             {task.title}
                           </span>
                           {task.highlight === "next" ? (
@@ -465,7 +465,7 @@ export default function LightmanRoadmapPage() {
         })}
       </motion.section>
 
-      <footer className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] text-slate-500 shadow-sm">
+      <footer className="rounded-lg border border-slate-200 bg-card px-4 py-3 text-[11px] text-slate-500 shadow-sm">
         <p>
           מסמך חי — יעודכן עם סגירת משימות ב-Git. גרסת יעד:{" "}
           <strong className="font-semibold text-slate-800">ERP V1</strong>.

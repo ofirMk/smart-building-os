@@ -18,7 +18,7 @@ const denseHead =
 const denseCell =
   "px-2 py-1.5 text-[13px] leading-snug text-foreground [&:has([role=checkbox])]:pe-0"
 const interactiveRow =
-  "cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
+  "cursor-pointer border-b border-slate-100 transition-colors hover:bg-background"
 
 const staticRow =
   "border-b border-slate-100 hover:bg-transparent"

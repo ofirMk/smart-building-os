@@ -72,9 +72,9 @@ export default async function ContractsBillingHubPage() {
         חזרה למרכז הפיקוד
       </Link>
 
-      <header className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+      <header className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-indigo-950">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-background text-indigo-950">
             <Landmark className="size-6" strokeWidth={1.5} aria-hidden />
           </span>
           <div>
@@ -103,9 +103,9 @@ export default async function ContractsBillingHubPage() {
             <Link
               key={t.href}
               href={t.href}
-              className="group flex flex-col rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition-colors hover:border-slate-200 hover:shadow-md"
+              className="group flex flex-col rounded-xl border border-slate-100 bg-card p-5 shadow-sm transition-colors hover:border-slate-200 hover:shadow-md"
             >
-              <span className="mb-3 flex size-10 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-indigo-950 transition-colors group-hover:bg-indigo-950/5">
+              <span className="mb-3 flex size-10 items-center justify-center rounded-lg border border-slate-100 bg-background text-indigo-950 transition-colors group-hover:bg-indigo-950/5">
                 <Icon className="size-5" strokeWidth={1.5} aria-hidden />
               </span>
               <h2 className="text-base font-semibold text-indigo-950">
@@ -119,7 +119,7 @@ export default async function ContractsBillingHubPage() {
         })}
       </nav>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-indigo-950">
           מודול כספים (מס׳ 5 בסדר הזהב)
         </h3>
@@ -131,7 +131,7 @@ export default async function ContractsBillingHubPage() {
             <li key={s.href}>
               <Link
                 href={s.href}
-                className="font-currency-mono inline-flex rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-[13px] font-medium text-indigo-950 transition-colors hover:bg-slate-100"
+                className="font-currency-mono inline-flex rounded-lg border border-slate-100 bg-background/80 px-3 py-2 text-[13px] font-medium text-indigo-950 transition-colors hover:bg-slate-100"
               >
                 {s.title}
               </Link>

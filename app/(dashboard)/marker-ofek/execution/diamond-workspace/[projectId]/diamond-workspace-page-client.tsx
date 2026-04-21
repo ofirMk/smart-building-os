@@ -73,12 +73,12 @@ export function DiamondWorkspacePageClient({
         />
       }
       workArea={
-        <div className="flex h-full min-h-0 flex-col bg-white">
+        <div className="flex h-full min-h-0 flex-col bg-card">
           <div className="shrink-0 border-b border-slate-100 px-4 py-4 lg:px-6">
             <p className="text-[10px] font-semibold tracking-[0.22em] text-slate-400">
               שולחן עבודה יהלום
             </p>
-            <h1 className="mt-1 text-xl font-extralight text-slate-900">
+            <h1 className="mt-1 text-xl font-extralight text-foreground">
               {projectName}
             </h1>
             {projectCode ? (
@@ -111,13 +111,13 @@ export function DiamondWorkspacePageClient({
             </p>
           </div>
           <ul className="space-y-3 text-xs font-light text-slate-500">
-            <li className="rounded-xl border border-slate-100 bg-white/80 px-4 py-3">
+            <li className="rounded-xl border border-slate-100 bg-card/80 px-4 py-3">
               אין התראות פעילות — המערכת במצב יציב.
             </li>
-            <li className="rounded-xl border border-slate-100 bg-white/80 px-4 py-3">
+            <li className="rounded-xl border border-slate-100 bg-card/80 px-4 py-3">
               F2 — הקמה מהירה של ישות (למשל פרויקט) כשאין מיקוד בשדה טקסט.
             </li>
-            <li className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-white/80 px-4 py-3">
+            <li className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-card/80 px-4 py-3">
               <span className="font-medium text-slate-600">שטח</span>
               <Link
                 href={`/marker-ofek/execution/field/floor-handover/${projectId}`}
@@ -141,13 +141,13 @@ export function DiamondWorkspacePageClient({
             סיכום כספי (משימות)
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+            <div className="rounded-xl border border-slate-100 bg-background/80 px-4 py-3">
               <p className="text-[10px] text-slate-400">תכנון</p>
               <p className="mt-1 font-mono text-base tabular-nums text-slate-800">
                 {fmt(variance.plannedCost)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+            <div className="rounded-xl border border-slate-100 bg-background/80 px-4 py-3">
               <p className="text-[10px] text-slate-400">ביצוע</p>
               <p className="mt-1 font-mono text-base tabular-nums text-slate-800">
                 {fmt(variance.actualCost)}
@@ -160,11 +160,11 @@ export function DiamondWorkspacePageClient({
                   ? "border-rose-100 bg-rose-50/50"
                   : variance.variance < 0
                     ? "border-emerald-100 bg-emerald-50/50"
-                    : "border-slate-100 bg-slate-50/80"
+                    : "border-slate-100 bg-background/80"
               )}
             >
               <p className="text-[10px] text-slate-400">סטייה</p>
-              <p className="mt-1 font-mono text-base tabular-nums text-slate-900">
+              <p className="mt-1 font-mono text-base tabular-nums text-foreground">
                 {fmt(variance.variance)}{" "}
                 <span className="text-xs font-normal text-slate-500">
                   (

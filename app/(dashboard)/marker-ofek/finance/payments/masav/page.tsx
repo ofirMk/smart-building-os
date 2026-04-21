@@ -8,7 +8,7 @@ export default async function MasavPage() {
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-7xl flex-col p-6 md:p-8">
       <div className="mb-6 shrink-0">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-foreground">
           מסלקת תשלומים (מס״ב)
         </h1>
         <p className="text-slate-500">

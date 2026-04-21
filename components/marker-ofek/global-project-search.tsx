@@ -85,11 +85,11 @@ export function GlobalProjectSearch() {
           window.setTimeout(() => setOpen(false), 120)
         }}
         placeholder="חיפוש פרויקט (Ctrl+K)"
-        className="h-10 w-full rounded-xl border border-slate-200 bg-white pe-10 ps-3 text-sm text-[#1e293b] shadow-sm outline-none ring-0 transition focus:border-indigo-300"
+        className="h-10 w-full rounded-xl border border-slate-200 bg-card pe-10 ps-3 text-sm text-[#1e293b] shadow-sm outline-none ring-0 transition focus:border-indigo-300"
         aria-label="חיפוש פרויקטים גלובלי"
       />
       {open && filtered.length > 0 ? (
-        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-100 bg-white p-1 shadow-sm">
+        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-100 bg-card p-1 shadow-sm">
           {filtered.map((project) => (
             <button
               key={project.id}

@@ -213,7 +213,7 @@ export function FinanceOverheadClient({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 md:px-6 rtl" dir="rtl">
-      <header className="pharmacy-hero-card border-slate-100 bg-white p-6">
+      <header className="pharmacy-hero-card border-slate-100 bg-card p-6">
         <h1 className="text-2xl font-bold tracking-tight text-[#1e293b]">
           עקיפות והעמסה — Finance ERP
         </h1>
@@ -223,7 +223,7 @@ export function FinanceOverheadClient({
         </p>
       </header>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-800">מדיניות העמסה — ברירת מחדל חברה</h2>
         <p className="mt-1 text-xs text-slate-500">
           חל על פרויקטים ללא שורה בטבלת מדיניות פרויקט. ניתן לשלב שיטות per-project.
@@ -248,7 +248,7 @@ export function FinanceOverheadClient({
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-slate-800">רישום עקיפות חודשי</h2>
           <button
@@ -301,7 +301,7 @@ export function FinanceOverheadClient({
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-800">מדיניות לפי פרויקט</h2>
         <p className="mt-1 text-xs text-slate-500">
           דורס את ברירת המחדל הגלובלית לפרויקט זה. fixed_rate = אחוז מסך עומס החודש לפני חלוקת השאר.

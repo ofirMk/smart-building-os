@@ -57,7 +57,7 @@ export function ProjectExecutionCommandView({
     <div className="space-y-6">
       <div className="grid gap-4 lg:grid-cols-3">
         <section
-          className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-1"
+          className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm lg:col-span-1"
           aria-labelledby="exec-progress-heading"
         >
           <div className="flex items-center gap-2 text-[#1e293b]">
@@ -81,7 +81,7 @@ export function ProjectExecutionCommandView({
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href={`/marker-ofek/execution/gantt/${projectId}`}
-              className="inline-flex rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-medium text-[#1e293b] hover:bg-slate-100"
+              className="inline-flex rounded-lg border border-slate-100 bg-background px-3 py-2 text-sm font-medium text-[#1e293b] hover:bg-slate-100"
             >
               גאנט מלא
             </Link>
@@ -96,7 +96,7 @@ export function ProjectExecutionCommandView({
         </section>
 
         <section
-          className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-1"
+          className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm lg:col-span-1"
           aria-labelledby="exec-media-heading"
         >
           <div className="flex items-center gap-2 text-[#1e293b]">
@@ -114,7 +114,7 @@ export function ProjectExecutionCommandView({
                 return (
                   <li
                     key={m.id}
-                    className="aspect-square overflow-hidden rounded-lg border border-slate-100 bg-slate-50"
+                    className="aspect-square overflow-hidden rounded-lg border border-slate-100 bg-background"
                   >
                     {src && String(m.mime_type ?? "").startsWith("image/") ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -132,7 +132,7 @@ export function ProjectExecutionCommandView({
         </section>
 
         <section
-          className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-1"
+          className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm lg:col-span-1"
           aria-labelledby="exec-issues-heading"
         >
           <div className="flex items-center gap-2 text-[#1e293b]">

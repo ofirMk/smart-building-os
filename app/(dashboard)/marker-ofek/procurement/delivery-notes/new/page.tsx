@@ -156,15 +156,15 @@ export default function NewDeliveryNotePage() {
   return (
     <div
       dir="rtl"
-      className="bg-white p-8 font-sans text-slate-900"
+      className="bg-card p-8 font-sans text-foreground"
     >
       <div className="mx-auto mb-8 flex max-w-4xl items-center justify-between border-b border-slate-100 pb-6">
         <div className="flex items-center gap-4">
-          <div className="rounded-full bg-slate-50 p-3 text-indigo-600">
+          <div className="rounded-full bg-background p-3 text-indigo-600">
             <Package size={24} aria-hidden />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-xl font-bold text-foreground">
               קליטת סחורה - תעודת משלוח
             </h1>
             <p className="text-sm text-slate-400">
@@ -185,7 +185,7 @@ export default function NewDeliveryNotePage() {
       </div>
 
       <form onSubmit={onSubmit} className="mx-auto grid max-w-4xl gap-8">
-        <Card className="border-slate-100 bg-white p-8 shadow-sm">
+        <Card className="border-slate-100 bg-card p-8 shadow-sm">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label
@@ -201,7 +201,7 @@ export default function NewDeliveryNotePage() {
               >
                 <SelectTrigger
                   id="projectId"
-                  className="h-10 border-slate-200 bg-white"
+                  className="h-10 border-slate-200 bg-card"
                 >
                   <SelectValue placeholder="בחר פרויקט..." />
                 </SelectTrigger>
@@ -255,7 +255,7 @@ export default function NewDeliveryNotePage() {
               >
                 <SelectTrigger
                   id="itemCatalogId"
-                  className="h-10 border-slate-200 bg-white"
+                  className="h-10 border-slate-200 bg-card"
                 >
                   <SelectValue placeholder="בחר פריט מהקטלוג" />
                 </SelectTrigger>
@@ -320,7 +320,7 @@ export default function NewDeliveryNotePage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="מספר תעודה, ספק, הערות קליטה..."
-                className="min-h-[100px] rounded-md border-slate-200 bg-white text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="min-h-[100px] rounded-md border-slate-200 bg-card text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 disabled={submitting}
               />
             </div>

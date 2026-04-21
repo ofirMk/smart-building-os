@@ -197,7 +197,7 @@ export function HoldenContractWorkspaceClient({
               <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
                 חוזה / כתב כמויות
               </p>
-              <h2 className="mt-2 text-lg font-bold text-slate-900">
+              <h2 className="mt-2 text-lg font-bold text-foreground">
                 {c.project?.name ?? "פרויקט"}
               </h2>
               <p className="text-slate-600">{c.entity?.name}</p>
@@ -229,7 +229,7 @@ export function HoldenContractWorkspaceClient({
                 })}
               </tbody>
             </table>
-            <div className="flex justify-between border-t border-slate-200 pt-4 text-base font-semibold text-slate-900">
+            <div className="flex justify-between border-t border-slate-200 pt-4 text-base font-semibold text-foreground">
               <span>סה״כ חוזה</span>
               <span className="tabular-nums text-emerald-700">
                 ₪{total.toLocaleString("he-IL")}

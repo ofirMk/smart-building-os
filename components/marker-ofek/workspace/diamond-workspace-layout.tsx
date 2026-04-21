@@ -107,7 +107,7 @@ export function DiamondWorkspaceLayout({
   return (
     <div
       className={cn(
-        "flex h-[min(100dvh,100vh)] min-h-0 w-full flex-col bg-white",
+        "flex h-[min(100dvh,100vh)] min-h-0 w-full flex-col bg-card",
         className
       )}
       dir="rtl"
@@ -151,7 +151,7 @@ export function DiamondWorkspaceLayout({
               defaultSize={h2}
               minSize={14}
               maxSize={42}
-              className="min-h-0 min-w-[180px] overflow-hidden border-s border-slate-100/90 bg-slate-50/40"
+              className="min-h-0 min-w-[180px] overflow-hidden border-s border-slate-100/90 bg-background/40"
             >
               {silentGuard}
             </Panel>
@@ -177,7 +177,7 @@ export function DiamondWorkspaceLayout({
             setConsoleCollapsedUi(false)
             persist({ ...layoutRef.current, consoleCollapsed: false })
           }}
-          className="min-h-0 overflow-hidden border-t border-slate-100 bg-white"
+          className="min-h-0 overflow-hidden border-t border-slate-100 bg-card"
         >
           <div className="flex h-full min-h-0 flex-col">
             <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">

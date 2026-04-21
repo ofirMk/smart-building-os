@@ -433,7 +433,7 @@ export default function ProcurementPoDetailPage() {
             <h1 className="text-2xl font-bold tracking-tight text-[#1e293b] sm:text-3xl">
               {po.po_number}
             </h1>
-            <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-[#1e293b]">
+            <span className="inline-flex rounded-md border border-slate-200 bg-background px-2 py-0.5 text-xs font-medium text-[#1e293b]">
               {poStatusLabel(po.status)}
             </span>
           </div>
@@ -474,7 +474,7 @@ export default function ProcurementPoDetailPage() {
         ) : null}
       </header>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-[#1e293b]">סיווג עלות וניכוי במקור</h2>
         <p className="mt-1 text-xs text-slate-500">
           לקישור לדוחות כספיים ו-P&L. ברירת מחדל ניכוי מהספק:{" "}
@@ -489,7 +489,7 @@ export default function ProcurementPoDetailPage() {
               value={financeCat}
               onValueChange={(v) => setFinanceCat(v ?? "materials")}
             >
-              <SelectTrigger className="border-slate-200 bg-white">
+              <SelectTrigger className="border-slate-200 bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

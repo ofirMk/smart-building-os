@@ -94,7 +94,7 @@ export default async function SubcontractorSyncPage({ params }: PageProps) {
         </div>
         <Link
           href={`/marker-ofek/execution/gantt/${projectId}`}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 shadow-sm hover:bg-slate-50"
+          className="rounded-lg border border-slate-200 bg-card px-3 py-1.5 text-sm font-medium text-indigo-700 shadow-sm hover:bg-background"
         >
           חזרה לגאנט
         </Link>

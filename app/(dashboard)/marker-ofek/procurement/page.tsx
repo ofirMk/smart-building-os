@@ -43,9 +43,9 @@ function statusClass(s: PoStatusEn): string {
     case "Draft":
       return "bg-slate-100 text-slate-800 ring-1 ring-slate-200"
     case "Sent":
-      return "bg-slate-50 text-slate-800 ring-1 ring-slate-300"
+      return "bg-background text-slate-800 ring-1 ring-slate-300"
     case "Received":
-      return "bg-white text-slate-900 ring-1 ring-slate-400"
+      return "bg-card text-foreground ring-1 ring-slate-400"
     default:
       return "bg-slate-100 text-slate-800"
   }
@@ -65,7 +65,7 @@ export default function ProcurementDashboardPage() {
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
-      className="bg-white text-slate-900"
+      className="bg-card text-foreground"
       eyebrow="Lightman · רכש"
       title="לוח רכש — חשמל ותשתיות"
       description="הזמנות רכש אחרונות (דמו). פרויקטים: רמת עיר היין (אשקלון), גינדי סביון, ריינבו שדה דב."
@@ -84,11 +84,11 @@ export default function ProcurementDashboardPage() {
         </Link>
       }
       master={
-        <div className="rounded-md border border-slate-200 bg-white p-2.5 shadow-sm">
+        <div className="rounded-md border border-slate-200 bg-card p-2.5 shadow-sm">
           <p className={cn(ERP_DENSE_LABEL_CLASS, "text-slate-600")}>
             סיכום מהיר
           </p>
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-slate-900">
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-foreground">
             <span>
               <span className="font-semibold tabular-nums">
                 {PROCUREMENT_DASHBOARD_MOCK_ORDERS.length}
@@ -103,9 +103,9 @@ export default function ProcurementDashboardPage() {
         </div>
       }
       detail={
-        <DenseDetailPanel className="border-slate-200 bg-white p-0 shadow-sm">
-          <div className="border-b border-slate-200 bg-white px-2.5 py-2">
-            <h2 className="text-start text-sm font-semibold text-slate-900">
+        <DenseDetailPanel className="border-slate-200 bg-card p-0 shadow-sm">
+          <div className="border-b border-slate-200 bg-card px-2.5 py-2">
+            <h2 className="text-start text-sm font-semibold text-foreground">
               הזמנות רכש אחרונות
             </h2>
             <p className="text-[11px] text-slate-600">
@@ -113,7 +113,7 @@ export default function ProcurementDashboardPage() {
               לעריכה במנוע הזמנה
             </p>
           </div>
-          <div className="w-full overflow-x-auto bg-white">
+          <div className="w-full overflow-x-auto bg-card">
             <Table>
               <TableHeader>
                 <TableRow className="h-9 border-slate-200 hover:bg-transparent">
@@ -150,7 +150,7 @@ export default function ProcurementDashboardPage() {
                       duration: 0.28,
                       ease: [0.22, 1, 0.36, 1],
                     }}
-                    className="h-9 cursor-pointer border-slate-100 hover:bg-slate-50/80"
+                    className="h-9 cursor-pointer border-slate-100 hover:bg-background/80"
                     onClick={() =>
                       router.push(
                         `/marker-ofek/procurement/purchase-orders/new?mockPo=${encodeURIComponent(row.poNumber)}`
@@ -165,19 +165,19 @@ export default function ProcurementDashboardPage() {
                       }
                     }}
                   >
-                    <TableCell className="px-2 py-1.5 font-mono text-xs font-medium text-slate-900">
+                    <TableCell className="px-2 py-1.5 font-mono text-xs font-medium text-foreground">
                       {row.poNumber}
                     </TableCell>
                     <TableCell className="px-2 py-1.5 text-xs tabular-nums text-slate-800">
                       {new Date(row.date).toLocaleDateString("he-IL")}
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-xs text-slate-900">
+                    <TableCell className="px-2 py-1.5 text-xs text-foreground">
                       {row.project}
                     </TableCell>
                     <TableCell className="max-w-[14rem] truncate px-2 py-1.5 text-xs text-slate-800">
                       {row.supplier}
                     </TableCell>
-                    <TableCell className="px-2 py-1.5 text-xs font-medium tabular-nums text-slate-900">
+                    <TableCell className="px-2 py-1.5 text-xs font-medium tabular-nums text-foreground">
                       {formatIls(row.totalAmount)}
                     </TableCell>
                     <TableCell className="px-2 py-1.5">

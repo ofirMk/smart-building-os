@@ -60,12 +60,12 @@ import { MD_QUERY } from "@/lib/marker-ofek/master-detail-nav"
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 const readOnlyQtyClass =
-  "h-8 w-full min-w-[4.5rem] border-slate-200 bg-slate-50 text-sm font-currency-mono text-slate-800 tabular-nums"
+  "h-8 w-full min-w-[4.5rem] border-slate-200 bg-background text-sm font-currency-mono text-slate-800 tabular-nums"
 const readOnlyDescClass =
-  "h-8 border-slate-200 bg-slate-50/80 text-sm text-slate-900"
+  "h-8 border-slate-200 bg-background/80 text-sm text-foreground"
 const calcMoneyClass =
   "inline-flex min-h-8 min-w-[6.5rem] items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 font-currency-mono text-sm font-semibold tabular-nums text-emerald-900"
 
@@ -282,12 +282,12 @@ export function ClientBillingWorkspace() {
   return (
     <>
       <form
-        className="print:hidden flex min-h-0 min-w-0 flex-1 flex-col bg-white [color-scheme:light]"
+        className="print:hidden flex min-h-0 min-w-0 flex-1 flex-col bg-card [color-scheme:light]"
         onSubmit={handleSubmit(onIssueFinal)}
       >
         <DenseMasterDetailTemplate
           dir="rtl"
-          className="min-h-0 flex-1 text-slate-900"
+          className="min-h-0 flex-1 text-foreground"
           eyebrow="Marker Ofek · כספים"
           title="הגשת חשבון יזם (מצטבר)"
           description="בקשת תשלום מצטברת מול יזם — BOQ, ניכויים והוראות שינוי (דמה)."
@@ -303,7 +303,7 @@ export function ClientBillingWorkspace() {
                   "shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-bold",
                   locked
                     ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                    : "border-slate-200 bg-slate-50 text-slate-700"
+                    : "border-slate-200 bg-background text-slate-700"
                 )}
               >
                 {clientBillingStatusLabelHe(documentStatus ?? "draft")}
@@ -313,7 +313,7 @@ export function ClientBillingWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 border-slate-200 bg-white text-sm text-slate-800"
+                className="h-8 gap-1 border-slate-200 bg-card text-sm text-slate-800"
                 onClick={onPrint}
               >
                 <Printer className="size-3.5 opacity-90" aria-hidden />
@@ -323,7 +323,7 @@ export function ClientBillingWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-white text-sm text-slate-800"
+                className="h-8 border-slate-200 bg-card text-sm text-slate-800"
                 disabled={locked}
                 onClick={onSaveDraft}
               >
@@ -340,7 +340,7 @@ export function ClientBillingWorkspace() {
             </>
           }
           master={
-            <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
             <div className="flex flex-wrap gap-4">
               <div className="flex min-w-[220px] flex-1 flex-col gap-1">
                 <span className={labelClass}>פרויקט</span>
@@ -496,10 +496,10 @@ export function ClientBillingWorkspace() {
           </div>
           }
           detail={
-            <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-white p-1.5 shadow-sm">
+            <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-card p-1.5 shadow-sm">
         {/* Grid */}
         <div className="relative min-h-0 flex-1 overflow-auto px-0 pb-2 pt-1 md:px-2">
-          <div className="rounded-md border border-slate-200 bg-white md:rounded-lg">
+          <div className="rounded-md border border-slate-200 bg-card md:rounded-lg">
             <Table dir="rtl" className="relative">
               <TableHeader>
                 <TableRow className="border-slate-200 hover:bg-transparent">
@@ -558,7 +558,7 @@ export function ClientBillingWorkspace() {
                       role="button"
                       tabIndex={0}
                       className={cn(
-                        "border-slate-100 hover:bg-slate-50/80",
+                        "border-slate-100 hover:bg-background/80",
                         lineFocus === index &&
                           "bg-sky-50/90 ring-2 ring-inset ring-sky-500/35"
                       )}
@@ -647,7 +647,7 @@ export function ClientBillingWorkspace() {
                         <span
                           className={cn(
                             readOnlyQtyClass,
-                            "inline-flex w-full items-center justify-start border bg-white"
+                            "inline-flex w-full items-center justify-start border bg-card"
                           )}
                         >
                           {cum.toLocaleString("he-IL", {
@@ -677,7 +677,7 @@ export function ClientBillingWorkspace() {
                     סה״כ לחיוב בתקופה (בסיס BOQ)
                   </TableCell>
                   <TableCell className="py-2.5 text-start">
-                    <span className="inline-flex min-h-9 min-w-[7rem] items-center rounded-md border-2 border-emerald-300 bg-white px-3 font-currency-mono text-base font-bold tabular-nums text-emerald-950 shadow-sm">
+                    <span className="inline-flex min-h-9 min-w-[7rem] items-center rounded-md border-2 border-emerald-300 bg-card px-3 font-currency-mono text-base font-bold tabular-nums text-emerald-950 shadow-sm">
                       {ils.format(periodTotal)}
                     </span>
                   </TableCell>
@@ -693,7 +693,7 @@ export function ClientBillingWorkspace() {
           ) : null}
 
           {/* Phase 8.4 — ניכויים, התייקרויות והוראות שינוי */}
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-3 shadow-inner">
+          <div className="mt-4 rounded-lg border border-slate-200 bg-background/90 px-3 py-3 shadow-inner">
             <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
               <div>
                 <p className="text-xs font-bold text-slate-800">
@@ -708,7 +708,7 @@ export function ClientBillingWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 border-slate-200 bg-white text-sm"
+                className="h-8 gap-1 border-slate-200 bg-card text-sm"
                 disabled={locked}
                 onClick={appendChangeOrderRow}
               >
@@ -717,7 +717,7 @@ export function ClientBillingWorkspace() {
               </Button>
             </div>
 
-            <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+            <div className="overflow-x-auto rounded-md border border-slate-200 bg-card">
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow className="border-slate-200 hover:bg-transparent">
@@ -746,7 +746,7 @@ export function ClientBillingWorkspace() {
                   {changeOrderFields.map((coField, coIndex) => (
                     <TableRow
                       key={coField.id}
-                      className="border-slate-100 hover:bg-slate-50/80"
+                      className="border-slate-100 hover:bg-background/80"
                     >
                       <TableCell className="px-2 py-1 align-middle">
                         <Input
@@ -781,7 +781,7 @@ export function ClientBillingWorkspace() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7 border-slate-200 bg-white"
+                          className="h-7 w-7 border-slate-200 bg-card"
                           disabled={locked}
                           onClick={() => removeChangeOrder(coIndex)}
                           aria-label="מחק הוראת שינוי"
@@ -800,19 +800,19 @@ export function ClientBillingWorkspace() {
                 <span className="text-xs font-medium">
                   סה״כ לחיוב בתקופה (בסיס BOQ)
                 </span>
-                <span className="font-currency-mono text-sm font-semibold tabular-nums text-slate-900">
+                <span className="font-currency-mono text-sm font-semibold tabular-nums text-foreground">
                   {ils.format(periodTotal)}
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-slate-700">
                 <span className="text-xs font-medium">סה״כ הוראות שינוי</span>
-                <span className="font-currency-mono text-sm font-semibold tabular-nums text-slate-900">
+                <span className="font-currency-mono text-sm font-semibold tabular-nums text-foreground">
                   {ils.format(deductions.changeOrdersApprovedSum)}
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-slate-700">
                 <span className="text-xs font-medium">התייקרויות</span>
-                <span className="font-currency-mono text-sm font-semibold tabular-nums text-slate-900">
+                <span className="font-currency-mono text-sm font-semibold tabular-nums text-foreground">
                   {ils.format(parseMoney(indexationAmount))}
                 </span>
               </div>

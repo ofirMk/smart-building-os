@@ -24,7 +24,7 @@ export function CommandCenterOpenTasksAccordion({
   return (
     <section
       data-diamond-spotlight="cc-alerts"
-      className="rounded-xl border border-slate-200/80 bg-white shadow-sm"
+      className="rounded-xl border border-slate-200/80 bg-card shadow-sm"
       aria-label="משימות פתוחות"
     >
       <Accordion.Root
@@ -41,7 +41,7 @@ export function CommandCenterOpenTasksAccordion({
               className={cn(
                 "group flex w-full items-center justify-between gap-3 border-0 bg-transparent px-4 py-3.5 text-start",
                 "text-sm font-semibold text-indigo-950 transition-colors",
-                "hover:bg-slate-50/80",
+                "hover:bg-background/80",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/25 focus-visible:ring-offset-2"
               )}
             >
@@ -60,7 +60,7 @@ export function CommandCenterOpenTasksAccordion({
                 <li key={a.label}>
                   <Link
                     href={a.href}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-2.5 text-xs text-slate-700 hover:border-slate-100 hover:bg-slate-50"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-2.5 text-xs text-slate-700 hover:border-slate-100 hover:bg-background"
                   >
                     <span className="flex min-w-0 items-center gap-2 font-sans">
                       <span

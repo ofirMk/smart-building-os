@@ -192,7 +192,7 @@ export default function EnterpriseChatPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-white" dir="rtl">
+    <div className="flex min-h-0 flex-1 flex-col bg-card" dir="rtl">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
         <div className="mb-4 rounded-2xl border border-slate-800 bg-gradient-to-l from-slate-900 to-slate-950 p-4 shadow-2xl shadow-slate-950/30">
           <div className="flex items-start justify-between gap-4">

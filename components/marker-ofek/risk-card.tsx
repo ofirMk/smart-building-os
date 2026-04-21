@@ -57,7 +57,7 @@ export function RiskCard({
         <CardTitle className="flex items-center gap-2 text-sm font-bold">
           {LevelIcon}
           <span className="min-w-0 flex-1">{title}</span>
-          <span className="shrink-0 rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+          <span className="shrink-0 rounded-full bg-card/70 px-2 py-0.5 text-[10px] font-medium text-slate-600">
             {LEVEL_LABEL_HE[level]}
           </span>
         </CardTitle>

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import {
   Bot,
@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 
 import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
+import { ActiveCompanyBadge } from "@/components/layout/active-company-badge"
 import { MarkerOfekHeaderNav } from "@/components/marker-ofek/layout/header"
 import { NotificationBell } from "@/components/marker-ofek/layout/notification-bell"
 import { Button } from "@/components/ui/button"
@@ -40,6 +41,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  ACTIVE_COMPANY_CHANGED_EVENT,
+  COMPANY_CONTEXT_OPTIONS,
+  companyTargetHref,
+  readActiveCompanyIdFromCookie,
+  resolveCompanyContext,
+  type CompanyContextId,
+  writeActiveCompanyCookie,
+} from "@/lib/company-context"
 import { cn } from "@/lib/utils"
 
 type TopNavBarProps = {
@@ -48,8 +58,6 @@ type TopNavBarProps = {
   stickyClassName?: string
   isHoldenErpShell?: boolean
 }
-
-type DomainId = "marker_ofek" | "holden_group"
 
 type MegaId = "procurement" | "finance" | "projects" | "hr" | "ai"
 
@@ -225,11 +233,8 @@ const QUICK_SEARCH_LINKS: { href: string; title: string; subtitle: string }[] =
 const BREATHING_LINE_CLASS =
   "h-[3px] rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-600 shadow-[0_1px_8px_rgba(16,185,129,0.35)]"
 
-function setDomainCookie(domain: DomainId) {
-  if (typeof document === "undefined") return
-  const maxAge = 60 * 60 * 24 * 180
-  document.cookie = `selected_company=${domain}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
-  window.location.reload()
+function setCompanyCookie(company: CompanyContextId) {
+  writeActiveCompanyCookie(company)
 }
 
 function isPathUnder(pathname: string, prefix: string) {
@@ -261,7 +266,7 @@ function MotionDropdown({
           exit={reduce ? undefined : { opacity: 0, y: -4, scale: 0.99 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           className={cn(
-            "absolute top-[calc(100%+6px)] z-[60] min-w-[13rem] overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-900/[0.04]",
+            "absolute top-[calc(100%+6px)] z-[60] min-w-[13rem] overflow-hidden rounded-xl border border-border bg-card p-1 shadow-xl ring-1 ring-slate-900/[0.04]",
             align === "end" ? "end-0" : "start-0"
           )}
         >
@@ -308,7 +313,7 @@ function MegaMenuPanel({
           }}
           className={cn(
             "pointer-events-auto absolute start-1/2 top-full z-[55] mt-2 w-[min(26rem,calc(100vw-2rem))] -translate-x-1/2 rtl:translate-x-1/2",
-            "rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-slate-900/[0.06]"
+            "rounded-xl border border-border bg-card p-2 shadow-xl ring-1 ring-slate-900/[0.06]"
           )}
           style={{ transformOrigin: "top center" }}
         >
@@ -335,7 +340,7 @@ function MegaMenuPanel({
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1 text-start">
-                      <span className="block text-sm font-semibold text-slate-900 transition-colors group-hover/mega:text-emerald-900">
+                      <span className="block text-sm font-semibold text-foreground transition-colors group-hover/mega:text-emerald-900">
                         {item.title}
                       </span>
                       <span className="mt-0.5 block text-[11px] leading-snug text-slate-500 group-hover/mega:text-slate-600">
@@ -381,8 +386,8 @@ function BreathingNavTrigger({
         onFocus={onEnter}
         className={cn(
           "group/trigger relative flex items-center gap-0.5 rounded-md px-2.5 py-2 text-[13px] font-medium outline-none transition-colors duration-200",
-          "text-slate-700 hover:text-slate-900",
-          (open || active) && "text-slate-900"
+          "text-slate-700 hover:text-foreground",
+          (open || active) && "text-foreground"
         )}
       >
         <span className="relative z-10">{label}</span>
@@ -421,8 +426,9 @@ export function TopNavBar({
   isHoldenErpShell,
 }: TopNavBarProps) {
   const pathname = usePathname() ?? ""
+  const router = useRouter()
   const reduceMotion = useReducedMotion()
-  const [domain, setDomain] = React.useState<DomainId>("marker_ofek")
+  const [domain, setDomain] = React.useState<CompanyContextId>("marker_ofek")
   const [openMega, setOpenMega] = React.useState<MegaId | null>(null)
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const navClusterRef = React.useRef<HTMLDivElement>(null)
@@ -453,9 +459,21 @@ export function TopNavBar({
   )
 
   React.useEffect(() => {
-    const m = document.cookie.match(/(?:^|;\s*)selected_company=([^;]*)/)
-    const v = m?.[1]?.trim()
-    if (v === "holden_group" || v === "marker_ofek") setDomain(v)
+    const next = readActiveCompanyIdFromCookie()
+    if (next) setDomain(next)
+  }, [])
+
+  React.useEffect(() => {
+    const onCompanyChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<{ companyId?: CompanyContextId }>
+      const next = resolveCompanyContext(customEvent.detail?.companyId ?? null)
+      if (next) {
+        setDomain(next)
+      }
+    }
+    window.addEventListener(ACTIVE_COMPANY_CHANGED_EVENT, onCompanyChanged)
+    return () =>
+      window.removeEventListener(ACTIVE_COMPANY_CHANGED_EVENT, onCompanyChanged)
   }, [])
 
   React.useEffect(() => setOpenMega(null), [pathname])
@@ -519,7 +537,7 @@ export function TopNavBar({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "sticky z-[50] flex min-h-[3.75rem] shrink-0 flex-col border-b border-white/70 bg-white/80 text-slate-900 shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden dark:!border-white/70 dark:!bg-white/80 dark:!text-slate-900",
+          "sticky z-[50] flex min-h-[3.75rem] shrink-0 flex-col border-b border-border/70 bg-card/80 text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
           isHoldenErpShell ? "shadow-[0_1px_0_0_rgb(226_232_240/0.9)]" : "",
           stickyClassName,
           className
@@ -534,15 +552,15 @@ export function TopNavBar({
           <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
             <NavDrawerTrigger
               className={cn(
-                "size-9 shrink-0 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm",
+                "size-9 shrink-0 rounded-lg border border-slate-200 bg-card text-slate-600 shadow-sm",
                 "transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                "hover:bg-slate-50 hover:text-slate-900 hover:shadow-md",
+                "hover:bg-muted hover:text-foreground hover:shadow-md",
                 "active:scale-[0.96]"
               )}
             />
             <Link
               href="/marker-ofek/command-center"
-              className="group flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-slate-50"
+              className="group flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-muted"
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-900 to-slate-700 text-white shadow-sm">
                 <Sparkles className="size-4" aria-hidden />
@@ -551,7 +569,7 @@ export function TopNavBar({
                 <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   Smart Building OS
                 </span>
-                <span className="truncate text-sm font-semibold text-slate-900">
+                <span className="truncate text-sm font-semibold text-foreground">
                   מרקר אופק
                 </span>
               </span>
@@ -563,27 +581,34 @@ export function TopNavBar({
               <Select
                 value={domain}
                 onValueChange={(v) => {
-                  if (v === "marker_ofek" || v === "holden_group") {
+                  if (
+                    v === "marker_ofek" ||
+                    v === "holden_group" ||
+                    v === "building_management_co"
+                  ) {
                     setDomain(v)
-                    setDomainCookie(v)
+                    setCompanyCookie(v)
+                    router.push(companyTargetHref(v))
                   }
                 }}
               >
                 <SelectTrigger
                   size="sm"
-                  className="h-8 border-slate-200 bg-white px-2 text-xs font-medium"
+                  className="h-8 border-slate-200 bg-card px-2 text-xs font-medium"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="marker_ofek" className="text-sm">
-                    מרקר אופק (קבלנות)
-                  </SelectItem>
-                  <SelectItem value="holden_group" className="text-sm">
-                    הולדן (ניהול נכסים)
-                  </SelectItem>
+                  {COMPANY_CONTEXT_OPTIONS.map((company) => (
+                    <SelectItem key={company.id} value={company.id} className="text-sm">
+                      {company.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="hidden sm:block">
+              <ActiveCompanyBadge companyId={domain} />
             </div>
           </div>
 
@@ -608,8 +633,8 @@ export function TopNavBar({
                     className={cn(
                       "group/cc relative block rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
                       commandCenterActive
-                        ? "text-slate-900"
-                        : "text-slate-600 hover:text-slate-900"
+                        ? "text-foreground"
+                        : "text-slate-600 hover:text-foreground"
                     )}
                   >
                     מרכז פיקוד
@@ -673,13 +698,13 @@ export function TopNavBar({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 shadow-sm"
+              className="h-8 gap-1.5 border-slate-200 bg-card px-2 text-xs font-medium text-slate-700 shadow-sm"
               onClick={() => setSearchOpen(true)}
               aria-label="חיפוש מהיר"
             >
               <Search className="size-3.5 opacity-80" aria-hidden />
               <span className="hidden sm:inline">חיפוש</span>
-              <kbd className="hidden rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-500 sm:inline">
+              <kbd className="hidden rounded border border-slate-200 bg-background px-1 font-mono text-[10px] text-slate-500 sm:inline">
                 ⌘K
               </kbd>
             </Button>
@@ -720,14 +745,14 @@ export function TopNavBar({
                   </p>
                   <Link
                     href="/marker-ofek/settings"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-slate-50"
+                    className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
                     onClick={() => setProfileOpen(false)}
                   >
                     הגדרות אישיות
                   </Link>
                   <Link
                     href="/marker-ofek/settings/user-permissions"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-slate-50"
+                    className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
                     onClick={() => setProfileOpen(false)}
                   >
                     הרשאות
@@ -735,7 +760,7 @@ export function TopNavBar({
                   <div className="my-1 h-px bg-slate-100" />
                   <button
                     type="button"
-                    className="w-full rounded-md px-3 py-2 text-start text-sm text-slate-700 hover:bg-slate-50"
+                    className="w-full rounded-md px-3 py-2 text-start text-sm text-slate-700 hover:bg-muted"
                     onClick={() => setProfileOpen(false)}
                   >
                     יציאה (דמו)
@@ -747,7 +772,7 @@ export function TopNavBar({
         </div>
 
         {children ? (
-          <div className="flex min-h-[3rem] w-full items-start gap-2 bg-white px-3 py-2 md:px-5">
+          <div className="flex min-h-[3rem] w-full items-start gap-2 bg-card px-3 py-2 md:px-5">
             {children}
           </div>
         ) : null}
@@ -755,7 +780,7 @@ export function TopNavBar({
 
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent
-          className="max-w-lg gap-0 overflow-hidden border-slate-200 bg-white p-0 shadow-2xl dark:!bg-white"
+          className="max-w-lg gap-0 overflow-hidden border-border bg-card p-0 shadow-2xl"
           showCloseButton
         >
           <motion.div
@@ -777,7 +802,7 @@ export function TopNavBar({
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
                 placeholder="הקלד לסינון קישורים…"
-                className="h-9 border-slate-200 bg-white text-sm"
+                className="h-9 border-slate-200 bg-card text-sm"
                 autoFocus
               />
               <ul className="mt-3 max-h-[min(50vh,20rem)] space-y-0.5 overflow-y-auto">
@@ -785,10 +810,10 @@ export function TopNavBar({
                   <li key={`${item.title}-${index}`}>
                     <Link
                       href={item.href}
-                      className="flex flex-col rounded-lg px-3 py-2 text-start transition-colors hover:bg-slate-50"
+                      className="flex flex-col rounded-lg px-3 py-2 text-start transition-colors hover:bg-muted"
                       onClick={() => setSearchOpen(false)}
                     >
-                      <span className="text-sm font-medium text-slate-900">
+                      <span className="text-sm font-medium text-foreground">
                         {item.title}
                       </span>
                       <span className="text-[11px] text-muted-foreground">

@@ -145,7 +145,7 @@ export function WorkspaceScenarioSwitcher() {
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            "inline-flex h-9 max-w-[11rem] items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300/60 hover:bg-emerald-50/50 focus-visible:ring-2 focus-visible:ring-emerald-500/25 disabled:opacity-60",
+            "inline-flex h-9 max-w-[11rem] items-center gap-1.5 rounded-md border border-slate-200 bg-card px-2.5 text-xs font-medium text-slate-800 shadow-sm outline-none transition hover:border-emerald-300/60 hover:bg-emerald-50/50 focus-visible:ring-2 focus-visible:ring-emerald-500/25 disabled:opacity-60",
             active && "border-emerald-300/80 bg-emerald-50/60"
           )}
           disabled={pending}
@@ -231,7 +231,7 @@ export function WorkspaceScenarioSwitcher() {
             {localScenarios.map((s, idx) => (
               <li
                 key={s.id}
-                className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-2"
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-background/50 p-2"
               >
                 <ScenarioIcon name={s.icon} />
                 <RenameInline

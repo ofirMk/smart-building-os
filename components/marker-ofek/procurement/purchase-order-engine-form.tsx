@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import {
   AlertTriangle,
   FileDown,
@@ -21,6 +22,7 @@ import {
   type SubmitHandler,
 } from "react-hook-form"
 
+import { FormStatusGuard, useFormStatusGuard } from "@/components/erp/shared/form-status-guard"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -38,11 +40,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { apiGet } from "@/lib/utils/api-client"
 import { cn } from "@/lib/utils"
 import {
-  MOCK_PO_CATALOG_ITEMS,
-  MOCK_PO_PROJECTS,
-  MOCK_PO_SUPPLIERS,
   MOCK_PROJECT_BUDGET_INSIGHTS,
   PO_ENGINE_VAT_RATE,
   PROJECT_BUDGET_LIMIT_NIS,
@@ -54,9 +54,19 @@ import {
 import { purchaseOrderEngineDefaultsFromMockPo } from "@/lib/marker-ofek/procurement-mock-dashboard-pos"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15 md:text-sm"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15 md:text-sm"
 const labelClass = "text-xs font-semibold text-slate-600"
 const cellPad = "px-2 py-1 align-middle"
+
+const supplierLookupSchema = z.array(z.object({ id: z.string(), name: z.string() }))
+const projectLookupSchema = z.array(z.object({ id: z.string(), name: z.string() }))
+const itemLookupSchema = z.array(
+  z.object({
+    id: z.string(),
+    itemNumber: z.string(),
+    description: z.string(),
+  })
+)
 
 function formatNis(n: number): string {
   return new Intl.NumberFormat("he-IL", {
@@ -98,6 +108,48 @@ export function PurchaseOrderEngineForm() {
 
   const watchedLines = useWatch({ control, name: "lines" })
   const watchedProjectId = useWatch({ control, name: "projectId" })
+  const [suppliers, setSuppliers] = React.useState<Array<{ id: string; name: string }>>([])
+  const [projects, setProjects] = React.useState<Array<{ id: string; name: string }>>([])
+  const [items, setItems] = React.useState<
+    Array<{ id: string; itemNumber: string; description: string }>
+  >([])
+  const [lookupLoading, setLookupLoading] = React.useState(true)
+  const [lookupError, setLookupError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    const controller = new AbortController()
+    setLookupLoading(true)
+    setLookupError(null)
+    void (async () => {
+      try {
+        const [nextSuppliers, nextProjects, nextItems] = await Promise.all([
+          apiGet<Array<{ id: string; name: string }>>("/api/erp/master-data/suppliers?supplierKind=supplier", {
+            schema: supplierLookupSchema,
+            signal: controller.signal,
+          }),
+          apiGet<Array<{ id: string; name: string }>>("/api/projects?status=ACTIVE", {
+            schema: projectLookupSchema,
+            signal: controller.signal,
+          }),
+          apiGet<Array<{ id: string; itemNumber: string; description: string }>>("/api/erp/master-data/items", {
+            schema: itemLookupSchema,
+            signal: controller.signal,
+          }),
+        ])
+        if (controller.signal.aborted) return
+        setSuppliers(nextSuppliers)
+        setProjects(nextProjects)
+        setItems(nextItems)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        if (error instanceof Error && error.name === "AbortError") return
+        setLookupError(error instanceof Error ? error.message : "טעינת נתוני ייחוס נכשלה")
+      } finally {
+        if (!controller.signal.aborted) setLookupLoading(false)
+      }
+    })()
+    return () => controller.abort()
+  }, [])
 
   const subtotal = React.useMemo(() => {
     if (!watchedLines?.length) return 0
@@ -120,12 +172,19 @@ export function PurchaseOrderEngineForm() {
   )
 
   const overBudget = grandTotal > PROJECT_BUDGET_LIMIT_NIS
+  const guard = useFormStatusGuard({
+    isStale: lookupLoading || Boolean(lookupError),
+    hasHighVariance: overBudget,
+    staleMessage: lookupError ?? "נתוני פרויקט/ספק/פריטים עדיין נטענים.",
+    highVarianceMessage: "זוהתה חריגת תקציב גבוהה. שליחה נחסמה עד לטיפול בחריגה.",
+  })
 
   const projectInsights = watchedProjectId
     ? MOCK_PROJECT_BUDGET_INSIGHTS[watchedProjectId] ?? null
     : null
 
   const onValid: SubmitHandler<PurchaseOrderEngineOutput> = (data) => {
+    if (!guard.assertReady()) return
     console.log("[PO Engine] validated purchase order:", data)
   }
 
@@ -134,6 +193,7 @@ export function PurchaseOrderEngineForm() {
   }
 
   function saveDraft() {
+    if (!guard.assertReady()) return
     console.log("[PO Engine] save draft (no full validation):", getValues())
   }
 
@@ -148,7 +208,7 @@ export function PurchaseOrderEngineForm() {
   return (
     <div
       dir="rtl"
-      className="mx-auto w-full max-w-6xl pb-12 [color-scheme:light]"
+      className="w-full max-w-full pb-12 [color-scheme:light]"
     >
       <form
         onSubmit={handleSubmit(onValid, onInvalid)}
@@ -158,13 +218,13 @@ export function PurchaseOrderEngineForm() {
         {/* 1. Action ribbon — SAP-style */}
         <div
           className={cn(
-            "sticky top-0 z-30 -mx-1 border-b border-slate-200 bg-white/95 px-1 backdrop-blur-sm",
-            "supports-[backdrop-filter]:bg-white/90"
+            "sticky top-0 z-30 -mx-1 border-b border-slate-200 bg-card/95 px-1 backdrop-blur-sm",
+            "supports-[backdrop-filter]:bg-card/90"
           )}
         >
           <div className="flex flex-wrap items-end gap-3 py-2">
             <div className="min-w-0 flex-1">
-              <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg">
+              <h1 className="text-base font-bold tracking-tight text-foreground md:text-lg">
                 מרחב עבודה — הזמנת רכש
               </h1>
               <p className="mt-0.5 text-[11px] text-slate-500">
@@ -176,7 +236,7 @@ export function PurchaseOrderEngineForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-sm"
+                className="h-8 border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm"
                 onClick={saveDraft}
               >
                 <Save className="size-3.5" aria-hidden />
@@ -193,7 +253,7 @@ export function PurchaseOrderEngineForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-sm"
+                className="h-8 border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm"
                 onClick={exportPdf}
               >
                 <FileDown className="size-3.5" aria-hidden />
@@ -203,7 +263,7 @@ export function PurchaseOrderEngineForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-sm"
+                className="h-8 border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm"
                 onClick={attachDocuments}
               >
                 <Paperclip className="size-3.5" aria-hidden />
@@ -235,10 +295,16 @@ export function PurchaseOrderEngineForm() {
             </p>
           </div>
         ) : null}
+        <FormStatusGuard
+          isStale={lookupLoading || Boolean(lookupError)}
+          hasHighVariance={overBudget}
+          staleMessage={lookupError ?? undefined}
+          highVarianceMessage="חריגת תקציב גבוהה - המשך נחסם עד לאישור חריגה."
+        />
 
         {/* 2. Smart header — dual cards */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <section className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5">
             <h2 className="mb-3 border-b border-slate-200 pb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
               כרטיס א׳ — ספק ופרויקט
             </h2>
@@ -256,7 +322,7 @@ export function PurchaseOrderEngineForm() {
                       <SelectTrigger
                         size="sm"
                         className={cn(
-                          "h-8 w-full border-slate-200 bg-white text-sm text-slate-900",
+                          "h-8 w-full border-slate-200 bg-card text-sm text-foreground",
                           formState.errors.supplierId && "border-red-300"
                         )}
                         onBlur={field.onBlur}
@@ -265,8 +331,8 @@ export function PurchaseOrderEngineForm() {
                       >
                         <SelectValue placeholder="בחרו ספק" />
                       </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-white">
-                        {MOCK_PO_SUPPLIERS.map((s) => (
+                      <SelectContent className="border border-slate-200 bg-card">
+                        {(suppliers.length > 0 ? suppliers : []).map((s) => (
                           <SelectItem key={s.id} value={s.id} className="text-sm">
                             {s.name}
                           </SelectItem>
@@ -295,15 +361,15 @@ export function PurchaseOrderEngineForm() {
                       <SelectTrigger
                         size="sm"
                         className={cn(
-                          "h-8 w-full border-slate-200 bg-white text-sm text-slate-900",
+                          "h-8 w-full border-slate-200 bg-card text-sm text-foreground",
                           formState.errors.projectId && "border-red-300"
                         )}
                         aria-invalid={!!formState.errors.projectId}
                       >
                         <SelectValue placeholder="בחרו פרויקט" />
                       </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-white">
-                        {MOCK_PO_PROJECTS.map((p) => (
+                      <SelectContent className="border border-slate-200 bg-card">
+                        {(projects.length > 0 ? projects : []).map((p) => (
                           <SelectItem key={p.id} value={p.id} className="text-sm">
                             {p.name}
                           </SelectItem>
@@ -339,25 +405,25 @@ export function PurchaseOrderEngineForm() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <section className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5">
             <h2 className="mb-3 border-b border-slate-200 pb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
               כרטיס ב׳ — תובנות חיות (מוק)
             </h2>
             {projectInsights ? (
               <dl className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+                <div className="rounded-lg border border-slate-100 bg-background/80 px-3 py-2">
                   <dt className="text-[11px] font-medium text-slate-500">
                     תקציב מאושר
                   </dt>
-                  <dd className="mt-1 text-sm font-bold tabular-nums text-slate-900">
+                  <dd className="mt-1 text-sm font-bold tabular-nums text-foreground">
                     {formatNis(projectInsights.approvedNis)}
                   </dd>
                 </div>
-                <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+                <div className="rounded-lg border border-slate-100 bg-background/80 px-3 py-2">
                   <dt className="text-[11px] font-medium text-slate-500">
                     נוצל עד כה
                   </dt>
-                  <dd className="mt-1 text-sm font-bold tabular-nums text-slate-900">
+                  <dd className="mt-1 text-sm font-bold tabular-nums text-foreground">
                     {formatNis(projectInsights.usedNis)}
                   </dd>
                 </div>
@@ -379,10 +445,10 @@ export function PurchaseOrderEngineForm() {
         </div>
 
         {/* 3. Power grid — line items */}
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+        <section className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">שורות הזמנה</h2>
+              <h2 className="text-sm font-bold text-foreground">שורות הזמנה</h2>
               <p className="text-[11px] text-slate-500">
                 רשת שורות — פריט, כמות, מחיר, הערות, סה״כ
               </p>
@@ -391,7 +457,7 @@ export function PurchaseOrderEngineForm() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-white text-xs text-slate-800"
+              className="h-8 border-slate-200 bg-card text-xs text-slate-800"
               onClick={() =>
                 append({
                   catalogItemId: "",
@@ -406,10 +472,10 @@ export function PurchaseOrderEngineForm() {
             </Button>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-card">
             <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                <tr className="border-b border-slate-200 bg-background text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">
                   <th className={cn(cellPad, "min-w-[200px]")}>פריט</th>
                   <th className={cn(cellPad, "w-24")}>כמות</th>
                   <th className={cn(cellPad, "w-28")}>מחיר יחידה</th>
@@ -444,7 +510,7 @@ export function PurchaseOrderEngineForm() {
                             >
                               <SelectTrigger
                                 size="sm"
-                                className="h-8 w-full border-slate-200 bg-white text-sm text-slate-900"
+                                className="h-8 w-full border-slate-200 bg-card text-sm text-foreground"
                                 aria-invalid={
                                   !!formState.errors.lines?.[index]
                                     ?.catalogItemId
@@ -452,16 +518,16 @@ export function PurchaseOrderEngineForm() {
                               >
                                 <SelectValue placeholder="בחרו פריט" />
                               </SelectTrigger>
-                              <SelectContent className="border border-slate-200 bg-white">
-                                {MOCK_PO_CATALOG_ITEMS.map((c) => (
+                              <SelectContent className="border border-slate-200 bg-card">
+                                {(items.length > 0 ? items : []).map((c) => (
                                   <SelectItem
                                     key={c.id}
                                     value={c.id}
                                     className="text-sm"
                                   >
-                                    <span className="font-medium">{c.label}</span>
+                                    <span className="font-medium">{c.description}</span>
                                     <span className="mr-2 text-slate-500">
-                                      ({c.sku})
+                                      ({c.itemNumber})
                                     </span>
                                   </SelectItem>
                                 ))}
@@ -530,7 +596,7 @@ export function PurchaseOrderEngineForm() {
                       <td
                         className={cn(
                           cellPad,
-                          "tabular-nums text-sm font-semibold text-slate-900"
+                          "tabular-nums text-sm font-semibold text-foreground"
                         )}
                       >
                         {formatNis(rowTotal)}
@@ -549,7 +615,7 @@ export function PurchaseOrderEngineForm() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="min-w-[14rem] border border-slate-200 bg-white text-sm text-slate-900 shadow-md"
+                              className="min-w-[14rem] border border-slate-200 bg-card text-sm text-foreground shadow-md"
                             >
                               <DropdownMenuItem
                                 disabled
@@ -602,7 +668,7 @@ export function PurchaseOrderEngineForm() {
         </section>
 
         {/* 4. Control footer — totals + budget context */}
-        <section className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 md:p-5">
+        <section className="rounded-xl border border-slate-200 bg-background/50 p-4 md:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
             <div className="space-y-1">
               <p className="text-xs font-bold text-slate-800">סיכום כספי ובקרה</p>
@@ -619,26 +685,26 @@ export function PurchaseOrderEngineForm() {
               </p>
             </div>
 
-            <div className="w-full max-w-sm space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-sm">
+            <div className="w-full max-w-sm space-y-2 rounded-lg border border-slate-200 bg-card p-4 text-sm shadow-sm">
               <div className="flex justify-between gap-4 text-slate-600">
                 <span>סכום ביניים (לפני מע״מ)</span>
-                <span className="tabular-nums font-medium text-slate-900">
+                <span className="tabular-nums font-medium text-foreground">
                   {formatNis(subtotal)}
                 </span>
               </div>
               <div className="flex justify-between gap-4 text-slate-600">
                 <span>מע״מ ({Math.round(PO_ENGINE_VAT_RATE * 100)}%)</span>
-                <span className="tabular-nums font-medium text-slate-900">
+                <span className="tabular-nums font-medium text-foreground">
                   {formatNis(vatAmount)}
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-2">
                 <div className="flex justify-between gap-4">
-                  <span className="font-bold text-slate-900">סה״כ לתשלום</span>
+                  <span className="font-bold text-foreground">סה״כ לתשלום</span>
                   <span
                     className={cn(
                       "text-lg font-bold tabular-nums tracking-tight",
-                      overBudget ? "text-red-700" : "text-slate-900"
+                      overBudget ? "text-red-700" : "text-foreground"
                     )}
                   >
                     {formatNis(grandTotal)}

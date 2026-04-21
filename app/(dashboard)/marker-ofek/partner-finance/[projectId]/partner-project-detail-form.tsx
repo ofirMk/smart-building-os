@@ -48,7 +48,7 @@ export function PartnerProjectDetailForm({ projectId, initialRow }: Props) {
   }
 
   return (
-    <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+    <section className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm">
       <h2 className="mb-2 text-sm font-semibold text-[#1e293b]">עדכון עלויות (ידני)</h2>
       <p className="mb-4 text-xs leading-relaxed text-slate-400">
         חברות ביצוע, קופה קטנה ועלות אתר. שכר: אם הוזן ערך חיובי ב־<code className="rounded bg-slate-100 px-1">partner_cost_employee_salaries</code>{" "}
@@ -65,7 +65,7 @@ export function PartnerProjectDetailForm({ projectId, initialRow }: Props) {
             min={0}
             step={0.01}
             dir="ltr"
-            className="border-slate-200 bg-white font-currency-mono text-[#1e293b]"
+            className="border-slate-200 bg-card font-currency-mono text-[#1e293b]"
             value={sub}
             onChange={(e) => setSub(e.target.value)}
           />
@@ -80,7 +80,7 @@ export function PartnerProjectDetailForm({ projectId, initialRow }: Props) {
             min={0}
             step={0.01}
             dir="ltr"
-            className="border-slate-200 bg-white font-currency-mono text-[#1e293b]"
+            className="border-slate-200 bg-card font-currency-mono text-[#1e293b]"
             value={petty}
             onChange={(e) => setPetty(e.target.value)}
           />
@@ -95,7 +95,7 @@ export function PartnerProjectDetailForm({ projectId, initialRow }: Props) {
             min={0}
             step={0.01}
             dir="ltr"
-            className="border-slate-200 bg-white font-currency-mono text-[#1e293b]"
+            className="border-slate-200 bg-card font-currency-mono text-[#1e293b]"
             value={oh}
             onChange={(e) => setOh(e.target.value)}
           />

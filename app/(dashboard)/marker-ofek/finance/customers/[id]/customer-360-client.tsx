@@ -56,19 +56,19 @@ export function Customer360Client({
 
   return (
     <motion.div
-      className="flex h-[min(100dvh,100vh)] min-h-0 flex-col bg-slate-50/50"
+      className="flex h-[min(100dvh,100vh)] min-h-0 flex-col bg-background/50"
       dir="rtl"
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="shrink-0 border-b border-slate-100 bg-white px-4 py-4 md:px-8">
+      <div className="shrink-0 border-b border-slate-100 bg-card px-4 py-4 md:px-8">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-400">
               לקוח — תצוגה 360°
             </p>
-            <h1 className="text-xl font-light text-slate-900">{c.name}</h1>
+            <h1 className="text-xl font-light text-foreground">{c.name}</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
@@ -93,7 +93,7 @@ export function Customer360Client({
       <div className="min-h-0 flex-1 px-2 py-4 md:px-6">
         <PanelGroup direction="horizontal" className="mx-auto h-full max-w-[1400px] min-h-[520px]">
           <Panel defaultSize={32} minSize={22} className="min-w-0">
-            <div className="h-full overflow-auto rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+            <div className="h-full overflow-auto rounded-2xl border border-slate-100 bg-card p-6 shadow-sm">
               <h2 className="text-xs font-semibold tracking-wide text-slate-400">
                 פרטים
               </h2>
@@ -134,16 +134,16 @@ export function Customer360Client({
           <PanelResizeHandle className="relative w-2 shrink-0 bg-transparent before:absolute before:inset-y-8 before:start-1/2 before:w-px before:-translate-x-1/2 before:bg-slate-200 hover:before:bg-slate-300" />
           <Panel minSize={45} className="min-w-0">
             <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-              <div className="shrink-0 rounded-2xl border border-slate-100 bg-white px-6 py-5 shadow-sm">
+              <div className="shrink-0 rounded-2xl border border-slate-100 bg-card px-6 py-5 shadow-sm">
                 <p className="text-[11px] font-medium text-slate-400">אובליגו פתוח</p>
                 <p
-                  className="mt-1 text-2xl font-extralight text-slate-900 tabular-nums"
+                  className="mt-1 text-2xl font-extralight text-foreground tabular-nums"
                   dir="ltr"
                 >
                   {ils.format(initial.openBalance)}
                 </p>
               </div>
-              <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+              <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-100 bg-card shadow-sm">
                 <div className="border-b border-slate-50 px-4 py-3">
                   <h2 className="text-sm font-medium text-slate-700">פעילות כספית</h2>
                   <p className="text-[11px] font-light text-slate-500">

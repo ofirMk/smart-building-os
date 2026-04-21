@@ -289,7 +289,7 @@ export function MarkerGantt({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col gap-4 bg-white p-4 lg:p-6",
+        "flex h-full min-h-0 flex-col gap-4 bg-card p-4 lg:p-6",
         className
       )}
       dir="rtl"
@@ -298,7 +298,7 @@ export function MarkerGantt({
         <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-400">
           לוח זמנים חזותי
         </p>
-        <h2 className="text-lg font-light text-slate-900">תרשים גאנט</h2>
+        <h2 className="text-lg font-light text-foreground">תרשים גאנט</h2>
         <p className="text-xs font-light leading-relaxed text-slate-500">
           לחיצה על שורה לבחירה. לחיצה כפולה על הפס — עריכת אחוז התקדמות (לוח צד).
           F2 — עריכת צומת WBS (יהלום). Enter — עריכה מהירה. תוויות בניין/קומה מוצגות
@@ -306,9 +306,9 @@ export function MarkerGantt({
         </p>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-100 bg-slate-50/40">
+      <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-100 bg-background/40">
         <div className="flex min-h-[320px] min-w-[720px] flex-col">
-          <div className="sticky top-0 z-20 flex border-b border-slate-100 bg-white/95 backdrop-blur-sm">
+          <div className="sticky top-0 z-20 flex border-b border-slate-100 bg-card/95 backdrop-blur-sm">
             <div className="w-[min(32%,240px)] shrink-0 px-4 py-3 text-xs font-medium text-slate-400">
               משימה / WBS
             </div>
@@ -377,7 +377,7 @@ export function MarkerGantt({
               >
                 <button
                   type="button"
-                  className="w-[min(32%,240px)] shrink-0 px-4 py-2.5 text-start text-sm font-light text-slate-800 hover:bg-slate-50/80"
+                  className="w-[min(32%,240px)] shrink-0 px-4 py-2.5 text-start text-sm font-light text-slate-800 hover:bg-background/80"
                   style={{ paddingInlineStart: 16 + indent }}
                   onClick={() => setSelectedId(id)}
                 >
@@ -397,7 +397,7 @@ export function MarkerGantt({
                   className="relative min-h-[44px] min-w-0 flex-1 py-2 pe-3 ps-1"
                   dir="ltr"
                 >
-                  <div className="relative h-9 w-full rounded-lg bg-white/60">
+                  <div className="relative h-9 w-full rounded-lg bg-card/60">
                     <div
                       className="pointer-events-none absolute inset-y-1 z-10 w-px bg-amber-400/90"
                       style={{ left: `${todayPct}%` }}
@@ -538,7 +538,7 @@ export function MarkerGantt({
             {editingRow ? (
               <Link
                 href={`/marker-ofek/execution/gantt/${projectId}`}
-                className="inline-flex h-9 w-full items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex h-9 w-full items-center justify-center rounded-lg border border-slate-200 bg-card text-sm font-medium text-slate-700 transition hover:bg-background"
               >
                 מעבר לגאנט מלא
               </Link>

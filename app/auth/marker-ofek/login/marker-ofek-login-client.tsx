@@ -127,7 +127,7 @@ export function MarkerOfekLoginClient({
   return (
     <div className="mx-auto w-full max-w-md space-y-8">
       <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-card shadow-sm">
           {branding.brandLogoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -152,13 +152,13 @@ export function MarkerOfekLoginClient({
         </div>
       </div>
 
-      <div className="flex rounded-xl border border-slate-100 bg-slate-50/50 p-1">
+      <div className="flex rounded-xl border border-slate-100 bg-background/50 p-1">
         <button
           type="button"
           className={cn(
             "flex-1 rounded-lg py-2 text-sm font-medium transition-colors",
             mode === "signin"
-              ? "bg-white text-indigo-950 shadow-sm"
+              ? "bg-card text-indigo-950 shadow-sm"
               : "text-slate-500"
           )}
           onClick={() => {
@@ -173,7 +173,7 @@ export function MarkerOfekLoginClient({
           className={cn(
             "flex-1 rounded-lg py-2 text-sm font-medium transition-colors",
             mode === "request"
-              ? "bg-white text-indigo-950 shadow-sm"
+              ? "bg-card text-indigo-950 shadow-sm"
               : "text-slate-500"
           )}
           onClick={() => {
@@ -200,7 +200,7 @@ export function MarkerOfekLoginClient({
             <Button
               type="button"
               variant="outline"
-              className="h-11 border-slate-200 bg-white font-currency-mono text-sm text-indigo-950 hover:bg-slate-50"
+              className="h-11 border-slate-200 bg-card font-currency-mono text-sm text-indigo-950 hover:bg-background"
               disabled={oauthBusy != null || pending}
               onClick={() => void startOAuth("google")}
             >
@@ -212,7 +212,7 @@ export function MarkerOfekLoginClient({
             <Button
               type="button"
               variant="outline"
-              className="h-11 border-slate-200 bg-white font-currency-mono text-sm text-indigo-950 hover:bg-slate-50"
+              className="h-11 border-slate-200 bg-card font-currency-mono text-sm text-indigo-950 hover:bg-background"
               disabled={oauthBusy != null || pending}
               onClick={() => void startOAuth("azure")}
             >
@@ -228,7 +228,7 @@ export function MarkerOfekLoginClient({
               <span className="w-full border-t border-slate-100" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 font-currency-mono text-slate-400">
+              <span className="bg-card px-3 font-currency-mono text-slate-400">
                 או אימייל
               </span>
             </div>
@@ -367,7 +367,7 @@ export function MarkerOfekLoginClient({
           <Button
             type="submit"
             disabled={pending}
-            className="h-11 w-full border border-slate-100 bg-white font-currency-mono text-sm text-indigo-950 hover:bg-slate-50"
+            className="h-11 w-full border border-slate-100 bg-card font-currency-mono text-sm text-indigo-950 hover:bg-background"
           >
             {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : "שליחת בקשה"}
           </Button>

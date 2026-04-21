@@ -171,7 +171,7 @@ function CreateAccountDialogBody({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-3 border-b border-slate-100 bg-slate-50/40 px-4 py-3">
+      <div className="space-y-3 border-b border-slate-100 bg-background/40 px-4 py-3">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           סיכום מחושב (בזמן אמת)
         </p>
@@ -212,7 +212,7 @@ function CreateAccountDialogBody({
               <span>—</span>
             )}
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full border border-slate-100 bg-white">
+          <div className="h-2 w-full overflow-hidden rounded-full border border-slate-100 bg-card">
             <div
               className="h-full rounded-full bg-indigo-600 transition-[width] duration-200"
               style={{
@@ -357,7 +357,7 @@ function RibbonCell({
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-100 bg-white px-2 py-1.5",
+        "rounded-lg border border-slate-100 bg-card px-2 py-1.5",
         emphasize && "border-indigo-100 bg-indigo-50/50"
       )}
     >

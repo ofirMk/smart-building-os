@@ -34,7 +34,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 function severityBadgeClass(severity: QaDefectSeverity): string {
@@ -44,7 +44,7 @@ function severityBadgeClass(severity: QaDefectSeverity): string {
   if (severity === "בינוני") {
     return "border-amber-300 bg-amber-50 font-medium text-amber-900"
   }
-  return "border-slate-200 bg-slate-50 font-medium text-slate-700"
+  return "border-slate-200 bg-background font-medium text-slate-700"
 }
 
 export function QaDefectWorkspace() {
@@ -106,7 +106,7 @@ export function QaDefectWorkspace() {
 
       <DenseMasterDetailTemplate
         dir="rtl"
-        className="min-h-0 flex-1 bg-white text-slate-900 [color-scheme:light]"
+        className="min-h-0 flex-1 bg-card text-foreground [color-scheme:light]"
         eyebrow="Marker Ofek · ביצוע"
         title="פתיחת קריאת ליקוי (QA)"
         description="רישום ליקוי בשטח והקצאה לקבלן משנה (דמה)."
@@ -121,7 +121,7 @@ export function QaDefectWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-white text-sm text-slate-800"
+              className="h-8 border-slate-200 bg-card text-sm text-slate-800"
               onClick={onSaveDraft}
             >
               שמור טיוטה
@@ -138,7 +138,7 @@ export function QaDefectWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 border-slate-200 bg-white text-sm text-slate-800"
+              className="h-8 gap-1.5 border-slate-200 bg-card text-sm text-slate-800"
               onClick={onPhotosClick}
             >
               <Camera className="size-4 opacity-80" aria-hidden />
@@ -147,7 +147,7 @@ export function QaDefectWorkspace() {
           </>
         }
         master={
-          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex min-w-[200px] flex-1 flex-col gap-1">
               <span className={labelClass}>פרויקט</span>
@@ -252,7 +252,7 @@ export function QaDefectWorkspace() {
         </div>
         }
         detail={
-          <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
             פרטי הליקוי
           </p>
@@ -326,7 +326,7 @@ export function QaDefectWorkspace() {
               rows={6}
               placeholder="תיאור מפורט: מה נמצא, מדידות, צילומים מצורפים…"
               className={cn(
-                "min-h-[9rem] resize-y border-slate-200 bg-white py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15",
+                "min-h-[9rem] resize-y border-slate-200 bg-card py-2 text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15",
                 errors.description && "border-red-300 ring-1 ring-red-200"
               )}
               {...register("description")}
@@ -342,7 +342,7 @@ export function QaDefectWorkspace() {
             <span className="text-xs text-slate-500">סטטוס קריאה:</span>
             <Badge
               variant="outline"
-              className="h-6 border-slate-200 bg-slate-50 text-xs font-medium text-slate-800"
+              className="h-6 border-slate-200 bg-background text-xs font-medium text-slate-800"
             >
               פתוח
             </Badge>

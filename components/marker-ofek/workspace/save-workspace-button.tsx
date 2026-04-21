@@ -62,7 +62,7 @@ export function SaveWorkspaceButton() {
       type="button"
       variant="outline"
       size="sm"
-      className="inline-flex gap-1.5 border-slate-200 text-slate-900 hover:border-emerald-500/40 hover:bg-emerald-500/5"
+      className="inline-flex gap-1.5 border-slate-200 text-foreground hover:border-emerald-500/40 hover:bg-emerald-500/5"
       disabled={pending || !ws}
       onClick={onSave}
       title="שמירת סרגל, לשוניות, פרויקט פעיל, העדפות תצוגה וגלילה"

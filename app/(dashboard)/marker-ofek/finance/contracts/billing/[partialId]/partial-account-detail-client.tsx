@@ -382,7 +382,7 @@ export function PartialAccountDetailClient({
 
         {isDraft ? (
           <section
-            className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-4"
+            className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-background/40 p-4"
             aria-label="משיכת נתוני שדה"
           >
             <FieldBillingSyncSheet
@@ -627,7 +627,7 @@ export function PartialAccountDetailClient({
             הזמנות שינוי (חריגים) מאושרות
           </h2>
           {initial.variations.length === 0 ? (
-            <p className="rounded-xl border border-slate-100 bg-slate-50/30 px-4 py-6 text-sm text-slate-500">
+            <p className="rounded-xl border border-slate-100 bg-background/30 px-4 py-6 text-sm text-slate-500">
               אין VO מאושרים רשומים לחוזה זה.
             </p>
           ) : (

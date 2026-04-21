@@ -14,9 +14,9 @@ export default function FinanceIndexationPage() {
       >
         חזרה למרכז חוזה וחשבונות
       </Link>
-      <header className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+      <header className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm">
         <div className="flex items-start gap-4">
-          <span className="flex size-11 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-indigo-950">
+          <span className="flex size-11 items-center justify-center rounded-lg border border-slate-100 bg-background text-indigo-950">
             <Percent className="size-5" aria-hidden />
           </span>
           <div>

@@ -226,7 +226,7 @@ export function SuppliersMasterClient() {
   }
 
   return (
-    <div dir="rtl" className="mx-auto flex w-full max-w-7xl flex-col gap-6 bg-white pb-12">
+    <div dir="rtl" className="mx-auto flex w-full max-w-7xl flex-col gap-6 bg-card pb-12">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -256,7 +256,7 @@ export function SuppliersMasterClient() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="rounded-xl border border-slate-100 bg-card">
           <div className="border-b border-slate-100 px-4 py-4">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-[#1e293b]">
               <Building2 className="size-5 stroke-[1.5] text-indigo-600" aria-hidden />
@@ -286,7 +286,7 @@ export function SuppliersMasterClient() {
                   className={`w-full rounded-lg border px-3 py-2 text-start text-sm transition-colors ${
                     s.id === selectedSupplierId
                       ? "border-indigo-200 bg-indigo-50/50"
-                      : "border-slate-100 bg-white hover:border-slate-200"
+                      : "border-slate-100 bg-card hover:border-slate-200"
                   }`}
                 >
                   <p className="truncate font-medium">{s.name}</p>
@@ -297,7 +297,7 @@ export function SuppliersMasterClient() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="rounded-xl border border-slate-100 bg-card">
           <div className="border-b border-slate-100 px-4 py-4">
             <h2 className="text-lg font-semibold text-[#1e293b]">פרטי ספק ומחירונים</h2>
             <p className="mt-1 text-xs text-slate-500">פרטי קשר, פריטים מקושרים ומחירי ספק אחרונים.</p>
@@ -307,7 +307,7 @@ export function SuppliersMasterClient() {
               <p className="text-sm text-muted-foreground">בחרו ספק להצגת פירוט.</p>
             ) : (
               <>
-                <div className="grid gap-3 rounded-lg border border-slate-100 bg-white p-3 sm:grid-cols-3">
+                <div className="grid gap-3 rounded-lg border border-slate-100 bg-card p-3 sm:grid-cols-3">
                   <div className="inline-flex items-center gap-2">
                     <UserRound className="size-4 text-muted-foreground" aria-hidden />
                     <span className="text-sm">{selectedSupplier.name}</span>
@@ -336,13 +336,13 @@ export function SuppliersMasterClient() {
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                    <div className="rounded-lg border border-slate-100 bg-card p-3">
                       <p className="mb-2 text-xs text-muted-foreground">
                         שיוך ידני מחדש (במקרה שמיפוי AI היה שגוי)
                       </p>
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <input
-                          className="h-9 w-full rounded-md border border-slate-100 bg-white px-3 text-sm"
+                          className="h-9 w-full rounded-md border border-slate-100 bg-card px-3 text-sm"
                           value={relinkQuery}
                           onChange={(e) => setRelinkQuery(e.target.value)}
                           placeholder="הקלידו מק״ט פנימי / תיאור פריט"
@@ -373,7 +373,7 @@ export function SuppliersMasterClient() {
                             className={
                               it.id === selectedItemId
                                 ? "cursor-pointer bg-indigo-50/60 hover:bg-indigo-50"
-                                : "cursor-pointer hover:bg-slate-50/80"
+                                : "cursor-pointer hover:bg-background/80"
                             }
                           >
                             <TableCell className="font-mono text-xs">
@@ -410,12 +410,12 @@ export function SuppliersMasterClient() {
                   </div>
                 )}
 
-                <section className="rounded-lg border border-slate-100 bg-white p-3">
+                <section className="rounded-lg border border-slate-100 bg-card p-3">
                   <p className="mb-2 text-sm font-semibold text-[#1e293b]">פריט נבחר</p>
                   {!selectedItem ? (
                     <p className="text-sm text-muted-foreground">בחרו פריט מהטבלה להצגת פירוט.</p>
                   ) : (
-                    <div className="grid gap-3 rounded-lg border border-slate-100 bg-white p-3 sm:grid-cols-2">
+                    <div className="grid gap-3 rounded-lg border border-slate-100 bg-card p-3 sm:grid-cols-2">
                       <p className="text-sm">
                         <span className="text-muted-foreground">מק״ט פנימי: </span>
                         <span className="font-mono">{selectedCatalogItem?.sku || "—"}</span>
@@ -451,7 +451,7 @@ export function SuppliersMasterClient() {
         </div>
       </div>
 
-      <div className="inline-flex items-center gap-2 rounded-md border border-slate-100 bg-white px-3 py-2 text-xs text-slate-500">
+      <div className="inline-flex items-center gap-2 rounded-md border border-slate-100 bg-card px-3 py-2 text-xs text-slate-500">
         <PackageSearch className="size-3.5 stroke-[1.5] text-indigo-600" aria-hidden />
         בחירת ספק מעדכנת מיד את פאנל הפרטים.
       </div>

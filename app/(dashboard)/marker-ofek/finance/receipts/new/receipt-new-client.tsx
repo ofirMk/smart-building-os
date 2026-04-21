@@ -130,7 +130,7 @@ export function ReceiptNewClient({
         <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-400">
           גבייה
         </p>
-        <h1 className="text-2xl font-extralight text-slate-900">קבלה חדשה</h1>
+        <h1 className="text-2xl font-extralight text-foreground">קבלה חדשה</h1>
         <p className="text-sm font-light text-slate-500">
           רישום תשלום — התאמה לחשבוניות פתוחות (אופציונלי).
         </p>
@@ -144,7 +144,7 @@ export function ReceiptNewClient({
 
       <form
         onSubmit={(e) => void onSubmit(e)}
-        className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm"
+        className="space-y-5 rounded-2xl border border-slate-100 bg-card p-6 shadow-sm"
       >
         <div className="grid gap-2">
           <Label>לקוח</Label>
@@ -235,7 +235,7 @@ export function ReceiptNewClient({
           />
         </div>
 
-        <div className="space-y-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-4">
+        <div className="space-y-3 rounded-xl border border-dashed border-slate-200 bg-background/50 p-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-medium text-slate-700">
               הקצאה לחשבוניות

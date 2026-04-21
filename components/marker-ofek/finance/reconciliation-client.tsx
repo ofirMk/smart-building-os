@@ -195,7 +195,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
   }
 
   const cardGlass =
-    "rounded-3xl border border-white/30 bg-white/40 shadow-xl shadow-slate-900/5 backdrop-blur-xl"
+    "rounded-3xl border border-white/30 bg-card/40 shadow-xl shadow-slate-900/5 backdrop-blur-xl"
 
   const rowGlow = (on: boolean, side: "books" | "bank") =>
     cn(
@@ -206,7 +206,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
       on &&
         side === "bank" &&
         "border-violet-400/35 bg-violet-500/10 shadow-[0_0_24px_-4px_rgba(167,139,250,0.35)]",
-      !on && "hover:bg-white/30"
+      !on && "hover:bg-card/30"
     )
 
   return (
@@ -224,7 +224,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
           <select
             value={selectedBankId}
             onChange={(e) => void handleBankSelection(e.target.value)}
-            className="w-full rounded-2xl border-0 bg-white/60 px-4 py-3 text-sm text-slate-900 shadow-inner ring-1 ring-slate-200/50 focus:ring-2 focus:ring-blue-500/50"
+            className="w-full rounded-2xl border-0 bg-card/60 px-4 py-3 text-sm text-foreground shadow-inner ring-1 ring-slate-200/50 focus:ring-2 focus:ring-blue-500/50"
           >
             <option value="" disabled>
               בחרו חשבון…
@@ -318,7 +318,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
         </section>
 
         <div className="hidden shrink-0 items-center justify-center lg:flex lg:w-12">
-          <div className="rounded-full border border-white/40 bg-white/30 p-3 shadow-lg backdrop-blur-md">
+          <div className="rounded-full border border-white/40 bg-card/30 p-3 shadow-lg backdrop-blur-md">
             <ArrowLeftRight className="size-6 text-slate-400" />
           </div>
         </div>
@@ -478,7 +478,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
               type="button"
               disabled={!selectedBankId}
               onClick={() => handleAutoMatch()}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-card/5 px-5 py-3 text-sm font-medium text-slate-100 transition hover:bg-card/10 disabled:opacity-40"
             >
               <Sparkles className="size-4 text-amber-300" />
               Match AI
@@ -490,7 +490,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
               className={cn(
                 "inline-flex items-center gap-2 rounded-2xl px-8 py-3 text-sm font-semibold transition",
                 totals.isBalanced && !isMatching
-                  ? "bg-gradient-to-l from-emerald-500 to-emerald-400 text-slate-900 shadow-lg shadow-emerald-500/30 hover:from-emerald-400 hover:to-emerald-300"
+                  ? "bg-gradient-to-l from-emerald-500 to-emerald-400 text-foreground shadow-lg shadow-emerald-500/30 hover:from-emerald-400 hover:to-emerald-300"
                   : "cursor-not-allowed bg-slate-800 text-slate-500"
               )}
             >

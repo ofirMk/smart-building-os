@@ -1,5 +1,5 @@
-import { InventoryHub } from "@/components/marker-ofek/procurement/inventory-hub"
+import { InventorySheetWorkspaceClient } from "@/components/erp/workspaces/procurement/inventory-sheet/inventory-sheet-workspace-client"
 
 export default function ProcurementInventoryPage() {
-  return <InventoryHub />
+  return <InventorySheetWorkspaceClient />
 }

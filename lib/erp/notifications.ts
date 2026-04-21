@@ -26,9 +26,15 @@ export type ExecutiveVarianceWhatsAppPayload = {
 
 export type WeeklyPulsePayload = {
   companyId: string
+  totalRevenue?: number
+  averageMarginPct?: number
+  highVarianceCount?: number
   healthyProjects: number
   attentionProjects: number
-  totalOffsetRecoveryNis: number
+  topPerformerName?: string
+  lowestHealthName?: string
+  managerTargets?: string[]
+  topProjectOffsetVelocityDays?: number
 }
 
 export function formatPricingDeltaPercent(varianceRatio: number): string {
@@ -135,10 +141,18 @@ export async function sendExecutiveVarianceWhatsAppAlert(
 }
 
 export function formatWeeklyPulseMessage(payload: WeeklyPulsePayload): string {
-  const totalOffset = Number(payload.totalOffsetRecoveryNis || 0).toLocaleString("he-IL", {
+  const totalRevenue = Number(payload.totalRevenue || 0).toLocaleString("he-IL", {
     maximumFractionDigits: 0,
   })
-  return `Weekly Pulse: ${payload.healthyProjects} Projects Healthy, ${payload.attentionProjects} Require Attention. Total Offset Recovery: ${totalOffset} NIS.`
+  const avgMargin = Number(payload.averageMarginPct ?? 0).toFixed(1)
+  const highVariance = Math.max(0, Number(payload.highVarianceCount ?? 0))
+  const topPerformer = payload.topPerformerName ? `Top: ${payload.topPerformerName}.` : ""
+  const lowestHealth = payload.lowestHealthName ? `Watch: ${payload.lowestHealthName}.` : ""
+  const offsetVelocity =
+    Number(payload.topProjectOffsetVelocityDays ?? 0) > 0
+      ? `Offset Velocity: ${Number(payload.topProjectOffsetVelocityDays).toFixed(2)} days.`
+      : ""
+  return `Weekly Pulse: Revenue ${totalRevenue} NIS, Avg Margin ${avgMargin}%, High Variance ${highVariance}. ${payload.healthyProjects} Projects Healthy, ${payload.attentionProjects} Require Attention. ${topPerformer} ${lowestHealth} ${offsetVelocity}`.trim()
 }
 
 export async function sendWeeklyPulseWhatsAppAlert(

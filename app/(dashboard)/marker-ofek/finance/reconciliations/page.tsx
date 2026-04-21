@@ -11,7 +11,7 @@ export default async function ReconciliationPage() {
     >
       <div className="mx-auto flex max-w-[1800px] flex-col gap-6 overflow-hidden p-4 pb-10 md:p-8">
         <header className="shrink-0 space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             התאמות בנקים וקליטה אוטומטית
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-slate-500">

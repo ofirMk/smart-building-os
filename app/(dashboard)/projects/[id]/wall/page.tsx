@@ -29,11 +29,11 @@ export default async function ProjectWallPage({
   }
 
   return (
-    <div className="min-h-0 flex-1 bg-slate-50 pb-8 pt-2 dark:bg-slate-950" dir="rtl" lang="he">
+    <div className="min-h-0 flex-1 bg-background pb-8 pt-2 dark:bg-slate-950" dir="rtl" lang="he">
       <div className="mx-auto w-full max-w-2xl px-3 sm:px-4">
         <Link
           href={`/marker-ofek/projects/${id}`}
-          className="mb-4 inline-flex w-fit items-center gap-2 text-sm text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+          className="mb-4 inline-flex w-fit items-center gap-2 text-sm text-slate-600 transition-colors hover:text-foreground dark:text-slate-400 dark:hover:text-slate-100"
         >
           <ArrowRight className="size-4 rotate-180" aria-hidden />
           חזרה למרכז הפרויקט

@@ -130,7 +130,7 @@ export function UnassignedItemsCard({
           <button
             type="button"
             onClick={selectAllFiltered}
-            className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-600 shadow-sm transition-all hover:text-blue-800"
+            className="rounded-lg border border-blue-200 bg-card px-4 py-2 text-sm font-bold text-blue-600 shadow-sm transition-all hover:text-blue-800"
           >
             בחר את כל {filteredItems.length} התוצאות
           </button>
@@ -160,7 +160,7 @@ export function UnassignedItemsCard({
             className={`flex items-center justify-between rounded-lg border p-3 shadow-sm transition-all ${
               selectedIds.includes(item.id)
                 ? "border-blue-200 bg-blue-50"
-                : "border-red-100 bg-white"
+                : "border-red-100 bg-card"
             }`}
           >
             <div className="flex items-start gap-3">
@@ -184,7 +184,7 @@ export function UnassignedItemsCard({
 
             <div className="flex items-center gap-2">
               <select
-                className="rounded border bg-slate-50 p-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="rounded border bg-background p-2 text-sm focus:ring-2 focus:ring-blue-500"
                 onChange={(e) => void handleAssign(item.id, e.target.value)}
                 disabled={loadingId === item.id}
                 value=""
@@ -201,7 +201,7 @@ export function UnassignedItemsCard({
           </div>
         ))}
         {filteredItems.length === 0 ? (
-          <p className="rounded-lg border border-red-100 bg-white p-4 text-sm text-slate-500">
+          <p className="rounded-lg border border-red-100 bg-card p-4 text-sm text-slate-500">
             לא נמצאו תוצאות לחיפוש.
           </p>
         ) : null}
@@ -210,7 +210,7 @@ export function UnassignedItemsCard({
       {selectedIds.length > 0 && (
         <div className="animate-in slide-in-from-bottom-5 sticky bottom-4 inset-x-0 z-50 mt-4 flex items-center justify-between rounded-xl bg-blue-600 p-4 text-white shadow-2xl">
           <div className="flex items-center gap-4">
-            <span className="rounded-full bg-white px-3 py-1 font-bold text-blue-600">
+            <span className="rounded-full bg-card px-3 py-1 font-bold text-blue-600">
               {selectedIds.length} פריטים נבחרו
             </span>
             <p className="text-sm font-medium">שיוך גורף לסעיף בחוזה:</p>
@@ -218,7 +218,7 @@ export function UnassignedItemsCard({
 
           <div className="flex items-center gap-3">
             <select
-              className="rounded-lg border px-3 py-2 text-sm text-slate-900 outline-none"
+              className="rounded-lg border px-3 py-2 text-sm text-foreground outline-none"
               defaultValue=""
               onChange={(e) => {
                 if (e.target.value) {

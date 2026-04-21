@@ -50,9 +50,9 @@ const currencyUsd = new Intl.NumberFormat("en-US", {
 })
 
 const tabListJimmy =
-  "h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 data-[variant=line]:rounded-lg"
+  "h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-slate-200 bg-background p-1 data-[variant=line]:rounded-lg"
 const tabTriggerJimmy =
-  "text-xs data-active:bg-white data-active:text-slate-900 data-active:shadow-sm md:text-sm dark:!bg-transparent dark:data-active:!bg-white dark:data-active:!text-slate-900"
+  "text-xs data-active:bg-card data-active:text-foreground data-active:shadow-sm md:text-sm dark:!bg-transparent dark:data-active:!bg-card dark:data-active:!text-foreground"
 
 /** שדה ERP: מפתח / ערך — יישור קבוע ללא טקסט צף */
 function KvField({
@@ -65,7 +65,7 @@ function KvField({
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-xs font-medium text-slate-500">{label}</span>
-      <div className="break-words text-sm font-semibold text-slate-900">
+      <div className="break-words text-sm font-semibold text-foreground">
         {children}
       </div>
     </div>
@@ -156,10 +156,10 @@ export function TechnicalCatalogWorkspace() {
   return (
     <div
       dir="rtl"
-      className="flex min-h-0 w-full max-w-none flex-1 flex-col bg-white text-slate-900 [color-scheme:light]"
+      className="flex min-h-0 w-full max-w-none flex-1 flex-col bg-card text-foreground [color-scheme:light]"
     >
       <header className="shrink-0 border-b border-slate-200 pb-3">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           קטלוג פריטים טכני (מאסטר)
         </h1>
         <p className="mt-1 text-xs text-slate-500">
@@ -189,7 +189,7 @@ export function TechnicalCatalogWorkspace() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="מק״ט, שם או קטגוריה…"
-                    className="h-8 border-slate-200 bg-white pe-9 text-sm text-slate-900 placeholder:text-slate-400"
+                    className="h-8 border-slate-200 bg-card pe-9 text-sm text-foreground placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -207,11 +207,11 @@ export function TechnicalCatalogWorkspace() {
                   <SelectTrigger
                     id="catalog-cat"
                     size="sm"
-                    className="h-8 border-slate-200 bg-white text-sm text-slate-900"
+                    className="h-8 border-slate-200 bg-card text-sm text-foreground"
                   >
                     <SelectValue placeholder="הכל" />
                   </SelectTrigger>
-                  <SelectContent className="border border-slate-200 bg-white">
+                  <SelectContent className="border border-slate-200 bg-card">
                     <SelectItem value={CATEGORY_ALL} className="text-sm">
                       הכל
                     </SelectItem>
@@ -248,9 +248,9 @@ export function TechnicalCatalogWorkspace() {
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-slate-200 bg-white">
+          <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-slate-200 bg-card">
             <Table>
-              <TableHeader className="sticky top-0 z-10 bg-slate-50 shadow-sm">
+              <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
                 <TableRow className="border-slate-200 hover:bg-transparent">
                   <TableHead className="h-8 py-1 text-end text-xs font-bold text-slate-700">
                     מק״ט פנימי
@@ -309,7 +309,7 @@ export function TechnicalCatalogWorkspace() {
                           "cursor-pointer border-slate-100 transition-colors select-none",
                           selected
                             ? "bg-blue-50 hover:bg-blue-50"
-                            : "hover:bg-slate-50"
+                            : "hover:bg-background"
                         )}
                       >
                         <TableCell className="py-1 font-mono text-[13px] tabular-nums text-slate-800">
@@ -318,7 +318,7 @@ export function TechnicalCatalogWorkspace() {
                         <TableCell className="max-w-[10rem] truncate py-1 font-mono text-[13px] text-slate-700">
                           {row.supplierSku || "—"}
                         </TableCell>
-                        <TableCell className="max-w-[22rem] py-1 text-sm text-slate-900">
+                        <TableCell className="max-w-[22rem] py-1 text-sm text-foreground">
                           {row.name}
                         </TableCell>
                         <TableCell className="py-1 text-sm text-slate-700">
@@ -327,7 +327,7 @@ export function TechnicalCatalogWorkspace() {
                         <TableCell className="py-1 text-sm text-slate-700">
                           {row.uom}
                         </TableCell>
-                        <TableCell className="py-1 text-end font-mono text-sm tabular-nums text-slate-900">
+                        <TableCell className="py-1 text-end font-mono text-sm tabular-nums text-foreground">
                           {currencyNis.format(row.basePriceNis)}
                         </TableCell>
                         <TableCell className="py-1 text-end">
@@ -357,10 +357,10 @@ export function TechnicalCatalogWorkspace() {
         </section>
 
         {/* Bottom 60% — Detail workspace */}
-        <section className="relative z-0 flex min-h-0 flex-[3] flex-col overflow-hidden border-t-2 border-slate-300 bg-white">
+        <section className="relative z-0 flex min-h-0 flex-[3] flex-col overflow-hidden border-t-2 border-slate-300 bg-card">
           {!activeSku || !activeRow || !detail ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-3 px-4 py-10 text-center">
-              <div className="rounded-full border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-full border border-slate-200 bg-background p-4">
                 <PackageSearch
                   className="size-10 text-slate-400"
                   aria-hidden
@@ -375,10 +375,10 @@ export function TechnicalCatalogWorkspace() {
               </p>
             </div>
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
-              <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card">
+              <div className="shrink-0 border-b border-slate-200 bg-background px-4 py-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <h2 className="min-w-0 max-w-full text-base leading-snug text-slate-900">
+                  <h2 className="min-w-0 max-w-full text-base leading-snug text-foreground">
                     <span className="font-mono font-bold tracking-tight">
                       {detail.sku}
                     </span>
@@ -391,7 +391,7 @@ export function TechnicalCatalogWorkspace() {
                   </h2>
                   <Badge
                     variant="outline"
-                    className="h-7 shrink-0 border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-sm"
+                    className="h-7 shrink-0 border-slate-200 bg-card px-2.5 text-[11px] font-semibold text-slate-700 shadow-sm"
                   >
                     <LayoutGrid className="size-3.5 opacity-70" aria-hidden />
                     <span className="mr-1">תצוגת עבודה</span>
@@ -404,7 +404,7 @@ export function TechnicalCatalogWorkspace() {
                 defaultValue="general"
                 className="flex min-h-0 flex-1 flex-col gap-0"
               >
-                <div className="shrink-0 border-b border-slate-100 bg-white px-3 pt-3">
+                <div className="shrink-0 border-b border-slate-100 bg-card px-3 pt-3">
                   <TabsList
                     variant="line"
                     className={cn("w-full", tabListJimmy)}
@@ -432,7 +432,7 @@ export function TechnicalCatalogWorkspace() {
 
                 <TabsContent
                   value="general"
-                  className="mt-0 min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-white outline-none"
+                  className="mt-0 min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-card outline-none"
                 >
                   {activeRow ? (
                     <div className="space-y-6 border-b border-slate-100 p-4">
@@ -450,7 +450,7 @@ export function TechnicalCatalogWorkspace() {
                           <Input
                             id={`sku-${activeRow.sku}`}
                             dir="ltr"
-                            className="h-9 border-slate-200 bg-white font-mono text-sm text-slate-900"
+                            className="h-9 border-slate-200 bg-card font-mono text-sm text-foreground"
                             value={activeRow.sku}
                             onChange={(e) =>
                               patchRow(activeRow.sku, { sku: e.target.value })
@@ -467,7 +467,7 @@ export function TechnicalCatalogWorkspace() {
                           <Input
                             id={`sup-sku-${activeRow.sku}`}
                             dir="ltr"
-                            className="h-9 border-slate-200 bg-white font-mono text-sm text-slate-900"
+                            className="h-9 border-slate-200 bg-card font-mono text-sm text-foreground"
                             value={activeRow.supplierSku}
                             onChange={(e) =>
                               patchRow(activeRow.sku, {
@@ -486,7 +486,7 @@ export function TechnicalCatalogWorkspace() {
                           </Label>
                           <Input
                             id={`name-${activeRow.sku}`}
-                            className="h-9 border-slate-200 bg-white text-sm text-slate-900"
+                            className="h-9 border-slate-200 bg-card text-sm text-foreground"
                             value={activeRow.name}
                             onChange={(e) =>
                               patchRow(activeRow.sku, { name: e.target.value })
@@ -502,7 +502,7 @@ export function TechnicalCatalogWorkspace() {
                           </Label>
                           <Input
                             id={`uom-${activeRow.sku}`}
-                            className="h-9 border-slate-200 bg-white text-sm text-slate-900"
+                            className="h-9 border-slate-200 bg-card text-sm text-foreground"
                             value={activeRow.uom}
                             onChange={(e) =>
                               patchRow(activeRow.sku, { uom: e.target.value })
@@ -524,7 +524,7 @@ export function TechnicalCatalogWorkspace() {
                             step="0.01"
                             min={0}
                             dir="ltr"
-                            className="h-9 border-slate-200 bg-white font-mono text-sm text-slate-900"
+                            className="h-9 border-slate-200 bg-card font-mono text-sm text-foreground"
                             value={Number.isFinite(activeRow.basePriceNis) ? activeRow.basePriceNis : 0}
                             onChange={(e) => {
                               const v = parseFloat(e.target.value)
@@ -535,7 +535,7 @@ export function TechnicalCatalogWorkspace() {
                           />
                         </div>
                         <div className="flex flex-col justify-end gap-2 sm:col-span-2 lg:col-span-1">
-                          <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2">
+                          <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-background/80 px-3 py-2">
                             <Label
                               htmlFor={`active-${activeRow.sku}`}
                               className="text-xs font-semibold text-slate-700"
@@ -582,10 +582,10 @@ export function TechnicalCatalogWorkspace() {
 
                 <TabsContent
                   value="suppliers"
-                  className="mt-0 min-h-0 flex-1 overflow-hidden border-t border-slate-100 bg-white outline-none"
+                  className="mt-0 min-h-0 flex-1 overflow-hidden border-t border-slate-100 bg-card outline-none"
                 >
                   <div className="p-4">
-                    <div className="max-h-[min(280px,42vh)] overflow-auto rounded-md border border-slate-200 bg-white shadow-sm">
+                    <div className="max-h-[min(280px,42vh)] overflow-auto rounded-md border border-slate-200 bg-card shadow-sm">
                       <Table>
                         <TableHeader>
                           <TableRow className="border-slate-200 hover:bg-transparent">
@@ -607,15 +607,15 @@ export function TechnicalCatalogWorkspace() {
                           {detail.linkedSuppliers.map((s, i) => (
                             <TableRow
                               key={`${s.supplierSku}-${i}`}
-                              className="border-slate-100 hover:bg-slate-50/80"
+                              className="border-slate-100 hover:bg-background/80"
                             >
-                              <TableCell className="py-1.5 text-sm font-medium text-slate-900">
+                              <TableCell className="py-1.5 text-sm font-medium text-foreground">
                                 {s.supplierName}
                               </TableCell>
                               <TableCell className="py-1.5 font-mono text-[13px] text-slate-800">
                                 {s.supplierSku}
                               </TableCell>
-                              <TableCell className="py-1.5 text-end font-mono text-sm font-semibold tabular-nums text-slate-900">
+                              <TableCell className="py-1.5 text-end font-mono text-sm font-semibold tabular-nums text-foreground">
                                 {currencyNis.format(s.lastPriceNis)}
                               </TableCell>
                               <TableCell className="py-1.5 text-end">
@@ -637,7 +637,7 @@ export function TechnicalCatalogWorkspace() {
 
                 <TabsContent
                   value="mrp"
-                  className="mt-0 min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-white outline-none"
+                  className="mt-0 min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-card outline-none"
                 >
                   <div className={detailKvGrid}>
                     <KvField label="Min Order">{detail.mrp.minOrder}</KvField>
@@ -669,7 +669,7 @@ export function TechnicalCatalogWorkspace() {
 
                 <TabsContent
                   value="costing"
-                  className="mt-0 min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-white outline-none"
+                  className="mt-0 min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-card outline-none"
                 >
                   <div className={detailKvGrid}>
                     <KvField label="Standard Cost ($)">

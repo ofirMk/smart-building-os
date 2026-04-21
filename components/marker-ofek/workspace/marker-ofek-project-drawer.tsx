@@ -268,7 +268,7 @@ export function MarkerOfekProjectDrawer() {
             </div>
           ) : localProjectId ? (
             <div className="grid gap-3">
-              <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm">
                 <p className="text-xs font-medium text-muted-foreground">
                   תכנון (BoQ) לעומת עלות רכש
                 </p>

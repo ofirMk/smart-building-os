@@ -52,19 +52,19 @@ export default async function FinanceVatReportPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm">
           <p className="text-[11px] font-semibold uppercase text-slate-400">בסיס חייב</p>
           <p className="mt-1 font-currency-mono text-lg font-semibold tabular-nums">
             {ils.format(d.outputSubtotalNis)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm">
           <p className="text-[11px] font-semibold uppercase text-slate-400">מע״מ פלט</p>
           <p className="mt-1 font-currency-mono text-lg font-semibold tabular-nums">
             {ils.format(d.outputVatNis)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm">
           <p className="text-[11px] font-semibold uppercase text-slate-400">סה״כ כולל מע״מ</p>
           <p className="mt-1 font-currency-mono text-lg font-semibold tabular-nums">
             {ils.format(d.outputGrandNis)}
@@ -72,7 +72,7 @@ export default async function FinanceVatReportPage() {
         </div>
       </section>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-100 bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>

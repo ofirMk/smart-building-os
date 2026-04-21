@@ -200,7 +200,7 @@ export default function ProcurementCatalogPage() {
   ]
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -330,13 +330,13 @@ export default function ProcurementCatalogPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="חיפוש לפי מק״ט, תיאור או קטגוריה…"
-            className="h-11 border-slate-100 bg-white ps-10"
+            className="h-11 border-slate-100 bg-card ps-10"
             aria-label="חיפוש בקטלוג"
           />
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-100 bg-card">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 md:px-6">
           <p className="text-sm font-medium text-[#1e293b]">
             {loading ? "טוען…" : `${filtered.length} פריטים`}
@@ -365,7 +365,7 @@ export default function ProcurementCatalogPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-100 bg-white hover:bg-white">
+                <TableRow className="border-slate-100 bg-card hover:bg-card">
                   <TableHead className="text-start text-indigo-950">מק״ט</TableHead>
                   <TableHead className="text-start text-indigo-950">תיאור</TableHead>
                   <TableHead className="text-start text-indigo-950">יחידה</TableHead>

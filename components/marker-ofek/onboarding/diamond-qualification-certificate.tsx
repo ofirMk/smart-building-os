@@ -36,7 +36,7 @@ export function DiamondQualificationCertificate({ show, onClose }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-white/90 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-card/90 p-4 backdrop-blur-sm"
           dir="rtl"
         >
           <motion.div
@@ -61,7 +61,7 @@ export function DiamondQualificationCertificate({ show, onClose }: Props) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
                 Diamond Qualification
               </p>
-              <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
+              <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground">
                 הסמכת משתמש מקצועי
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">

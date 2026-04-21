@@ -31,7 +31,7 @@ import { MD_QUERY } from "@/lib/marker-ofek/master-detail-nav"
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 w-20 border-slate-200 bg-white text-sm tabular-nums text-slate-900 shadow-sm [color-scheme:light] focus-visible:border-sky-500/40 focus-visible:ring-sky-500/15"
+  "h-8 w-20 border-slate-200 bg-card text-sm tabular-nums text-foreground shadow-sm [color-scheme:light] focus-visible:border-sky-500/40 focus-visible:ring-sky-500/15"
 
 const statusLabel: Record<string, string> = {
   pending: "ממתין לאישור",
@@ -167,15 +167,15 @@ export function TimesheetWorkspace() {
     <div
       dir="rtl"
       lang="he"
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-white p-3 text-slate-900 md:gap-4 md:p-4 [color-scheme:light]"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-card p-3 text-foreground md:gap-4 md:p-4 [color-scheme:light]"
     >
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-background">
             <ClipboardList className="size-4 text-slate-700" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg">
+            <h1 className="text-base font-bold tracking-tight text-foreground md:text-lg">
               אישור שעות עבודה ושכר
             </h1>
             <p className="text-[11px] text-slate-500">
@@ -188,7 +188,7 @@ export function TimesheetWorkspace() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 border-slate-200 bg-white text-xs text-slate-800 shadow-sm hover:bg-slate-50"
+            className="h-8 gap-1.5 border-slate-200 bg-card text-xs text-slate-800 shadow-sm hover:bg-background"
             onClick={approveAll}
             disabled={!hasWorkers}
           >
@@ -209,7 +209,7 @@ export function TimesheetWorkspace() {
       </div>
 
       <section
-        className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 shadow-sm"
+        className="rounded-lg border border-slate-200 bg-background/80 p-3 shadow-sm"
         aria-label="הקשר חודש"
       >
         <div className="grid gap-2 sm:max-w-xs">
@@ -222,7 +222,7 @@ export function TimesheetWorkspace() {
           <Input
             id="timesheet-month"
             type="month"
-            className="h-8 border-slate-200 bg-white text-sm shadow-sm [color-scheme:light]"
+            className="h-8 border-slate-200 bg-card text-sm shadow-sm [color-scheme:light]"
             {...register("month")}
           />
           {errors.month ? (
@@ -323,7 +323,7 @@ export function TimesheetWorkspace() {
                       }
                     }}
                   >
-                    <TableCell className="px-2 py-0 align-middle text-xs font-medium text-slate-900">
+                    <TableCell className="px-2 py-0 align-middle text-xs font-medium text-foreground">
                       <input
                         type="hidden"
                         {...register(`workers.${index}.workerId`)}
@@ -363,7 +363,7 @@ export function TimesheetWorkspace() {
                     <TableCell className="px-2 py-0 align-middle">
                       <span
                         className={cn(
-                          "inline-flex min-h-8 min-w-[4.5rem] items-center rounded-md border border-slate-200 bg-slate-50 px-2 font-currency-mono text-xs font-semibold tabular-nums text-slate-900",
+                          "inline-flex min-h-8 min-w-[4.5rem] items-center rounded-md border border-slate-200 bg-background px-2 font-currency-mono text-xs font-semibold tabular-nums text-foreground",
                           alert === "red" && "border-red-300 bg-red-100 text-red-900",
                           alert === "amber" &&
                             "border-amber-300 bg-amber-100 text-amber-950"
@@ -383,7 +383,7 @@ export function TimesheetWorkspace() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 border-slate-200 bg-white px-2 text-xs shadow-sm"
+                        className="h-8 border-slate-200 bg-card px-2 text-xs shadow-sm"
                         disabled={row?.status === "approved"}
                         onClick={() => approveWorker(index)}
                       >

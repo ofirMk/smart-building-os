@@ -35,7 +35,7 @@ export function WbsNodeSkeletonClient({
         <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-400">
           צומת WBS — טיוטה
         </p>
-        <h1 className="text-2xl font-extralight text-slate-900">עורך מבנה</h1>
+        <h1 className="text-2xl font-extralight text-foreground">עורך מבנה</h1>
         <p className="font-mono text-xs text-slate-500">{nodeId}</p>
         <p className="text-sm font-light leading-relaxed text-slate-600">
           נקודת כניסה ל-F2 מצומת WBS. עריכת תווית והיררכיה תתווסף בהמשך; Escape

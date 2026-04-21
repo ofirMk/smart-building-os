@@ -227,7 +227,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
 
   if (!projectId) {
     return (
-      <div className="bg-white px-2 py-10 text-center text-sm text-slate-500">
+      <div className="bg-card px-2 py-10 text-center text-sm text-slate-500">
         בחרו מכרז ב{" "}
         <Link className="text-indigo-600 underline" href={TENDERS_ROUTES.hub}>
           מרכז המכרזים
@@ -237,7 +237,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -260,7 +260,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-9 gap-2 border-slate-100 bg-white"
+              className="h-9 gap-2 border-slate-100 bg-card"
               onClick={() => {
                 setDekelBoqId(null)
                 setDekelOpen(true)
@@ -274,7 +274,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
         }
       />
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-100 bg-white p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-100 bg-card p-4">
         <div className="grid min-w-[12rem] flex-1 gap-1">
           <Label htmlFor="tender-dekel-mult" className="text-xs text-slate-600">
             מקדם ברירת מחדל למכרז (מחיר דקל → המחיר שלך)
@@ -283,7 +283,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
             id="tender-dekel-mult"
             value={defaultDekelMult}
             onChange={(e) => setDefaultDekelMult(e.target.value)}
-            className="max-w-[10rem] border-slate-100 bg-white font-currency-mono tabular-nums"
+            className="max-w-[10rem] border-slate-100 bg-card font-currency-mono tabular-nums"
             inputMode="decimal"
             dir="ltr"
           />
@@ -291,7 +291,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
         <Button
           type="button"
           variant="secondary"
-          className="border border-slate-100 bg-slate-50"
+          className="border border-slate-100 bg-background"
           disabled={savingMult}
           onClick={() => {
             if (!projectId) return
@@ -340,7 +340,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
             className={cn(
               "rounded-lg px-4 py-2 text-sm font-medium",
               version === v.id
-                ? "border border-indigo-200 bg-white text-indigo-800 shadow-sm"
+                ? "border border-indigo-200 bg-card text-indigo-800 shadow-sm"
                 : "border border-transparent text-slate-600 hover:border-slate-100"
             )}
           >
@@ -358,7 +358,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
           value={tableSearch}
           onChange={(e) => setTableSearch(e.target.value)}
           placeholder="חיפוש בטבלת השורות…"
-          className="h-10 border-slate-100 bg-white pe-10"
+          className="h-10 border-slate-100 bg-card pe-10"
           aria-label="חיפוש בטבלת כתב כמויות"
         />
       </div>
@@ -372,7 +372,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
         <div className="overflow-x-auto rounded-xl border border-slate-100">
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-100 bg-white hover:bg-white">
+              <TableRow className="border-slate-100 bg-card hover:bg-card">
                 <TableHead className="text-start">תיאור</TableHead>
                 <TableHead className="text-start">יח׳</TableHead>
                 <TableHead className="text-end font-mono">כמות</TableHead>
@@ -457,7 +457,7 @@ export function TendersBoqClient({ projectId }: { projectId: string | null }) {
       <form
         id="boq-add-line-form"
         onSubmit={(e) => void addLine(e)}
-        className="grid gap-3 rounded-xl border border-slate-100 bg-white p-4 md:grid-cols-6"
+        className="grid gap-3 rounded-xl border border-slate-100 bg-card p-4 md:grid-cols-6"
       >
         <div className="md:col-span-2">
           <Label>תיאור</Label>

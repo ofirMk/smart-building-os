@@ -1101,7 +1101,7 @@ export function InvoiceCommanderClient({
             </p>
             <div className="flex flex-1 items-start justify-center overflow-auto pb-4 lg:min-h-0 lg:items-stretch lg:pb-0">
               <div
-                className="w-full max-w-[min(100%,520px)] overflow-hidden rounded-sm border border-slate-600/40 bg-white shadow-2xl shadow-black/40 lg:max-h-[calc(100dvh-11rem)]"
+                className="w-full max-w-[min(100%,520px)] overflow-hidden rounded-sm border border-slate-600/40 bg-card shadow-2xl shadow-black/40 lg:max-h-[calc(100dvh-11rem)]"
                 style={{ aspectRatio: "210 / 297" }}
               >
                 <div className="h-full min-h-[380px] w-full">

@@ -186,7 +186,7 @@ export function PartnerMetricsClient({
                     {currencyFormatter.format(payload.totalManagedProfit)}
                   </p>
                 </div>
-                <span className="flex size-11 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">
+                <span className="flex size-11 items-center justify-center rounded-xl border border-slate-100 bg-background text-slate-500">
                   <TrendingUp className="size-5 text-emerald-400" aria-hidden />
                 </span>
               </div>
@@ -201,7 +201,7 @@ export function PartnerMetricsClient({
                     {currencyFormatter.format(payload.managementBonus)}
                   </p>
                 </div>
-                <span className="flex size-11 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-500">
+                <span className="flex size-11 items-center justify-center rounded-xl border border-slate-100 bg-background text-slate-500">
                   <Wallet className="size-5 text-indigo-400" aria-hidden />
                 </span>
               </div>
@@ -244,7 +244,7 @@ export function PartnerMetricsClient({
                     payload.projects.map((row) => (
                       <TableRow
                         key={row.projectId}
-                        className="border-white/10 transition-colors hover:bg-white/5"
+                        className="border-white/10 transition-colors hover:bg-card/5"
                       >
                         <TableCell className="font-medium text-foreground">
                           <span className="block text-xs text-muted-foreground">{row.code}</span>
@@ -374,7 +374,7 @@ export function PartnerMetricsClient({
       ) : null}
 
       <Sheet open={detailRow != null} onOpenChange={(o) => !o && setDetailRow(null)}>
-        <SheetContent className="border-slate-100 bg-white text-foreground" dir="rtl">
+        <SheetContent className="border-slate-100 bg-card text-foreground" dir="rtl">
           <SheetHeader>
             <SheetTitle className="text-start text-foreground">
               {detailRow ? `${detailRow.code} — ${detailRow.name}` : ""}

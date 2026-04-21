@@ -51,7 +51,7 @@ function KpiCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-xl border border-slate-100 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+      className="rounded-xl border border-slate-100 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className={cn("mt-2 font-currency-mono text-2xl font-semibold tabular-nums tracking-tight", accentClass)}>
@@ -102,7 +102,7 @@ export function PartnerProfitCenterClient({ payload }: { payload: PartnerMetrics
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.3 }}
-                className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+                className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-card p-4 shadow-sm sm:flex-row sm:items-center"
               >
                 <div className="min-w-0">
                   <span className="block font-mono text-[11px] text-slate-400">{row.code}</span>

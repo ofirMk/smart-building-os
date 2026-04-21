@@ -223,7 +223,7 @@ export default function MarkerOfekSystemMapPage() {
           </div>
         </div>
 
-        <div className="relative mt-8 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+        <div className="relative mt-8 rounded-xl border border-slate-100 bg-background/80 p-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <span>
               השלמה לפי צמתים פעילים:{" "}

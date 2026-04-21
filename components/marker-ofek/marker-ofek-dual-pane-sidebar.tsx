@@ -3,8 +3,16 @@
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useCallback, useMemo, type MouseEvent } from "react"
+import { useCallback, useMemo, useState, type MouseEvent } from "react"
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { SidebarProjectContextSwitcher } from "@/components/marker-ofek/sidebar-project-context-switcher"
 import { sidebarMenuButtonVariants } from "@/components/ui/sidebar"
 import { isSidebarNavItemActive } from "@/lib/infrastructure/navigation/sidebar-routes"
 import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
@@ -66,6 +74,7 @@ export function MarkerOfekDrawerNavContent({
     return MARKER_OFEK_SIDEBAR_SECTIONS.map((section) => ({
       id: section.id,
       label: section.label,
+      defaultOpen: section.defaultOpen,
       items: filterDrawerItems(
         section.items.map((it) => ({
           title: it.title,
@@ -92,55 +101,101 @@ export function MarkerOfekDrawerNavContent({
     [closeMobileNav, markerSoftNav]
   )
 
+  const activeSectionId = useMemo(() => {
+    const activeSection = navSections.find((section) =>
+      section.items.some((item) => isSidebarNavItemActive(pathname, item.href))
+    )
+    return activeSection?.id ?? null
+  }, [navSections, pathname])
+
+  const [manualExpandedSections, setManualExpandedSections] = useState<string[]>(() =>
+    navSections
+      .filter((section) => section.defaultOpen)
+      .map((section) => section.id)
+  )
+  const expandedSections = useMemo(() => {
+    const next = new Set<string>()
+    for (const section of navSections) {
+      if (section.defaultOpen) next.add(section.id)
+    }
+    for (const sectionId of manualExpandedSections) {
+      if (navSections.some((section) => section.id === sectionId)) next.add(sectionId)
+    }
+    if (activeSectionId) next.add(activeSectionId)
+    return [...next]
+  }, [activeSectionId, manualExpandedSections, navSections])
+
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-slate-800/40 pt-2"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-slate-200 pt-2"
       dir="rtl"
     >
+      <div className="px-1">
+        <SidebarProjectContextSwitcher />
+      </div>
       <nav
-        className="flex min-h-0 flex-1 flex-col gap-4 px-1 pb-3"
+        className="flex min-h-0 flex-1 flex-col px-1 pb-3"
         aria-label="ניווט מרקר אופק"
       >
-        {navSections.map((section) => (
-          <div key={section.id} className="min-w-0">
-            <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              {section.label}
-            </p>
-            <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
-              {section.items.map((item, index) => {
-                const Icon = item.icon
-                const active = isSidebarNavItemActive(pathname, item.href)
-                return (
-                  <li
-                    key={`${section.id}-${item.title}-${index}`}
-                    className="group/menu-item relative"
-                  >
-                    <Link
-                      href={item.href}
-                      onClick={(e) => onNavClick(e, item.href, item.title)}
-                      dir="rtl"
-                      data-active={active ? "" : undefined}
-                      className={cn(
-                        sidebarMenuButtonVariants({
-                          variant: "default",
-                          size: "default",
-                        }),
-                        "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
-                        "[&_svg]:size-4 [&_svg]:shrink-0",
-                        "data-active:bg-emerald-500/20 data-active:text-emerald-50 data-active:shadow-sm",
-                        "hover:bg-slate-800/80 hover:text-emerald-100",
-                        "flex w-full items-center justify-start text-start"
-                      )}
-                    >
-                      <Icon aria-hidden />
-                      <span className="truncate text-[13px]">{item.title}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+        <Accordion
+          type="multiple"
+          value={expandedSections}
+          onValueChange={setManualExpandedSections}
+          className="w-full"
+        >
+          {navSections.map((section) => (
+            <AccordionItem
+              key={section.id}
+              value={section.id}
+              className={cn(
+                "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-card px-1",
+                "shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+              )}
+            >
+              <AccordionHeader>
+                <AccordionTrigger className="rounded-lg px-2 py-3 text-xs font-semibold tracking-[0.04em] text-slate-700 hover:text-foreground">
+                  {section.label}
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionContent className="border-t border-slate-100 pb-2 pt-2">
+                <ul className="flex w-full min-w-0 flex-col gap-0.5 p-0">
+                  {section.items.map((item, index) => {
+                    const Icon = item.icon
+                    const active = isSidebarNavItemActive(pathname, item.href)
+                    return (
+                      <li
+                        key={`${section.id}-${item.title}-${index}`}
+                        className="group/menu-item relative"
+                      >
+                        <Link
+                          href={item.href}
+                          onClick={(e) => onNavClick(e, item.href, item.title)}
+                          dir="rtl"
+                          data-active={active ? "" : undefined}
+                          className={cn(
+                            sidebarMenuButtonVariants({
+                              variant: "default",
+                              size: "default",
+                            }),
+                            "gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-out",
+                            "[&_svg]:size-4 [&_svg]:shrink-0",
+                            "data-active:border data-active:border-sky-200 data-active:bg-sky-50 data-active:text-sky-900 data-active:shadow-sm",
+                            "border border-transparent hover:border-slate-200 hover:bg-background hover:text-foreground",
+                            "flex w-full items-center justify-start text-start text-slate-700",
+                            "active:scale-[0.99]"
+                          )}
+                        >
+                          <Icon aria-hidden />
+                          <span className="truncate text-[13px]">{item.title}</span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </nav>
     </div>
   )

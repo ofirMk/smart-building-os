@@ -88,7 +88,7 @@ function StepNode({ status }: { status: PlanStatus }) {
   }
   return (
     <div
-      className="relative z-[1] flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 bg-white text-slate-400 shadow-sm dark:border-slate-600 dark:bg-slate-900"
+      className="relative z-[1] flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 bg-card text-slate-400 shadow-sm dark:border-slate-600 dark:bg-slate-900"
       aria-hidden
     >
       <Circle className="size-4" strokeWidth={2} aria-hidden />
@@ -130,12 +130,12 @@ export function MasterPlanTracker() {
     <section
       dir="rtl"
       lang="he"
-      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-md dark:border-slate-700/80 dark:bg-slate-950"
+      className="rounded-2xl border border-slate-200 bg-card p-5 shadow-md dark:border-slate-700/80 dark:bg-slate-950"
       aria-labelledby="master-plan-tracker-heading"
     >
       <h2
         id="master-plan-tracker-heading"
-        className="text-start text-base font-bold tracking-tight text-slate-900 dark:text-slate-50"
+        className="text-start text-base font-bold tracking-tight text-foreground dark:text-slate-50"
       >
         מפת דרכים - שדרוג מערכת Holden ERP
       </h2>

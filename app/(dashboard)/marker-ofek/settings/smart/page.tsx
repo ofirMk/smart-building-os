@@ -94,7 +94,7 @@ export default async function MarkerOfekSmartSettingsHubPage() {
               href={c.href}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-auto min-h-[7rem] flex-col items-stretch justify-between gap-3 rounded-xl border-slate-100 bg-white p-5 text-start font-normal shadow-sm hover:bg-slate-50/80"
+                "h-auto min-h-[7rem] flex-col items-stretch justify-between gap-3 rounded-xl border-slate-100 bg-card p-5 text-start font-normal shadow-sm hover:bg-background/80"
               )}
             >
               <div className="flex items-start gap-3">

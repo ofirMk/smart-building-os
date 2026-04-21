@@ -168,7 +168,7 @@ export function OverheadRegistryClient({
       </header>
 
       {canSetAllocation ? (
-        <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-indigo-950">מדיניות העמסה (אופיר)</h2>
           <p className="mt-1 text-xs text-slate-500">
             חלוקת סכום העקיפות בין פרויקטים פעילים במסנן הנוכחי.
@@ -204,7 +204,7 @@ export function OverheadRegistryClient({
       ) : null}
 
       {isAdmin ? (
-        <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-indigo-950">הוספת שורה</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="grid gap-2 sm:col-span-2">
@@ -298,7 +298,7 @@ export function OverheadRegistryClient({
         <p className="text-sm text-slate-500">עריכת הרישום זמינה לאדמין בלבד.</p>
       )}
 
-      <section className="overflow-x-auto rounded-xl border border-slate-100 bg-white shadow-sm">
+      <section className="overflow-x-auto rounded-xl border border-slate-100 bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="border-slate-100 hover:bg-transparent">

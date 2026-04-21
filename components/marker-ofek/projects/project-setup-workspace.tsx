@@ -70,10 +70,10 @@ const CREATED_PROJECT_STORAGE_KEY =
   "marker-ofek:projects:newly-created-id"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-[11px] font-semibold text-slate-600"
 const tableInputClass =
-  "h-7 min-h-7 border-slate-200 bg-white px-1.5 text-xs text-slate-900 shadow-sm focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-7 min-h-7 border-slate-200 bg-card px-1.5 text-xs text-foreground shadow-sm focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 
 const ils = new Intl.NumberFormat("he-IL", {
   style: "currency",
@@ -257,7 +257,7 @@ export function ProjectSetupWorkspace() {
         <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           Phase 8.3 · נתוני מאסטר
         </p>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
+        <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
           הקמת פרויקט והצעת מחיר
         </h1>
         <p className="text-sm text-slate-600">
@@ -274,7 +274,7 @@ export function ProjectSetupWorkspace() {
         noValidate
       >
         <div className="grid min-h-0 gap-4 lg:grid-cols-2">
-          <Card className="border-slate-200 bg-white shadow-sm">
+          <Card className="border-slate-200 bg-card shadow-sm">
             <CardHeader className="space-y-1 border-b border-slate-100 py-3">
               <CardTitle className="text-base">פרטי פרויקט</CardTitle>
               <CardDescription className="text-xs">
@@ -486,7 +486,7 @@ export function ProjectSetupWorkspace() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-8 shrink-0 text-slate-500 hover:text-slate-900"
+                      className="size-8 shrink-0 text-slate-500 hover:text-foreground"
                       title="ניקוי בחירת מכרז"
                       aria-label="ניקוי בחירת מכרז"
                       onClick={() => setTenderId("")}
@@ -499,7 +499,7 @@ export function ProjectSetupWorkspace() {
             </CardContent>
           </Card>
 
-          <Card className="flex min-h-0 flex-col border-slate-200 bg-white shadow-sm">
+          <Card className="flex min-h-0 flex-col border-slate-200 bg-card shadow-sm">
             <CardHeader className="space-y-1 border-b border-slate-100 py-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
@@ -576,7 +576,7 @@ export function ProjectSetupWorkspace() {
                         id={`project-quote-line-${index}`}
                         role="button"
                         tabIndex={0}
-                        className="cursor-pointer border-slate-100 hover:bg-slate-50/80"
+                        className="cursor-pointer border-slate-100 hover:bg-background/80"
                         onClick={() => pushQuoteLineUrl(index)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -671,14 +671,14 @@ export function ProjectSetupWorkspace() {
                   })}
                 </TableBody>
                 <TableFooter>
-                  <TableRow className="border-t-2 border-slate-200 bg-slate-50/90 hover:bg-slate-50/90">
+                  <TableRow className="border-t-2 border-slate-200 bg-background/90 hover:bg-background/90">
                     <TableCell
                       colSpan={5}
                       className="text-start text-xs font-semibold text-slate-800"
                     >
                       סה״כ הצעת מחיר
                     </TableCell>
-                    <TableCell className="font-currency-mono text-sm font-bold tabular-nums text-slate-900">
+                    <TableCell className="font-currency-mono text-sm font-bold tabular-nums text-foreground">
                       {ils.format(quoteTotal)}
                     </TableCell>
                     <TableCell />
@@ -698,7 +698,7 @@ export function ProjectSetupWorkspace() {
           </Card>
         </div>
 
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200 bg-card shadow-sm">
           <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 py-3">
             <p className="text-xs text-slate-500">
               שמירה ב-ERP: שם, לקוח, קוד פנימי ושיוך מכרז. שורות הצעת המחיר

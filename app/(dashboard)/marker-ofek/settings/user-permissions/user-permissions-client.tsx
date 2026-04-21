@@ -49,7 +49,7 @@ function IndigoSwitch({
     >
       <span
         className={cn(
-          "pointer-events-none absolute top-0.5 size-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out",
+          "pointer-events-none absolute top-0.5 size-6 rounded-full bg-card shadow-sm transition-transform duration-200 ease-out",
           checked ? "translate-x-[1.375rem]" : "translate-x-0.5"
         )}
       />
@@ -153,7 +153,7 @@ export function UserPermissionsClient() {
   }
 
   return (
-    <div className="bg-white font-sans text-[#0f172a] rtl" dir="rtl">
+    <div className="bg-card font-sans text-[#0f172a] rtl" dir="rtl">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">
         <header className="pharmacy-hero-card p-6 md:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
@@ -178,7 +178,7 @@ export function UserPermissionsClient() {
             {rows.map((row) => (
               <section
                 key={row.userId}
-                className="rounded-xl border border-slate-100 bg-white shadow-sm"
+                className="rounded-xl border border-slate-100 bg-card shadow-sm"
               >
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="font-mono text-xs text-slate-500">{row.userId}</p>

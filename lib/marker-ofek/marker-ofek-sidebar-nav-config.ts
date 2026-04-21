@@ -1,35 +1,23 @@
 import type { LucideIcon } from "lucide-react"
 import {
-  Activity,
   AlertTriangle,
   ArrowLeftRight,
-  Bot,
   Building2,
   ClipboardList,
-  Clock,
-  CreditCard,
-  GanttChartSquare,
   FileEdit,
+  FileStack,
   FileText,
   FolderKanban,
-  HardHat,
-  Landmark,
-  LayoutDashboard,
-  LineChart,
+  ListChecks,
   ListOrdered,
-  Map,
-  MessageSquare,
   Package,
   PackageOpen,
-  PieChart,
-  PlusCircle,
+  ReceiptText,
   Receipt,
-  ShieldCheck,
   ShoppingCart,
-  Table2,
-  Truck,
-  Wallet,
+  Users,
   Wrench,
+  Zap,
 } from "lucide-react"
 
 export type MarkerOfekSidebarNavItem = {
@@ -48,274 +36,166 @@ export type MarkerOfekSidebarNavSection = {
 /** ניווט מרקר אופק — מקור אמת יחיד לסרגל ולמגירה */
 export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
   {
-    id: "project-cockpit",
-    label: "לוח בקרה",
-    defaultOpen: true,
+    id: "procurement-chain",
+    label: "שרשרת רכש (Procurement)",
+    defaultOpen: false,
     items: [
-      {
-        title: "אנליטיקה והנהלה (BI)",
-        href: "/marker-ofek/analytics",
-        icon: LineChart,
-      },
-      {
-        title: "קוקפיט (Dashboard)",
-        href: "/marker-ofek/dashboard",
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    id: "project-mgmt",
-    label: "ניהול פרויקטים",
-    defaultOpen: true,
-    items: [
-      {
-        title: "אתרים פעילים",
-        href: "/marker-ofek/projects",
-        icon: FolderKanban,
-      },
-      {
-        title: "הקמת פרויקט / מכרז",
-        href: "/marker-ofek/projects/new",
-        icon: FolderKanban,
-      },
-      {
-        title: "ניהול משימות",
-        href: "/marker-ofek/execution/daily-logs/new",
-        icon: ClipboardList,
-      },
-      {
-        title: "גאנט פרויקטים",
-        href: "/marker-ofek/projects/gantt",
-        icon: GanttChartSquare,
-      },
-    ],
-  },
-  {
-    id: "procurement-mgmt",
-    label: "רכש ואספקה",
-    defaultOpen: true,
-    items: [
-      {
-        title: "מרכז רכש",
-        href: "/marker-ofek/procurement",
-        icon: ShoppingCart,
-      },
-      {
-        title: "רשימת הזמנות (PO)",
-        href: "/marker-ofek/procurement/orders",
-        icon: ListOrdered,
-      },
-      {
-        title: "הזמנת רכש חדשה (מנוע)",
-        href: "/marker-ofek/procurement/purchase-orders/new",
-        icon: PlusCircle,
-      },
-      {
-        title: "הזמנה ממכרז (BoQ)",
-        href: "/marker-ofek/procurement/purchase-orders/from-boq",
-        icon: FileText,
-      },
-      {
-        title: "קטלוג פריטים (מאסטר)",
-        href: "/marker-ofek/catalog",
-        icon: Package,
-      },
-      {
-        title: "קטלוג ברכש (מחובר)",
-        href: "/marker-ofek/procurement/catalog",
-        icon: Table2,
-      },
       {
         title: "ספקים",
         href: "/marker-ofek/procurement/suppliers",
         icon: Building2,
       },
       {
-        title: "קליטת סחורה (GR)",
+        title: "קטלוג פריטים",
+        href: "/marker-ofek/catalog",
+        icon: Package,
+      },
+      {
+        title: "מחירוני ספקים",
+        href: "/marker-ofek/procurement/catalog",
+        icon: FileStack,
+      },
+      {
+        title: "הזמנות רכש",
+        href: "/marker-ofek/procurement/orders",
+        icon: ShoppingCart,
+      },
+      {
+        title: "קבלות סחורה (GRPO)",
         href: "/marker-ofek/procurement/goods-receipt/new",
         icon: PackageOpen,
       },
       {
-        title: "תעודת משלוח",
-        href: "/marker-ofek/procurement/delivery-notes/new",
-        icon: Truck,
+        title: "חשבוניות ספק (AP)",
+        href: "/marker-ofek/procurement/invoices/new",
+        icon: Receipt,
       },
     ],
   },
   {
-    id: "execution-mgmt",
-    label: "ניהול ביצוע",
+    id: "projects-control",
+    label: "פרויקטים ובקרה (Projects & Control)",
     defaultOpen: true,
     items: [
       {
-        title: "יומן עבודה (Daily Log)",
-        href: "/marker-ofek/execution/daily-logs/new",
-        icon: HardHat,
+        title: "כרטיס פרויקט",
+        href: "/marker-ofek/projects",
+        icon: FolderKanban,
       },
       {
-        title: "ניהול ליקויים (QA)",
-        href: "/marker-ofek/execution/qa-defects/new",
-        icon: AlertTriangle,
+        title: "מהדורות תכנון (BOQ)",
+        href: "/marker-ofek/tenders/wbs",
+        icon: ListOrdered,
       },
       {
-        title: "ניפוק ציוד (Material Issue)",
-        href: "/marker-ofek/execution/material-issue/new",
-        icon: Truck,
+        title: "עץ מוצר לתמחור (BOM)",
+        href: "/marker-ofek/tenders/pricing",
+        icon: FileStack,
       },
       {
-        title: "שעון נוכחות (Attendance)",
-        href: "/marker-ofek/execution/attendance",
-        icon: Clock,
+        title: "בקרה תקציבית - תכנון מול ביצוע",
+        href: "/marker-ofek/finance/budget-control",
+        icon: ArrowLeftRight,
       },
     ],
   },
   {
-    id: "logistics",
-    label: "לוגיסטיקה",
+    id: "contracts-billing",
+    label: "חוזים וחשבונות (Contracts & Billing)",
     defaultOpen: true,
     items: [
       {
-        title: "כלי עבודה (Tools/Assets)",
+        title: "חוזי קבלן",
+        href: "/marker-ofek/contracts/create-subcontractor",
+        icon: FileEdit,
+      },
+      {
+        title: "חוזי מזמין",
+        href: "/marker-ofek/finance/contracts-billing",
+        icon: FileText,
+      },
+      {
+        title: "הוראות שינוי",
+        href: "/marker-ofek/finance/variations",
+        icon: ClipboardList,
+      },
+      {
+        title: "חשבונות חלקיים",
+        href: "/marker-ofek/finance/partials",
+        icon: ReceiptText,
+      },
+    ],
+  },
+  {
+    id: "finance-core",
+    label: "כספים (Finance)",
+    defaultOpen: true,
+    items: [
+      {
+        title: "לקוחות",
+        href: "/marker-ofek/finance/customers",
+        icon: Users,
+      },
+      {
+        title: "כרטסות",
+        href: "/marker-ofek/finance/gl-accounts",
+        icon: ListChecks,
+      },
+      {
+        title: "תקבולים ותשלומים",
+        href: "/marker-ofek/finance/payments",
+        icon: ArrowLeftRight,
+      },
+    ],
+  },
+  {
+    id: "office-management",
+    label: "ניהול משרד (Office Management)",
+    defaultOpen: true,
+    items: [
+      {
+        title: "משאבי אנוש",
+        href: "/marker-ofek/hr/timesheets",
+        icon: ClipboardList,
+      },
+      {
+        title: "רכבים וציוד",
         href: "/marker-ofek/logistics/asset-tracking",
         icon: Wrench,
       },
     ],
   },
   {
-    id: "hr-mgmt",
-    label: "משאבי אנוש (HR)",
+    id: "smart-building",
+    label: "ניהול מבנים (Smart Building)",
     defaultOpen: true,
     items: [
       {
-        title: "ניהול שעות ושכר",
-        href: "/marker-ofek/hr/timesheets",
-        icon: ClipboardList,
+        title: "Residents",
+        href: "/tenants",
+        icon: Users,
       },
       {
-        title: "ספר עובדים",
-        href: "/marker-ofek/entities/new?kind=worker",
-        icon: Building2,
+        title: "Maintenance",
+        href: "/maintenance",
+        icon: Wrench,
       },
       {
-        title: "נוכחות עובדים",
-        href: "/marker-ofek/execution/attendance",
-        icon: Clock,
+        title: "Incidents",
+        href: "/tickets",
+        icon: AlertTriangle,
       },
     ],
   },
   {
-    id: "finance-accounts",
-    label: "כספים וחשבונות",
-    defaultOpen: true,
-    items: [
-      {
-        title: "בקרת תקציב (Budget Control)",
-        href: "/marker-ofek/finance/budget-control",
-        icon: PieChart,
-      },
-      {
-        title: "אישורי חשבונות קבלנים",
-        href: "/marker-ofek/finance/subcontractor-billing/new",
-        icon: Wallet,
-      },
-      {
-        title: "חשבונות יזם (Client Billing)",
-        href: "/marker-ofek/finance/client-billing/new",
-        icon: Landmark,
-      },
-      {
-        title: "חשבוניות מס",
-        href: "/marker-ofek/finance/invoices",
-        icon: Receipt,
-      },
-      {
-        title: "תשלומים",
-        href: "/marker-ofek/finance/payments",
-        icon: CreditCard,
-      },
-    ],
-  },
-  {
-    id: "finance-mgmt",
-    label: "ניהול כספים — הרחבה",
+    id: "ev-charging",
+    label: "טעינת רכבים (EV Charging)",
     defaultOpen: false,
     items: [
       {
-        title: "הזנת פקודת יומן",
-        href: "/marker-ofek/finance/journal-entries/new",
-        icon: FileEdit,
-      },
-      {
-        title: "בקרת תשלומים",
-        href: "/marker-ofek/finance/clearance",
-        icon: ShieldCheck,
-      },
-      {
-        title: "התאמות בנקים",
-        href: "/marker-ofek/finance/reconciliations",
-        icon: ArrowLeftRight,
-      },
-      {
-        title: "הפקת חשבונית מס",
-        href: "/marker-ofek/finance/billing/new",
-        icon: Receipt,
-      },
-      {
-        title: "ניהול מס״ב",
-        href: "/marker-ofek/finance/payments",
-        icon: CreditCard,
-      },
-    ],
-  },
-  {
-    id: "master-data-mgmt",
-    label: "ניהול נתונים",
-    defaultOpen: true,
-    items: [
-      {
-        title: "מרכז נתוני מאסטר",
-        href: "/marker-ofek/master-data",
-        icon: Table2,
-      },
-      {
-        title: "הקמת ספק",
-        href: "/marker-ofek/entities/new?kind=supplier&lock=1",
-        icon: Building2,
-      },
-    ],
-  },
-  {
-    id: "ai-agent",
-    label: "AI Agent",
-    defaultOpen: true,
-    items: [
-      {
-        title: "צ׳אט עוזר חכם",
-        href: "/chat",
-        icon: MessageSquare,
-      },
-      {
-        title: "סוכן תפעול ארגוני",
-        href: "/chat",
-        icon: Bot,
-      },
-    ],
-  },
-  {
-    id: "system-ops",
-    label: "מערכת",
-    defaultOpen: true,
-    items: [
-      {
-        title: "מפת דרכים (Roadmap)",
-        href: "/marker-ofek/roadmap",
-        icon: Map,
-      },
-      {
-        title: "בריאות המערכת",
-        href: "/marker-ofek/system/health",
-        icon: Activity,
+        title: "ניהול עמדות וצריכה",
+        href: "/ev-management",
+        icon: Zap,
       },
     ],
   },

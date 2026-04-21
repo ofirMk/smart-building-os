@@ -45,7 +45,7 @@ export default async function MarkerOfekContractsPage() {
               href="/marker-ofek/settings"
               className={cn(
                 buttonVariants({ size: "lg", variant: "outline" }),
-                "gap-2 border-slate-200 bg-white text-[#1e293b] hover:bg-slate-50"
+                "gap-2 border-slate-200 bg-card text-[#1e293b] hover:bg-background"
               )}
             >
               <Settings className="size-4" aria-hidden />

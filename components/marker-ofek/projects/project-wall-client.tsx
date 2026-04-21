@@ -37,7 +37,7 @@ function AiBadge({ category }: { category: ProjectWallPostRow["ai_category"] }) 
       variant="outline"
       title={L.he}
       className={cn(
-        "shrink-0 border font-mono text-[10px] font-semibold tracking-tight text-slate-900 sm:text-[11px]",
+        "shrink-0 border font-mono text-[10px] font-semibold tracking-tight text-foreground sm:text-[11px]",
         category === "technical" &&
           "border-slate-400/80 bg-slate-100",
         category === "safety" &&
@@ -98,7 +98,7 @@ export function ProjectWallClient({
           <span className="text-slate-600">Diamond Standard</span>
         </div>
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
             קיר הפרויקט
           </h1>
           <p className="text-sm text-slate-600">{projectName}</p>
@@ -114,7 +114,7 @@ export function ProjectWallClient({
       {canPost ? (
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="space-y-1 pb-2">
-            <CardTitle className="text-lg text-slate-900">פרסום עדכון</CardTitle>
+            <CardTitle className="text-lg text-foreground">פרסום עדכון</CardTitle>
             <CardDescription>טקסט או תמונה (אחסון מאובטח) — סיווג AI אוטומטי.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -193,29 +193,29 @@ export function ProjectWallClient({
           </CardContent>
         </Card>
       ) : (
-        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-600">
+        <p className="rounded-xl border border-dashed border-slate-200 bg-background/80 px-4 py-3 text-center text-sm text-slate-600">
           צפייה בלבד — פרסום לקיר זמין למנהלי מערכת, מנהלי נכסים ושותפים מנהלי פרויקט.
         </p>
       )}
 
       <section aria-labelledby="wall-feed-heading" className="flex min-h-0 flex-1 flex-col gap-3">
-        <h2 id="wall-feed-heading" className="text-lg font-semibold text-slate-900">
+        <h2 id="wall-feed-heading" className="text-lg font-semibold text-foreground">
           ציר זמן
         </h2>
-        <ScrollArea className="max-h-[min(85dvh,720px)] rounded-2xl border border-slate-200 bg-white pr-1 shadow-sm sm:rounded-2xl">
+        <ScrollArea className="max-h-[min(85dvh,720px)] rounded-2xl border border-slate-200 bg-card pr-1 shadow-sm sm:rounded-2xl">
           <ul className="flex flex-col gap-3 p-3 sm:p-4">
             {posts.length === 0 ? (
-              <li className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center text-sm text-slate-500">
+              <li className="rounded-xl border border-dashed border-slate-200 bg-background/50 px-4 py-10 text-center text-sm text-slate-500">
                 עדיין אין עדכונים בקיר.{" "}
                 {canPost ? "פרסמו את העדכון הראשון — הוא יופיע כאן." : null}
               </li>
             ) : (
               posts.map((p) => (
                 <li key={p.id} className="relative ps-3 before:absolute before:start-0 before:top-2 before:h-[calc(100%-0.5rem)] before:w-px before:bg-slate-200 before:content-[''] last:before:hidden">
-                  <article className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
+                  <article className="rounded-xl border border-slate-200 bg-background/50 p-4 shadow-sm">
                     <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0 text-start">
-                        <p className="truncate text-sm font-semibold text-slate-900">
+                        <p className="truncate text-sm font-semibold text-foreground">
                           {p.author_full_name?.trim() || "משתמש"}
                         </p>
                         <p className="text-xs text-slate-500 tabular-nums">{formatWallTime(p.created_at)}</p>
@@ -223,7 +223,7 @@ export function ProjectWallClient({
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         <Badge
                           variant="secondary"
-                          className="border-slate-200 bg-white text-[10px] font-normal text-slate-700"
+                          className="border-slate-200 bg-card text-[10px] font-normal text-slate-700"
                         >
                           {p.post_kind === "text"
                             ? "טקסט"

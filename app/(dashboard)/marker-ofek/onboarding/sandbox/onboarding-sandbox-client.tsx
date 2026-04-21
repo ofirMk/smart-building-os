@@ -38,11 +38,11 @@ export function OnboardingSandboxClient({
       <DiamondQualificationCertificate show={showCert} onClose={() => setShowCert(false)} />
 
       <header className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-100 bg-white px-3 py-1 text-[11px] font-medium text-indigo-700">
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-100 bg-card px-3 py-1 text-[11px] font-medium text-indigo-700">
           <GraduationCap className="size-3.5" aria-hidden />
           Diamond Qualification
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">ארגז חול — הכשרה</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">ארגז חול — הכשרה</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
           עברו את שלושת השלבים בפרויקט הדמו בלבד. נתוני האימון אינם נכללים בדשבורד הנהלה או במדדי
           רווח.
@@ -71,7 +71,7 @@ export function OnboardingSandboxClient({
       <div className="grid gap-4 md:grid-cols-1">
         <Card className="border-slate-100 bg-[#FFFFFF] shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base text-slate-900">שלב 1 — ספק חדש</CardTitle>
+            <CardTitle className="text-base text-foreground">שלב 1 — ספק חדש</CardTitle>
             <CardDescription>
               הקימו ספק עם ח.פ / ע.מ. ממסכי רכש ניתן לפתוח הקמה מהירה ב־F2 (חלון חדש).
             </CardDescription>
@@ -91,7 +91,7 @@ export function OnboardingSandboxClient({
 
         <Card className="border-slate-100 bg-[#FFFFFF] shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base text-slate-900">שלב 2 — ניכוי מס במקור</CardTitle>
+            <CardTitle className="text-base text-foreground">שלב 2 — ניכוי מס במקור</CardTitle>
             <CardDescription>
               בכרטיס הספק: הגדירו אחוז ניכוי במקור ותאריכי תוקף (תאימות מס) לפי חוקי הברזל בארגון.
             </CardDescription>
@@ -110,7 +110,7 @@ export function OnboardingSandboxClient({
 
         <Card className="border-slate-100 bg-[#FFFFFF] shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base text-slate-900">שלב 3 — הזמנת רכש ראשונה</CardTitle>
+            <CardTitle className="text-base text-foreground">שלב 3 — הזמנת רכש ראשונה</CardTitle>
             <CardDescription>
               צרו הזמנה לפרויקט האימון «אימון Diamond — ארגז חול», ובמסך ההזמנה שמרו בשדות המס אחוז
               ניכוי גדול מ־0.

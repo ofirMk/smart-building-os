@@ -177,7 +177,7 @@ export default function MarkerOfekFinancePage() {
               href="/marker-ofek/contracts"
               className={cn(
                 buttonVariants({ size: "sm", variant: "outline" }),
-                "gap-2 border-slate-200 text-slate-800 hover:bg-slate-50"
+                "gap-2 border-slate-200 text-slate-800 hover:bg-background"
               )}
             >
               כרטיסי חוזה

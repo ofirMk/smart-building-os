@@ -65,7 +65,7 @@ export function HoldenA4Paper({
         className
       )}
     >
-      <div className="mx-auto min-h-[280mm] w-full max-w-[190mm] rounded bg-white px-6 py-8 text-slate-900 shadow-inner shadow-slate-200/80">
+      <div className="mx-auto min-h-[280mm] w-full max-w-[190mm] rounded bg-card px-6 py-8 text-foreground shadow-inner shadow-slate-200/80">
         {children}
       </div>
     </div>

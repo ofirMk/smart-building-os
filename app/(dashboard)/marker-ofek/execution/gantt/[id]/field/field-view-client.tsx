@@ -104,7 +104,7 @@ export default function FieldViewClient({
                     setPlanVaultTask({ id: task.id, name: task.name })
                     setPlanVaultOpen(true)
                   }}
-                  className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-slate-50"
+                  className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-card px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-background"
                 >
                   <FileText className="size-4" aria-hidden />
                   מסמכים

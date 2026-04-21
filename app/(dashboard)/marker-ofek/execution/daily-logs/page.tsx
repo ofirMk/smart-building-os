@@ -49,7 +49,7 @@ export default function DailyLogsPage() {
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
-      className="bg-white text-slate-900"
+      className="bg-card text-foreground"
       eyebrow="Lightman · ביצוע"
       title="יומן עבודה יומי — אתר"
       description="דיווח מנהל אתר: מזג אוויר, כוח אדם, ביצועים וחריגים. נתוני דמו בלבד."
@@ -83,7 +83,7 @@ export default function DailyLogsPage() {
                 if (v) setProjectId(v)
               }}
             >
-              <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}>
+              <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -101,7 +101,7 @@ export default function DailyLogsPage() {
               type="date"
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
-              className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}
+              className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}
               dir="ltr"
             />
           </div>
@@ -113,7 +113,7 @@ export default function DailyLogsPage() {
                 if (v) setWeather(v)
               }}
             >
-              <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}>
+              <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -131,14 +131,14 @@ export default function DailyLogsPage() {
               inputMode="numeric"
               value={workforce}
               onChange={(e) => setWorkforce(e.target.value)}
-              className={cn(ERP_DENSE_INPUT_CLASS, "tabular-nums bg-white")}
+              className={cn(ERP_DENSE_INPUT_CLASS, "tabular-nums bg-card")}
               dir="ltr"
             />
           </div>
         </motion.div>
       }
       detail={
-        <DenseDetailPanel className="border-slate-200 bg-white p-3 shadow-sm">
+        <DenseDetailPanel className="border-slate-200 bg-card p-3 shadow-sm">
           <div className="grid gap-4">
             <div className="grid gap-1">
               <Label className={ERP_DENSE_LABEL_CLASS}>
@@ -149,7 +149,7 @@ export default function DailyLogsPage() {
                 onChange={(e) => setCompleted(e.target.value)}
                 rows={5}
                 className={cn(
-                  "min-h-[7rem] resize-y border-slate-200 bg-white px-2 py-1.5 text-sm leading-relaxed",
+                  "min-h-[7rem] resize-y border-slate-200 bg-card px-2 py-1.5 text-sm leading-relaxed",
                   "transition-shadow duration-200 focus-visible:shadow-sm"
                 )}
                 placeholder="פירוט ביצועים, יחידות, אזורים באתר…"
@@ -164,7 +164,7 @@ export default function DailyLogsPage() {
                 onChange={(e) => setIssues(e.target.value)}
                 rows={4}
                 className={cn(
-                  "min-h-[5.5rem] resize-y border-slate-200 bg-white px-2 py-1.5 text-sm leading-relaxed",
+                  "min-h-[5.5rem] resize-y border-slate-200 bg-card px-2 py-1.5 text-sm leading-relaxed",
                   "transition-shadow duration-200 focus-visible:shadow-sm"
                 )}
                 placeholder="עיכובי אספקה, רישוי, תיאום קבלנים…"

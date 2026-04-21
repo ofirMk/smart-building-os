@@ -50,9 +50,9 @@ export function AssetCard({
   }
 
   return (
-    <Card className={cn("border border-slate-100 bg-white shadow-none", className)} size="sm">
+    <Card className={cn("border border-slate-100 bg-card shadow-none", className)} size="sm">
       <CardHeader className="flex flex-row items-start gap-3 border-b border-slate-100 pb-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-white text-indigo-600">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-card text-indigo-600">
           <Package className="size-5 stroke-[1.5]" aria-hidden />
         </div>
         <div className="min-w-0 space-y-1">

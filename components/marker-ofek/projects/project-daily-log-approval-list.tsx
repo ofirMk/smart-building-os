@@ -63,7 +63,7 @@ export function ProjectDailyLogApprovalList({
 
   return (
     <section
-      className="mx-auto mt-8 max-w-lg space-y-3 rounded-xl border border-slate-100 bg-slate-50/40 p-4"
+      className="mx-auto mt-8 max-w-lg space-y-3 rounded-xl border border-slate-100 bg-background/40 p-4"
       dir="rtl"
     >
       <h2 className="text-sm font-semibold text-[#1e293b]">
@@ -78,7 +78,7 @@ export function ProjectDailyLogApprovalList({
           return (
             <li
               key={l.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-card px-3 py-2"
             >
               <span className="font-currency-mono text-sm text-slate-700">
                 {l.log_date}

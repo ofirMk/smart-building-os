@@ -31,7 +31,7 @@ export function WorkspaceAiPrompt({
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200/70 bg-white text-emerald-700 shadow-sm">
+        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200/70 bg-card text-emerald-700 shadow-sm">
           <Sparkles className="size-4" aria-hidden />
         </span>
         <div className="min-w-0 flex-1 space-y-2">

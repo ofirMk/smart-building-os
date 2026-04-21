@@ -36,7 +36,7 @@ const modules = [
 
 export default function DataSpacePortal() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white p-8 md:p-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-card p-8 md:p-12">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
@@ -56,7 +56,7 @@ export default function DataSpacePortal() {
               transition={{ delay: idx * 0.1, duration: 0.5, ease: "easeOut" }}
               whileHover={{ scale: 1.03, translateY: -5 }}
             >
-              <Card className="group relative overflow-hidden border-slate-100 bg-white p-8 shadow-sm transition-all duration-300 hover:border-slate-200">
+              <Card className="group relative overflow-hidden border-slate-100 bg-card p-8 shadow-sm transition-all duration-300 hover:border-slate-200">
                 <div className="relative flex items-center justify-between">
                   <div>
                     <div className="mb-3 flex items-center gap-2 text-slate-400">

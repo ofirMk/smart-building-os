@@ -78,7 +78,7 @@ export function MoAccessRequestsPanel() {
             {rows.map((r) => (
               <li
                 key={r.id}
-                className="rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-start"
+                className="rounded-lg border border-slate-100 bg-background/50 p-3 text-start"
               >
                 <p className="font-medium text-indigo-950">{r.full_name}</p>
                 <p className="mt-1 font-currency-mono text-xs text-slate-600">

@@ -36,7 +36,7 @@ function Switch({
     >
       <span
         className={cn(
-          "pointer-events-none absolute top-0.5 size-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out",
+          "pointer-events-none absolute top-0.5 size-6 rounded-full bg-card shadow-sm transition-transform duration-200 ease-out",
           checked ? "translate-x-[1.375rem]" : "translate-x-0.5"
         )}
       />

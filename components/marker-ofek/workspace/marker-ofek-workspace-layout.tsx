@@ -57,7 +57,7 @@ function MarkerOfekWorkspaceChrome({
       <MarkerOfekProjectContextShortcut />
       <motion.div
         layout
-        className="mb-3 flex w-full max-w-none flex-col gap-1.5 border-b border-slate-200 bg-white/95 px-2 py-2 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-white/90 md:px-3"
+        className="mb-3 flex w-full max-w-none flex-col gap-1.5 border-b border-slate-200 bg-card/95 px-2 py-2 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-card/90 md:px-3"
         dir="rtl"
         transition={{ type: "spring", stiffness: 400, damping: 38 }}
       >

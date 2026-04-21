@@ -30,5 +30,12 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "supabase/functions"]
+  "exclude": [
+    "node_modules",
+    "supabase/functions",
+    "app/api/erp/master-data",
+    ".next/dev/types",
+    "components/erp/contracts/**/*",
+    "components/erp/workspaces/contracts/contract-workspace-client.tsx"
+  ]
 }

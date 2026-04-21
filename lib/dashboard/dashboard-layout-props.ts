@@ -14,9 +14,11 @@ import {
   isPartnerMetricsViewer,
   resolvePartnerMetricsPersona,
 } from "@/lib/marker-ofek/partner-metrics/access"
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { getDashboardBootstrap } from "@/lib/marker-ofek/user-dashboard-config-actions"
 import { getWorkspaceSettingsBootstrap } from "@/lib/marker-ofek/user-workspace-actions"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+import { cookies } from "next/headers"
 
 const ACTIVE_PROJECT_STATUSES = ["planning", "active", "on_hold"] as const
 
@@ -53,6 +55,10 @@ async function fetchScopedProjectCount(
 }
 
 export async function getDashboardLayoutProps() {
+  const cookieStore = await cookies()
+  const selectedCompany = resolveCompanyContext(
+    cookieStore.get(COMPANY_COOKIE_KEY)?.value
+  )
   const supabase = await createSupabaseServerAuthClient()
   const {
     data: { user },
@@ -116,5 +122,6 @@ export async function getDashboardLayoutProps() {
     showMirrorSelector: persona === "ophir" && Boolean(userId),
     mirrorViewAs: scope.viewAs,
     mirrorBannerLabel: scope.bannerLabel,
+    selectedCompany,
   }
 }

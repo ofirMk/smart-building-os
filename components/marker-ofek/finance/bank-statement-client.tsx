@@ -159,7 +159,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-6 rounded-xl border bg-white p-6 shadow-sm">
+      <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
@@ -191,7 +191,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
             <select
               value={selectedBank}
               onChange={(e) => setSelectedBank(e.target.value)}
-              className="w-full rounded-md border bg-slate-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="" disabled>
                 בחר חשבון...
@@ -252,15 +252,15 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex items-center justify-between border-b bg-background px-4 py-3">
           <h3 className="font-medium text-slate-700">
             תנועות דף הבנק
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm">
-            <thead className="border-b bg-slate-50 font-medium text-slate-600">
+            <thead className="border-b bg-background font-medium text-slate-600">
               <tr>
                 <th className="w-40 px-4 py-3">תאריך תנועה</th>
                 <th className="w-40 px-4 py-3">אסמכתא</th>
@@ -274,7 +274,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
               {lines.map((line) => (
                 <tr
                   key={line.id}
-                  className="group hover:bg-slate-50/50 focus-within:bg-blue-50/30"
+                  className="group hover:bg-background/50 focus-within:bg-blue-50/30"
                 >
                   <td className="p-1.5">
                     <input
@@ -346,7 +346,7 @@ export function BankStatementClient({ accounts }: BankStatementClientProps) {
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t bg-slate-50 p-4">
+        <div className="flex items-center justify-between border-t bg-background p-4">
           <button
             type="button"
             onClick={addLine}

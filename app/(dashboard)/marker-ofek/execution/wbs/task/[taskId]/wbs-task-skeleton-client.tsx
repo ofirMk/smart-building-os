@@ -35,7 +35,7 @@ export function WbsTaskSkeletonClient({
         <p className="text-[10px] font-semibold tracking-[0.2em] text-slate-400">
           עורך צומת — טיוטה
         </p>
-        <h1 className="text-2xl font-extralight text-slate-900">משימה</h1>
+        <h1 className="text-2xl font-extralight text-foreground">משימה</h1>
         <p className="font-mono text-xs text-slate-500">{taskId}</p>
         <p className="text-sm font-light leading-relaxed text-slate-600">
           עמוד זה שומר את ניווט ה-F2 פעיל. עריכה מלאה תתווסף בשלב הבא; בינתיים

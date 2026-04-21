@@ -215,7 +215,7 @@ export function PlansTakeoffClient({
             }}
             disabled={projects.length === 0}
           >
-            <SelectTrigger className="h-10 w-full min-w-[240px] rounded-sm border-zinc-300 bg-white sm:w-[320px]">
+            <SelectTrigger className="h-10 w-full min-w-[240px] rounded-sm border-zinc-300 bg-card sm:w-[320px]">
               <SelectValue placeholder="בחר פרויקט" />
             </SelectTrigger>
             <SelectContent>
@@ -280,7 +280,7 @@ export function PlansTakeoffClient({
       </div>
 
       {reviewRows.length > 0 ? (
-        <section className="space-y-3 rounded-sm border border-zinc-200 bg-white p-4 shadow-sm">
+        <section className="space-y-3 rounded-sm border border-zinc-200 bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-[15px] font-bold text-zinc-900">סקירה ואישור לפני BOQ</h2>
             <Button
@@ -321,7 +321,7 @@ export function PlansTakeoffClient({
                           updateRow(row.id, { boqItemId: v === "__none__" ? null : v })
                         }
                       >
-                        <SelectTrigger className="h-9 w-full min-w-[200px] rounded-sm border-zinc-300 bg-white text-start text-[12px]">
+                        <SelectTrigger className="h-9 w-full min-w-[200px] rounded-sm border-zinc-300 bg-card text-start text-[12px]">
                           <SelectValue placeholder="בחר שורת כתב כמויות" />
                         </SelectTrigger>
                         <SelectContent>
@@ -343,7 +343,7 @@ export function PlansTakeoffClient({
                         inputMode="decimal"
                         value={row.qtyInput}
                         onChange={(e) => updateRow(row.id, { qtyInput: e.target.value })}
-                        className="w-full min-w-[96px] rounded-sm border border-zinc-300 bg-white px-2 py-1.5 text-end tabular-nums text-zinc-900 outline-none focus:border-zinc-500"
+                        className="w-full min-w-[96px] rounded-sm border border-zinc-300 bg-card px-2 py-1.5 text-end tabular-nums text-zinc-900 outline-none focus:border-zinc-500"
                       />
                     </td>
                   </tr>

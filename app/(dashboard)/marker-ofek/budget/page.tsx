@@ -154,7 +154,7 @@ export default function BudgetControlPage() {
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
-      className="bg-white text-slate-900"
+      className="bg-card text-foreground"
       eyebrow="Lightman · תקציב"
       title="בקרת תקציב פרויקט"
       description="תקציב מתוכנן מול ביצוע — WBS מפורט (דמו). ללא חיבור למסד."
@@ -170,7 +170,7 @@ export default function BudgetControlPage() {
                 if (v) setProjectId(v)
               }}
             >
-              <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "w-full bg-white")}>
+              <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "w-full bg-card")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -189,19 +189,19 @@ export default function BudgetControlPage() {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="grid gap-2 sm:grid-cols-3"
           >
-            <div className="rounded-md border border-slate-200 bg-slate-50/80 p-2.5">
+            <div className="rounded-md border border-slate-200 bg-background/80 p-2.5">
               <p className="text-[11px] font-medium text-slate-500">תקציב כולל</p>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                 {formatIls(project.totalBudget)}
               </p>
             </div>
-            <div className="rounded-md border border-slate-200 bg-white p-2.5">
+            <div className="rounded-md border border-slate-200 bg-card p-2.5">
               <p className="text-[11px] font-medium text-slate-500">בוצע בפועל</p>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                 {formatIls(project.actualSpent)}
               </p>
             </div>
-            <div className="rounded-md border border-slate-200 bg-white p-2.5">
+            <div className="rounded-md border border-slate-200 bg-card p-2.5">
               <p className="text-[11px] font-medium text-slate-500">ניצול מצטבר</p>
               <div className="mt-1 flex items-center gap-1.5">
                 <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
@@ -221,10 +221,10 @@ export default function BudgetControlPage() {
         </div>
       }
       detail={
-        <DenseDetailPanel className="border-slate-200 bg-white p-0 shadow-sm">
+        <DenseDetailPanel className="border-slate-200 bg-card p-0 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-2.5 py-2">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
+              <h2 className="text-sm font-semibold text-foreground">
                 מבנה WBS — תקציב מול התחייבויות וביצוע
               </h2>
               <p className="text-[11px] text-slate-600">
@@ -270,12 +270,12 @@ export default function BudgetControlPage() {
                         duration: 0.25,
                         ease: [0.22, 1, 0.36, 1],
                       }}
-                      className="h-9 border-slate-100 hover:bg-slate-50/90"
+                      className="h-9 border-slate-100 hover:bg-background/90"
                     >
                       <TableCell className="px-2 py-1.5 font-mono text-[11px] text-slate-800">
                         {r.code}
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 text-xs text-slate-900">
+                      <TableCell className="px-2 py-1.5 text-xs text-foreground">
                         {r.name}
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-xs tabular-nums">
@@ -291,7 +291,7 @@ export default function BudgetControlPage() {
                         <span
                           className={cn(
                             "text-xs font-medium tabular-nums",
-                            neg ? "text-slate-600" : "text-slate-900"
+                            neg ? "text-slate-600" : "text-foreground"
                           )}
                         >
                           {neg ? "▼ " : "▲ "}

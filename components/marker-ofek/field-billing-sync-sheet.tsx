@@ -131,7 +131,7 @@ export function FieldBillingSyncSheet({ partialId, open, onOpenChange }: Props) 
             </div>
           ) : data ? (
             <div className="flex flex-col gap-8">
-              <section className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-sm">
+              <section className="space-y-2 rounded-xl border border-slate-100 bg-background/50 p-3 text-sm">
                 <p className="font-medium text-[#1e293b]">טווח תאריכים</p>
                 <p className="font-currency-mono text-slate-600">
                   {data.period.startIso} → {data.period.endIso}
@@ -148,7 +148,7 @@ export function FieldBillingSyncSheet({ partialId, open, onOpenChange }: Props) 
                   דיווחי שטח
                 </h3>
                 {data.fieldReports.length === 0 ? (
-                  <p className="rounded-lg border border-slate-100 bg-white px-3 py-4 text-sm text-slate-500">
+                  <p className="rounded-lg border border-slate-100 bg-card px-3 py-4 text-sm text-slate-500">
                     אין יומנים בטווח התאריכים.
                   </p>
                 ) : (
@@ -160,7 +160,7 @@ export function FieldBillingSyncSheet({ partialId, open, onOpenChange }: Props) 
                           "rounded-lg border px-3 py-2 text-xs",
                           r.includedInSuggestion
                             ? "border-emerald-100 bg-emerald-50/40"
-                            : "border-slate-100 bg-white"
+                            : "border-slate-100 bg-card"
                         )}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">

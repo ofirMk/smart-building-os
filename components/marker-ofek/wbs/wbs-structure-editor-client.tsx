@@ -114,7 +114,7 @@ function TreeRows({
         return (
         <li key={node.id}>
           <div
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-white px-2 py-2 text-indigo-900"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-card px-2 py-2 text-indigo-900"
             style={{ marginInlineStart: depth * 16 }}
             onDragOver={(e) => {
               e.preventDefault()
@@ -187,7 +187,7 @@ function TreeRows({
                 }
               }}
               placeholder="שם שלב / משימה / תת־משימה"
-              className="min-w-[12rem] flex-1 border-slate-100 bg-white font-sans text-sm text-indigo-900 placeholder:text-slate-400"
+              className="min-w-[12rem] flex-1 border-slate-100 bg-card font-sans text-sm text-indigo-900 placeholder:text-slate-400"
             />
             <Button
               type="button"
@@ -509,7 +509,7 @@ export function WbsStructureEditorClient({ projects }: { projects: ProjectOpt[] 
   }
 
   return (
-    <div className="space-y-6 rounded-xl border border-slate-100 bg-white p-4 text-indigo-900 shadow-sm md:p-6">
+    <div className="space-y-6 rounded-xl border border-slate-100 bg-card p-4 text-indigo-900 shadow-sm md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-2">
           <FolderTree className="size-5 text-indigo-600" aria-hidden />
@@ -631,7 +631,7 @@ export function WbsStructureEditorClient({ projects }: { projects: ProjectOpt[] 
             שלב ראשי (שורש)
           </Button>
         </div>
-        <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-3">
+        <div className="rounded-xl border border-slate-100 bg-background/40 p-3">
           <TreeRows
             nodes={tree}
             parentPath={[]}
@@ -709,7 +709,7 @@ export function WbsStructureEditorClient({ projects }: { projects: ProjectOpt[] 
             <div className="space-y-2">
               <Label className="text-xs">תבנית מקור</Label>
               {templateStructures.length === 0 ? (
-                <p className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                <p className="rounded-lg border border-slate-100 bg-background px-3 py-2 text-xs text-slate-600">
                   אין תבניות שמורות. שמרו מבנה קיים כתבנית או צרו תבנית חדשה.
                 </p>
               ) : (

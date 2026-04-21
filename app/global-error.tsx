@@ -18,9 +18,9 @@ export default function GlobalError({
 
   return (
     <html lang="he" dir="rtl">
-      <body className="m-0 bg-white text-slate-900 [color-scheme:light]">
+      <body className="m-0 bg-card text-foreground [color-scheme:light]">
         <div className="flex min-h-[100dvh] items-center justify-center p-4">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-card p-6 shadow-sm md:p-8">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex size-11 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600">
                 <AlertTriangle className="size-5" aria-hidden />
@@ -35,7 +35,7 @@ export default function GlobalError({
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            <div className="rounded-lg border border-slate-200 bg-background px-3 py-2 text-xs text-slate-600">
               {error.digest ? `מזהה תקלה: ${error.digest}` : "מזהה תקלה לא זמין"}
             </div>
 

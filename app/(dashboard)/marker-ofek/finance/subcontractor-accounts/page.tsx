@@ -311,7 +311,7 @@ export default function SubcontractorPartialPaymentsPage() {
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
-      className="bg-white"
+      className="bg-card"
       eyebrow="כספים · קבלנים"
       title='חשבונות קבלני משנה — תשלומים חלקיים'
       description="ניהול חשבון חלקי מול קבלן משנה: שורות כתב כמויות, קיזוזים, והיסטוריית אישורים — תצוגת עבודה לבדיקות והדגמות."
@@ -333,7 +333,7 @@ export default function SubcontractorPartialPaymentsPage() {
         </>
       }
       master={
-        <div className="space-y-2 bg-white">
+        <div className="space-y-2 bg-card">
           <div className="flex flex-wrap items-end gap-3">
             <div className="grid min-w-[12rem] flex-1 gap-1">
               <Label className={ERP_DENSE_LABEL_CLASS}>פרויקט</Label>
@@ -343,7 +343,7 @@ export default function SubcontractorPartialPaymentsPage() {
                   if (v) setProjectId(v)
                 }}
               >
-                <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "w-full bg-white")}>
+                <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "w-full bg-card")}>
                   <SelectValue placeholder="בחר פרויקט" />
                 </SelectTrigger>
                 <SelectContent>
@@ -363,7 +363,7 @@ export default function SubcontractorPartialPaymentsPage() {
                   if (v) setSubId(v)
                 }}
               >
-                <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "w-full bg-white")}>
+                <SelectTrigger className={cn(ERP_DENSE_INPUT_CLASS, "w-full bg-card")}>
                   <SelectValue placeholder="בחר קבלן" />
                 </SelectTrigger>
                 <SelectContent>
@@ -381,26 +381,26 @@ export default function SubcontractorPartialPaymentsPage() {
           </div>
 
           <div className="grid gap-1.5 sm:grid-cols-3">
-            <Card className="border-slate-200 bg-white py-2 shadow-sm">
+            <Card className="border-slate-200 bg-card py-2 shadow-sm">
               <CardHeader className="px-2.5 py-1.5 pb-0">
                 <CardTitle className="text-[11px] font-medium text-muted-foreground">
                   סכום חוזה
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-2.5 pb-2 pt-0">
-                <p className="text-base font-semibold tabular-nums text-slate-900">
+                <p className="text-base font-semibold tabular-nums text-foreground">
                   {formatIls(kpi.contract)}
                 </p>
               </CardContent>
             </Card>
-            <Card className="border-slate-200 bg-white py-2 shadow-sm">
+            <Card className="border-slate-200 bg-card py-2 shadow-sm">
               <CardHeader className="px-2.5 py-1.5 pb-0">
                 <CardTitle className="text-[11px] font-medium text-muted-foreground">
                   מאושר מצטבר (לתאריך)
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-2.5 pb-2 pt-0">
-                <p className="text-base font-semibold tabular-nums text-slate-900">
+                <p className="text-base font-semibold tabular-nums text-foreground">
                   {formatIls(kpi.approvedCumulative)}
                 </p>
               </CardContent>
@@ -421,7 +421,7 @@ export default function SubcontractorPartialPaymentsPage() {
         </div>
       }
       detail={
-        <div className="flex min-h-[22rem] flex-col gap-1 bg-white">
+        <div className="flex min-h-[22rem] flex-col gap-1 bg-card">
           <Tabs defaultValue="current" className="w-full gap-1" dir="rtl">
             <TabsList className="h-8 w-full justify-start bg-slate-100/90 p-0.5 sm:w-auto">
               <TabsTrigger value="current" className="px-2.5 text-xs">
@@ -436,7 +436,7 @@ export default function SubcontractorPartialPaymentsPage() {
             </TabsList>
 
             <TabsContent value="current" className="mt-1">
-              <div className="overflow-x-auto rounded border border-slate-200 bg-white">
+              <div className="overflow-x-auto rounded border border-slate-200 bg-card">
                 <Table>
                   <TableHeader>
                     <TableRow className="h-8 border-slate-200 hover:bg-transparent">
@@ -484,21 +484,21 @@ export default function SubcontractorPartialPaymentsPage() {
               </div>
               <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-1.5 text-xs">
                 <span className="text-muted-foreground">סה״כ בקשה לחשבון נוכחי</span>
-                <span className="font-semibold tabular-nums text-slate-900">
+                <span className="font-semibold tabular-nums text-foreground">
                   {formatIls(totalRequest)}
                 </span>
               </div>
             </TabsContent>
 
             <TabsContent value="deductions" className="mt-1">
-              <div className="grid gap-2 rounded border border-slate-200 bg-white p-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-2 rounded border border-slate-200 bg-card p-2 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="grid gap-1">
                   <Label className={ERP_DENSE_LABEL_CLASS}>עיכבון (מקובל 5%)</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       value={retentionPct}
                       onChange={(e) => setRetentionPct(e.target.value)}
-                      className={cn(ERP_DENSE_INPUT_CLASS, "max-w-[5rem] bg-white")}
+                      className={cn(ERP_DENSE_INPUT_CLASS, "max-w-[5rem] bg-card")}
                       inputMode="decimal"
                     />
                     <span className="text-xs text-muted-foreground">%</span>
@@ -509,7 +509,7 @@ export default function SubcontractorPartialPaymentsPage() {
                   <Input
                     value={insurance}
                     onChange={(e) => setInsurance(e.target.value)}
-                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}
+                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}
                     placeholder="₪"
                   />
                 </div>
@@ -518,7 +518,7 @@ export default function SubcontractorPartialPaymentsPage() {
                   <Input
                     value={safety}
                     onChange={(e) => setSafety(e.target.value)}
-                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}
+                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}
                   />
                 </div>
                 <div className="grid gap-1">
@@ -526,7 +526,7 @@ export default function SubcontractorPartialPaymentsPage() {
                   <Input
                     value={warranty}
                     onChange={(e) => setWarranty(e.target.value)}
-                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}
+                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}
                   />
                 </div>
                 <div className="grid gap-1 sm:col-span-2">
@@ -534,7 +534,7 @@ export default function SubcontractorPartialPaymentsPage() {
                   <Input
                     value={otherDed}
                     onChange={(e) => setOtherDed(e.target.value)}
-                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-white")}
+                    className={cn(ERP_DENSE_INPUT_CLASS, "bg-card")}
                   />
                 </div>
               </div>
@@ -545,7 +545,7 @@ export default function SubcontractorPartialPaymentsPage() {
             </TabsContent>
 
             <TabsContent value="history" className="mt-1">
-              <div className="overflow-x-auto rounded border border-slate-200 bg-white">
+              <div className="overflow-x-auto rounded border border-slate-200 bg-card">
                 <Table>
                   <TableHeader>
                     <TableRow className="h-8 border-slate-200 hover:bg-transparent">

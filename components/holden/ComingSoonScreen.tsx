@@ -15,7 +15,7 @@ export function ComingSoonScreen({ title }: ComingSoonScreenProps) {
         <p className="mt-4 text-lg text-zinc-400">בקרוב</p>
         <Link
           href="/portal"
-          className="mt-10 inline-flex rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-cyan-300/95 transition-colors hover:bg-white/[0.08]"
+          className="mt-10 inline-flex rounded-xl border border-white/10 bg-card/[0.04] px-5 py-2.5 text-sm font-medium text-cyan-300/95 transition-colors hover:bg-card/[0.08]"
         >
           חזרה לפורטל
         </Link>

@@ -118,7 +118,7 @@ export function BudgetControlWorkspace() {
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
-      className="min-h-0 flex-1 bg-white text-slate-900 [color-scheme:light]"
+      className="min-h-0 flex-1 bg-card text-foreground [color-scheme:light]"
       eyebrow="Marker Ofek · כספים"
       title="בקרת תקציב ורווחיות"
       description="תקציב מול עלות בפועל מול הכנסות (דמה). לחיצה על שורת קטגוריה מעמיקה את המיקוד ומעדכנת את כתובת הדף (?e=פרויקט&c=קטגוריה)."
@@ -132,7 +132,7 @@ export function BudgetControlWorkspace() {
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 gap-1.5 border-slate-200 bg-white text-xs text-slate-800 shadow-sm hover:bg-slate-50"
+          className="h-8 gap-1.5 border-slate-200 bg-card text-xs text-slate-800 shadow-sm hover:bg-background"
           onClick={exportExcel}
         >
           <FileSpreadsheet className="size-3.5 shrink-0" aria-hidden />
@@ -142,7 +142,7 @@ export function BudgetControlWorkspace() {
       master={
         <div className="flex flex-col gap-3">
           <section
-            className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 shadow-sm"
+            className="rounded-lg border border-slate-200 bg-background/80 p-3 shadow-sm"
             aria-label="הקשר פרויקט"
           >
             <div className="grid gap-2 sm:max-w-md">
@@ -159,7 +159,7 @@ export function BudgetControlWorkspace() {
               >
                 <SelectTrigger
                   id="budget-project"
-                  className="h-9 border-slate-200 bg-white text-sm text-slate-900 shadow-sm"
+                  className="h-9 border-slate-200 bg-card text-sm text-foreground shadow-sm"
                 >
                   <SelectValue placeholder="בחרו פרויקט…" />
                 </SelectTrigger>
@@ -178,12 +178,12 @@ export function BudgetControlWorkspace() {
             <KpiTile
               label='סה״כ תקציב'
               value={ils.format(totalBudget)}
-              valueClassName="text-slate-900"
+              valueClassName="text-foreground"
             />
             <KpiTile
               label='סה״כ עלות בפועל'
               value={ils.format(totalActual)}
-              valueClassName="text-slate-900"
+              valueClassName="text-foreground"
             />
             <KpiTile
               label="תחזית רווח / הפסד"
@@ -203,8 +203,8 @@ export function BudgetControlWorkspace() {
         </div>
       }
       detail={
-        <DenseDetailPanel className="min-h-0 flex-1 overflow-hidden border-slate-200 bg-white p-0 shadow-sm">
-          <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
+        <DenseDetailPanel className="min-h-0 flex-1 overflow-hidden border-slate-200 bg-card p-0 shadow-sm">
+          <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-slate-200 bg-card shadow-sm">
             <div className="border-b border-slate-200 px-3 py-2">
               <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600">
                 פירוט לפי קטגוריה
@@ -246,7 +246,7 @@ export function BudgetControlWorkspace() {
                         role="button"
                         tabIndex={0}
                         className={cn(
-                          "cursor-pointer border-slate-100 transition-colors hover:bg-slate-50/80",
+                          "cursor-pointer border-slate-100 transition-colors hover:bg-background/80",
                           focusedCategory === cat &&
                             "bg-emerald-50/90 ring-2 ring-inset ring-emerald-500/50"
                         )}
@@ -262,7 +262,7 @@ export function BudgetControlWorkspace() {
                           }
                         }}
                       >
-                        <TableCell className="py-1.5 font-medium text-slate-900">
+                        <TableCell className="py-1.5 font-medium text-foreground">
                           {categoryLabel(cat)}
                         </TableCell>
                         <TableCell className="py-1.5 font-currency-mono tabular-nums text-slate-800">
@@ -316,7 +316,7 @@ function KpiTile({
   sub?: string
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </p>

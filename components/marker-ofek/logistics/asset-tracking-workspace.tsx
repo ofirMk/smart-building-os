@@ -40,7 +40,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 let checkoutIdSeq = 0
@@ -146,7 +146,7 @@ export function AssetTrackingWorkspace() {
     >
       <DenseMasterDetailTemplate
         dir="rtl"
-        className="min-h-0 flex-1 bg-white text-slate-900 [color-scheme:light]"
+        className="min-h-0 flex-1 bg-card text-foreground [color-scheme:light]"
         eyebrow="Marker Ofek · לוגיסטיקה"
         title="ניהול כלי עבודה וציוד"
         description="ניפוק כלים לשטח ומעקב החזרות (דמה)."
@@ -166,8 +166,8 @@ export function AssetTrackingWorkspace() {
           </Button>
         }
         master={
-          <section className="flex min-h-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-900">ניפוק לשטח</h2>
+          <section className="flex min-h-0 flex-col gap-3 rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
+            <h2 className="text-sm font-bold text-foreground">ניפוק לשטח</h2>
             <div className="grid gap-3">
               <div className="flex flex-col gap-1">
                 <Label htmlFor="asset-id" className={labelClass}>
@@ -289,7 +289,7 @@ export function AssetTrackingWorkspace() {
                 <Textarea
                   id="notes"
                   rows={3}
-                  className="min-h-[4.5rem] resize-y border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+                  className="min-h-[4.5rem] resize-y border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
                   placeholder="אופציונלי — אתר, הערות בטיחות…"
                   {...register("notes")}
                 />
@@ -307,8 +307,8 @@ export function AssetTrackingWorkspace() {
           </section>
         }
         detail={
-          <section className="flex min-h-0 min-w-0 flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-900">
+          <section className="flex min-h-0 min-w-0 flex-col gap-2 rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
+            <h2 className="text-sm font-bold text-foreground">
               בשימוש בשטח ({checkouts.length})
             </h2>
             <div className="min-h-0 flex-1 overflow-auto rounded-md border border-slate-200">

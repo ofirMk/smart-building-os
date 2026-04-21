@@ -34,12 +34,12 @@ import {
 } from "@/lib/marker-ofek/business-partner-entry-schema"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15 md:text-sm"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15 md:text-sm"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 /** Jimmy: לבן בלבד — דורס מחלקות dark מהרכיבים הבסיסיים */
 const tabTriggerJimmy =
-  "text-xs data-active:bg-white data-active:text-slate-900 data-active:shadow-sm md:text-sm dark:!bg-transparent dark:!text-slate-700 dark:data-active:!border-slate-200 dark:data-active:!bg-white dark:data-active:!text-slate-900 dark:hover:!text-slate-800"
+  "text-xs data-active:bg-card data-active:text-foreground data-active:shadow-sm md:text-sm dark:!bg-transparent dark:!text-slate-700 dark:data-active:!border-slate-200 dark:data-active:!bg-card dark:data-active:!text-foreground dark:hover:!text-slate-800"
 
 type Props = {
   initialKind?: BpEntityType | null
@@ -82,10 +82,10 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
   return (
     <div
       dir="rtl"
-      className="w-full rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5 [color-scheme:light]"
+      className="w-full rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5 [color-scheme:light]"
     >
       <header className="mb-4 border-b border-slate-100 pb-3">
-        <h1 className="text-lg font-bold tracking-tight text-slate-900">
+        <h1 className="text-lg font-bold tracking-tight text-foreground">
           הקמת שותף עסקי (Business Partner)
         </h1>
         <p className="mt-1 text-xs text-slate-500">
@@ -114,7 +114,7 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
         <Tabs defaultValue="general" className="w-full gap-3">
           <TabsList
             variant="line"
-            className="grid h-auto w-full grid-cols-3 gap-0 rounded-lg border border-slate-200 bg-slate-50 p-1"
+            className="grid h-auto w-full grid-cols-3 gap-0 rounded-lg border border-slate-200 bg-background p-1"
           >
             <TabsTrigger value="general" className={tabTriggerJimmy}>
               פרטים כלליים
@@ -170,14 +170,14 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
                         size="sm"
                         disabled={lockKind}
                         className={cn(
-                          "h-8 w-full border-slate-200 bg-white text-sm text-slate-900",
+                          "h-8 w-full border-slate-200 bg-card text-sm text-foreground",
                           lockKind && "cursor-not-allowed opacity-90"
                         )}
                         aria-invalid={!!formState.errors.entityType}
                       >
                         <SelectValue placeholder="בחרו סוג" />
                       </SelectTrigger>
-                      <SelectContent className="border-slate-200 bg-white">
+                      <SelectContent className="border-slate-200 bg-card">
                         {BP_ENTITY_TYPES.map((t) => (
                           <SelectItem key={t} value={t} className="text-sm">
                             {labelForEntityType(t)}
@@ -272,12 +272,12 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
                     >
                       <SelectTrigger
                         size="sm"
-                        className="h-8 w-full max-w-md border-slate-200 bg-white text-sm text-slate-900"
+                        className="h-8 w-full max-w-md border-slate-200 bg-card text-sm text-foreground"
                         aria-invalid={!!formState.errors.paymentTermsCode}
                       >
                         <SelectValue placeholder="בחרו תנאי תשלום" />
                       </SelectTrigger>
-                      <SelectContent className="border-slate-200 bg-white">
+                      <SelectContent className="border-slate-200 bg-card">
                         {BP_PAYMENT_TERM_OPTIONS.map((o) => (
                           <SelectItem
                             key={o.value}
@@ -308,7 +308,7 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
               {fields.map((row, index) => (
                 <li
                   key={row.id}
-                  className="rounded-lg border border-slate-200 bg-slate-50/80 p-3"
+                  className="rounded-lg border border-slate-200 bg-background/80 p-3"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
@@ -362,7 +362,7 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-white text-xs text-slate-800"
+              className="h-8 border-slate-200 bg-card text-xs text-slate-800"
               onClick={() => append({ name: "", phone: "" })}
             >
               <Plus className="size-3.5" aria-hidden />

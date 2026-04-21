@@ -182,7 +182,7 @@ export function ProjectMiniGantt({ projectId, className }: ProjectMiniGanttProps
           רענון
         </Button>
       </div>
-      <div ref={trackRef} className="space-y-4 rounded-xl border border-slate-100 bg-white p-4">
+      <div ref={trackRef} className="space-y-4 rounded-xl border border-slate-100 bg-card p-4">
         {leaves.map((t) => {
           const s = String(t.start_date ?? "").trim()
           const e = String(t.end_date ?? "").trim()
@@ -219,7 +219,7 @@ export function ProjectMiniGantt({ projectId, className }: ProjectMiniGanttProps
                   </Button>
                 </div>
               </div>
-              <div className="relative h-8 rounded-md bg-slate-50">
+              <div className="relative h-8 rounded-md bg-background">
                 <div
                   role="slider"
                   tabIndex={0}

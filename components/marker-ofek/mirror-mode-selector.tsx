@@ -42,7 +42,7 @@ export function MirrorModeSelector({ currentViewAs }: { currentViewAs: ViewAsTok
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-md border border-indigo-200 bg-white px-2.5 text-xs font-medium text-indigo-900 shadow-sm outline-none transition hover:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-indigo-500/30 disabled:opacity-60",
+          "inline-flex h-9 items-center gap-1.5 rounded-md border border-indigo-200 bg-card px-2.5 text-xs font-medium text-indigo-900 shadow-sm outline-none transition hover:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-indigo-500/30 disabled:opacity-60",
           currentViewAs !== "global" && "border-indigo-400 bg-indigo-50"
         )}
         aria-label="מצב צפייה כשותף"

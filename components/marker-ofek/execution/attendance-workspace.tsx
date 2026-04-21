@@ -168,7 +168,7 @@ export function AttendanceWorkspace() {
   return (
     <DenseMasterDetailTemplate
       dir="rtl"
-      className="min-h-0 flex-1 bg-white text-slate-900 [color-scheme:light]"
+      className="min-h-0 flex-1 bg-card text-foreground [color-scheme:light]"
       eyebrow="Marker Ofek · ביצוע"
       title="שעון נוכחות יומי"
       description={`${dateIso} · דמה GPS · שעות מחושבות אוטומטית`}
@@ -178,7 +178,7 @@ export function AttendanceWorkspace() {
         label: "חזרה ללוח בקרה",
       }}
       master={
-      <section className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2">
+      <section className="grid gap-3 rounded-lg border border-slate-200 bg-card p-3 shadow-sm sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="att-worker" className="text-xs font-semibold text-slate-600">
             עובד
@@ -191,7 +191,7 @@ export function AttendanceWorkspace() {
           >
             <SelectTrigger
               id="att-worker"
-              className="h-8 border-slate-200 bg-white text-sm shadow-sm"
+              className="h-8 border-slate-200 bg-card text-sm shadow-sm"
             >
               <SelectValue />
             </SelectTrigger>
@@ -216,7 +216,7 @@ export function AttendanceWorkspace() {
           >
             <SelectTrigger
               id="att-project"
-              className="h-8 border-slate-200 bg-white text-sm shadow-sm"
+              className="h-8 border-slate-200 bg-card text-sm shadow-sm"
             >
               <SelectValue />
             </SelectTrigger>
@@ -259,7 +259,7 @@ export function AttendanceWorkspace() {
         מיקום מאומת: <strong>{GEO_MOCK_LABEL}</strong>
       </div>
 
-      <section className="min-h-0 flex-1 rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="min-h-0 flex-1 rounded-lg border border-slate-200 bg-card shadow-sm">
         <div className="border-b border-slate-200 px-3 py-2">
           <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600">
             נוכחות היום ({activeToday.length} פתוחים ללא יציאה)
@@ -298,7 +298,7 @@ export function AttendanceWorkspace() {
                   const open = row.clockOutTime == null
                   return (
                     <TableRow key={row.id} className="border-slate-100">
-                      <TableCell className="py-1.5 font-medium text-slate-900">
+                      <TableCell className="py-1.5 font-medium text-foreground">
                         {row.workerName}
                       </TableCell>
                       <TableCell className="py-1.5 font-currency-mono tabular-nums text-slate-800">
@@ -331,7 +331,7 @@ export function AttendanceWorkspace() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 border-red-200 bg-white text-xs font-semibold text-red-700 hover:bg-red-50"
+                            className="h-8 border-red-200 bg-card text-xs font-semibold text-red-700 hover:bg-red-50"
                             onClick={() => clockOutForRow(row.id)}
                           >
                             יציאה ידנית

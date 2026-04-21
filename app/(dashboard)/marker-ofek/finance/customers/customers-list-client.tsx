@@ -34,7 +34,7 @@ export function CustomersListClient({
           <p className="text-[10px] font-semibold tracking-[0.22em] text-slate-400">
             Diamond Finance &amp; CRM
           </p>
-          <h1 className="text-2xl font-extralight text-slate-900">לקוחות</h1>
+          <h1 className="text-2xl font-extralight text-foreground">לקוחות</h1>
           <p className="text-sm font-light text-slate-500">
             מזמינים — תצוגת רשימה; F2 מכל בחירה ליצירת לקוח חדש.
           </p>
@@ -43,14 +43,14 @@ export function CustomersListClient({
           href="/marker-ofek/entities/new?kind=client&lock=1"
           className={buttonVariants({
             variant: "outline",
-            className: "border-slate-200 bg-white shadow-sm",
+            className: "border-slate-200 bg-card shadow-sm",
           })}
         >
           לקוח חדש
         </Link>
       </header>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="border-slate-100 hover:bg-transparent">
@@ -82,7 +82,7 @@ export function CustomersListClient({
               initialRows.map((r) => (
                 <TableRow
                   key={r.id}
-                  className="border-slate-50 hover:bg-slate-50/60"
+                  className="border-slate-50 hover:bg-background/60"
                 >
                   <TableCell className="font-medium text-slate-800">
                     {r.name}

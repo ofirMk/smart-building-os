@@ -39,7 +39,7 @@ export function ExecutiveCashFlowChart({
 
   if (!mounted) {
     return (
-      <div className="h-[280px] animate-pulse rounded-lg bg-slate-50" aria-hidden />
+      <div className="h-[280px] animate-pulse rounded-lg bg-background" aria-hidden />
     )
   }
 

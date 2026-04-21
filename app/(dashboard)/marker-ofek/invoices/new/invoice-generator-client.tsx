@@ -415,7 +415,7 @@ export function InvoiceGeneratorClient({
     <div
       className={cn(
         "flex min-h-[calc(100dvh-4rem)] flex-col",
-        diamond ? "bg-slate-950 text-slate-100" : "bg-white"
+        diamond ? "bg-slate-950 text-slate-100" : "bg-card"
       )}
       dir="rtl"
     >
@@ -440,7 +440,7 @@ export function InvoiceGeneratorClient({
             <h1
               className={cn(
                 "mt-1 text-2xl font-extralight tracking-tight",
-                diamond ? "text-white" : "text-slate-900"
+                diamond ? "text-white" : "text-foreground"
               )}
             >
               מחולל חשבוניות
@@ -475,7 +475,7 @@ export function InvoiceGeneratorClient({
             "order-2 min-h-[50vh] border-t lg:order-1 lg:border-t-0 lg:border-e",
             diamond
               ? "border-emerald-500/15 bg-slate-900/50"
-              : "border-slate-100 bg-slate-50/50"
+              : "border-slate-100 bg-background/50"
           )}
         >
           <div className="sticky top-0 flex h-full min-h-[560px] flex-col p-4 lg:min-h-[calc(100dvh-12rem)]">
@@ -492,7 +492,7 @@ export function InvoiceGeneratorClient({
                 "min-h-0 flex-1 overflow-hidden rounded-xl border shadow-2xl",
                 diamond
                   ? "border-emerald-500/25 bg-slate-900"
-                  : "border-slate-200 bg-white shadow-sm"
+                  : "border-slate-200 bg-card shadow-sm"
               )}
             >
               <PDFViewer
@@ -577,7 +577,7 @@ export function InvoiceGeneratorClient({
                       "h-12",
                       diamond
                         ? "border-emerald-500/25 bg-slate-950 text-slate-100"
-                        : "border-slate-200 bg-white"
+                        : "border-slate-200 bg-card"
                     )}
                   >
                     <SelectValue placeholder="ללא — רק ישות מזמין" />
@@ -639,7 +639,7 @@ export function InvoiceGeneratorClient({
                       "h-12",
                       diamond
                         ? "border-emerald-500/25 bg-slate-950 text-slate-100"
-                        : "border-slate-200 bg-slate-50/80"
+                        : "border-slate-200 bg-background/80"
                     )}
                   >
                     <SelectValue placeholder="בחרו לקוח מהרשימה" />
@@ -672,7 +672,7 @@ export function InvoiceGeneratorClient({
                       setProjectId(!v || v === "__none__" ? "" : v)
                     }
                   >
-                    <SelectTrigger className="h-12 border-slate-200 bg-white">
+                    <SelectTrigger className="h-12 border-slate-200 bg-card">
                       <SelectValue placeholder="ללא — הכנסה כללית" />
                     </SelectTrigger>
                     <SelectContent align="end" className="z-[120]">
@@ -694,7 +694,7 @@ export function InvoiceGeneratorClient({
                     }
                     disabled={!effectiveProjectId}
                   >
-                    <SelectTrigger className="h-12 border-slate-200 bg-white">
+                    <SelectTrigger className="h-12 border-slate-200 bg-card">
                       <SelectValue placeholder="ללא חוזה" />
                     </SelectTrigger>
                     <SelectContent align="end" className="z-[120]">
@@ -725,7 +725,7 @@ export function InvoiceGeneratorClient({
                   "rounded-lg border px-3 py-2 text-[11px] leading-relaxed",
                   diamond
                     ? "border-emerald-500/20 bg-slate-900/60 text-slate-400"
-                    : "border-slate-100 bg-slate-50 text-slate-600"
+                    : "border-slate-100 bg-background text-slate-600"
                 )}
               >
                 סוג מסמך במסך זה:{" "}
@@ -793,7 +793,7 @@ export function InvoiceGeneratorClient({
                         "h-12",
                         diamond
                           ? "border-emerald-500/25 bg-slate-950 text-slate-100"
-                          : "border-slate-200 bg-white"
+                          : "border-slate-200 bg-card"
                       )}
                     >
                       <SelectValue />
@@ -859,7 +859,7 @@ export function InvoiceGeneratorClient({
                 {lines.map((row, idx) => (
                   <div
                     key={row.id}
-                    className="rounded-xl border border-slate-100 bg-slate-50/40 p-4"
+                    className="rounded-xl border border-slate-100 bg-background/40 p-4"
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400">
@@ -887,7 +887,7 @@ export function InvoiceGeneratorClient({
                             )
                           )
                         }
-                        className="border-slate-200 bg-white"
+                        className="border-slate-200 bg-card"
                       />
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -908,7 +908,7 @@ export function InvoiceGeneratorClient({
                                 )
                               )
                             }
-                            className="mt-1 border-slate-200 bg-white font-mono"
+                            className="mt-1 border-slate-200 bg-card font-mono"
                             dir="ltr"
                           />
                         </div>
@@ -930,7 +930,7 @@ export function InvoiceGeneratorClient({
                                 )
                               )
                             }
-                            className="mt-1 border-slate-200 bg-white font-mono"
+                            className="mt-1 border-slate-200 bg-card font-mono"
                             dir="ltr"
                           />
                         </div>
@@ -946,7 +946,7 @@ export function InvoiceGeneratorClient({
                 "rounded-xl border px-4 py-5 shadow-xl",
                 diamond
                   ? "border-emerald-500/25 bg-slate-900/90"
-                  : "border-slate-100 bg-white"
+                  : "border-slate-100 bg-card"
               )}
             >
               <div
@@ -976,7 +976,7 @@ export function InvoiceGeneratorClient({
                   "mt-3 flex justify-between border-t pt-3 text-base",
                   diamond
                     ? "border-emerald-500/20 text-white"
-                    : "border-slate-100 text-slate-900"
+                    : "border-slate-100 text-foreground"
                 )}
               >
                 <span>לתשלום</span>

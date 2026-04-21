@@ -44,13 +44,13 @@ import {
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 const tabListJimmy =
-  "h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1"
+  "h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-slate-200 bg-background p-1"
 const tabTriggerJimmy =
-  "text-xs data-active:bg-white data-active:text-slate-900 data-active:shadow-sm md:text-sm"
+  "text-xs data-active:bg-card data-active:text-foreground data-active:shadow-sm md:text-sm"
 
 export function DailyLogWorkspace() {
   const photoRef = React.useRef<HTMLInputElement>(null)
@@ -112,7 +112,7 @@ export function DailyLogWorkspace() {
 
       <DenseMasterDetailTemplate
         dir="rtl"
-        className="min-h-0 flex-1 bg-white text-slate-900 [color-scheme:light]"
+        className="min-h-0 flex-1 bg-card text-foreground [color-scheme:light]"
         eyebrow="Marker Ofek · ביצוע"
         title="יומן עבודה יומי"
         description="כוח אדם, משימות וספקים — שידור למשרד (דמה)."
@@ -127,7 +127,7 @@ export function DailyLogWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-white text-sm text-slate-800"
+              className="h-8 border-slate-200 bg-card text-sm text-slate-800"
               onClick={onSaveDraft}
             >
               שמור טיוטה
@@ -143,7 +143,7 @@ export function DailyLogWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 border-slate-200 bg-white text-sm text-slate-800"
+              className="h-8 gap-1.5 border-slate-200 bg-card text-sm text-slate-800"
               onClick={onPhotosClick}
             >
               <Camera className="size-4 opacity-80" aria-hidden />
@@ -152,7 +152,7 @@ export function DailyLogWorkspace() {
           </>
         }
         master={
-          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
           <div className="flex flex-wrap gap-4">
             <div className="flex min-w-[220px] flex-1 flex-col gap-1">
               <span className={labelClass}>פרויקט</span>
@@ -246,7 +246,7 @@ export function DailyLogWorkspace() {
               rows={2}
               placeholder="סיכום יום, חריגים, תיאום מול משרד…"
               className={cn(
-                "min-h-[4.5rem] resize-y border-slate-200 bg-white py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+                "min-h-[4.5rem] resize-y border-slate-200 bg-card py-2 text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
               )}
               {...register("generalNotes")}
             />
@@ -285,7 +285,7 @@ export function DailyLogWorkspace() {
                   {manpowerArray.fields.map((field, index) => (
                     <TableRow
                       key={field.id}
-                      className="border-slate-100 hover:bg-slate-50/80"
+                      className="border-slate-100 hover:bg-background/80"
                     >
                       <TableCell className="px-2 py-1.5 align-middle">
                         <Input
@@ -340,7 +340,7 @@ export function DailyLogWorkspace() {
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 shrink-0 border-slate-200 bg-white"
+                            className="h-8 w-8 shrink-0 border-slate-200 bg-card"
                             disabled={manpowerArray.fields.length <= 1}
                             onClick={() => manpowerArray.remove(index)}
                             aria-label="מחק שורה"
@@ -359,7 +359,7 @@ export function DailyLogWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 border-slate-200 bg-white text-sm"
+                className="h-8 gap-1 border-slate-200 bg-card text-sm"
                 onClick={() =>
                   manpowerArray.append({ role: "", headCount: 0 })
                 }
@@ -395,7 +395,7 @@ export function DailyLogWorkspace() {
                   {tasksArray.fields.map((field, index) => (
                     <TableRow
                       key={field.id}
-                      className="border-slate-100 hover:bg-slate-50/80"
+                      className="border-slate-100 hover:bg-background/80"
                     >
                       <TableCell className="px-2 py-1.5 align-middle">
                         <Input
@@ -449,7 +449,7 @@ export function DailyLogWorkspace() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 shrink-0 border-slate-200 bg-white"
+                          className="h-8 w-8 shrink-0 border-slate-200 bg-card"
                           disabled={tasksArray.fields.length <= 1}
                           onClick={() => tasksArray.remove(index)}
                           aria-label="מחק שורה"
@@ -467,7 +467,7 @@ export function DailyLogWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 border-slate-200 bg-white text-sm"
+                className="h-8 gap-1 border-slate-200 bg-card text-sm"
                 onClick={() =>
                   tasksArray.append({ description: "", status: "בוצע" })
                 }

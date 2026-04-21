@@ -107,7 +107,7 @@ export function SystemHealthClient({ initial, loadError }: Props) {
           type="button"
           variant="outline"
           size="sm"
-          className="border-white/15 bg-white/5"
+          className="border-white/15 bg-card/5"
           onClick={() => void refresh()}
           disabled={refreshing}
         >
@@ -132,7 +132,7 @@ export function SystemHealthClient({ initial, loadError }: Props) {
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <section className="rounded-2xl border border-white/10 bg-card/[0.03] p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-300">
           רשומות אחרונות
         </h2>

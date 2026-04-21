@@ -34,7 +34,7 @@ import { isQaSeverityCritical as isCritical } from "@/lib/marker-ofek/qa-defect-
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-9 min-h-9 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-9 min-h-9 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-[11px] font-semibold text-slate-600"
 
 const ils = new Intl.NumberFormat("he-IL", {
@@ -51,7 +51,7 @@ function severityBadgeClass(severity: PortalOpenDefect["severity"]): string {
   if (severity === "בינוני") {
     return "border-amber-300 bg-amber-50 text-amber-900"
   }
-  return "border-slate-200 bg-slate-50 text-slate-800"
+  return "border-slate-200 bg-background text-slate-800"
 }
 
 export function SubcontractorDashboard() {
@@ -111,7 +111,7 @@ export function SubcontractorDashboard() {
     <div
       dir="rtl"
       lang="he"
-      className="flex min-h-0 w-full flex-1 flex-col gap-3 bg-white p-3 pb-8 text-slate-900 sm:gap-4 sm:p-4"
+      className="flex min-h-0 w-full flex-1 flex-col gap-3 bg-card p-3 pb-8 text-foreground sm:gap-4 sm:p-4"
     >
       <header className="space-y-0.5 border-b border-slate-200 pb-3">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
@@ -131,7 +131,7 @@ export function SubcontractorDashboard() {
             "border shadow-sm",
             openCount > 0
               ? "border-red-300 bg-red-50/80"
-              : "border-slate-200 bg-white"
+              : "border-slate-200 bg-card"
           )}
         >
           <CardHeader className="space-y-0 p-3 pb-1">
@@ -159,7 +159,7 @@ export function SubcontractorDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 bg-white shadow-sm">
+        <Card className="border border-slate-200 bg-card shadow-sm">
           <CardHeader className="space-y-0 p-3 pb-1">
             <CardTitle className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
               <Receipt className="size-3.5 shrink-0 text-slate-500" aria-hidden />
@@ -177,18 +177,18 @@ export function SubcontractorDashboard() {
 
       <section className="flex min-h-0 flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-slate-900">ליקויים לטיפול דחוף</h2>
+          <h2 className="text-sm font-bold text-foreground">ליקויים לטיפול דחוף</h2>
           <span className="text-[10px] text-slate-500">מקושר ל־QA (3.2)</span>
         </div>
 
         <ul className="flex flex-col gap-2">
           {PORTAL_OPEN_DEFECTS.map((d) => (
             <li key={d.id}>
-              <Card className="border border-slate-200 bg-white shadow-sm">
+              <Card className="border border-slate-200 bg-card shadow-sm">
                 <CardHeader className="space-y-1 p-3 pb-2">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 flex-1 space-y-1">
-                      <p className="truncate text-xs font-semibold text-slate-900">
+                      <p className="truncate text-xs font-semibold text-foreground">
                         {d.projectLabel}
                       </p>
                       <p className="text-[11px] text-slate-600">{d.location}</p>
@@ -202,7 +202,7 @@ export function SubcontractorDashboard() {
                       </Badge>
                       <Badge
                         variant="outline"
-                        className="border-slate-200 bg-slate-50 text-[10px] text-slate-700"
+                        className="border-slate-200 bg-background text-[10px] text-slate-700"
                       >
                         {d.status}
                       </Badge>
@@ -246,11 +246,11 @@ export function SubcontractorDashboard() {
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-slate-900">הגשת חשבון חדש</h2>
+          <h2 className="text-sm font-bold text-foreground">הגשת חשבון חדש</h2>
           <span className="text-[10px] text-slate-500">מקושר ל־4.1</span>
         </div>
 
-        <Card className="border border-slate-200 bg-white shadow-sm">
+        <Card className="border border-slate-200 bg-card shadow-sm">
           <CardHeader className="space-y-0 p-3 pb-2">
             <CardTitle className="flex items-center gap-1.5 text-xs font-semibold">
               <FileText className="size-3.5 text-slate-500" aria-hidden />
@@ -313,7 +313,7 @@ export function SubcontractorDashboard() {
                 <Textarea
                   id="portal-notes"
                   rows={2}
-                  className="min-h-[4rem] resize-y border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+                  className="min-h-[4rem] resize-y border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
                   placeholder="פירוט קצר לשורות עבודה…"
                   {...register("notes")}
                 />
@@ -331,7 +331,7 @@ export function SubcontractorDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border border-dashed border-slate-200 bg-slate-50/50">
+        <Card className="border border-dashed border-slate-200 bg-background/50">
           <CardHeader className="p-3 pb-1">
             <CardTitle className="text-xs font-semibold text-slate-700">
               חשבונות אחרונים (תצוגה)
@@ -341,16 +341,16 @@ export function SubcontractorDashboard() {
             {PORTAL_RECENT_INVOICES.map((inv) => (
               <div
                 key={inv.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-100 bg-white px-2 py-1.5 text-[11px]"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-100 bg-card px-2 py-1.5 text-[11px]"
               >
                 <div className="min-w-0">
-                  <p className="font-mono font-semibold text-slate-900">
+                  <p className="font-mono font-semibold text-foreground">
                     {inv.invoiceNumber}
                   </p>
                   <p className="text-slate-500">{inv.billingMonth}</p>
                 </div>
                 <div className="text-end">
-                  <p className="font-currency-mono font-semibold tabular-nums text-slate-900">
+                  <p className="font-currency-mono font-semibold tabular-nums text-foreground">
                     {ils.format(inv.claimedAmount)}
                   </p>
                   <p

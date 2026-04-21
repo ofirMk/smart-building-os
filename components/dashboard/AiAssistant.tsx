@@ -458,10 +458,10 @@ export function AiAssistant({
   }
 
   const cardClassName = cn(
-    "flex h-[min(560px,calc(100dvh-7rem))] flex-col overflow-hidden border-slate-200/90 bg-white",
+    "flex h-[min(560px,calc(100dvh-7rem))] flex-col overflow-hidden border-slate-200/90 bg-card",
     splitDocked
       ? "w-full max-w-none shadow-xl ring-1 ring-slate-100"
-      : "w-[min(100vw-2rem,400px)] shadow-2xl shadow-slate-900/15 ring-1 ring-emerald-200/40 backdrop-blur-xl supports-[backdrop-filter]:bg-white/95"
+      : "w-[min(100vw-2rem,400px)] shadow-2xl shadow-slate-900/15 ring-1 ring-emerald-200/40 backdrop-blur-xl supports-[backdrop-filter]:bg-card/95"
   )
 
   const headerTitleBlock = (
@@ -479,7 +479,7 @@ export function AiAssistant({
       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-950/10 text-emerald-950 ring-1 ring-emerald-900/15">
         <Bot className="size-5" aria-hidden />
       </span>
-      <CardTitle className="text-base font-semibold leading-tight text-slate-900">
+      <CardTitle className="text-base font-semibold leading-tight text-foreground">
         עוזר חכם — ניתוח פיננסי
       </CardTitle>
     </div>
@@ -607,7 +607,7 @@ export function AiAssistant({
                         ) : part.type === "file" ? (
                           <div
                             key={`${m.id}-file-${index}`}
-                            className="mt-2 rounded-lg border border-slate-300/70 bg-white/70 px-2 py-1.5 text-[11px] text-slate-600"
+                            className="mt-2 rounded-lg border border-slate-300/70 bg-card/70 px-2 py-1.5 text-[11px] text-slate-600"
                           >
                             קובץ מצורף
                           </div>
@@ -653,7 +653,7 @@ export function AiAssistant({
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="w-full border-slate-200 bg-white text-[12px] text-slate-800 hover:bg-slate-50"
+                className="w-full border-slate-200 bg-card text-[12px] text-slate-800 hover:bg-background"
                 disabled={busy}
                 onClick={() => {
                   void (async () => {

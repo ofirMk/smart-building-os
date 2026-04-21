@@ -94,7 +94,7 @@ export default async function MarkerOfekProjectsDashboardPage() {
 
       <ProjectsModuleNav />
 
-      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm md:p-6">
+      <div className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm md:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">פרויקטים פעילים</h2>
           {error ? (

@@ -101,7 +101,7 @@ export default function FloorHandoverClient({
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8" dir="rtl">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="text-xl font-semibold text-foreground">
             מסירת קומה
           </h1>
           <p className="mt-1 text-sm font-light text-slate-500">
@@ -116,7 +116,7 @@ export default function FloorHandoverClient({
         </Link>
       </div>
 
-      <div className="grid gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="grid gap-4 rounded-2xl border border-slate-100 bg-card p-5 shadow-sm">
         <div className="grid gap-2">
           <Label htmlFor="b">בניין</Label>
           <Input
@@ -147,7 +147,7 @@ export default function FloorHandoverClient({
             {checklist.map((c) => (
               <li
                 key={c.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-background/50 px-3 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-800">{c.label}</p>
@@ -177,7 +177,7 @@ export default function FloorHandoverClient({
           </ul>
         </div>
 
-        <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white px-3 py-3">
+        <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-card px-3 py-3">
           <Checkbox
             id="dry"
             checked={ready}

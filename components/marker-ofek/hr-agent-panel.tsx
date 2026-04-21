@@ -499,7 +499,7 @@ export function HRAgentPanel({
             htmlFor="contract-upload-multi"
             className="flex w-full cursor-pointer flex-col items-center gap-6 py-12 text-slate-500"
           >
-            <div className="rounded-full bg-slate-50 p-5">
+            <div className="rounded-full bg-background p-5">
               <Upload className="h-10 w-10 text-slate-500" aria-hidden />
             </div>
             <span className="text-base font-light text-slate-600">
@@ -512,7 +512,7 @@ export function HRAgentPanel({
               {files.map((f, i) => (
                 <div
                   key={fileKey(f, i)}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-background/80 px-4 py-3"
                 >
                   <div className="flex min-w-0 items-center gap-2 truncate">
                     <FileText
@@ -608,8 +608,8 @@ export function HRAgentPanel({
       </Card>
 
       {!hideResultsColumn ? (
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-100 bg-slate-50">
+        <Card className="overflow-hidden border-slate-200 bg-card shadow-sm">
+          <CardHeader className="border-b border-slate-100 bg-background">
             <CardTitle className="flex items-center gap-2 text-lg font-light text-slate-800">
               <MessageSquare className="h-5 w-5 text-slate-600" aria-hidden />
               תוצאות ניתוח מסמכים

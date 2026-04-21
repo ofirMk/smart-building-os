@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 
 import { MarkerOfekDrawerNavContent } from "@/components/marker-ofek/marker-ofek-dual-pane-sidebar"
 import { useModuleVisibility } from "@/components/marker-ofek/marker-ofek-dashboard-context"
+import { SidebarProjectContextSwitcher } from "@/components/marker-ofek/sidebar-project-context-switcher"
 import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
 import { useNavDrawer } from "@/components/dashboard/nav-drawer-context"
 import {
@@ -106,7 +107,7 @@ export function DashboardNavDrawerPanel({
   if (isMarker) {
     return (
       <div
-        className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-sidebar px-2 pb-4 pt-2 text-sidebar-foreground"
+        className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-card px-2 pb-4 pt-2 text-foreground"
         dir="rtl"
       >
         <MarkerOfekDrawerNavContent
@@ -126,9 +127,10 @@ export function DashboardNavDrawerPanel({
 
   return (
     <div
-      className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-sidebar px-3 pb-4 pt-3 text-sidebar-foreground"
+      className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-card px-3 pb-4 pt-3 text-foreground"
       dir="rtl"
     >
+      <SidebarProjectContextSwitcher />
       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
         {isFacilityManagementContext(pathname)
           ? "הולדן גרופ — ניהול מבנים"

@@ -106,9 +106,9 @@ export function GanttPortfolioClient({ initialRows }: GanttPortfolioClientProps)
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm">
         <table className="w-full text-right text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+          <thead className="border-b border-slate-200 bg-background text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr>
               <th className="px-3 py-2">שם הגאנט</th>
               <th className="px-3 py-2">פרויקט</th>
@@ -127,7 +127,7 @@ export function GanttPortfolioClient({ initialRows }: GanttPortfolioClientProps)
             ) : (
               rows.map((row) => (
                 <tr key={row.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-3 py-2 font-medium text-slate-900">{row.name}</td>
+                  <td className="px-3 py-2 font-medium text-foreground">{row.name}</td>
                   <td className="px-3 py-2 text-slate-700">{row.project_name}</td>
                   <td className="px-3 py-2 text-slate-600">{row.status}</td>
                   <td className="px-3 py-2 tabular-nums text-slate-600">
@@ -141,7 +141,7 @@ export function GanttPortfolioClient({ initialRows }: GanttPortfolioClientProps)
                   <td className="px-3 py-2">
                     <Link
                       href={`/marker-ofek/projects/gantt/${row.id}`}
-                      className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50"
+                      className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-background"
                     >
                       פתח
                     </Link>

@@ -3,6 +3,7 @@
 import * as React from "react"
 import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { z } from "zod"
 import {
   AlertTriangle,
   Banknote,
@@ -24,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { HighRiskApprovalsWidget } from "@/components/marker-ofek/analytics/high-risk-approvals-widget"
 import {
   EXECUTIVE_MOCK_CASH_FLOW_FORECAST_3M,
   EXECUTIVE_MOCK_CEO_ALERTS,
@@ -37,6 +39,7 @@ import {
   type ExecutiveProjectSnapshot,
 } from "@/lib/marker-ofek/executive-analytics-mock-data"
 import { MD_QUERY } from "@/lib/marker-ofek/master-detail-nav"
+import { apiGet } from "@/lib/utils/api-client"
 import { cn } from "@/lib/utils"
 
 const ExecutiveCashFlowChart = dynamic(
@@ -48,7 +51,7 @@ const ExecutiveCashFlowChart = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="h-[280px] animate-pulse rounded-lg bg-slate-50"
+        className="h-[280px] animate-pulse rounded-lg bg-background"
         aria-hidden
       />
     ),
@@ -69,6 +72,48 @@ const pct = new Intl.NumberFormat("he-IL", {
 const CHART_IN = "expectedIn"
 const CHART_OUT = "expectedOut"
 
+const weeklyArchiveResponseSchema = z.object({
+  rows: z.array(
+    z.object({
+      id: z.string(),
+      generatedAt: z.string(),
+      topProjectName: z.string(),
+      topProjectOffsetVelocityDays: z.coerce.number(),
+      summary: z.object({
+        totalProjects: z.coerce.number(),
+        totalRevenue: z.coerce.number(),
+        averageMarginPct: z.coerce.number(),
+        highVarianceCount: z.coerce.number(),
+        healthyProjects: z.coerce.number(),
+        attentionProjects: z.coerce.number(),
+        forecastingAccuracyIndex: z.coerce.number(),
+        offsetVelocityDays: z.coerce.number(),
+        projectHealthScore: z.coerce.number(),
+      }),
+      pmAccuracyRanking: z.array(
+        z.object({
+          managerName: z.string(),
+          forecastingAccuracyPct: z.coerce.number(),
+          rank: z.coerce.number(),
+          sampleCount: z.coerce.number(),
+        })
+      ),
+      riskAlerts: z.array(
+        z.object({
+          projectId: z.string(),
+          projectName: z.string(),
+          healthScore: z.coerce.number(),
+          pdfUrl: z.string(),
+        })
+      ),
+      emailSent: z.boolean(),
+      whatsappSent: z.boolean(),
+    })
+  ),
+})
+
+type WeeklyArchiveResponse = z.infer<typeof weeklyArchiveResponseSchema>
+
 function notifySuccess(title: string, description?: string) {
   toast.success(title, { description })
 }
@@ -81,6 +126,9 @@ export function ExecutiveDashboard() {
   const [expandedProjectId, setExpandedProjectId] = React.useState<string | null>(
     null
   )
+  const [weeklyArchive, setWeeklyArchive] = React.useState<WeeklyArchiveResponse["rows"]>([])
+  const [weeklyArchiveLoading, setWeeklyArchiveLoading] = React.useState(false)
+  const [weeklyArchiveError, setWeeklyArchiveError] = React.useState<string | null>(null)
 
   const expandedProjectIdRef = React.useRef<string | null>(null)
   React.useLayoutEffect(() => {
@@ -93,6 +141,42 @@ export function ExecutiveDashboard() {
       setExpandedProjectId(pid)
     }
   }, [searchParams])
+
+  React.useEffect(() => {
+    let isCurrentRequest = true
+    const controller = new AbortController()
+    const loadArchive = async () => {
+      setWeeklyArchiveLoading(true)
+      setWeeklyArchiveError(null)
+      try {
+        const response = await apiGet<WeeklyArchiveResponse>(
+          "/api/erp/analytics/weekly-reports-archive?limit=16",
+          {
+            schema: weeklyArchiveResponseSchema,
+            signal: controller.signal,
+          }
+        )
+        if (!controller.signal.aborted && isCurrentRequest) {
+          setWeeklyArchive(response.rows)
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
+        if (isCurrentRequest) {
+          setWeeklyArchive([])
+          setWeeklyArchiveError(error instanceof Error ? error.message : "טעינת ארכיון נכשלה")
+        }
+      } finally {
+        if (!controller.signal.aborted && isCurrentRequest) {
+          setWeeklyArchiveLoading(false)
+        }
+      }
+    }
+    void loadArchive()
+    return () => {
+      isCurrentRequest = false
+      controller.abort()
+    }
+  }, [])
 
   const toggleProjectExpansion = React.useCallback(
     (id: string) => {
@@ -135,16 +219,16 @@ export function ExecutiveDashboard() {
     <div
       dir="rtl"
       lang="he"
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 bg-white p-3 text-slate-900 md:p-4 [color-scheme:light]"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 bg-card p-3 text-foreground md:p-4 [color-scheme:light]"
     >
       {/* Action ribbon */}
       <header className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-background">
               <BarChart3 className="size-4 text-slate-700" aria-hidden />
             </span>
-            <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg">
+            <h1 className="text-base font-bold tracking-tight text-foreground md:text-lg">
               אנליטיקה ודוחות הנהלה (BI)
             </h1>
           </div>
@@ -181,7 +265,7 @@ export function ExecutiveDashboard() {
           label="סה״כ הוצאות"
           value={ils.format(kpis.totalCosts)}
           sub="עלויות ביצוע ורכש מצטברות"
-          accent="text-slate-900"
+          accent="text-foreground"
         />
         <MassKpiCard
           icon={Banknote}
@@ -200,9 +284,9 @@ export function ExecutiveDashboard() {
       </div>
 
       {/* Cash flow forecast — full width */}
-      <section className="flex flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="flex flex-col rounded-lg border border-slate-200 bg-card shadow-sm">
         <div className="border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-sm font-bold text-foreground">
             תחזית תזרים מזומנים (3 חודשים קדימה)
           </h2>
           <p className="mt-0.5 text-xs text-slate-500">
@@ -213,7 +297,7 @@ export function ExecutiveDashboard() {
           {hasCashFlowData ? (
             <ExecutiveCashFlowChart data={cashFlowChartData} />
           ) : (
-            <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+            <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-background text-sm text-slate-500">
               אין נתוני תחזית תזרים להצגה.
             </div>
           )}
@@ -222,9 +306,9 @@ export function ExecutiveDashboard() {
 
       {/* Split: RTL — טבלת פרויקטים + התראות */}
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
-        <section className="flex min-h-[320px] flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section className="flex min-h-[320px] flex-col rounded-lg border border-slate-200 bg-card shadow-sm">
           <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-sm font-bold text-foreground">
               סטטוס פיננסי לפי פרויקט
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
@@ -284,16 +368,16 @@ export function ExecutiveDashboard() {
           </div>
         </section>
 
-        <section className="flex min-h-[320px] flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section className="flex min-h-[320px] flex-col rounded-lg border border-slate-200 bg-card shadow-sm">
           <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-bold text-slate-900">התראות מנכ״ל</h2>
+            <h2 className="text-sm font-bold text-foreground">התראות מנכ״ל</h2>
             <p className="mt-0.5 text-xs text-slate-500">
               חמש התראות מובילות — איחורי תשלום, לו״ז, תזרים וליקויים
             </p>
           </div>
           <ul className="flex flex-1 flex-col gap-2 overflow-auto p-3">
             {!hasAlerts ? (
-              <li className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-xs text-slate-500">
+              <li className="rounded-md border border-dashed border-slate-200 bg-background px-3 py-4 text-xs text-slate-500">
                 אין התראות פעילות כרגע.
               </li>
             ) : null}
@@ -303,6 +387,113 @@ export function ExecutiveDashboard() {
           </ul>
         </section>
       </div>
+
+      <section className="rounded-lg border border-slate-200 bg-card shadow-sm">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <h2 className="text-sm font-bold text-foreground">Weekly Reports Archive</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            דוחות שבועיים היסטוריים: Green Corner, דירוג PM ופרויקטי סיכון עם קישורי PDF.
+          </p>
+        </div>
+        <div className="overflow-auto p-2">
+          <Table dir="rtl">
+            <TableHeader>
+              <TableRow className="border-slate-200 hover:bg-transparent">
+                <TableHead className="text-right">תאריך הפקה</TableHead>
+                <TableHead className="text-right">Top Project (Offset)</TableHead>
+                <TableHead className="text-left">Health ממוצע</TableHead>
+                <TableHead className="text-left">Forecast Accuracy</TableHead>
+                <TableHead className="text-left">Risk Alerts</TableHead>
+                <TableHead className="text-left">Dispatch</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {weeklyArchiveLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-6 text-center text-xs text-slate-500">
+                    טוען ארכיון שבועי...
+                  </TableCell>
+                </TableRow>
+              ) : weeklyArchiveError ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-6 text-center text-xs text-red-600">
+                    {weeklyArchiveError}
+                  </TableCell>
+                </TableRow>
+              ) : weeklyArchive.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-6 text-center text-xs text-slate-500">
+                    אין דוחות שבועיים בארכיון.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                weeklyArchive.map((row) => (
+                  <TableRow key={row.id} className="border-slate-100">
+                    <TableCell className="text-xs text-slate-700">
+                      {new Date(row.generatedAt).toLocaleString("he-IL")}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-800">
+                      {row.topProjectName || "—"}
+                      <div className="font-mono text-[11px] text-slate-500">
+                        {row.topProjectOffsetVelocityDays > 0
+                          ? `${row.topProjectOffsetVelocityDays.toFixed(2)}d`
+                          : "n/a"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {row.summary.projectHealthScore.toFixed(1)}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {(row.summary.forecastingAccuracyIndex * 100).toFixed(1)}%
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {row.riskAlerts.length === 0 ? (
+                        <span className="text-slate-500">—</span>
+                      ) : (
+                        <div className="space-y-1">
+                          {row.riskAlerts.slice(0, 2).map((risk) => (
+                            <a
+                              key={`${row.id}-${risk.projectId}`}
+                              href={risk.pdfUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block text-blue-700 underline"
+                            >
+                              {risk.projectName} ({risk.healthScore.toFixed(1)})
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <span
+                        className={cn(
+                          "inline-flex rounded px-2 py-0.5 font-medium",
+                          row.whatsappSent ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                        )}
+                      >
+                        WA {row.whatsappSent ? "sent" : "failed"}
+                      </span>
+                      <span
+                        className={cn(
+                          "ms-1 inline-flex rounded px-2 py-0.5 font-medium",
+                          row.emailSent ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                        )}
+                      >
+                        Mail {row.emailSent ? "sent" : "failed"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
+
+      {/* High-Risk Approvals — Bento red-flags widget fed by the
+          /api/erp/dashboard/high-variance-overrides endpoint. */}
+      <HighRiskApprovalsWidget />
     </div>
   )
 }
@@ -327,7 +518,7 @@ const ProjectFinancialRow = React.memo(function ProjectFinancialRow({
       <TableRow
         className={cn(
           "cursor-pointer border-slate-100 transition-colors",
-          expanded ? "bg-slate-50" : "hover:bg-slate-50/80"
+          expanded ? "bg-background" : "hover:bg-background/80"
         )}
         onClick={activate}
         onKeyDown={(e) => {
@@ -350,7 +541,7 @@ const ProjectFinancialRow = React.memo(function ProjectFinancialRow({
             aria-hidden
           />
         </TableCell>
-        <TableCell className="max-w-[140px] text-right font-medium text-slate-900">
+        <TableCell className="max-w-[140px] text-right font-medium text-foreground">
           {p.name}
         </TableCell>
         <TableCell className="whitespace-nowrap text-left tabular-nums text-slate-800">
@@ -400,7 +591,7 @@ const ProjectFinancialRow = React.memo(function ProjectFinancialRow({
         </TableCell>
       </TableRow>
       {expanded ? (
-        <TableRow className="border-slate-100 bg-slate-50/90 hover:bg-slate-50/90">
+        <TableRow className="border-slate-100 bg-background/90 hover:bg-background/90">
           <TableCell colSpan={8} className="p-0">
             <ProjectCostDrillDown
               projectName={p.name}
@@ -436,10 +627,10 @@ function ProjectCostDrillDown({
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         פירוח עלויות — {projectName}
       </p>
-      <div className="mb-2 grid grid-cols-1 gap-2 rounded-md border border-slate-200 bg-white p-2 text-[11px] sm:grid-cols-3">
+      <div className="mb-2 grid grid-cols-1 gap-2 rounded-md border border-slate-200 bg-card p-2 text-[11px] sm:grid-cols-3">
         <div className="text-slate-600">
           תקציב בסיס פרויקט:{" "}
-          <span className="font-semibold text-slate-900">
+          <span className="font-semibold text-foreground">
             {ils.format(baselineBudget)}
           </span>
         </div>
@@ -448,7 +639,7 @@ function ProjectCostDrillDown({
           <span
             className={cn(
               "font-semibold",
-              totalOverBudget ? "text-red-600" : "text-slate-900"
+              totalOverBudget ? "text-red-600" : "text-foreground"
             )}
           >
             {ils.format(actualTotal)}
@@ -461,7 +652,7 @@ function ProjectCostDrillDown({
               "font-semibold",
               totalUtilization != null && totalUtilization > 100
                 ? "text-red-600"
-                : "text-slate-900"
+                : "text-foreground"
             )}
           >
             {totalUtilization == null ? "—" : `${pct.format(totalUtilization)}%`}
@@ -526,7 +717,7 @@ function CategoryBudgetRow({
 
   return (
     <TableRow className="border-slate-100">
-      <TableCell className="py-2 text-right font-medium text-slate-900">
+      <TableCell className="py-2 text-right font-medium text-foreground">
         {cat.labelHe}
       </TableCell>
       <TableCell className="py-2 text-left tabular-nums text-slate-700">
@@ -535,7 +726,7 @@ function CategoryBudgetRow({
       <TableCell
         className={cn(
           "py-2 text-left tabular-nums font-semibold",
-          over ? "text-red-600" : "text-slate-900"
+          over ? "text-red-600" : "text-foreground"
         )}
       >
         {ils.format(cat.actualCost)}
@@ -591,7 +782,7 @@ function MassKpiCard({
   accent?: string
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-card p-4 shadow-sm">
       <div className="mb-2 flex items-center gap-2 text-slate-600">
         <Icon className="size-5 shrink-0 opacity-85" aria-hidden />
         <span className="text-[11px] font-semibold leading-snug">{label}</span>
@@ -599,7 +790,7 @@ function MassKpiCard({
       <p
         className={cn(
           "font-currency-mono text-2xl font-bold tabular-nums tracking-tight md:text-3xl",
-          accent ?? "text-slate-900"
+          accent ?? "text-foreground"
         )}
       >
         {value}
@@ -617,13 +808,13 @@ function CeoAlertRow({ alert }: { alert: ExecutiveCeoAlert }) {
         ? "bg-amber-500"
         : "bg-slate-300"
   return (
-    <li className="flex gap-3 rounded-md border border-slate-100 bg-slate-50/80 px-3 py-2.5">
+    <li className="flex gap-3 rounded-md border border-slate-100 bg-background/80 px-3 py-2.5">
       <span
         className={cn("mt-1.5 h-8 w-1 shrink-0 rounded-full", bar)}
         aria-hidden
       />
       <div className="min-w-0 flex-1 text-start">
-        <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+        <p className="text-sm font-semibold text-foreground">{alert.title}</p>
         <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
           {alert.detail}
         </p>

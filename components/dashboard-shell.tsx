@@ -16,6 +16,7 @@ import { NavDrawerProvider } from "@/components/dashboard/nav-drawer-context"
 import { NavDrawerSheet } from "@/components/dashboard/nav-drawer-sheet"
 import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
 import { TopNavBar } from "@/components/layout/TopNavBar"
+import { CompanyContextGate } from "@/components/layout/company-context-gate"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
 import { GlobalProjectSearch } from "@/components/marker-ofek/global-project-search"
 import { MarkerOfekModuleHeaderActions } from "@/components/marker-ofek/marker-ofek-module-header-actions"
@@ -56,6 +57,7 @@ import type { HrWelcomePayload } from "@/lib/marker-ofek/diamond-navigator-curri
 import type { WorkspaceSettingsSnapshot } from "@/lib/marker-ofek/workspace-types"
 import { DEFAULT_WORKSPACE_SNAPSHOT } from "@/lib/marker-ofek/user-workspace-shared"
 import { cn } from "@/lib/utils"
+import { companyDisplayName, type CompanyContextId } from "@/lib/company-context"
 
 type Crumb = { label: string; href: string | null }
 
@@ -146,6 +148,7 @@ export function DashboardShell({
   showMirrorSelector = false,
   mirrorViewAs = "global" as ViewAsToken,
   mirrorBannerLabel = null,
+  selectedCompany = null,
 }: {
   children: React.ReactNode
   userEmail: string | null
@@ -169,6 +172,7 @@ export function DashboardShell({
   showMirrorSelector?: boolean
   mirrorViewAs?: ViewAsToken
   mirrorBannerLabel?: string | null
+  selectedCompany?: CompanyContextId | null
 }) {
   const pathname = usePathname()
   const branding = useOrganizationBranding()
@@ -205,6 +209,7 @@ export function DashboardShell({
 
   const mirrorBannerOn = Boolean(mirrorBannerLabel?.trim())
   const isHoldenErpShell = isMarkerOfekPath(pathname)
+  const requiresCompanySelection = selectedCompany == null
 
   return (
     <SmartWorkspaceProvider initial={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}>
@@ -215,9 +220,11 @@ export function DashboardShell({
         <MirrorModeBanner label={mirrorBannerLabel} />
       ) : null}
       <DashboardLastVisitTracker />
+      {requiresCompanySelection ? <CompanyContextGate /> : null}
       <div
         className={cn(
-          "flex h-full min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden bg-white text-slate-900 [color-scheme:light] dark:!bg-white dark:!text-slate-900",
+          "flex h-full min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden bg-background text-foreground",
+          requiresCompanySelection && "hidden",
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
         )}
         data-dashboard-layout="topnav-main"
@@ -231,9 +238,9 @@ export function DashboardShell({
           <NavDrawerTrigger
             className={cn(
               "size-9 shrink-0 rounded-lg",
-              "border border-slate-200 bg-white text-slate-600 shadow-sm dark:!border-slate-200 dark:!bg-white",
+              "border border-slate-200 bg-card text-slate-600 shadow-sm",
               "transition-[transform,box-shadow,background-color,color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
-              "hover:bg-slate-50 hover:text-slate-900 hover:shadow-md dark:hover:!bg-slate-50",
+              "hover:bg-muted hover:text-foreground hover:shadow-md",
               "active:scale-[0.96] motion-reduce:active:scale-100"
             )}
           />
@@ -259,6 +266,11 @@ export function DashboardShell({
                   )}
                 </span>
               ))}
+            </div>
+            <div className="mb-1 flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-background px-2 py-0.5 text-[10px] font-semibold tracking-[0.04em] text-slate-700">
+                חברה פעילה: {companyDisplayName(selectedCompany)}
+              </span>
             </div>
             <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               {headerBrand}
@@ -301,14 +313,14 @@ export function DashboardShell({
         <SmartWorkspaceChrome>
           <main
             dir="rtl"
-            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-4 overflow-x-hidden overflow-y-auto bg-white px-2 py-3 text-slate-900 print:bg-white print:p-0 md:px-4 md:py-4 dark:!bg-white dark:!text-slate-900"
+            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-4 overflow-x-hidden overflow-y-auto bg-background px-2 py-3 text-foreground print:bg-background print:p-0 md:px-4 md:py-4"
           >
             {children}
           </main>
         </SmartWorkspaceChrome>
         {isMarkerOfekExecutiveContext(pathname) ? (
           <footer
-            className="shrink-0 border-t border-slate-200 bg-white px-6 py-3 text-center text-slate-600 print:hidden md:px-10 dark:!bg-white"
+            className="shrink-0 border-t border-border bg-card px-6 py-3 text-center text-muted-foreground print:hidden md:px-10"
             dir="rtl"
           >
             <p className="text-[11px] font-medium">

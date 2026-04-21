@@ -142,7 +142,7 @@ function ManpowerRowLinkedDocs({
   }, [taskId])
 
   return (
-    <div className="mt-2 sm:col-span-2 rounded-lg border border-slate-100 bg-white p-3 text-indigo-900 shadow-sm">
+    <div className="mt-2 sm:col-span-2 rounded-lg border border-slate-100 bg-card p-3 text-indigo-900 shadow-sm">
       <p className="text-xs font-semibold text-indigo-900">תוכניות ומסמכים למשימה</p>
       {busy ? (
         <p className="mt-1 flex items-center gap-2 text-xs text-slate-500">
@@ -172,7 +172,7 @@ function ManpowerRowLinkedDocs({
         type="button"
         variant="outline"
         size="sm"
-        className="mt-3 w-full gap-2 border-slate-200 bg-white font-semibold text-indigo-900 hover:bg-slate-50"
+        className="mt-3 w-full gap-2 border-slate-200 bg-card font-semibold text-indigo-900 hover:bg-background"
         onClick={onOpenVault}
       >
         <FileText className="size-4" aria-hidden />
@@ -396,7 +396,7 @@ export function ProjectDailyLogMobileForm({
     <form
       onSubmit={(e) => void onSubmit(e)}
       className={cn(
-        "mx-auto max-w-lg space-y-6 rounded-xl border-2 border-slate-300 bg-white p-4 shadow-md sm:p-6",
+        "mx-auto max-w-lg space-y-6 rounded-xl border-2 border-slate-300 bg-card p-4 shadow-md sm:p-6",
         "text-[#0f172a]"
       )}
     >
@@ -415,14 +415,14 @@ export function ProjectDailyLogMobileForm({
       </div>
 
       {/* נוכחות ומשימות */}
-      <section className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+      <section className="space-y-3 rounded-lg border border-slate-200 bg-background/80 p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
           <h2 className="text-base font-bold text-[#0f172a]">נוכחות ומשימות</h2>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-10 gap-1.5 border-slate-300 bg-white font-semibold text-indigo-700 hover:bg-indigo-50"
+            className="h-10 gap-1.5 border-slate-300 bg-card font-semibold text-indigo-700 hover:bg-indigo-50"
             disabled={copyBusy || loadingTasks}
             onClick={() => void copyFromPreviousDay()}
           >
@@ -442,7 +442,7 @@ export function ProjectDailyLogMobileForm({
           {manpower.map((row, idx) => (
             <li
               key={row.key}
-              className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+              className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm"
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500">שורה {idx + 1}</span>
@@ -573,7 +573,7 @@ export function ProjectDailyLogMobileForm({
           type="button"
           variant="outline"
           size="sm"
-          className="w-full border-slate-300 bg-white font-semibold"
+          className="w-full border-slate-300 bg-card font-semibold"
           onClick={() => setManpower((prev) => [...prev, defaultManpowerRow()])}
         >
           <Plus className="ms-1 size-4" aria-hidden />
@@ -641,7 +641,7 @@ export function ProjectDailyLogMobileForm({
       </div>
 
       {/* צילום ראיות */}
-      <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-3 sm:p-4">
+      <section className="space-y-3 rounded-lg border border-slate-200 bg-card p-3 sm:p-4">
         <h2 className="border-b border-slate-200 pb-2 text-base font-bold text-[#0f172a]">
           צילום ראיות (תיוג חכם)
         </h2>
@@ -660,7 +660,7 @@ export function ProjectDailyLogMobileForm({
             {photos.map((p, i) => (
               <li
                 key={p.key}
-                className="flex flex-col gap-2 rounded-md border border-slate-200 bg-slate-50 p-2 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-md border border-slate-200 bg-background p-2 sm:flex-row sm:items-center sm:justify-between"
               >
                 <span className="truncate text-xs font-medium text-slate-700">
                   {i + 1}. {p.file.name}
@@ -703,14 +703,14 @@ export function ProjectDailyLogMobileForm({
       </section>
 
       {/* ציוד כבד */}
-      <section className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+      <section className="space-y-3 rounded-lg border border-slate-200 bg-background/80 p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
           <h2 className="text-base font-bold text-[#0f172a]">ציוד כבד</h2>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="border-slate-300 bg-white"
+            className="border-slate-300 bg-card"
             onClick={() =>
               setEquipment((prev) => [
                 ...prev,
@@ -733,7 +733,7 @@ export function ProjectDailyLogMobileForm({
         ) : (
           <ul className="space-y-3">
             {equipment.map((row) => (
-              <li key={row.key} className="rounded-lg border border-slate-200 bg-white p-3">
+              <li key={row.key} className="rounded-lg border border-slate-200 bg-card p-3">
                 <div className="mb-2 flex justify-end">
                   <button
                     type="button"

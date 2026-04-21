@@ -77,7 +77,7 @@ export function FullscreenToggle({ className }: { className?: string }) {
         onClick={() => void toggle()}
         className={cn(
           "inline-flex size-10 shrink-0 items-center justify-center rounded-full p-2 text-slate-500 transition-all duration-300",
-          "hover:bg-slate-100 hover:text-slate-900",
+          "hover:bg-slate-100 hover:text-foreground",
           "outline-none focus-visible:ring-2 focus-visible:ring-slate-400/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
           className
         )}

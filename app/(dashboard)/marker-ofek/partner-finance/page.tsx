@@ -25,14 +25,14 @@ export default async function MarkerOfekPartnerProfitCenterPage() {
   ])
   if (!res.ok) {
     return (
-      <div className="bg-white p-8 font-sans text-[#0f172a] rtl" dir="rtl">
+      <div className="bg-card p-8 font-sans text-[#0f172a] rtl" dir="rtl">
         <p className="text-sm text-red-600">{res.error}</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white font-sans text-[#0f172a] rtl" dir="rtl">
+    <div className="bg-card font-sans text-[#0f172a] rtl" dir="rtl">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-10">
         <header className="space-y-2 border-b border-slate-100 pb-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">

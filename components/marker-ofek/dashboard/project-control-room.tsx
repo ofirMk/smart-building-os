@@ -35,11 +35,11 @@ export function ProjectControlRoom() {
     <div
       dir="rtl"
       lang="he"
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 bg-white p-3 text-slate-900 md:p-4 [color-scheme:light]"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 bg-card p-3 text-foreground md:p-4 [color-scheme:light]"
     >
       {/* Ribbon */}
       <header className="border-b border-slate-200 pb-3">
-        <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg">
+        <h1 className="text-base font-bold tracking-tight text-foreground md:text-lg">
           קוקפיט ניהול פרויקטים
         </h1>
         <p className="mt-1 text-xs text-slate-500">
@@ -53,7 +53,7 @@ export function ProjectControlRoom() {
           icon={Users}
           label="פועלים בשטח"
           value={String(MOCK_KPIS.workersOnSite)}
-          valueClassName="text-slate-900"
+          valueClassName="text-foreground"
         />
         <KpiCard
           icon={AlertTriangle}
@@ -65,19 +65,19 @@ export function ProjectControlRoom() {
           icon={FileCheck2}
           label="תעודות משלוח ממתינות לאישור"
           value={String(MOCK_KPIS.pendingDeliveryNotes)}
-          valueClassName="text-slate-900"
+          valueClassName="text-foreground"
         />
         <KpiCard
           icon={ClipboardList}
           label='סה״כ חשבונות יזם שאושרו'
           value={ils.format(MOCK_KPIS.approvedClientBillingTotal)}
-          valueClassName="text-slate-900"
+          valueClassName="text-foreground"
         />
       </div>
 
       {/* Split */}
       <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-2">
-        <section className="flex min-h-[220px] flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="flex min-h-[220px] flex-col rounded-lg border border-slate-200 bg-card p-4 shadow-sm">
           <h2 className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2 text-sm font-bold text-slate-800">
             <AlertTriangle className="size-4 text-amber-600" aria-hidden />
             ליקויים אחרונים
@@ -86,9 +86,9 @@ export function ProjectControlRoom() {
             {MOCK_RECENT_DEFECTS.map((d) => (
               <li
                 key={d.id}
-                className="rounded-md border border-slate-100 bg-slate-50/80 px-3 py-2"
+                className="rounded-md border border-slate-100 bg-background/80 px-3 py-2"
               >
-                <p className="font-medium text-slate-900">{d.title}</p>
+                <p className="font-medium text-foreground">{d.title}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {d.project} · <span className="font-medium">{d.severity}</span>
                 </p>
@@ -97,7 +97,7 @@ export function ProjectControlRoom() {
           </ul>
         </section>
 
-        <section className="flex min-h-[220px] flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="flex min-h-[220px] flex-col rounded-lg border border-slate-200 bg-card p-4 shadow-sm">
           <h2 className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2 text-sm font-bold text-slate-800">
             <ClipboardList className="size-4 text-sky-600" aria-hidden />
             פעילות אחרונה בשטח
@@ -106,10 +106,10 @@ export function ProjectControlRoom() {
             {MOCK_RECENT_LOGS.map((log) => (
               <li
                 key={log.id}
-                className="rounded-md border border-slate-100 bg-slate-50/80 px-3 py-2"
+                className="rounded-md border border-slate-100 bg-background/80 px-3 py-2"
               >
                 <p className="text-xs font-semibold text-slate-500">{log.date}</p>
-                <p className="mt-0.5 font-medium text-slate-900">{log.summary}</p>
+                <p className="mt-0.5 font-medium text-foreground">{log.summary}</p>
                 <p className="mt-0.5 text-xs text-slate-600">
                   כוח אדם בשטח: {log.workers}
                 </p>
@@ -134,7 +134,7 @@ function KpiCard({
   valueClassName?: string
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-card p-4 shadow-sm">
       <div className="mb-2 flex items-center gap-2 text-slate-500">
         <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
         <span className="text-[11px] font-semibold leading-tight">{label}</span>

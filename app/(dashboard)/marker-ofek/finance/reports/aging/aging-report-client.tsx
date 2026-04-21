@@ -42,7 +42,7 @@ export function AgingReportClient({
           <p className="text-[10px] font-semibold tracking-[0.22em] text-slate-400">
             דוחות כספיים
           </p>
-          <h1 className="text-2xl font-extralight text-slate-900">גילוי חובות</h1>
+          <h1 className="text-2xl font-extralight text-foreground">גילוי חובות</h1>
           <p className="mt-1 text-sm font-light text-slate-500">
             לפי תאריך יעד (הנפקה + תנאי תשלום מהלקוח).
           </p>
@@ -59,11 +59,11 @@ export function AgingReportClient({
         {initial.buckets.map((b) => (
           <div
             key={b.key}
-            className="rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm"
+            className="rounded-2xl border border-slate-100 bg-card px-4 py-4 shadow-sm"
           >
             <p className="text-[11px] font-medium text-slate-400">{b.label}</p>
             <p
-              className="mt-2 text-lg font-light tabular-nums text-slate-900"
+              className="mt-2 text-lg font-light tabular-nums text-foreground"
               dir="ltr"
             >
               {ils.format(b.amount)}
@@ -72,10 +72,10 @@ export function AgingReportClient({
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
+      <div className="rounded-2xl border border-slate-100 bg-card p-2 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-50 px-4 py-3">
           <span className="text-sm font-medium text-slate-700">סה״כ פתוח</span>
-          <span className="text-lg font-light tabular-nums text-slate-900" dir="ltr">
+          <span className="text-lg font-light tabular-nums text-foreground" dir="ltr">
             {ils.format(initial.totalOpen)}
           </span>
         </div>

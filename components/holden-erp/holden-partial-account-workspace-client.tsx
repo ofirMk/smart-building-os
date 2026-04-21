@@ -286,7 +286,7 @@ export function HoldenPartialAccountWorkspaceClient({
               <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
                 חשבון חלקי
               </p>
-              <h2 className="mt-2 text-lg font-bold text-slate-900">
+              <h2 className="mt-2 text-lg font-bold text-foreground">
                 מס׳ {pa.account_number}{" "}
                 <span className="text-base font-normal text-slate-600">
                   · {c.project?.name}
@@ -318,7 +318,7 @@ export function HoldenPartialAccountWorkspaceClient({
                 ))}
               </tbody>
             </table>
-            <div className="space-y-2 border-t border-slate-200 pt-4 text-slate-900">
+            <div className="space-y-2 border-t border-slate-200 pt-4 text-foreground">
               <div className="flex justify-between text-sm">
                 <span>עיכבון</span>
                 <span className="tabular-nums font-medium">

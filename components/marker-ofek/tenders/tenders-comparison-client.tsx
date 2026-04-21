@@ -121,7 +121,7 @@ export function TendersComparisonClient({ projectId }: { projectId: string | nul
 
   if (!projectId) {
     return (
-      <div className="bg-white px-2 py-10 text-center text-sm text-slate-500">
+      <div className="bg-card px-2 py-10 text-center text-sm text-slate-500">
         בחרו מכרז ב{" "}
         <Link className="text-indigo-600 underline" href={TENDERS_ROUTES.hub}>
           מרכז המכרזים
@@ -131,7 +131,7 @@ export function TendersComparisonClient({ projectId }: { projectId: string | nul
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -158,7 +158,7 @@ export function TendersComparisonClient({ projectId }: { projectId: string | nul
         <div className="overflow-x-auto rounded-xl border border-slate-100">
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-100 bg-white hover:bg-white">
+              <TableRow className="border-slate-100 bg-card hover:bg-card">
                 <TableHead className="text-start">ספק</TableHead>
                 <TableHead className="text-start">שורת BoQ</TableHead>
                 <TableHead className="text-end font-mono">מחיר יעד</TableHead>
@@ -229,7 +229,7 @@ export function TendersComparisonClient({ projectId }: { projectId: string | nul
 
       <form
         onSubmit={(e) => void addQuote(e)}
-        className="grid gap-3 rounded-xl border border-slate-100 bg-white p-4 md:grid-cols-4"
+        className="grid gap-3 rounded-xl border border-slate-100 bg-card p-4 md:grid-cols-4"
       >
         <div>
           <Label>שורת BoQ (סופי)</Label>

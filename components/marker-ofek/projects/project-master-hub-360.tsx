@@ -3,6 +3,7 @@
 import Link from "next/link"
 import * as React from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { z } from "zod"
 import {
   AlertCircle,
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   CloudSun,
   FileUp,
   Gauge,
+  Loader2,
   Package,
   ShoppingCart,
   Sparkles,
@@ -20,6 +22,8 @@ import {
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { apiGet } from "@/lib/utils/api-client"
 import { cn } from "@/lib/utils"
 import type { ProjectMasterHubMock } from "@/lib/marker-ofek/project-master-hub-mock"
 import type { GanttRecord } from "@/types/gantt"
@@ -35,6 +39,55 @@ const ilsFull = new Intl.NumberFormat("he-IL", {
   style: "currency",
   currency: "ILS",
   minimumFractionDigits: 2,
+})
+
+const profitabilitySnapshotSchema = z.object({
+  netProfitability: z.coerce.number(),
+  currentMarginPct: z.coerce.number(),
+  totalApprovedClientAmount: z.coerce.number(),
+  totalSubcontractorBills: z.coerce.number(),
+  directMaterialCosts: z.coerce.number(),
+  totalOffsetsAndCommissions: z.coerce.number(),
+  offsetExposure: z.coerce.number(),
+  profitMarginHeatmap: z.array(
+    z.object({
+      subChapter: z.string(),
+      expectedRevenue: z.coerce.number(),
+      expectedCost: z.coerce.number(),
+      marginPct: z.coerce.number(),
+      risk: z.enum(["LOW", "MEDIUM", "HIGH"]),
+    })
+  ),
+  billingVariance: z.array(
+    z.object({
+      label: z.string(),
+      period: z.string().nullable(),
+      submittedTotal: z.coerce.number(),
+      approvedTotal: z.coerce.number(),
+    })
+  ),
+  cashFlowForecast: z.object({
+    averageApprovalLagDays: z.coerce.number(),
+    haircutFactor: z.coerce.number(),
+    lookaheadDays: z.coerce.number(),
+    totals: z.object({
+      confirmedInflow: z.coerce.number(),
+      expectedInflow: z.coerce.number(),
+      totalInflow: z.coerce.number(),
+    }),
+    timeline: z.array(
+      z.object({
+        billId: z.string(),
+        billNumber: z.string(),
+        contractId: z.string(),
+        forecastType: z.enum(["CONFIRMED", "EXPECTED"]),
+        amount: z.coerce.number(),
+        approvalDate: z.string().nullable(),
+        cashArrivalDate: z.string(),
+        paymentTermsDays: z.coerce.number(),
+      })
+    ),
+  }),
 })
 
 function statusLabelHe(s: MoProjectStatus): string {
@@ -161,7 +214,7 @@ function DualProgressRings({
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           תקציב / עבודה
         </span>
-        <span className="text-lg font-bold tabular-nums text-slate-900">
+        <span className="text-lg font-bold tabular-nums text-foreground">
           {budgetPct}% / {workPct}%
         </span>
       </div>
@@ -194,7 +247,7 @@ function HubCard({
       animate="rest"
       variants={liftHover}
       className={cn(
-        "rounded-xl border border-slate-200/90 bg-white p-3 shadow-sm ring-1 ring-slate-900/[0.04]",
+        "rounded-xl border border-slate-200/90 bg-card p-3 shadow-sm ring-1 ring-slate-900/[0.04]",
         "will-change-transform [transform-style:preserve-3d]",
         className
       )}
@@ -217,11 +270,60 @@ export function ProjectMasterHub360(props: {
     props
   const reduce = useReducedMotion()
   const [now, setNow] = React.useState(() => new Date())
+  const [profitability, setProfitability] = React.useState<
+    z.infer<typeof profitabilitySnapshotSchema> | null
+  >(null)
+  const [profitabilityLoading, setProfitabilityLoading] = React.useState(false)
+  const [profitabilityError, setProfitabilityError] = React.useState<string | null>(null)
+  const [exportingExecutive, setExportingExecutive] = React.useState(false)
 
   React.useEffect(() => {
     const t = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(t)
   }, [])
+
+  React.useEffect(() => {
+    let isCurrentRequest = true
+    const controller = new AbortController()
+
+    const loadProfitability = async () => {
+      setProfitabilityLoading(true)
+      setProfitabilityError(null)
+      if (!projectId) {
+        setProfitability(null)
+        setProfitabilityLoading(false)
+        return
+      }
+      try {
+        const data = await apiGet(
+          `/api/erp/projects/${projectId}/profitability`,
+          {
+            schema: profitabilitySnapshotSchema,
+            signal: controller.signal,
+          }
+        )
+        if (isCurrentRequest) {
+          setProfitability(data)
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
+        if (isCurrentRequest) {
+          setProfitability(null)
+          setProfitabilityError(
+            error instanceof Error ? error.message : "טעינת אנליטיקה נכשלה"
+          )
+        }
+      } finally {
+        if (isCurrentRequest) setProfitabilityLoading(false)
+      }
+    }
+
+    void loadProfitability()
+    return () => {
+      isCurrentRequest = false
+      controller.abort()
+    }
+  }, [projectId])
 
   const localTimeLabel = formatHeTime(now, mock.timeZone)
 
@@ -254,6 +356,121 @@ export function ProjectMasterHub360(props: {
     )
   }, [mock.activity])
 
+  const exportExecutiveSummary = React.useCallback(async () => {
+    if (!projectId) return
+    setExportingExecutive(true)
+    const controller = new AbortController()
+    try {
+      const snapshot =
+        profitability ??
+        (await apiGet(`/api/erp/projects/${projectId}/profitability`, {
+          schema: profitabilitySnapshotSchema,
+          signal: controller.signal,
+        }))
+      const { jsPDF } = await import("jspdf")
+      const doc = new jsPDF({ unit: "pt", format: "a4" })
+      const generatedAt = new Date().toLocaleString("en-GB")
+      const formatDate = (value: string) =>
+        new Intl.DateTimeFormat("he-IL", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
+          new Date(value)
+        )
+
+      let y = 44
+      doc.setFillColor(15, 23, 42)
+      doc.rect(0, 0, 595, 36, "F")
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(11)
+      doc.text("Holden Group", 40, 23)
+      doc.setTextColor(17, 24, 39)
+      doc.setFontSize(18)
+      doc.text("Executive Summary", 40, y + 24)
+      doc.setFontSize(11)
+      doc.text(`Project: ${displayName}`, 40, y + 42)
+      doc.text(`Internal code: ${internalCode}`, 40, y + 58)
+      doc.text(`Generated: ${generatedAt}`, 40, y + 74)
+
+      y += 104
+      doc.setFontSize(14)
+      doc.text("Dashboard Snapshot (Bento Widgets)", 40, y)
+      y += 18
+      doc.setFontSize(11)
+      doc.text(`Net Profitability: ${ilsFull.format(snapshot.netProfitability)}`, 40, y)
+      y += 14
+      doc.text(`Approved Client Amount: ${ilsFull.format(snapshot.totalApprovedClientAmount)}`, 40, y)
+      y += 14
+      doc.text(`Offset Exposure: ${ilsFull.format(snapshot.offsetExposure)}`, 40, y)
+      y += 14
+      doc.text(`Current Margin: ${snapshot.currentMarginPct.toFixed(2)}%`, 40, y)
+      y += 26
+
+      doc.setFontSize(14)
+      doc.text("Profitability Heatmap (Sub-chapters)", 40, y)
+      y += 18
+      doc.setFontSize(10)
+      for (const cell of snapshot.profitMarginHeatmap.slice(0, 12)) {
+        if (y > 760) {
+          doc.addPage()
+          y = 48
+        }
+        doc.text(
+          `${cell.subChapter} | Margin ${cell.marginPct.toFixed(2)}% | Revenue ${ils.format(
+            cell.expectedRevenue
+          )} | Cost ${ils.format(cell.expectedCost)} | Risk ${cell.risk}`,
+          40,
+          y
+        )
+        y += 14
+      }
+
+      if (y > 680) {
+        doc.addPage()
+        y = 48
+      } else {
+        y += 12
+      }
+      doc.setFontSize(14)
+      doc.text("Cash Flow Timeline (90-Day Outlook)", 40, y)
+      y += 18
+      doc.setFontSize(10)
+      doc.text(
+        `Confirmed: ${ilsFull.format(snapshot.cashFlowForecast.totals.confirmedInflow)} | Expected: ${ilsFull.format(
+          snapshot.cashFlowForecast.totals.expectedInflow
+        )} | Total: ${ilsFull.format(snapshot.cashFlowForecast.totals.totalInflow)}`,
+        40,
+        y
+      )
+      y += 14
+      doc.text(
+        `Approval lag avg: ${snapshot.cashFlowForecast.averageApprovalLagDays.toFixed(
+          2
+        )} days | Haircut factor: ${snapshot.cashFlowForecast.haircutFactor.toFixed(4)}`,
+        40,
+        y
+      )
+      y += 18
+
+      for (const row of snapshot.cashFlowForecast.timeline) {
+        if (y > 780) {
+          doc.addPage()
+          y = 48
+        }
+        const line = `${formatDate(row.cashArrivalDate)} | ${row.forecastType} | ${
+          row.billNumber
+        } | ${ils.format(row.amount)}`
+        doc.text(line, 40, y)
+        y += 13
+      }
+
+      doc.save(`holden-executive-summary-${projectId.slice(0, 8)}.pdf`)
+    } catch (error) {
+      if (controller.signal.aborted) return
+      console.error("Executive PDF export failed:", error)
+    } finally {
+      controller.abort()
+      setExportingExecutive(false)
+    }
+  }, [displayName, internalCode, profitability, projectId])
+
   return (
     <motion.div
       dir="rtl"
@@ -262,7 +479,7 @@ export function ProjectMasterHub360(props: {
       initial="hidden"
       animate="show"
     >
-      <motion.div variants={item} className="border-b border-slate-200/80 bg-white/90 px-3 py-3 md:px-5">
+      <motion.div variants={item} className="border-b border-slate-200/80 bg-card/90 px-3 py-3 md:px-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-2">
             <Link
@@ -273,7 +490,7 @@ export function ProjectMasterHub360(props: {
               כל הפרויקטים
             </Link>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-balance text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
+              <h1 className="text-balance text-xl font-bold tracking-tight text-foreground md:text-2xl">
                 {displayName}
               </h1>
               <Badge
@@ -292,7 +509,7 @@ export function ProjectMasterHub360(props: {
               ) : null}
             </p>
             <p className="text-sm text-slate-700">
-              <span className="font-semibold text-slate-900">מנהל אתר: </span>
+              <span className="font-semibold text-foreground">מנהל אתר: </span>
               {mock.siteManager}
             </p>
           </div>
@@ -300,7 +517,7 @@ export function ProjectMasterHub360(props: {
           <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:items-stretch lg:w-auto lg:min-w-[280px]">
             <div className="flex flex-1 items-center gap-2 rounded-xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white px-3 py-2 shadow-sm">
               <motion.span
-                className="flex size-9 items-center justify-center rounded-lg bg-white text-sky-600 shadow-sm ring-1 ring-sky-100"
+                className="flex size-9 items-center justify-center rounded-lg bg-card text-sky-600 shadow-sm ring-1 ring-sky-100"
                 animate={
                   reduce
                     ? undefined
@@ -314,7 +531,7 @@ export function ProjectMasterHub360(props: {
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-700">
                   Live Pulse · מזג אוויר באתר
                 </p>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-foreground">
                   {mock.weather.tempC}°C · {mock.weather.condition}
                 </p>
                 <p className="text-[11px] leading-snug text-slate-600">
@@ -323,14 +540,14 @@ export function ProjectMasterHub360(props: {
               </div>
             </div>
             <div className="flex flex-1 items-center gap-2 rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white px-3 py-2 shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-100">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-card text-emerald-600 shadow-sm ring-1 ring-emerald-100">
                 <CalendarClock className="size-5" aria-hidden />
               </span>
               <div className="min-w-0 text-start">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
                   שעון מקומי (אתר)
                 </p>
-                <p className="font-currency-mono text-sm font-bold tabular-nums text-slate-900">
+                <p className="font-currency-mono text-sm font-bold tabular-nums text-foreground">
                   {localTimeLabel}
                 </p>
                 <p className="text-[11px] text-slate-600">{mock.timeZone}</p>
@@ -360,13 +577,13 @@ export function ProjectMasterHub360(props: {
                 לבקרה שבועית.
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                <div className="rounded-lg bg-slate-50 px-2 py-1.5 ring-1 ring-slate-100">
+                <div className="rounded-lg bg-background px-2 py-1.5 ring-1 ring-slate-100">
                   <p className="text-slate-500">מחויב מצטבר</p>
-                  <p className="font-semibold tabular-nums text-slate-900">
+                  <p className="font-semibold tabular-nums text-foreground">
                     {ils.format(mock.financial.committedNis)}
                   </p>
                 </div>
-                <div className="rounded-lg bg-slate-50 px-2 py-1.5 ring-1 ring-slate-100">
+                <div className="rounded-lg bg-background px-2 py-1.5 ring-1 ring-slate-100">
                   <p className="text-slate-500">ערך עבודה מזוכה</p>
                   <p className="font-semibold tabular-nums text-emerald-800">
                     {ils.format(mock.financial.earnedValueNis)}
@@ -382,7 +599,7 @@ export function ProjectMasterHub360(props: {
               <p className="text-sm font-bold">סיכום רכש</p>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tabular-nums text-slate-900">
+              <span className="text-3xl font-bold tabular-nums text-foreground">
                 {mock.procurement.openPOs}
               </span>
               <span className="text-xs text-slate-600">הזמנות פתוחות</span>
@@ -395,9 +612,9 @@ export function ProjectMasterHub360(props: {
                 {mock.procurement.pendingDeliveries.map((d) => (
                   <li
                     key={d.label}
-                    className="rounded-lg border border-slate-100 bg-slate-50/80 px-2 py-1.5"
+                    className="rounded-lg border border-slate-100 bg-background/80 px-2 py-1.5"
                   >
-                    <p className="text-xs font-semibold text-slate-900">
+                    <p className="text-xs font-semibold text-foreground">
                       {d.label}
                     </p>
                     <p className="text-[11px] text-slate-600">{d.detail}</p>
@@ -409,7 +626,7 @@ export function ProjectMasterHub360(props: {
               {mock.procurement.recentSuppliers.map((s) => (
                 <span
                   key={s}
-                  className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-700"
+                  className="rounded-full border border-slate-200 bg-card px-2 py-0.5 text-[10px] font-medium text-slate-700"
                 >
                   {s}
                 </span>
@@ -430,7 +647,7 @@ export function ProjectMasterHub360(props: {
                     key={m.id}
                     className="rounded-lg border border-violet-100 bg-violet-50/40 px-2.5 py-2"
                   >
-                    <p className="text-xs font-semibold leading-snug text-slate-900">
+                    <p className="text-xs font-semibold leading-snug text-foreground">
                       {m.title}
                     </p>
                     <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-600">
@@ -453,6 +670,92 @@ export function ProjectMasterHub360(props: {
           </HubCard>
         </motion.div>
 
+        <motion.div variants={item} className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <HubCard className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Banknote className="size-4 text-emerald-700" aria-hidden />
+              <p className="text-sm font-bold text-foreground">Net Profitability</p>
+            </div>
+            {profitabilityLoading ? (
+              <p className="text-xs text-slate-500">טוען נתוני רווחיות...</p>
+            ) : (
+              <>
+                <p className="font-currency-mono text-2xl font-black tabular-nums text-foreground">
+                  {ilsFull.format(profitability?.netProfitability ?? 0)}
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  מאושר לקוח − חשבונות קבלן משנה − חומרים ישירים + קיזוזים/עמלות
+                </p>
+              </>
+            )}
+          </HubCard>
+
+          <HubCard className="space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="size-4 text-red-700" aria-hidden />
+              <p className="text-sm font-bold text-foreground">Offset Exposure</p>
+            </div>
+            {profitabilityLoading ? (
+              <p className="text-xs text-slate-500">טוען חשיפת קיזוז...</p>
+            ) : (
+              <>
+                <p className="font-currency-mono text-2xl font-black tabular-nums text-red-700">
+                  {ilsFull.format(profitability?.offsetExposure ?? 0)}
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  סכום שורות רכש לא מקוזזות המחוברות לקבלני משנה בפרויקט
+                </p>
+              </>
+            )}
+          </HubCard>
+
+          <HubCard className="space-y-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="size-4 text-indigo-700" aria-hidden />
+              <p className="text-sm font-bold text-foreground">Billing Variance</p>
+            </div>
+            {profitabilityLoading ? (
+              <p className="text-xs text-slate-500">טוען וריאנס חיובים...</p>
+            ) : profitability?.billingVariance?.length ? (
+              <div className="space-y-2">
+                {profitability.billingVariance.slice(-5).map((row) => {
+                  const max = Math.max(row.submittedTotal, row.approvedTotal, 1)
+                  const submittedPct = Math.round((row.submittedTotal / max) * 100)
+                  const approvedPct = Math.round((row.approvedTotal / max) * 100)
+                  return (
+                    <div key={`${row.label}-${row.period ?? "na"}`} className="space-y-1">
+                      <p className="truncate text-[11px] font-semibold text-slate-700">
+                        {row.label}
+                      </p>
+                      <div className="space-y-1">
+                        <div className="h-2 rounded bg-slate-100">
+                          <div
+                            className="h-2 rounded bg-slate-400"
+                            style={{ width: `${submittedPct}%` }}
+                          />
+                        </div>
+                        <div className="h-2 rounded bg-emerald-100">
+                          <div
+                            className="h-2 rounded bg-emerald-500"
+                            style={{ width: `${approvedPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">אין נתוני חיוב להצגה.</p>
+            )}
+          </HubCard>
+        </motion.div>
+        {profitabilityError ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {profitabilityError}
+          </p>
+        ) : null}
+
         <motion.div
           variants={item}
           className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start"
@@ -463,7 +766,7 @@ export function ProjectMasterHub360(props: {
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Zap className="size-4 text-amber-500" aria-hidden />
-                  <p className="text-sm font-bold text-slate-900">
+                  <p className="text-sm font-bold text-foreground">
                     פעילות ביצוע אחרונה
                   </p>
                 </div>
@@ -488,7 +791,7 @@ export function ProjectMasterHub360(props: {
                           </span>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm font-semibold text-foreground">
                                 {row.title}
                               </p>
                               <span className="text-[10px] text-slate-500 tabular-nums">
@@ -517,7 +820,7 @@ export function ProjectMasterHub360(props: {
                           </span>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm font-semibold text-foreground">
                                 {row.title}
                               </p>
                               <Badge className="h-5 border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-900">
@@ -527,7 +830,7 @@ export function ProjectMasterHub360(props: {
                             <p className="mt-0.5 text-[12px] text-slate-600">
                               {row.detail} · {row.supplier}
                             </p>
-                            <p className="mt-1 font-currency-mono text-sm font-bold tabular-nums text-slate-900">
+                            <p className="mt-1 font-currency-mono text-sm font-bold tabular-nums text-foreground">
                               {ilsFull.format(row.amountNis)}
                             </p>
                             <p className="text-[10px] text-slate-500 tabular-nums">
@@ -548,14 +851,14 @@ export function ProjectMasterHub360(props: {
               <HubCard className="p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <BarChart3 className="size-4 text-indigo-600" aria-hidden />
-                  <p className="text-sm font-bold text-slate-900">תרשימי גאנט</p>
+                  <p className="text-sm font-bold text-foreground">תרשימי גאנט</p>
                 </div>
                 <ul className="space-y-2">
                   {ganttCharts.map((g) => (
                     <li key={g.id}>
                       <Link
                         href={`/marker-ofek/projects/gantt/${g.id}`}
-                        className="block rounded-lg border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:border-indigo-300 hover:from-indigo-50/60"
+                        className="block rounded-lg border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-indigo-300 hover:from-indigo-50/60"
                       >
                         {g.name}
                         <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
@@ -579,10 +882,21 @@ export function ProjectMasterHub360(props: {
             <HubCard className="p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="size-4 text-amber-500" aria-hidden />
-                <p className="text-sm font-bold text-slate-900">
+                <p className="text-sm font-bold text-foreground">
                   פעולות מהירות
                 </p>
               </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mb-3 h-8 w-full justify-center border-slate-200 bg-card text-xs"
+                disabled={profitabilityLoading || exportingExecutive}
+                onClick={() => void exportExecutiveSummary()}
+              >
+                {exportingExecutive ? <Loader2 className="me-1 size-3.5 animate-spin" /> : null}
+                Export Executive Summary
+              </Button>
               <div className="grid grid-cols-1 gap-2.5">
                 <Link href="/marker-ofek/procurement/purchase-orders/new">
                   <motion.div
@@ -594,7 +908,7 @@ export function ProjectMasterHub360(props: {
                       <ShoppingCart className="size-6" aria-hidden />
                     </span>
                     <div className="min-w-0 text-start">
-                      <p className="text-sm font-bold text-slate-900">
+                      <p className="text-sm font-bold text-foreground">
                         הזמנת רכש חדשה
                       </p>
                       <p className="text-[11px] text-slate-600">
@@ -614,7 +928,7 @@ export function ProjectMasterHub360(props: {
                       <AlertCircle className="size-6" aria-hidden />
                     </span>
                     <div className="min-w-0 text-start">
-                      <p className="text-sm font-bold text-slate-900">
+                      <p className="text-sm font-bold text-foreground">
                         דיווח חריג / תקלה
                       </p>
                       <p className="text-[11px] text-slate-600">
@@ -634,7 +948,7 @@ export function ProjectMasterHub360(props: {
                       <FileUp className="size-6" aria-hidden />
                     </span>
                     <div className="min-w-0 text-start">
-                      <p className="text-sm font-bold text-slate-900">
+                      <p className="text-sm font-bold text-foreground">
                         העלאת תוכנית / מסמך
                       </p>
                       <p className="text-[11px] text-slate-600">
@@ -648,13 +962,13 @@ export function ProjectMasterHub360(props: {
               <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
                 <Link
                   href={`/marker-ofek/execution/gantt/${projectId}`}
-                  className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50"
+                  className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-background"
                 >
                   גאנט מלא
                 </Link>
                 <Link
                   href={`/projects/${projectId}/wall`}
-                  className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50"
+                  className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-background"
                 >
                   קיר פרויקט
                 </Link>

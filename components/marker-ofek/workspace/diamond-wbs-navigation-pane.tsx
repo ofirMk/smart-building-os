@@ -37,7 +37,7 @@ function WbsBranch({
         <li key={n.id}>
           <Link
             href={`/marker-ofek/execution/wbs/node/${n.id}`}
-            className="block rounded-lg px-2 py-1.5 text-xs font-light text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            className="block rounded-lg px-2 py-1.5 text-xs font-light text-slate-600 transition-colors hover:bg-slate-100 hover:text-foreground"
             style={{ paddingInlineStart: `${8 + depth * 10}px` }}
           >
             {n.label}
@@ -70,7 +70,7 @@ export function DiamondWbsNavigationPane({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden border-e border-slate-100/90 bg-slate-50/30",
+        "flex h-full min-h-0 flex-col overflow-hidden border-e border-slate-100/90 bg-background/30",
         className
       )}
       dir="rtl"
@@ -95,14 +95,14 @@ export function DiamondWbsNavigationPane({
           </Link>
           <Link
             href={`/marker-ofek/execution/gantt/${projectId}`}
-            className="flex items-center gap-2 rounded-xl px-2 py-2 text-xs font-light text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+            className="flex items-center gap-2 rounded-xl px-2 py-2 text-xs font-light text-slate-600 transition-colors hover:bg-card hover:text-foreground"
           >
             <ChevronLeft className="size-3.5 shrink-0 opacity-60" aria-hidden />
             גאנט מלא
           </Link>
           <Link
             href="/marker-ofek/contracts/select-type"
-            className="flex items-center gap-2 rounded-xl px-2 py-2 text-xs font-light text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+            className="flex items-center gap-2 rounded-xl px-2 py-2 text-xs font-light text-slate-600 transition-colors hover:bg-card hover:text-foreground"
           >
             חוזים
           </Link>
@@ -113,7 +113,7 @@ export function DiamondWbsNavigationPane({
             מבנה עבודה
           </p>
           {wbsNodes.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-200 bg-white/60 px-3 py-3 text-[11px] font-light leading-relaxed text-slate-500">
+            <p className="rounded-lg border border-dashed border-slate-200 bg-card/60 px-3 py-3 text-[11px] font-light leading-relaxed text-slate-500">
               אין מבנה WBS לפרויקט זה. F2 — הקמת פרויקט או ייבוא מתכנון.
             </p>
           ) : (

@@ -237,7 +237,7 @@ export function DiamondNavigatorModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-[120] w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8"
+            className="relative z-[120] w-full max-w-lg rounded-2xl border border-slate-100 bg-card p-6 shadow-2xl sm:p-8"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export function DiamondNavigatorModal({
                   type="button"
                   onClick={() => startTrack(t.id)}
                   className={cn(
-                    "flex w-full flex-col items-start gap-0.5 rounded-xl border border-slate-100 bg-white px-4 py-3 text-start transition-colors hover:border-indigo-200 hover:bg-indigo-50/40",
+                    "flex w-full flex-col items-start gap-0.5 rounded-xl border border-slate-100 bg-card px-4 py-3 text-start transition-colors hover:border-indigo-200 hover:bg-indigo-50/40",
                     masteredSet.has(t.id) && "border-emerald-100 bg-emerald-50/30"
                   )}
                 >
@@ -303,7 +303,7 @@ export function DiamondNavigatorModal({
               </Button>
             </div>
 
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-100 bg-background/80 p-3">
               <Checkbox
                 id="suppress-intro"
                 checked={suppressIntro}
@@ -334,7 +334,7 @@ export function DiamondNavigatorModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-[120] w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8"
+            className="relative z-[120] w-full max-w-lg rounded-2xl border border-slate-100 bg-card p-6 shadow-2xl sm:p-8"
           >
             <div className="flex items-start justify-between gap-2">
               <p className="font-currency-mono text-[11px] text-slate-400">
@@ -390,7 +390,7 @@ export function DiamondNavigatorModal({
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
-                            <p className="mt-3 rounded-xl border border-slate-100 bg-slate-50/90 p-3 text-xs leading-relaxed text-indigo-950">
+                            <p className="mt-3 rounded-xl border border-slate-100 bg-background/90 p-3 text-xs leading-relaxed text-indigo-950">
                               {step.deepDive}
                             </p>
                           </motion.div>

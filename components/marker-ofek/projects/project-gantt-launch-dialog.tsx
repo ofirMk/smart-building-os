@@ -108,7 +108,7 @@ export function ProjectGanttLaunchDialog({ defaultProjectId }: { defaultProjectI
         type="button"
         variant="outline"
         size="sm"
-        className="border-slate-100 bg-white text-indigo-900"
+        className="border-slate-100 bg-card text-indigo-900"
         onClick={() => setOpen(true)}
       >
         <LayoutList className="size-4" aria-hidden />
@@ -127,7 +127,7 @@ export function ProjectGanttLaunchDialog({ defaultProjectId }: { defaultProjectI
             <div className="space-y-2">
               <Label className="text-xs text-slate-600">פרויקט</Label>
               {won.length === 0 ? (
-                <p className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                <p className="rounded-lg border border-slate-100 bg-background px-3 py-2 text-sm text-slate-600">
                   אין פרויקטים מקושרים למכרזים בניצחון. קשרו מכרז לפרויקט במסך המכרזים, או{" "}
                   <Link
                     href="/marker-ofek/execution/gantt"
@@ -140,7 +140,7 @@ export function ProjectGanttLaunchDialog({ defaultProjectId }: { defaultProjectI
                 </p>
               ) : (
                 <Select value={pick || undefined} onValueChange={(v) => v && setPick(v)}>
-                  <SelectTrigger className="border-slate-100 bg-white text-indigo-900">
+                  <SelectTrigger className="border-slate-100 bg-card text-indigo-900">
                     <SelectValue placeholder="בחרו" />
                   </SelectTrigger>
                   <SelectContent>
@@ -174,7 +174,7 @@ export function ProjectGanttLaunchDialog({ defaultProjectId }: { defaultProjectI
                     onValueChange={(v) => v && setStructureId(v)}
                     disabled={templateStructures.length === 0}
                   >
-                    <SelectTrigger className="border-slate-100 bg-white text-indigo-900">
+                    <SelectTrigger className="border-slate-100 bg-card text-indigo-900">
                       <SelectValue placeholder="בחרו תבנית" />
                     </SelectTrigger>
                     <SelectContent>

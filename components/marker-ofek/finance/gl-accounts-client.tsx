@@ -405,23 +405,23 @@ export function GlAccountsClient({
   const showPreview = mappingConfirmed && previewData.length >= 0
 
   const importCard = (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2 border-b border-slate-100 pb-4">
         <button
           type="button"
           onClick={handleWipeData}
           disabled={isPending}
-          className="flex items-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md border border-red-200 bg-card px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 className="h-4 w-4" />
           נקה כרטסת (מחיקת כל הנתונים)
         </button>
       </div>
       <div
-        className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-10 transition-colors ${
+        className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-background p-10 transition-colors ${
           showDropzone
             ? "hover:bg-slate-100"
-            : "border-slate-200/80 bg-slate-50/50"
+            : "border-slate-200/80 bg-background/50"
         }`}
       >
         <input
@@ -455,7 +455,7 @@ export function GlAccountsClient({
       </div>
 
       {showMapper && csvHeaders ? (
-        <div className="mt-8 space-y-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+        <div className="mt-8 space-y-4 rounded-lg border border-slate-200 bg-background/80 p-4">
           <div className="flex w-full flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
             <button
               type="button"
@@ -483,7 +483,7 @@ export function GlAccountsClient({
             {MAPPING_FIELDS.map((field) => (
               <label
                 key={field.key}
-                className="flex flex-col gap-1.5 rounded-md border border-slate-200 bg-white p-3"
+                className="flex flex-col gap-1.5 rounded-md border border-slate-200 bg-card p-3"
               >
                 <span className="text-sm font-medium text-slate-800">
                   {field.label}
@@ -500,7 +500,7 @@ export function GlAccountsClient({
                       [field.key]: e.target.value,
                     }))
                   }
-                  className="mt-1 rounded-md border border-slate-300 bg-white py-2 ps-3 pe-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 rounded-md border border-slate-300 bg-card py-2 ps-3 pe-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">
                     {field.required ? "— בחר עמודה —" : "— ללא (ברירת מחדל) —"}
@@ -551,7 +551,7 @@ export function GlAccountsClient({
 
           <div className="max-h-96 overflow-x-auto overflow-y-auto rounded-lg border border-slate-200">
             <table className="w-full text-right text-sm">
-              <thead className="sticky top-0 bg-slate-50 shadow-sm">
+              <thead className="sticky top-0 bg-background shadow-sm">
                 <tr>
                   <th className="p-3 font-medium text-slate-600">
                     קוד
@@ -569,8 +569,8 @@ export function GlAccountsClient({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {previewData.slice(0, 10).map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono text-slate-900">
+                  <tr key={i} className="hover:bg-background">
+                    <td className="p-3 font-mono text-foreground">
                       {row.account_code}
                     </td>
                     <td className="p-3 text-slate-700">
@@ -587,7 +587,7 @@ export function GlAccountsClient({
               </tbody>
             </table>
             {previewData.length > 10 ? (
-              <div className="border-t border-slate-100 bg-slate-50 p-3 text-center text-slate-500">
+              <div className="border-t border-slate-100 bg-background p-3 text-center text-slate-500">
                 מציג 10 שורות ראשונות מתוך {previewData.length}
               </div>
             ) : null}
@@ -638,7 +638,7 @@ export function GlAccountsClient({
       <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
         <BookOpen className="h-8 w-8 text-blue-600" />
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-foreground">
             כרטסת ראשית (Chart of Accounts)
           </h1>
           <p className="text-slate-500">

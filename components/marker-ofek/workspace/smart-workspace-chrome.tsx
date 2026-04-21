@@ -27,7 +27,7 @@ function SplitIframePane({ href }: { href: string | null }) {
 
   if (!href || !src) {
     return (
-      <div className="flex min-h-[320px] flex-1 items-center justify-center border-s border-slate-100 bg-slate-50 text-[12px] text-slate-500">
+      <div className="flex min-h-[320px] flex-1 items-center justify-center border-s border-slate-100 bg-background text-[12px] text-slate-500">
         בחרו לשונית נוספת מהסרגל כדי להציג מסך במקביל (תצוגה משנית).
       </div>
     )
@@ -38,12 +38,12 @@ function SplitIframePane({ href }: { href: string | null }) {
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="min-h-0 min-w-0 flex-1 border-s border-slate-100 bg-white"
+      className="min-h-0 min-w-0 flex-1 border-s border-slate-100 bg-card"
     >
       <iframe
         title="מסך משני"
         src={src}
-        className="size-full min-h-[50vh] bg-white"
+        className="size-full min-h-[50vh] bg-card"
         sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       />
     </motion.div>
@@ -65,13 +65,13 @@ function WorkspaceChromeInner({ children }: { children: React.ReactNode }) {
     split && pinned ? pinned : split ? secondaryHref : null
 
   return (
-    <div className="flex min-h-0 w-full max-w-none flex-1 flex-col bg-white">
+    <div className="flex min-h-0 w-full max-w-none flex-1 flex-col bg-card">
       <div className="flex min-h-0 flex-1 flex-col border-t border-slate-200/90 lg:flex-row">
         <motion.div
           layout
           className={cn(
-            "min-h-0 min-w-0 flex-1 bg-white",
-            split && "lg:max-w-[50%] lg:border-e lg:border-slate-200/90"
+            "min-h-0 min-w-0 flex-1 bg-card",
+            split && "lg:basis-[70%] lg:max-w-[70%] lg:border-e lg:border-slate-200/90"
           )}
         >
           {children}

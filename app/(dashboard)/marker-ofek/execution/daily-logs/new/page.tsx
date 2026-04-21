@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function NewDailyLogPage() {
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
       <Suspense
         fallback={
           <div className="p-8 text-center text-slate-500" dir="rtl">

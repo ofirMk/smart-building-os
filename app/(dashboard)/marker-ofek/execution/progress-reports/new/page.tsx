@@ -7,8 +7,10 @@ import {
   ArrowRight,
   BookOpen,
   ClipboardList,
+  Clock3,
   FileEdit,
   Loader2,
+  PanelRightOpen,
   Receipt,
   Sparkles,
   TrendingUp,
@@ -34,6 +36,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { MasterDetailWorkspace } from "@/components/layout/MasterDetailWorkspace"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -48,15 +51,21 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { BentoSmartList, type BentoSmartListColumn } from "@/components/ui/bento-smart-list"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { cleanDescription } from "@/lib/marker-ofek/clean-milestone-description"
 import {
   chapterHeaderLabel,
-  sortChapterPrefixes,
   wbsChapterPrefix,
 } from "@/lib/marker-ofek/wbs-chapter"
 import {
@@ -94,6 +103,44 @@ type MilestoneRow = {
   sort_order: number
 }
 
+type BoqListRow = {
+  milestone: MilestoneRow
+  sectionLabel: string
+  chapterLabel: string
+  description: string
+}
+
+type MatchedContractLine = {
+  id: string
+  lineNumber: number | null
+  boqRef: string | null
+  description: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  expectedUnitCost: number | null
+  expectedTotalCost: number | null
+  supplier: {
+    id: string
+    supplierNumber: string | null
+    supplierName: string | null
+    supplierType: string | null
+  } | null
+}
+
+type ContractLineBillHistory = {
+  id: string
+  billNumber: string | null
+  status: string | null
+  periodStart: string | null
+  periodEnd: string | null
+  createdAt: string | null
+  submittedQty: number
+  submittedAmount: number
+  approvedQty: number
+  approvedAmount: number
+}
+
 /** מצב תצוגת שלב 2 אחרי בחירת חוזה */
 type ContractFlowState = "idle" | "loading" | "empty" | "has_baseline"
 
@@ -112,6 +159,14 @@ function currentMonthIso(): string {
 function parseDecimal(s: string): number {
   const n = parseFloat(String(s).replace(",", ".").trim())
   return Number.isFinite(n) ? n : 0
+}
+
+function extractFirstPositiveInt(text: string): number | null {
+  const match = text.match(/\d+/)
+  if (!match) return null
+  const value = Number.parseInt(match[0], 10)
+  if (!Number.isFinite(value) || value <= 0) return null
+  return value
 }
 
 function embedOne<T>(x: T | T[] | null | undefined): T | null {
@@ -148,25 +203,6 @@ function milestoneSectionLabel(m: MilestoneRow, index: number): string {
 function milestoneDescriptionText(m: MilestoneRow): string {
   const d = decodeMilestoneStoredName(m.name)
   return cleanDescription(d.description || d.sectionCode)
-}
-
-function groupMilestonesByWbsChapter(rows: MilestoneRow[]): {
-  orderedPrefixes: string[]
-  byPrefix: Map<string, MilestoneRow[]>
-} {
-  const byPrefix = new Map<string, MilestoneRow[]>()
-  for (const m of rows) {
-    const code = decodeMilestoneStoredName(m.name).sectionCode
-    const prefix = wbsChapterPrefix(code)
-    const list = byPrefix.get(prefix) ?? []
-    list.push(m)
-    byPrefix.set(prefix, list)
-  }
-  for (const list of byPrefix.values()) {
-    list.sort((a, b) => a.sort_order - b.sort_order)
-  }
-  const orderedPrefixes = sortChapterPrefixes([...byPrefix.keys()])
-  return { orderedPrefixes, byPrefix }
 }
 
 function NewProgressReportPageInner() {
@@ -224,6 +260,18 @@ function NewProgressReportPageInner() {
   const [masterUom, setMasterUom] = React.useState<MasterDataUomRow[]>([])
   const [refCurrencyId, setRefCurrencyId] = React.useState("")
   const [refUomId, setRefUomId] = React.useState("")
+  const [selectedMilestoneId, setSelectedMilestoneId] =
+    React.useState<string | null>(null)
+  const [detailOpen, setDetailOpen] = React.useState(false)
+  const [detailLoading, setDetailLoading] = React.useState(false)
+  const [detailError, setDetailError] = React.useState<string | null>(null)
+  const [detailLine, setDetailLine] = React.useState<MatchedContractLine | null>(
+    null
+  )
+  const [detailHistory, setDetailHistory] = React.useState<
+    ContractLineBillHistory[]
+  >([])
+  const detailRequestIdRef = React.useRef(0)
 
   React.useEffect(() => {
     let cancelled = false
@@ -301,6 +349,11 @@ function NewProgressReportPageInner() {
       setCurrentPctByLine({})
       setHasProgressReportHistory(false)
       setBaselineMeta(null)
+      setSelectedMilestoneId(null)
+      setDetailOpen(false)
+      setDetailLine(null)
+      setDetailHistory([])
+      setDetailError(null)
       return
     }
     let cancelled = false
@@ -488,8 +541,17 @@ function NewProgressReportPageInner() {
     }
   }, [milestones, previousPctByLine, currentPctByLine])
 
-  const wbsGroups = React.useMemo(
-    () => groupMilestonesByWbsChapter(milestones),
+  const boqRows = React.useMemo<BoqListRow[]>(
+    () =>
+      milestones.map((m, index) => {
+        const sectionLabel = milestoneSectionLabel(m, index)
+        return {
+          milestone: m,
+          sectionLabel,
+          chapterLabel: chapterHeaderLabel(wbsChapterPrefix(sectionLabel)),
+          description: milestoneDescriptionText(m),
+        }
+      }),
     [milestones]
   )
 
@@ -505,6 +567,103 @@ function NewProgressReportPageInner() {
     }
     return out
   }, [milestones, previousPctByLine])
+
+  const selectedMilestone = React.useMemo(
+    () => milestones.find((m) => m.id === selectedMilestoneId) ?? null,
+    [milestones, selectedMilestoneId]
+  )
+
+  const boqColumns = React.useMemo<BentoSmartListColumn<BoqListRow>[]>(
+    () => [
+      {
+        key: "section",
+        title: "סעיף",
+        className: "w-[9.5rem]",
+        render: (row) => (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-mono text-xs text-slate-700">{row.sectionLabel}</span>
+            <span className="text-[11px] text-slate-500">{row.chapterLabel}</span>
+          </div>
+        ),
+      },
+      {
+        key: "description",
+        title: "תיאור",
+        className: "min-w-[17rem]",
+        render: (row) => (
+          <span className="line-clamp-2 text-xs leading-snug text-slate-700">
+            {row.description}
+          </span>
+        ),
+      },
+      {
+        key: "amount",
+        title: "סכום אבן דרך",
+        className: "w-[8rem] tabular-nums",
+        render: (row) => currencyFormatter.format(row.milestone.amount),
+      },
+      {
+        key: "previous",
+        title: "אחוז קודם",
+        className: "w-[7.5rem]",
+        render: (row) => {
+          const prevPct = roundMoney(
+            parseDecimal(previousPctByLine[row.milestone.id] ?? "0")
+          )
+          const prevQty = previousQtyByLine[row.milestone.id]
+          return (
+            <div className="flex min-h-8 min-w-[5rem] flex-col justify-center rounded-md bg-background px-1.5 tabular-nums">
+              <span className="text-xs">{prevPct}</span>
+              {prevQty ? (
+                <span className="text-[10px] text-slate-500">כמ׳ {prevQty}</span>
+              ) : null}
+            </div>
+          )
+        },
+      },
+      {
+        key: "current",
+        title: "אחוז נוכחי מצטבר",
+        className: "w-[8rem]",
+        render: (row) => (
+          <Input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={100}
+            step="any"
+            className="h-8 min-w-[6rem] px-2 py-1 text-xs tabular-nums"
+            value={currentPctByLine[row.milestone.id] ?? "0"}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) =>
+              setCurrentPctByLine((prev) => ({
+                ...prev,
+                [row.milestone.id]: event.target.value,
+              }))
+            }
+            aria-label="אחוז נוכחי מצטבר"
+          />
+        ),
+      },
+      {
+        key: "month",
+        title: "אחוז חודש",
+        className: "w-[6.5rem] tabular-nums text-slate-500",
+        render: (row) =>
+          roundMoney(lineDerived.byId[row.milestone.id]?.deltaPct ?? 0),
+      },
+      {
+        key: "payable",
+        title: "לתשלום חודש",
+        className: "w-[8.5rem] tabular-nums font-semibold",
+        render: (row) =>
+          currencyFormatter.format(
+            lineDerived.byId[row.milestone.id]?.approvedThisBill ?? 0
+          ),
+      },
+    ],
+    [currentPctByLine, lineDerived.byId, previousPctByLine, previousQtyByLine]
+  )
 
   const autosaveKey = React.useMemo(
     () =>
@@ -586,6 +745,188 @@ function NewProgressReportPageInner() {
         100
     ) / 100
 
+  async function openMilestoneDetail(row: BoqListRow) {
+    const requestId = detailRequestIdRef.current + 1
+    detailRequestIdRef.current = requestId
+    setSelectedMilestoneId(row.milestone.id)
+    setDetailOpen(true)
+    setDetailLoading(true)
+    setDetailError(null)
+    setDetailLine(null)
+    setDetailHistory([])
+
+    if (!selectedContractId.trim()) {
+      setDetailLoading(false)
+      setDetailError("לא נבחר חוזה להצגת פירוט.")
+      return
+    }
+
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data: rawLines, error: lineError } = await supabase
+        .from("erp_client_contract_lines")
+        .select(
+          "id,line_number,boq_ref,description,quantity,unit_price,total_price,expected_unit_cost,expected_total_cost,supplier_id,erp_md_suppliers(id,supplier_number,supplier_name,supplier_type)"
+        )
+        .eq("client_contract_id", selectedContractId)
+        .order("line_number", { ascending: true })
+
+      if (lineError) throw lineError
+      if (detailRequestIdRef.current !== requestId) return
+
+      const lines = ((rawLines ?? []) as Array<Record<string, unknown>>).map(
+        (line) => {
+          const supplierRaw = embedOne(
+            line.erp_md_suppliers as
+              | {
+                  id: string
+                  supplier_number: string | null
+                  supplier_name: string | null
+                  supplier_type: string | null
+                }
+              | {
+                  id: string
+                  supplier_number: string | null
+                  supplier_name: string | null
+                  supplier_type: string | null
+                }[]
+              | null
+          )
+          return {
+            id: String(line.id),
+            lineNumber:
+              line.line_number == null ? null : Number(line.line_number) || null,
+            boqRef:
+              line.boq_ref == null ? null : String(line.boq_ref).trim() || null,
+            description: String(line.description ?? ""),
+            quantity: Number(line.quantity) || 0,
+            unitPrice: Number(line.unit_price) || 0,
+            totalPrice: Number(line.total_price) || 0,
+            expectedUnitCost:
+              line.expected_unit_cost == null
+                ? null
+                : Number(line.expected_unit_cost),
+            expectedTotalCost:
+              line.expected_total_cost == null
+                ? null
+                : Number(line.expected_total_cost),
+            supplier: supplierRaw
+              ? {
+                  id: String(supplierRaw.id),
+                  supplierNumber: supplierRaw.supplier_number,
+                  supplierName: supplierRaw.supplier_name,
+                  supplierType: supplierRaw.supplier_type,
+                }
+              : null,
+          } satisfies MatchedContractLine
+        }
+      )
+
+      const sectionCode = decodeMilestoneStoredName(row.milestone.name).sectionCode
+      const fallbackCode = decodeMilestoneDisplayName(row.milestone.name).sectionCode
+      const effectiveSectionCode = sectionCode || fallbackCode
+      const sectionLineNumber = extractFirstPositiveInt(effectiveSectionCode)
+      const normalizedDescription = row.description.trim().toLowerCase()
+
+      const matchedLine =
+        lines.find(
+          (line) =>
+            sectionLineNumber != null && line.lineNumber === sectionLineNumber
+        ) ??
+        lines.find(
+          (line) =>
+            !!line.boqRef &&
+            !!effectiveSectionCode &&
+            line.boqRef.trim() === effectiveSectionCode.trim()
+        ) ??
+        lines.find((line) => {
+          const lineDescription = line.description.trim().toLowerCase()
+          return (
+            normalizedDescription.length >= 6 &&
+            (lineDescription.includes(normalizedDescription) ||
+              normalizedDescription.includes(lineDescription))
+          )
+        }) ??
+        null
+
+      if (!matchedLine) {
+        setDetailError(
+          "לא נמצאה שורת כתב כמויות תואמת ב־client_contract_lines לסעיף זה."
+        )
+        setDetailLoading(false)
+        return
+      }
+
+      setDetailLine(matchedLine)
+
+      const { data: rawHistory, error: historyError } = await supabase
+        .from("erp_client_progress_bill_lines")
+        .select(
+          "id,submitted_qty,submitted_amount,approved_qty,approved_amount,erp_client_progress_bills!inner(id,bill_number,status,period_start,period_end,created_at)"
+        )
+        .eq("contract_line_id", matchedLine.id)
+
+      if (historyError) throw historyError
+      if (detailRequestIdRef.current !== requestId) return
+
+      const mappedHistory: ContractLineBillHistory[] = (
+        (rawHistory ?? []) as Array<Record<string, unknown>>
+      )
+        .map((entry) => {
+          const bill = embedOne(
+            entry.erp_client_progress_bills as
+              | {
+                  id: string
+                  bill_number: string | null
+                  status: string | null
+                  period_start: string | null
+                  period_end: string | null
+                  created_at: string | null
+                }
+              | {
+                  id: string
+                  bill_number: string | null
+                  status: string | null
+                  period_start: string | null
+                  period_end: string | null
+                  created_at: string | null
+                }[]
+              | null
+          )
+
+          return {
+            id: String(entry.id),
+            billNumber: bill?.bill_number ?? null,
+            status: bill?.status ?? null,
+            periodStart: bill?.period_start ?? null,
+            periodEnd: bill?.period_end ?? null,
+            createdAt: bill?.created_at ?? null,
+            submittedQty: Number(entry.submitted_qty) || 0,
+            submittedAmount: Number(entry.submitted_amount) || 0,
+            approvedQty: Number(entry.approved_qty) || 0,
+            approvedAmount: Number(entry.approved_amount) || 0,
+          }
+        })
+        .sort((a, b) => {
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          return bTime - aTime
+        })
+
+      setDetailHistory(mappedHistory)
+      if (mappedHistory.length === 0) {
+        setDetailError("אין היסטוריית חשבונות קודמת עבור סעיף זה.")
+      }
+    } catch (error) {
+      if (detailRequestIdRef.current !== requestId) return
+      setDetailError(formatError(error))
+    } finally {
+      if (detailRequestIdRef.current === requestId) {
+        setDetailLoading(false)
+      }
+    }
+  }
+
   function resetForm() {
     if (autosaveKey) {
       try {
@@ -604,6 +945,11 @@ function NewProgressReportPageInner() {
     setDeductions("")
     setPreviousBilled("")
     setBaselineMeta(null)
+    setSelectedMilestoneId(null)
+    setDetailOpen(false)
+    setDetailLine(null)
+    setDetailHistory([])
+    setDetailError(null)
   }
 
   function saveReport(reportStatus: "draft" | "submitted" | "approved") {
@@ -653,7 +999,7 @@ function NewProgressReportPageInner() {
     <div
       dir="rtl"
       lang="he"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-1 pb-16 pt-2 sm:px-0"
+      className="flex h-full w-full max-w-none flex-col gap-4 px-3 pb-8 pt-2 lg:px-4"
     >
       <Link
         href="/marker-ofek/projects"
@@ -977,373 +1323,400 @@ function NewProgressReportPageInner() {
                 </Card>
               </div>
             ) : (
-              <div className="space-y-4 px-2 pb-4 sm:px-4">
-                {baselineMeta ? (
-                  <div className="flex flex-wrap items-center gap-2 px-2">
-                    <Badge className="bg-emerald-600/90 text-white hover:bg-emerald-600">
-                      בסיס פעיל
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      דוח אחרון: חודש {baselineMeta.reportMonth} ·{" "}
-                      {baselineMeta.status}
-                    </span>
+              <MasterDetailWorkspace
+                title="מרחב אב-בן לדיווח התקדמות"
+                description="תצורת 70/30: פאנל אב לרשימת סעיפי BOQ ופאנל בן לחישוב, ניכויים ואישור."
+                locale="he"
+                className="bg-transparent p-2"
+                masterLabel={{
+                  key: "progress_report_master",
+                  en: "BOQ Master",
+                  he: "סעיפי BOQ (אב)",
+                }}
+                detailLabel={{
+                  key: "progress_report_detail",
+                  en: "Billing Detail",
+                  he: "חישוב ואישור חשבון (בן)",
+                }}
+                master={
+                  <div className="space-y-2">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      {baselineMeta ? (
+                        <>
+                          <Badge className="bg-emerald-600/90 text-white hover:bg-emerald-600">
+                            בסיס פעיל
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            דוח אחרון: חודש {baselineMeta.reportMonth} ·{" "}
+                            {baselineMeta.status}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Badge variant="secondary">ללא דוח מאושר קודם</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            אחוז קודם לכל סעיף: 0% (ניתן לעדכן אחרי דוח מאושר ראשון)
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-background/80 px-3 py-2">
+                      <div className="text-xs text-slate-600">
+                        לחיצה על שורה פותחת מסך בן עם היסטוריית חיובים וקבלן מבצע.
+                      </div>
+                      <Badge variant="outline" className="text-[10px]">
+                        BOQ / BentoSmartList
+                      </Badge>
+                    </div>
+                    <BentoSmartList
+                      items={boqRows}
+                      columns={boqColumns}
+                      rowKey={(row) => row.milestone.id}
+                      selectedRowKey={selectedMilestoneId}
+                      onRowClick={(row) => void openMilestoneDetail(row)}
+                      emptyState="אין סעיפים להצגה"
+                    />
                   </div>
-                ) : (
-                  <div className="flex flex-wrap items-center gap-2 px-2">
-                    <Badge variant="secondary">ללא דוח מאושר קודם</Badge>
-                    <span className="text-sm text-muted-foreground">
-                      אחוז קודם לכל סעיף: 0% (ניתן לעדכן אחרי דוח מאושר ראשון)
-                    </span>
-                  </div>
-                )}
+                }
+                detail={
+                  <div className="space-y-3">
+                    <div className="rounded-md border border-slate-200 bg-background p-2">
+                      <p className="text-xs text-muted-foreground">
+                        לתשלום בחודש לפי BOQ
+                      </p>
+                      <p className="text-base font-semibold tabular-nums">
+                        {currencyFormatter.format(lineDerived.sumApprovedThisBill)}
+                      </p>
+                    </div>
 
-                <div className="overflow-x-auto rounded-md border border-border/60">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[5rem] text-start">
-                          סעיף
-                        </TableHead>
-                        <TableHead className="min-w-[12rem] text-start">
-                          תיאור
-                        </TableHead>
-                        <TableHead className="w-[7rem] text-start">
-                          סכום אבן דרך
-                        </TableHead>
-                        <TableHead className="w-[6.5rem] text-start">
-                          אחוז קודם
-                        </TableHead>
-                        <TableHead className="w-[7.5rem] text-start">
-                          אחוז נוכחי מצטבר
-                        </TableHead>
-                        <TableHead className="w-[6rem] text-start">
-                          אחוז חודש
-                        </TableHead>
-                        <TableHead className="min-w-[6.5rem] text-start">
-                          לתשלום חודש
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {wbsGroups.orderedPrefixes.map((prefix) => {
-                        const chapterRows = wbsGroups.byPrefix.get(prefix) ?? []
-                        return (
-                          <React.Fragment key={prefix}>
-                            <TableRow className="border-y-2 border-primary/20 bg-muted/50 hover:bg-muted/50">
-                              <TableCell
-                                colSpan={7}
-                                className="text-right font-bold text-primary"
-                              >
-                                {chapterHeaderLabel(prefix)}
-                              </TableCell>
-                            </TableRow>
-                            {chapterRows.map((m, idx) => {
-                              const d = lineDerived.byId[m.id]
-                              const approved = d?.approvedThisBill ?? 0
-                              const monthPct = d?.deltaPct ?? 0
-                              const prevPct = roundMoney(
-                                parseDecimal(previousPctByLine[m.id] ?? "0")
-                              )
-                              const prevQty = previousQtyByLine[m.id]
-                              return (
-                                <TableRow key={m.id}>
-                                  <TableCell className="font-mono text-sm text-muted-foreground">
-                                    {milestoneSectionLabel(m, idx)}
-                                  </TableCell>
-                                  <TableCell className="max-w-[280px] text-start text-sm leading-snug">
-                                    {milestoneDescriptionText(m)}
-                                  </TableCell>
-                                  <TableCell className="tabular-nums text-sm">
-                                    {currencyFormatter.format(m.amount)}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div
-                                      className="flex min-h-9 min-w-[4.5rem] flex-col justify-center rounded-md border border-transparent bg-muted/50 px-2 tabular-nums text-sm"
-                                      title={
-                                        prevQty
-                                          ? `מצב מדוח מאושר/מוגש אחרון · כמות מצטברת משוערת: ${prevQty}`
-                                          : "מדוח מאושר/מוגש אחרון"
-                                      }
-                                    >
-                                      <span>{prevPct}</span>
-                                      {prevQty ? (
-                                        <span className="text-[11px] text-muted-foreground">
-                                          כמ׳ {prevQty}
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      type="number"
-                                      inputMode="decimal"
-                                      min={0}
-                                      max={100}
-                                      step="any"
-                                      className="h-9 min-w-[5.5rem] tabular-nums"
-                                      value={currentPctByLine[m.id] ?? "0"}
-                                      onChange={(e) =>
-                                        setCurrentPctByLine((prev) => ({
-                                          ...prev,
-                                          [m.id]: e.target.value,
-                                        }))
-                                      }
-                                      aria-label="אחוז נוכחי מצטבר"
-                                    />
-                                  </TableCell>
-                                  <TableCell className="tabular-nums text-sm text-muted-foreground">
-                                    {roundMoney(monthPct)}
-                                  </TableCell>
-                                  <TableCell className="font-medium tabular-nums">
-                                    {currencyFormatter.format(approved)}
-                                  </TableCell>
-                                </TableRow>
-                              )
-                            })}
-                          </React.Fragment>
-                        )
-                      })}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow className="bg-muted/40 hover:bg-muted/40">
-                        <TableCell
-                          colSpan={5}
-                          className="text-start font-semibold"
-                        >
-                          סה״כ ערך מצטבר (מול אבני דרך)
-                        </TableCell>
-                        <TableCell
-                          colSpan={2}
-                          className="text-start font-bold tabular-nums"
-                        >
-                          {currencyFormatter.format(
-                            lineDerived.sumCumulativeValue
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableCell
-                          colSpan={5}
-                          className="text-start font-semibold"
-                        >
-                          סה״כ לתשלום בחודש (₪)
-                        </TableCell>
-                        <TableCell
-                          colSpan={2}
-                          className="text-start font-bold tabular-nums"
-                        >
-                          {currencyFormatter.format(
-                            lineDerived.sumApprovedThisBill
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pr-index">תוספת התייקרות / מדד</Label>
+                      <Input
+                        id="pr-index"
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        step="any"
+                        className="h-9"
+                        placeholder="0"
+                        value={indexation || ""}
+                        onChange={(e) => setIndexation(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pr-retention">עכבון (%)</Label>
+                      <Input
+                        id="pr-retention"
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        max={100}
+                        step="any"
+                        className="h-9"
+                        placeholder="5"
+                        value={retentionPercent || ""}
+                        onChange={(e) => setRetentionPercent(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pr-deduct">קיזוזים / הפחתות</Label>
+                      <Input
+                        id="pr-deduct"
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        step="any"
+                        className="h-9"
+                        placeholder="0"
+                        value={deductions || ""}
+                        onChange={(e) => setDeductions(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pr-prev-billed">
+                        חויב בחשבונות קודמים (מצטבר)
+                      </Label>
+                      <Input
+                        id="pr-prev-billed"
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        step="any"
+                        className="h-9"
+                        placeholder="0"
+                        value={previousBilled || ""}
+                        onChange={(e) => setPreviousBilled(e.target.value)}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="rounded-md border border-primary/25 bg-primary/5 p-2">
+                      <p className="text-xs text-muted-foreground">
+                        Sandbox projection (לתשלום סופי)
+                      </p>
+                      <p className="text-lg font-bold tabular-nums text-primary">
+                        {currencyFormatter.format(totalPayable)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        (אושר + מדד − עכבון − קיזוזים − חויב קודם)
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2 pt-1">
+                      <Button
+                        type="button"
+                        className="h-10 gap-2 border border-emerald-600/40 bg-emerald-700 text-white hover:bg-emerald-600"
+                        disabled={
+                          savingAs !== null ||
+                          saveReportPending ||
+                          buildBaselinePending ||
+                          loadingContracts ||
+                          !selectedContractId.trim() ||
+                          loadingMilestones ||
+                          contracts.length === 0
+                        }
+                        onClick={() => saveReport("approved")}
+                      >
+                        {savingAs === "approved" ? (
+                          <>
+                            <Loader2 className="size-4 shrink-0 animate-spin" />
+                            מאשר…
+                          </>
+                        ) : (
+                          <>
+                            <BookOpen className="size-4 shrink-0" />
+                            אשר וצור יומן
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        className="h-10 gap-2"
+                        disabled={
+                          savingAs !== null ||
+                          saveReportPending ||
+                          buildBaselinePending ||
+                          loadingContracts ||
+                          !selectedContractId.trim() ||
+                          loadingMilestones ||
+                          contracts.length === 0
+                        }
+                        onClick={() => saveReport("submitted")}
+                      >
+                        {savingAs === "submitted" ? (
+                          <>
+                            <Loader2 className="size-4 shrink-0 animate-spin" />
+                            מעבד…
+                          </>
+                        ) : (
+                          <>
+                            <Receipt className="size-4 shrink-0" />
+                            הפק חשבון חלקי
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9"
+                        disabled={
+                          savingAs !== null ||
+                          saveReportPending ||
+                          buildBaselinePending ||
+                          loadingContracts ||
+                          !selectedContractId.trim() ||
+                          loadingMilestones ||
+                          contracts.length === 0
+                        }
+                        onClick={() => saveReport("draft")}
+                      >
+                        {savingAs === "draft" ? (
+                          <>
+                            <Loader2 className="size-4 shrink-0 animate-spin" />
+                            שומר…
+                          </>
+                        ) : (
+                          "שמור כטיוטה"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                }
+              />
             )}
           </CardContent>
         </Card>
 
-        {contractState === "has_baseline" ? (
-          <>
-            <Card className="border-border/80 shadow-sm">
-              <CardHeader className="text-start pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Receipt className="size-5 text-muted-foreground" aria-hidden />
-                  סיכום כספי לחשבון
-                </CardTitle>
-                <CardDescription>
-                  בסיס עכבון ומדד על סכום לתשלום לפי אבני דרך בחודש זה (לפני מדד)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1 rounded-lg border border-border/70 bg-muted/30 px-3 py-3 sm:col-span-2">
-                  <p className="text-sm text-muted-foreground">
-                    סה״כ לתשלום בחודש לפי אבני דרך (לפני מדד)
-                  </p>
-                  <p className="text-lg font-bold tabular-nums">
-                    {currencyFormatter.format(lineDerived.sumApprovedThisBill)}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="pr-index">תוספת התייקרות / מדד</Label>
-                  <Input
-                    id="pr-index"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    className="min-h-11"
-                    placeholder="0"
-                    value={indexation || ""}
-                    onChange={(e) => setIndexation(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pr-retention">עכבון (%)</Label>
-                  <Input
-                    id="pr-retention"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    max={100}
-                    step="any"
-                    className="min-h-11"
-                    placeholder="5"
-                    value={retentionPercent || ""}
-                    onChange={(e) => setRetentionPercent(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    סכום עכבון:{" "}
-                    <span className="font-medium text-foreground tabular-nums">
-                      {currencyFormatter.format(retentionAmount)}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="pr-deduct">קיזוזים / הפחתות</Label>
-                  <Input
-                    id="pr-deduct"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    className="min-h-11"
-                    placeholder="0"
-                    value={deductions || ""}
-                    onChange={(e) => setDeductions(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pr-prev-billed">
-                    חויב בחשבונות קודמים (מצטבר)
-                  </Label>
-                  <Input
-                    id="pr-prev-billed"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    className="min-h-11"
-                    placeholder="0"
-                    value={previousBilled || ""}
-                    onChange={(e) => setPreviousBilled(e.target.value)}
-                  />
-                </div>
-
-                <Separator className="sm:col-span-2" />
-
-                <div className="space-y-1 rounded-lg border border-primary/25 bg-primary/5 px-3 py-3 sm:col-span-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    סה״כ לתשלום בחשבון זה
-                  </p>
-                  <p className="text-xl font-bold tabular-nums text-primary">
-                    {currencyFormatter.format(totalPayable)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    (אושר בחשבון + מדד − עכבון − קיזוזים − חויב קודם)
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex w-full flex-col gap-3 sm:max-w-2xl sm:self-center">
-              <Button
-                type="button"
-                size="lg"
-                variant="default"
-                className="min-h-12 w-full gap-2 border border-emerald-600/40 bg-emerald-700 text-white hover:bg-emerald-600"
-                disabled={
-                  savingAs !== null ||
-                  saveReportPending ||
-                  buildBaselinePending ||
-                  loadingContracts ||
-                  !selectedContractId.trim() ||
-                  loadingMilestones ||
-                  contracts.length === 0
-                }
-                onClick={() => saveReport("approved")}
-              >
-                {savingAs === "approved" ? (
-                  <>
-                    <Loader2
-                      className="size-5 shrink-0 animate-spin"
-                      aria-hidden
-                    />
-                    מאשר ויוצר יומן…
-                  </>
-                ) : (
-                  <>
-                    <BookOpen className="size-5 shrink-0" aria-hidden />
-                    אשר דוח וצור פקודת יומן (טיוטה)
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                size="lg"
-                className="min-h-12 w-full gap-2 text-base"
-                disabled={
-                  savingAs !== null ||
-                  saveReportPending ||
-                  buildBaselinePending ||
-                  loadingContracts ||
-                  !selectedContractId.trim() ||
-                  loadingMilestones ||
-                  contracts.length === 0
-                }
-                onClick={() => saveReport("submitted")}
-              >
-                {savingAs === "submitted" ? (
-                  <>
-                    <Loader2
-                      className="size-5 shrink-0 animate-spin"
-                      aria-hidden
-                    />
-                    מעבד…
-                  </>
-                ) : (
-                  <>
-                    <Receipt className="size-5 shrink-0" aria-hidden />
-                    הפק חשבון חלקי והעבר לסטטוס מוגש
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="min-h-11 w-full gap-2"
-                disabled={
-                  savingAs !== null ||
-                  saveReportPending ||
-                  buildBaselinePending ||
-                  loadingContracts ||
-                  !selectedContractId.trim() ||
-                  loadingMilestones ||
-                  contracts.length === 0
-                }
-                onClick={() => saveReport("draft")}
-              >
-                {savingAs === "draft" ? (
-                  <>
-                    <Loader2
-                      className="size-4 shrink-0 animate-spin"
-                      aria-hidden
-                    />
-                    שומר טיוטה…
-                  </>
-                ) : (
-                  "שמור כטיוטה בלבד"
-                )}
-              </Button>
-            </div>
-          </>
-        ) : null}
       </form>
+
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+        <SheetContent
+          side="left"
+          className="w-[min(94vw,980px)] max-w-[980px] p-0 sm:max-w-[980px]"
+        >
+          <SheetHeader className="border-b border-border bg-card">
+            <SheetTitle className="text-right">
+              מסך בן · פירוט סעיף BOQ
+            </SheetTitle>
+            <SheetDescription className="text-right">
+              {selectedMilestone
+                ? `${milestoneSectionLabel(
+                    selectedMilestone,
+                    milestones.findIndex((m) => m.id === selectedMilestone.id)
+                  )} · ${milestoneDescriptionText(selectedMilestone)}`
+                : "בחרו שורת סעיף להצגת פירוט"}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="h-full overflow-y-auto bg-background p-4">
+            {detailLoading ? (
+              <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-slate-200 bg-card shadow-sm">
+                <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  טוען היסטוריית חיובים וקבלן מבצע…
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Card className="border-slate-200 shadow-sm">
+                  <CardHeader className="pb-2 text-start">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <PanelRightOpen className="size-4 text-slate-500" />
+                      פירוט שורת client_contract_lines
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    {detailLine ? (
+                      <>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <p>
+                            <span className="text-muted-foreground">שורה:</span>{" "}
+                            <span className="font-mono">{detailLine.lineNumber ?? "—"}</span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">BOQ Ref:</span>{" "}
+                            <span className="font-mono">{detailLine.boqRef ?? "—"}</span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">כמות חוזית:</span>{" "}
+                            <span className="tabular-nums">{detailLine.quantity}</span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">מחיר יח׳:</span>{" "}
+                            <span className="tabular-nums">
+                              {currencyFormatter.format(detailLine.unitPrice)}
+                            </span>
+                          </p>
+                          <p className="sm:col-span-2">
+                            <span className="text-muted-foreground">תיאור:</span>{" "}
+                            {detailLine.description}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-slate-200 bg-background px-2 py-1.5 text-xs">
+                          עלות צפויה מבסיס ספק:{" "}
+                          <span className="font-medium tabular-nums">
+                            {detailLine.expectedTotalCost != null
+                              ? currencyFormatter.format(detailLine.expectedTotalCost)
+                              : "—"}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        אין שורת כתב כמויות תואמת עבור הסעיף שנבחר.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 shadow-sm">
+                  <CardHeader className="pb-2 text-start">
+                    <CardTitle className="text-base">קבלן מבצע מקושר</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm">
+                    {detailLine?.supplier ? (
+                      <div className="grid gap-1">
+                        <p>
+                          <span className="text-muted-foreground">שם:</span>{" "}
+                          {detailLine.supplier.supplierName ?? "—"}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">מספר ספק:</span>{" "}
+                          <span className="font-mono">
+                            {detailLine.supplier.supplierNumber ?? "—"}
+                          </span>
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">סוג:</span>{" "}
+                          {detailLine.supplier.supplierType ?? "—"}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        לא נמצא קבלן משנה מקושר לשורה זו.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 shadow-sm">
+                  <CardHeader className="pb-2 text-start">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Clock3 className="size-4 text-slate-500" />
+                      היסטוריית חשבונות קודמים לסעיף
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {detailHistory.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        אין היסטוריית חיובים עבור סעיף זה.
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto rounded-md border border-slate-200 bg-card">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-right">חשבון</TableHead>
+                              <TableHead className="text-right">תקופה</TableHead>
+                              <TableHead className="text-right">כמות מבוקשת</TableHead>
+                              <TableHead className="text-right">סכום מבוקש</TableHead>
+                              <TableHead className="text-right">כמות מאושרת</TableHead>
+                              <TableHead className="text-right">סכום מאושר</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {detailHistory.map((entry) => (
+                              <TableRow key={entry.id}>
+                                <TableCell className="font-medium">
+                                  חשבון {entry.billNumber ?? "—"} · {entry.status ?? "—"}
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">
+                                  {entry.periodStart ?? "—"} עד {entry.periodEnd ?? "—"}
+                                </TableCell>
+                                <TableCell>{entry.submittedQty}</TableCell>
+                                <TableCell>{currencyFormatter.format(entry.submittedAmount)}</TableCell>
+                                <TableCell>{entry.approvedQty}</TableCell>
+                                <TableCell>{currencyFormatter.format(entry.approvedAmount)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {detailError ? (
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    {detailError}
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

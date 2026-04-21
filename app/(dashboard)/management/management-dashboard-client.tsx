@@ -190,10 +190,10 @@ export function ManagementDashboardClient() {
     >
       <motion.header
         variants={motionItem}
-        className="pharmacy-hero-card rounded-xl border border-slate-100 bg-white p-6 shadow-sm md:p-8 dark:border-slate-800 dark:bg-slate-950"
+        className="pharmacy-hero-card rounded-xl border border-slate-100 bg-card p-6 shadow-sm md:p-8 dark:border-slate-800 dark:bg-slate-950"
       >
         <div className="flex flex-wrap items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-card shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {branding.brandLogoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -232,7 +232,7 @@ export function ManagementDashboardClient() {
           {KPI_PULSE.map((k) => (
             <Card
               key={k.label}
-              className="h-full border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
+              className="h-full border-slate-100 bg-card shadow-sm dark:border-slate-800 dark:bg-slate-950"
             >
                 <CardHeader className="pb-2">
                   <CardDescription className="text-xs font-medium text-slate-500">
@@ -269,7 +269,7 @@ export function ManagementDashboardClient() {
             מטריצת בריאות פרויקטים
           </h2>
           <Card className="overflow-hidden border-slate-100 shadow-sm dark:border-slate-800">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+            <CardHeader className="border-b border-slate-100 bg-background/50 dark:border-slate-800 dark:bg-slate-900/50">
               <CardTitle className="text-base text-indigo-950 dark:text-slate-50">
                 פרויקטים פעילים
               </CardTitle>
@@ -323,7 +323,7 @@ export function ManagementDashboardClient() {
               {AI_ALERTS.map((a, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-indigo-100/80 bg-white/80 p-3 shadow-sm dark:border-indigo-900/60 dark:bg-slate-900/60"
+                  className="rounded-lg border border-indigo-100/80 bg-card/80 p-3 shadow-sm dark:border-indigo-900/60 dark:bg-slate-900/60"
                 >
                   <p className="text-sm leading-relaxed text-indigo-950 dark:text-slate-100">
                     {a.text}

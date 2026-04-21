@@ -36,6 +36,7 @@ export default async function DashboardLayout({
         showMirrorSelector={p.showMirrorSelector}
         mirrorViewAs={p.mirrorViewAs}
         mirrorBannerLabel={p.mirrorBannerLabel}
+        selectedCompany={p.selectedCompany}
       >
         {children}
       </DashboardShell>

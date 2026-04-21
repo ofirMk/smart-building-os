@@ -51,7 +51,7 @@ export function SyncProgressBar({
       <TooltipTrigger
         type="button"
         className={cn(
-          "w-full max-w-[11rem] cursor-help rounded-md border border-transparent p-1 text-start outline-none transition-colors hover:border-slate-100 hover:bg-slate-50/80",
+          "w-full max-w-[11rem] cursor-help rounded-md border border-transparent p-1 text-start outline-none transition-colors hover:border-slate-100 hover:bg-background/80",
           className
         )}
       >

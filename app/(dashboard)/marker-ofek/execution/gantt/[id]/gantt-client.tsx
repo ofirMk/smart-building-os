@@ -344,7 +344,7 @@ export default function GanttClient({
   }, [])
 
   return (
-    <div className="flex min-h-0 flex-col gap-6 bg-white p-6 text-indigo-900 rtl">
+    <div className="flex min-h-0 flex-col gap-6 bg-card p-6 text-indigo-900 rtl">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
         <div className="min-w-0 space-y-1">
           <h1 className="text-xl font-bold tracking-tight text-indigo-900">{"לו\"ז וביצוע פרויקט"}</h1>
@@ -382,7 +382,7 @@ export default function GanttClient({
                   if (id) router.push(`/marker-ofek/execution/gantt/${id}`)
                 }}
               >
-                <SelectTrigger className="w-full border-slate-100 bg-white">
+                <SelectTrigger className="w-full border-slate-100 bg-card">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -433,18 +433,18 @@ export default function GanttClient({
       />
 
       {tasks.length > 0 && sanitizedGanttTasks.length > 0 ? (
-        <div className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+        <div className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-card px-4 py-3 shadow-sm">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">בקרת ציר זמן</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setGoToTodayPulse(Date.now())}
-                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-indigo-900 shadow-sm transition-colors hover:bg-slate-100"
+                className="rounded-lg border border-slate-200 bg-background px-3 py-1.5 text-xs font-semibold text-indigo-900 shadow-sm transition-colors hover:bg-slate-100"
               >
                 גלול להיום
               </button>
-              <div className="flex rounded-lg border border-slate-100 bg-slate-50/80 p-1 shadow-inner">
+              <div className="flex rounded-lg border border-slate-100 bg-background/80 p-1 shadow-inner">
                 {TIME_ZOOM_PRESETS.map((z) => (
                   <button
                     key={z.id}
@@ -473,7 +473,7 @@ export default function GanttClient({
       ) : null}
 
       {tasks.length === 0 ? (
-        <div className="rounded-xl border border-slate-100 bg-white p-12 text-center text-slate-500 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-card p-12 text-center text-slate-500 shadow-sm">
           אין משימות להצגה
         </div>
       ) : sanitizedGanttTasks.length === 0 ? (
@@ -481,7 +481,7 @@ export default function GanttClient({
           לא ניתן להציג את הלו״ז — תאריכי התחלה/סיום לא תקינים. עדכנו תאריכים במשימות ונסו שוב.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-slate-100 bg-card shadow-sm">
           <div className="pharmacy-gantt-surface gantt-grid-mesh relative rounded-xl border border-slate-100">
             <div className="gantt-container min-h-[560px] w-full overflow-auto">
               <Gantt

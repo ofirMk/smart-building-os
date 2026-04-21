@@ -46,11 +46,11 @@ const listItem = {
 }
 
 const hubIconWrapClass = cn(
-  "mb-4 flex size-12 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50/90 text-slate-600"
+  "mb-4 flex size-12 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-background/90 text-slate-600"
 )
 
 const hubCardShell = cn(
-  "h-full min-h-[220px] rounded-xl border border-slate-100 bg-white shadow-sm transition-shadow duration-200 hover:border-slate-200 hover:shadow-md"
+  "h-full min-h-[220px] rounded-xl border border-slate-100 bg-card shadow-sm transition-shadow duration-200 hover:border-slate-200 hover:shadow-md"
 )
 
 function MarkerOfekPillarCard({ pillar }: { pillar: MarkerOfekPillar }) {
@@ -166,7 +166,7 @@ export function ErpModuleHub({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
           className={cn(
-            "rounded-xl border border-slate-100 bg-white p-6 shadow-sm"
+            "rounded-xl border border-slate-100 bg-card p-6 shadow-sm"
           )}
           aria-label="מעבר למערכת אחזקה"
         >

@@ -64,7 +64,7 @@ export function GanttExecutionHub({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 bg-white p-6 md:p-10">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 bg-card p-6 md:p-10">
       <div className="space-y-2 text-center md:text-start">
         <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-slate-100 bg-indigo-50 text-indigo-700 md:mx-0">
           <CalendarRange className="size-6" aria-hidden />
@@ -141,7 +141,7 @@ export function GanttExecutionHub({
         </DialogContent>
       </Dialog>
 
-      <div className="space-y-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="space-y-3 rounded-xl border border-slate-100 bg-card p-4 shadow-sm">
         <Label className="text-xs text-slate-500">פרויקט</Label>
         <Select
           value={projectId || ""}
@@ -173,7 +173,7 @@ export function GanttExecutionHub({
           <Button
             type="button"
             variant="outline"
-            className="border-slate-200 bg-white hover:bg-slate-50"
+            className="border-slate-200 bg-card hover:bg-background"
             disabled={!projectId}
             onClick={openDiamondWorkspace}
           >

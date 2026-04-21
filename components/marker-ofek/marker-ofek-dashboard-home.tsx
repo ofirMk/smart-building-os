@@ -72,13 +72,13 @@ export async function MarkerOfekDashboardHome() {
         className="grid gap-6 md:grid-cols-3"
         aria-label="סיכום מהיר"
       >
-        <Card className="rounded-xl border border-slate-100 bg-white shadow-sm transition-colors duration-200 hover:border-slate-200">
+        <Card className="rounded-xl border border-slate-100 bg-card shadow-sm transition-colors duration-200 hover:border-slate-200">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-2">
               <CardTitle className="text-lg font-semibold text-[#1e293b]">
                 פרויקטים פעילים
               </CardTitle>
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-background">
                 <FolderKanban className="size-5 text-slate-500" aria-hidden />
               </span>
             </div>
@@ -103,7 +103,7 @@ export async function MarkerOfekDashboardHome() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border border-slate-100 bg-white shadow-sm transition-colors duration-200 hover:border-slate-200 md:col-span-2">
+        <Card className="rounded-xl border border-slate-100 bg-card shadow-sm transition-colors duration-200 hover:border-slate-200 md:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
@@ -139,7 +139,7 @@ export async function MarkerOfekDashboardHome() {
                 {recentReports.map((r) => (
                   <li
                     key={r.id}
-                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-slate-50"
+                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-background"
                   >
                     <span className="font-medium text-[#1e293b]">
                       {r.report_month
@@ -160,9 +160,9 @@ export async function MarkerOfekDashboardHome() {
         </Card>
       </section>
 
-      <Card className="rounded-xl border border-slate-100 bg-white shadow-sm transition-colors duration-200 hover:border-slate-200">
+      <Card className="rounded-xl border border-slate-100 bg-card shadow-sm transition-colors duration-200 hover:border-slate-200">
         <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-2">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-background">
             <LineChart className="size-5 text-indigo-600" aria-hidden />
           </span>
           <div className="space-y-1">

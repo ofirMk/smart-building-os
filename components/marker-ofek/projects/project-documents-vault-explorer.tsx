@@ -79,11 +79,11 @@ export function ProjectDocumentsVaultExplorer({
         if (list.length === 0) return null
         const isOpen = open[kind] ?? false
         return (
-          <div key={kind} className="overflow-hidden rounded-lg border border-slate-100 bg-white">
+          <div key={kind} className="overflow-hidden rounded-lg border border-slate-100 bg-card">
             <button
               type="button"
               onClick={() => setOpen((s) => ({ ...s, [kind]: !isOpen }))}
-              className="flex w-full items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2 text-start text-sm font-medium text-[#1e293b]"
+              className="flex w-full items-center gap-2 border-b border-slate-100 bg-background/80 px-3 py-2 text-start text-sm font-medium text-[#1e293b]"
             >
               <ChevronRight
                 className={cn("size-4 shrink-0 transition-transform", isOpen && "rotate-90")}

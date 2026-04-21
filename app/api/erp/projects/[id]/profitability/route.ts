@@ -624,16 +624,34 @@ export async function GET(
     targetMarginPct > 0
       ? clamp((currentMarginPct / targetMarginPct) * 100, 0, 100)
       : clamp(currentMarginPct + 50, 0, 100)
-  const cashFlowVelocityScore = clamp(haircutFactor * 100, 0, 100)
+  // Cash-flow velocity is defined by approval speed (fewer days => healthier score).
+  const cashFlowVelocityScore = clamp(100 - (averageApprovalLagDays / 60) * 100, 0, 100)
   const totalLeakage = subcontractorPerformance.reduce((sum, row) => sum + row.revenueLeakage, 0)
+  const unOffsetMaterialExposure = (poLinesRes.data ?? []).reduce((sum, row) => {
+    const line = row as {
+      subcontractor_id?: string | null
+      is_offset?: boolean | null
+      total_price?: number | null
+    }
+    // Material exposure = non-subcontractor material lines not offset yet.
+    if (line.subcontractor_id || line.is_offset === true) return sum
+    return sum + n(line.total_price)
+  }, 0)
   const leakagePressurePct =
     totalApprovedClientAmount > 0 ? (totalLeakage / totalApprovedClientAmount) * 100 : 0
+  const unOffsetExposurePct =
+    totalApprovedClientAmount > 0 ? (unOffsetMaterialExposure / totalApprovedClientAmount) * 100 : 0
   const highVarianceHistoricalCount = historicalVarianceRatios.filter((ratio) => ratio > 0.2).length
   const historicalVariancePenaltyPct =
     historicalVarianceRatios.length > 0
       ? (highVarianceHistoricalCount / historicalVarianceRatios.length) * 100
       : 0
-  const priceOverrideScore = clamp(100 - leakagePressurePct * 2.5 - historicalVariancePenaltyPct * 0.9, 0, 100)
+  // Risk exposure blends un-offset material pressure and approved override pressure.
+  const priceOverrideScore = clamp(
+    100 - unOffsetExposurePct * 2.0 - leakagePressurePct * 2.5 - historicalVariancePenaltyPct * 0.9,
+    0,
+    100
+  )
   const healthScore = clamp(
     marginVsTargetScore * 0.4 + cashFlowVelocityScore * 0.3 + priceOverrideScore * 0.3,
     0,

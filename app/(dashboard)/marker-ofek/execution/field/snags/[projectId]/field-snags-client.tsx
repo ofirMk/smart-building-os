@@ -116,7 +116,7 @@ export default function FieldSnagsClient({
     <div className="mx-auto w-full max-w-lg flex-col gap-8 px-4 py-8" dir="rtl">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="text-xl font-semibold text-foreground">
             ליקויים וקיזוזים
           </h1>
           <p className="mt-1 text-sm font-light text-slate-500">
@@ -134,7 +134,7 @@ export default function FieldSnagsClient({
 
       <form
         onSubmit={(e) => void onSubmit(e)}
-        className="mb-10 grid gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+        className="mb-10 grid gap-4 rounded-2xl border border-slate-100 bg-card p-5 shadow-sm"
       >
         <div className="grid gap-2">
           <Label>חוזה (קבלן משנה)</Label>
@@ -225,7 +225,7 @@ export default function FieldSnagsClient({
             initialSnags.map((s) => (
               <li
                 key={s.id}
-                className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3 text-sm"
+                className="rounded-xl border border-slate-100 bg-background/60 px-3 py-3 text-sm"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-medium text-slate-800">{s.title}</span>

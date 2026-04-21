@@ -290,7 +290,7 @@ function EditableTaskListHeader({ headerHeight, rowWidth }: EditableTaskListHead
   return (
     <div
       dir="rtl"
-      className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700"
+      className="border-b border-slate-200 bg-background text-[11px] font-semibold text-slate-700"
       style={{ height: headerHeight, width: rowWidth }}
     >
       <div className={`grid h-full ${GANTT_TASK_LIST_GRID_CLASS} items-center gap-2 px-2`}>
@@ -613,7 +613,7 @@ function EditableTaskList({
           <div
             key={task.id}
             className={`relative z-[2] pointer-events-auto grid ${GANTT_TASK_LIST_GRID_CLASS} items-center gap-2 border-b border-slate-100 px-2 ${
-              isSelected || isMultiSelected ? "bg-indigo-50" : "bg-white"
+              isSelected || isMultiSelected ? "bg-indigo-50" : "bg-card"
             }`}
             style={{ height: rowHeight }}
             onClick={(event) => {
@@ -1006,7 +1006,7 @@ function EditableTaskList({
         ? createPortal(
             <div
               ref={contextMenuRef}
-              className="fixed z-[2000] min-w-[210px] rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
+              className="fixed z-[2000] min-w-[210px] rounded-lg border border-slate-200 bg-card p-1 shadow-xl"
               style={{ left: contextMenu.x, top: contextMenu.y }}
               onClick={(event) => event.stopPropagation()}
               onContextMenuCapture={(event) => {
@@ -2428,7 +2428,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-card p-4 text-sm text-slate-600">
         <Loader2 className="size-4 animate-spin" aria-hidden />
         טוען משימות גאנט...
       </div>
@@ -2439,7 +2439,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
     <div className="space-y-3" dir="rtl">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-slate-900">{ganttTitle?.trim() || "תרשים גאנט"}</p>
+          <p className="text-sm font-semibold text-foreground">{ganttTitle?.trim() || "תרשים גאנט"}</p>
           <p className="text-[11px] text-slate-500">
             {savingTaskId ? "שומר עדכון…" : `${tasks.length} משימות נטענו`}
           </p>
@@ -2449,7 +2449,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
       <div className="overflow-hidden rounded-lg border border-slate-300/90 bg-gradient-to-b from-slate-100/90 to-white shadow-sm ring-1 ring-slate-200/60">
         <div
           dir="rtl"
-          className="flex w-full flex-wrap items-stretch justify-start border-b border-slate-200/80 bg-slate-50/95"
+          className="flex w-full flex-wrap items-stretch justify-start border-b border-slate-200/80 bg-background/95"
         >
           <MsProjectRibbonGroup title="ניהול גאנט">
             <Select
@@ -2458,7 +2458,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                 if (val) onActiveGanttSelect(val)
               }}
             >
-              <SelectTrigger className="h-8 w-[220px] border-slate-200 bg-white text-xs">
+              <SelectTrigger className="h-8 w-[220px] border-slate-200 bg-card text-xs">
                 <span className="truncate text-right" title={currentGanttName}>
                   {currentGanttName || "בחר גאנט..."}
                 </span>
@@ -2481,7 +2481,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 border-slate-200 bg-card text-xs shadow-sm"
               disabled={isCreatingGantt}
               onClick={() => {
                 setNewGanttProjectId(projectId)
@@ -2497,7 +2497,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 gap-1 border-slate-200 bg-card text-xs shadow-sm"
               onClick={() => scrollTimelineToFocusedTask()}
             >
               <Locate className="size-3.5 shrink-0" aria-hidden />
@@ -2509,7 +2509,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 gap-1 border-slate-200 bg-card text-xs shadow-sm"
               onClick={() => void handleAddTask()}
             >
               משימה חדשה
@@ -2518,7 +2518,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 gap-1 border-slate-200 bg-card text-xs shadow-sm"
               onClick={() => void addMilestoneBelowFocused()}
             >
               <Flag className="size-3.5 shrink-0" aria-hidden />
@@ -2528,7 +2528,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 gap-1 border-slate-200 bg-card text-xs shadow-sm"
               onClick={() => void indentSelectedTasks()}
             >
               <IndentIncrease className="size-3.5 shrink-0" aria-hidden />
@@ -2538,7 +2538,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 gap-1 border-slate-200 bg-card text-xs shadow-sm"
               onClick={() => void outdentSelectedTasks()}
             >
               <IndentDecrease className="size-3.5 shrink-0" aria-hidden />
@@ -2546,7 +2546,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
             </Button>
           </MsProjectRibbonGroup>
           <MsProjectRibbonGroup title="לוח זמנים — % ביצוע">
-            <div className="flex items-center gap-0.5 rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
+            <div className="flex items-center gap-0.5 rounded-md border border-slate-200 bg-card p-0.5 shadow-sm">
               {[0, 25, 50, 75, 100].map((p) => (
                 <Button
                   key={p}
@@ -2569,7 +2569,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               className={`h-8 gap-1 text-xs shadow-sm ${
                 criticalPathEnabled
                   ? "bg-red-600 text-white hover:bg-red-500"
-                  : "border-slate-200 bg-white"
+                  : "border-slate-200 bg-card"
               }`}
               onClick={() => setCriticalPathEnabled((prev) => !prev)}
             >
@@ -2579,7 +2579,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
           </MsProjectRibbonGroup>
           <MsProjectRibbonGroup title="ייצוא">
             <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-800 shadow-sm outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500/30">
+              <DropdownMenuTrigger className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-card px-2.5 text-xs font-medium text-slate-800 shadow-sm outline-none transition hover:bg-background focus-visible:ring-2 focus-visible:ring-indigo-500/30">
                 {exportingType ? (
                   <Loader2 className="size-3.5 animate-spin" aria-hidden />
                 ) : (
@@ -2620,7 +2620,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                 if (val) setSelectedSnapshotId(val)
               }}
             >
-              <SelectTrigger className="h-8 w-[220px] border-slate-200 bg-white text-xs">
+              <SelectTrigger className="h-8 w-[220px] border-slate-200 bg-card text-xs">
                 <SelectValue placeholder="בחר היסטוריה" />
               </SelectTrigger>
               <SelectContent>
@@ -2637,14 +2637,14 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-white text-xs shadow-sm"
+              className="h-8 border-slate-200 bg-card text-xs shadow-sm"
               onClick={() => void saveCurrentPlanAsBaseline()}
             >
               שמור תוכנית בסיס
             </Button>
           </MsProjectRibbonGroup>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2 bg-white/80 px-2 py-1.5 text-[11px] text-slate-600">
+        <div className="flex flex-wrap items-center justify-end gap-2 bg-card/80 px-2 py-1.5 text-[11px] text-slate-600">
           <Button
             type="button"
             size="sm"
@@ -2656,11 +2656,11 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
             רענון
           </Button>
           {selectedSnapshot ? (
-            <span className="rounded-sm border border-slate-200 bg-slate-50 px-2 py-1">
+            <span className="rounded-sm border border-slate-200 bg-background px-2 py-1">
               צפייה בגרסה: {selectedSnapshot.snapshot_name}
             </span>
           ) : (
-            <span className="rounded-sm border border-slate-200 bg-slate-50 px-2 py-1">
+            <span className="rounded-sm border border-slate-200 bg-background px-2 py-1">
               צפייה בתוכנית נוכחית
             </span>
           )}
@@ -2668,15 +2668,15 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
       </div>
 
       {chartTasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+        <div className="rounded-lg border border-dashed border-slate-300 bg-card p-10 text-center text-sm text-slate-500">
           <p className="mb-4">אין משימות להצגה עבור הפרויקט הנבחר.</p>
           <Button type="button" onClick={() => void handleAddTask()}>
             הוסף את המשימה הראשונה שלך
           </Button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-slate-50/90 px-3 py-2.5">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm">
+          <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-background/90 px-3 py-2.5">
             <div className="grid gap-1">
               <Label htmlFor="gantt-snapshot-type" className="text-[11px] text-slate-600">
                 סוג גרסה
@@ -2725,7 +2725,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
                 "שמור צילום מצב"
               )}
             </Button>
-            <div className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600">
+            <div className="rounded-md border border-slate-200 bg-card px-2.5 py-1.5 text-xs text-slate-600">
               {ganttSnapshots.length} גרסאות שמורות
             </div>
           </div>
@@ -2916,7 +2916,7 @@ export function GanttBoard({ ganttId, projectId, ganttTitle }: GanttBoardProps) 
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-background px-3 py-2">
               <Checkbox
                 checked={editForm.is_milestone}
                 onCheckedChange={(checked) =>

@@ -203,7 +203,7 @@ export function AiContractImportModal({
                 "flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors",
                 isDragging
                   ? "border-blue-500 bg-blue-50/80"
-                  : "border-slate-300 bg-slate-50/50 hover:border-slate-400",
+                  : "border-slate-300 bg-background/50 hover:border-slate-400",
                 (isPending || isSavingDraft) && "pointer-events-none opacity-60"
               )}
             >
@@ -242,7 +242,7 @@ export function AiContractImportModal({
             ) : null}
 
             {draft ? (
-              <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-start">
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-card p-4 text-start">
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                   <FileUp className="size-4" />
                   טיוטה לביקור (Human in the Loop)
@@ -288,7 +288,7 @@ export function AiContractImportModal({
                     </p>
                     <table className="w-full min-w-[480px] border-collapse text-[11px]">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-start">
+                        <tr className="border-b border-slate-200 bg-background text-start">
                           <th className="p-1.5">סעיף</th>
                           <th className="p-1.5">תיאור</th>
                           <th className="p-1.5">יח׳</th>
@@ -321,7 +321,7 @@ export function AiContractImportModal({
                     </p>
                     <table className="w-full min-w-[400px] border-collapse text-[11px]">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-start">
+                        <tr className="border-b border-slate-200 bg-background text-start">
                           <th className="p-1.5">סעיף</th>
                           <th className="p-1.5">תיאור</th>
                           <th className="p-1.5">משקל %</th>
@@ -396,7 +396,7 @@ function ReviewRow({
   return (
     <div className={cn("flex flex-col gap-0.5", className)}>
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-mono text-[11px] text-slate-900 break-all" dir="ltr">
+      <dd className="font-mono text-[11px] text-foreground break-all" dir="ltr">
         {value}
       </dd>
     </div>

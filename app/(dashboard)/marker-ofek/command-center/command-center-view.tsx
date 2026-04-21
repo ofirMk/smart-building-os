@@ -107,7 +107,7 @@ export function CommandCenterView({
     snapshot.staleDraftPartials > 0
 
   return (
-    <div dir="rtl" className="w-full text-[13px] text-slate-900">
+    <div dir="rtl" className="w-full text-[13px] text-foreground">
       <CommandCenterMotion>
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-8 font-sans lg:gap-5">
         <header className="border-b border-slate-200 pb-1.5">
@@ -115,7 +115,7 @@ export function CommandCenterView({
             {branding.organizationName}
           </p>
           <div className="mt-0.5 flex flex-row items-start gap-2">
-            <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm sm:size-8">
+            <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-card shadow-sm sm:size-8">
               {branding.brandLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -129,7 +129,7 @@ export function CommandCenterView({
             </div>
             <div className="min-w-0 flex-1 text-start">
               <div className="flex flex-row flex-wrap items-baseline gap-x-2.5 gap-y-0">
-                <h1 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">
+                <h1 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
                   מרכז הפיקוד
                 </h1>
                 <p className="text-xs font-medium text-slate-800 sm:text-sm">{hostWelcomeLine}</p>
@@ -180,7 +180,7 @@ export function CommandCenterView({
 
         {executivePulse ? (
           <section
-            className="grid gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md sm:grid-cols-3"
+            className="grid gap-4 rounded-2xl border border-slate-200/90 bg-card p-5 shadow-md sm:grid-cols-3"
             aria-label="דופק פיננסי"
           >
             <div>
@@ -227,19 +227,19 @@ export function CommandCenterView({
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/marker-ofek/entities/suppliers"
-                className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
+                className="rounded-lg border border-amber-200 bg-card px-3 py-2 text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
               >
                 ספקים ומס
               </Link>
               <Link
                 href="/marker-ofek/finance/partials"
-                className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
+                className="rounded-lg border border-amber-200 bg-card px-3 py-2 text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
               >
                 חשבונות חלקיים
               </Link>
               <Link
                 href="/marker-ofek/finance/centralized"
-                className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
+                className="rounded-lg border border-amber-200 bg-card px-3 py-2 text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
               >
                 כספים מרכזיים
               </Link>
@@ -264,19 +264,19 @@ export function CommandCenterView({
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/marker-ofek/execution/daily-logs"
-                className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-[12px] font-medium text-sky-950 shadow-sm transition hover:bg-sky-50"
+                className="rounded-lg border border-sky-200 bg-card px-3 py-2 text-[12px] font-medium text-sky-950 shadow-sm transition hover:bg-sky-50"
               >
                 יומני עבודה
               </Link>
               <Link
                 href="/marker-ofek/execution/plans"
-                className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-[12px] font-medium text-sky-950 shadow-sm transition hover:bg-sky-50"
+                className="rounded-lg border border-sky-200 bg-card px-3 py-2 text-[12px] font-medium text-sky-950 shadow-sm transition hover:bg-sky-50"
               >
                 תוכניות ושטח
               </Link>
               <Link
                 href="/marker-ofek/execution/gantt"
-                className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-[12px] font-medium text-sky-950 shadow-sm transition hover:bg-sky-50"
+                className="rounded-lg border border-sky-200 bg-card px-3 py-2 text-[12px] font-medium text-sky-950 shadow-sm transition hover:bg-sky-50"
               >
                 לוחות זמנים
               </Link>
@@ -288,12 +288,12 @@ export function CommandCenterView({
           type="single"
           collapsible
           defaultValue={undefined}
-          className="rounded-xl border border-slate-200 bg-white px-2 shadow-sm sm:px-3"
+          className="rounded-xl border border-slate-200 bg-card px-2 shadow-sm sm:px-3"
         >
           <AccordionItem value="cc-operational-pulse" className="border-0">
             <AccordionTrigger
               data-diamond-spotlight="cc-pulse"
-              className="py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-900 hover:no-underline sm:py-2.5"
+              className="py-2 text-[11px] font-semibold uppercase tracking-wide text-foreground hover:no-underline sm:py-2.5"
               aria-label="דופק תפעולי — לחצו לפתיחת מדדי עומס"
             >
               <span className="flex flex-row-reverse items-center gap-2">
@@ -307,30 +307,30 @@ export function CommandCenterView({
               </span>
             </AccordionTrigger>
             <AccordionContent className="pb-3 pt-0">
-              <div className="flex flex-wrap gap-x-6 gap-y-2 font-currency-mono text-sm tabular-nums text-slate-900">
+              <div className="flex flex-wrap gap-x-6 gap-y-2 font-currency-mono text-sm tabular-nums text-foreground">
                 <span>
                   PO ממתינים:{" "}
-                  <span className="text-slate-900">{snapshot.poPendingApproval}</span>
+                  <span className="text-foreground">{snapshot.poPendingApproval}</span>
                 </span>
                 <span>
                   חריגות לו״ז:{" "}
-                  <span className="text-slate-900">{snapshot.scheduleExceptions}</span>
+                  <span className="text-foreground">{snapshot.scheduleExceptions}</span>
                 </span>
                 <span>
                   מכרזים פתוחים:{" "}
-                  <span className="text-slate-900">{snapshot.openTendersCount}</span>
+                  <span className="text-foreground">{snapshot.openTendersCount}</span>
                 </span>
                 <span>
                   דיווחי שבוע:{" "}
-                  <span className="text-slate-900">{snapshot.weeklyExecutionLogs}</span>
+                  <span className="text-foreground">{snapshot.weeklyExecutionLogs}</span>
                 </span>
                 <span>
                   חלקיים בטיוטה (ממושכים):{" "}
-                  <span className="text-slate-900">{snapshot.staleDraftPartials}</span>
+                  <span className="text-foreground">{snapshot.staleDraftPartials}</span>
                 </span>
                 <span>
                   יומני שטח אתמול (טיוטה):{" "}
-                  <span className="text-slate-900">{snapshot.draftFieldLogsYesterday}</span>
+                  <span className="text-foreground">{snapshot.draftFieldLogsYesterday}</span>
                 </span>
               </div>
             </AccordionContent>
@@ -350,7 +350,7 @@ export function CommandCenterView({
 
         <div className="sticky bottom-3 z-20 mt-2 md:static md:bottom-auto">
           <div
-            className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.12)] backdrop-blur-sm md:rounded-xl md:shadow-md"
+            className="rounded-2xl border border-slate-200/90 bg-card/95 p-4 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.12)] backdrop-blur-sm md:rounded-xl md:shadow-md"
             data-diamond-spotlight="cc-quick"
           >
             <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:text-start">
@@ -363,7 +363,7 @@ export function CommandCenterView({
               >
                 <Link
                   href="/marker-ofek/partner-finance"
-                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                 >
                   <p className="text-xs font-semibold text-indigo-950">מרכז שותפי ניהול</p>
                   <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
@@ -372,7 +372,7 @@ export function CommandCenterView({
                 </Link>
                 <Link
                   href="/marker-ofek/finance/billing"
-                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                 >
                   <p className="text-xs font-semibold text-indigo-950">חיוב ותזרים</p>
                   <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
@@ -382,7 +382,7 @@ export function CommandCenterView({
                 {exec ? (
                   <Link
                     href="/management"
-                    className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                    className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                   >
                     <p className="text-xs font-semibold text-indigo-950">דשבורד הנהלה</p>
                     <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
@@ -392,7 +392,7 @@ export function CommandCenterView({
                 ) : (
                   <Link
                     href="/marker-ofek/procurement/orders"
-                    className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                    className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                   >
                     <p className="text-xs font-semibold text-indigo-950">תור אישורי רכש</p>
                     <p className="mt-2 font-currency-mono text-[11px] text-slate-500">
@@ -408,7 +408,7 @@ export function CommandCenterView({
               >
                 <Link
                   href="/marker-ofek/execution/daily-logs"
-                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                 >
                   <p className="text-xs font-semibold text-indigo-950">דיווח ביצוע יומי</p>
                   <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
@@ -417,7 +417,7 @@ export function CommandCenterView({
                 </Link>
                 <Link
                   href={snapshot.ganttHref}
-                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                 >
                   <p className="text-xs font-semibold text-indigo-950">גאנט / WBS</p>
                   <p className="mt-1 font-currency-mono text-[11px] text-slate-500">
@@ -426,7 +426,7 @@ export function CommandCenterView({
                 </Link>
                 <Link
                   href="/marker-ofek/procurement/orders"
-                  className="rounded-xl border border-slate-200/90 bg-white p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
+                  className="rounded-xl border border-slate-200/90 bg-card p-4 text-center shadow-sm transition-colors hover:border-indigo-200 hover:shadow-md md:text-start"
                 >
                   <p className="text-xs font-semibold text-indigo-950">הזמנות ממתינות</p>
                   <p className="mt-1 font-currency-mono text-[11px] tabular-nums text-slate-500">

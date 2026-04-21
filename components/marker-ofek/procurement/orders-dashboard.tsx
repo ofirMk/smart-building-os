@@ -303,7 +303,7 @@ export function OrdersDashboard() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -334,7 +334,7 @@ export function OrdersDashboard() {
           }
         />
         <nav
-          className="flex flex-wrap gap-x-4 gap-y-2 rounded-xl border border-slate-100 bg-white px-4 py-3 text-xs"
+          className="flex flex-wrap gap-x-4 gap-y-2 rounded-xl border border-slate-100 bg-card px-4 py-3 text-xs"
           aria-label="קישורים מהירים — רכש"
         >
           <span className="font-medium text-slate-400">כלים:</span>
@@ -384,7 +384,7 @@ export function OrdersDashboard() {
         </Alert>
       ) : null}
 
-      <section className="rounded-xl border border-slate-100 bg-white">
+      <section className="rounded-xl border border-slate-100 bg-card">
         <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6">
           <div className="flex items-center gap-2 text-[#1e293b]">
             <ProcurementIcon icon={Package} className="size-5" />
@@ -399,7 +399,7 @@ export function OrdersDashboard() {
               value={poListSearch}
               onChange={(e) => setPoListSearch(e.target.value)}
               placeholder="חיפוש הזמנה, ספק, פרויקט…"
-              className="h-9 border-slate-100 bg-white pe-9 text-sm"
+              className="h-9 border-slate-100 bg-card pe-9 text-sm"
               aria-label="חיפוש ברשימת הזמנות"
             />
           </div>
@@ -439,7 +439,7 @@ export function OrdersDashboard() {
           <div className="overflow-x-auto px-2 pb-4 md:px-4">
             <Table>
               <TableHeader>
-                <TableRow className="border-b border-slate-100 bg-white hover:bg-white">
+                <TableRow className="border-b border-slate-100 bg-card hover:bg-card">
                   <TableHead className="text-start text-indigo-950">מספר הזמנה</TableHead>
                   <TableHead className="text-start text-indigo-950">פרויקט</TableHead>
                   <TableHead className="text-start text-indigo-950">ספק</TableHead>
@@ -508,7 +508,7 @@ export function OrdersDashboard() {
                           : "—"}
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex rounded-md border border-slate-100 bg-white px-2 py-0.5 text-xs font-medium text-[#1e293b]">
+                        <span className="inline-flex rounded-md border border-slate-100 bg-card px-2 py-0.5 text-xs font-medium text-[#1e293b]">
                           {poStatusLabel(row.status)}
                         </span>
                       </TableCell>
@@ -544,7 +544,7 @@ export function OrdersDashboard() {
       </section>
 
       <section className="space-y-4">
-        <div className="rounded-xl border border-slate-100 bg-white p-4 md:p-6">
+        <div className="rounded-xl border border-slate-100 bg-card p-4 md:p-6">
           <p className="mb-3 text-sm font-semibold text-[#1e293b]">שורות הזמנה נבחרת</p>
           {loadingSelectedPo ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -554,10 +554,10 @@ export function OrdersDashboard() {
           ) : selectedPoLines.length === 0 ? (
             <p className="text-sm text-muted-foreground">בחרו הזמנה להצגת שורות.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-100 bg-white">
+            <div className="overflow-x-auto rounded-lg border border-slate-100 bg-card">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-100 bg-white hover:bg-white">
+                  <TableRow className="border-slate-100 bg-card hover:bg-card">
                     <TableHead className="text-start text-indigo-950">תיאור</TableHead>
                     <TableHead className="text-start text-indigo-950">כמות</TableHead>
                     <TableHead className="text-start text-indigo-950">מחיר יח׳</TableHead>
@@ -585,7 +585,7 @@ export function OrdersDashboard() {
           )}
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-4 md:p-6">
+        <div className="rounded-xl border border-slate-100 bg-card p-4 md:p-6">
           <p className="mb-3 text-sm font-semibold text-[#1e293b]">תעודות משלוח וקבלות</p>
           {loadingSelectedPo ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -595,10 +595,10 @@ export function OrdersDashboard() {
           ) : selectedPoReceipts.length === 0 ? (
             <p className="text-sm text-muted-foreground">אין תעודות משלוח להזמנה שנבחרה.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-100 bg-white">
+            <div className="overflow-x-auto rounded-lg border border-slate-100 bg-card">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-100 bg-white hover:bg-white">
+                  <TableRow className="border-slate-100 bg-card hover:bg-card">
                     <TableHead className="text-start">תאריך קבלה</TableHead>
                     <TableHead className="text-start">מספר תעודה</TableHead>
                     <TableHead className="text-start">נקלט ע״י</TableHead>

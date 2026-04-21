@@ -13,7 +13,7 @@ function severityShell(severity: PlanWbsDiscrepancyRow["severity"]) {
     case "info":
       return "border-sky-200 bg-sky-50/50"
     default:
-      return "border-slate-100 bg-white"
+      return "border-slate-100 bg-card"
   }
 }
 
@@ -29,7 +29,7 @@ function invoiceSeverityShell(
   if (sevs.includes("warn")) return "border-amber-200 bg-amber-50/60"
   if (!row.best_match) return "border-violet-200 bg-violet-50/40"
   if (sevs.includes("info")) return "border-sky-200 bg-sky-50/40"
-  return "border-slate-100 bg-white"
+  return "border-slate-100 bg-card"
 }
 
 export function AiPlanWbsSummaryGrid({
@@ -41,7 +41,7 @@ export function AiPlanWbsSummaryGrid({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-xl border border-slate-100 bg-white px-4 py-6 text-center text-sm text-slate-500">
+      <p className="rounded-xl border border-slate-100 bg-card px-4 py-6 text-center text-sm text-slate-500">
         אין שורות דוח להצגה
       </p>
     )
@@ -101,7 +101,7 @@ export function AiInvoicePoSummaryGrid({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-xl border border-slate-100 bg-white px-4 py-6 text-center text-sm text-slate-500">
+      <p className="rounded-xl border border-slate-100 bg-card px-4 py-6 text-center text-sm text-slate-500">
         אין שורות חשבונית להצגה
       </p>
     )
@@ -127,7 +127,7 @@ export function AiInvoicePoSummaryGrid({
               </p>
             </div>
             {r.best_match ? (
-              <p className="shrink-0 rounded-md border border-slate-100 bg-white px-2 py-1 font-currency-mono text-xs text-slate-600">
+              <p className="shrink-0 rounded-md border border-slate-100 bg-card px-2 py-1 font-currency-mono text-xs text-slate-600">
                 הזמנה {r.best_match.po_number}
               </p>
             ) : null}
@@ -170,7 +170,7 @@ export function AiComparisonKpiStrip({
   return (
     <div
       className={cn(
-        "flex flex-wrap gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm",
+        "flex flex-wrap gap-3 rounded-2xl border border-slate-100 bg-card p-4 shadow-sm",
         className
       )}
       dir="rtl"
@@ -178,7 +178,7 @@ export function AiComparisonKpiStrip({
       {items.map((it) => (
         <div
           key={it.label}
-          className="min-w-[8rem] flex-1 rounded-xl border border-slate-100 bg-slate-50/40 px-4 py-3"
+          className="min-w-[8rem] flex-1 rounded-xl border border-slate-100 bg-background/40 px-4 py-3"
         >
           <p className="text-xs font-medium text-slate-500">{it.label}</p>
           <p className="font-currency-mono mt-1 text-lg font-semibold tabular-nums text-[#1e293b]">

@@ -185,7 +185,7 @@ export function TendersWbsClient({ projectId }: { projectId: string | null }) {
 
   if (!projectId) {
     return (
-      <div className="bg-white px-2 py-10 text-center text-sm text-slate-500">
+      <div className="bg-card px-2 py-10 text-center text-sm text-slate-500">
         בחרו מכרז ב{" "}
         <Link className="text-indigo-600 underline" href={TENDERS_ROUTES.hub}>
           מרכז המכרזים
@@ -195,7 +195,7 @@ export function TendersWbsClient({ projectId }: { projectId: string | null }) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-card pb-10">
       <div className="relative max-w-md">
         <Search
           className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
@@ -205,7 +205,7 @@ export function TendersWbsClient({ projectId }: { projectId: string | null }) {
           value={tableSearch}
           onChange={(e) => setTableSearch(e.target.value)}
           placeholder="חיפוש לפי תיאור או קוד WBS…"
-          className="h-10 border-slate-100 bg-white pe-10"
+          className="h-10 border-slate-100 bg-card pe-10"
           aria-label="חיפוש בטבלת WBS"
         />
       </div>
@@ -241,7 +241,7 @@ export function TendersWbsClient({ projectId }: { projectId: string | null }) {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100 bg-white hover:bg-white">
+                    <TableRow className="border-slate-100 bg-card hover:bg-card">
                       <TableHead className="w-[140px] font-currency-mono">קוד WBS</TableHead>
                       <TableHead className="text-start">תיאור</TableHead>
                       <TableHead className="text-end font-currency-mono">סה״כ ₪</TableHead>

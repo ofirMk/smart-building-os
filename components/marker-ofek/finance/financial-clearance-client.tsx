@@ -20,7 +20,7 @@ const ils = new Intl.NumberFormat("he-IL", {
 })
 
 const glass =
-  "rounded-2xl border border-white/10 bg-white/[0.04] shadow-[0_0_60px_-24px_rgba(16,185,129,0.45)] backdrop-blur-xl"
+  "rounded-2xl border border-white/10 bg-card/[0.04] shadow-[0_0_60px_-24px_rgba(16,185,129,0.45)] backdrop-blur-xl"
 
 type Props = {
   initialRows: FinancialClearanceRow[]
@@ -75,7 +75,7 @@ export function FinancialClearanceClient({ initialRows, loadError }: Props) {
 
       <div className="space-y-8">
         {rows.length === 0 ? (
-          <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-16 text-center text-slate-500">
+          <p className="rounded-2xl border border-white/10 bg-card/[0.03] px-6 py-16 text-center text-slate-500">
             אין קבלות ממתינות לאישור פיננסי
           </p>
         ) : null}
@@ -217,7 +217,7 @@ function ViewProofButton({ path }: { path: string }) {
         type="button"
         variant="outline"
         size="sm"
-        className="border-white/15 bg-white/5 text-slate-100 hover:bg-white/10"
+        className="border-white/15 bg-card/5 text-slate-100 hover:bg-card/10"
         onClick={() => setOpen(true)}
       >
         {loading ? (

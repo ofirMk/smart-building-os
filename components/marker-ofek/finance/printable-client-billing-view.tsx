@@ -55,7 +55,7 @@ export function PrintableClientBillingView({
     <div
       className={cn(
         "hidden print:block",
-        "w-[210mm] min-h-[297mm] bg-white p-8 text-black [color-scheme:light]"
+        "w-[210mm] min-h-[297mm] bg-card p-8 text-foreground [color-scheme:light]"
       )}
       dir="rtl"
       lang="he"
@@ -216,7 +216,7 @@ export function PrintableClientBillingView({
       <footer className="mt-10 border-t-2 border-black pt-4 text-center text-xs text-neutral-800">
         <p className="font-semibold">
           סכום לחיוב סופי (אחרי שינויים וניכויים):{" "}
-          <span className="font-mono tabular-nums text-base text-black">
+          <span className="font-mono tabular-nums text-base text-foreground">
             {ils.format(finalAmountToBill)}
           </span>
         </p>

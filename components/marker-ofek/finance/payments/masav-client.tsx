@@ -116,10 +116,10 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm">
         <div className="max-h-[min(60vh,520px)] overflow-auto">
           <table className="w-full text-right text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-50 text-xs text-slate-500 shadow-sm">
+            <thead className="sticky top-0 z-10 bg-background text-xs text-slate-500 shadow-sm">
               <tr>
                 <th className="w-10 p-2" />
                 <th className="p-2">תאריך</th>
@@ -151,7 +151,7 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
                       className={`cursor-pointer transition-colors ${
                         checked
                           ? "bg-sky-50 hover:bg-sky-100"
-                          : "hover:bg-slate-50"
+                          : "hover:bg-background"
                       }`}
                     >
                       <td className="p-2">
@@ -203,12 +203,12 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-background px-4 py-3">
         <div className="flex items-center gap-2 text-slate-600">
           <Landmark className="size-5 text-slate-400" aria-hidden />
           <span className="text-sm">
             נבחרו{" "}
-            <strong className="text-slate-900">
+            <strong className="text-foreground">
               {selectedCount}
             </strong>{" "}
             דוחות
@@ -218,7 +218,7 @@ export function MasavClient({ pendingPayments }: MasavClientProps) {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             סה״כ לריצת תשלום
           </p>
-          <p className="text-xl font-bold tabular-nums text-slate-900">
+          <p className="text-xl font-bold tabular-nums text-foreground">
             {ils.format(selectedTotal)}
           </p>
         </div>

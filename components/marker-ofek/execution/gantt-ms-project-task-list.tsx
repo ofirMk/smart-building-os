@@ -38,7 +38,7 @@ export function GanttMsProjectTaskListHeader({
   return (
     <div
       dir="rtl"
-      className="border-b border-slate-200 bg-slate-50/90 text-slate-800"
+      className="border-b border-slate-200 bg-background/90 text-slate-800"
       style={{ fontFamily, fontSize, width: rowWidth, maxWidth: "100%" }}
     >
       <div
@@ -201,7 +201,7 @@ export function GanttMsProjectTaskListTable({
     <>
       <div
         dir="rtl"
-        className="gantt-task-list-pharmacy bg-white"
+        className="gantt-task-list-pharmacy bg-card"
         style={{ fontFamily, fontSize, width: rowWidth, maxWidth: "100%" }}
       >
         {tasks.map((t) => {
@@ -226,7 +226,7 @@ export function GanttMsProjectTaskListTable({
             <div
               key={`${t.id}row`}
               role="row"
-              className={`group relative flex items-stretch border-b border-slate-100 bg-white ${
+              className={`group relative flex items-stretch border-b border-slate-100 bg-card ${
                 dragOverId === t.id ? "bg-indigo-50/90 ring-1 ring-inset ring-indigo-200" : ""
               } ${draggingId === t.id ? "opacity-60" : ""}`}
               style={{ height: rowHeight }}
@@ -348,7 +348,7 @@ export function GanttMsProjectTaskListTable({
                 <button
                   type="button"
                   title="תוכניות ומסמכים מהכספת"
-                  className="flex size-6 items-center justify-center rounded border border-transparent text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-indigo-700"
+                  className="flex size-6 items-center justify-center rounded border border-transparent text-slate-500 hover:border-slate-200 hover:bg-background hover:text-indigo-700"
                   onClick={(e) => {
                     e.stopPropagation()
                     onOpenTaskPlans?.(t.id, rowName)

@@ -158,14 +158,14 @@ export function BillingHubClient({
               חוזי לקוח (ראשי)
             </h2>
             {contracts.length === 0 ? (
-              <p className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-10 text-center text-sm text-slate-500">
+              <p className="rounded-xl border border-slate-100 bg-background/50 px-4 py-10 text-center text-sm text-slate-500">
                 אין חוזים ראשיים במערכת.
               </p>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-100">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100 hover:bg-slate-50/50">
+                    <TableRow className="border-slate-100 hover:bg-background/50">
                       <TableHead className="text-slate-600">פרויקט</TableHead>
                       <TableHead className="text-slate-600">לקוח</TableHead>
                       <TableHead className="text-slate-600">סטטוס</TableHead>
@@ -229,14 +229,14 @@ export function BillingHubClient({
               חשבונות חלקיים — רשימה
             </h2>
             {partials.length === 0 ? (
-              <p className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-10 text-center text-sm text-slate-500">
+              <p className="rounded-xl border border-slate-100 bg-background/50 px-4 py-10 text-center text-sm text-slate-500">
                 אין חשבונות חלקיים. צרו חשבון ממרכז החיוב של חוזה.
               </p>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-100">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100 hover:bg-slate-50/50">
+                    <TableRow className="border-slate-100 hover:bg-background/50">
                       <TableHead className="text-slate-600">מס׳</TableHead>
                       <TableHead className="text-slate-600">פרויקט</TableHead>
                       <TableHead className="text-slate-600">סטטוס</TableHead>
@@ -314,14 +314,14 @@ export function BillingHubClient({
               גבויים = חשבוניות במצב שולם.
             </p>
             {portfolioProjects.length === 0 ? (
-              <p className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-10 text-center text-sm text-slate-500">
+              <p className="rounded-xl border border-slate-100 bg-background/50 px-4 py-10 text-center text-sm text-slate-500">
                 אין חוזים ראשיים במצב פעיל — או שאין הרשאת צפייה לפרויקטים.
               </p>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white">
+              <div className="overflow-x-auto rounded-xl border border-slate-100 bg-card">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100 hover:bg-slate-50/50">
+                    <TableRow className="border-slate-100 hover:bg-background/50">
                       <TableHead className="min-w-[10rem] text-indigo-950">
                         פרויקט
                       </TableHead>
@@ -480,7 +480,7 @@ function TabButton({
         "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active
           ? "bg-indigo-600 text-white shadow-sm"
-          : "text-slate-600 hover:bg-slate-50"
+          : "text-slate-600 hover:bg-background"
       )}
     >
       <Icon className="size-4 shrink-0" aria-hidden />

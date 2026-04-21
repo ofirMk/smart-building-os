@@ -17,15 +17,21 @@ import {
   getSecondaryDashboardStats,
 } from "@/lib/dashboard-stats"
 import { getBuildingsWithCounts } from "@/lib/buildings"
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 
 export default async function HoldenCommandCenterPage() {
   const cookieStore = await cookies()
-  const selectedCompany = cookieStore.get("selected_company")?.value
+  const selectedCompany = resolveCompanyContext(
+    cookieStore.get(COMPANY_COOKIE_KEY)?.value
+  )
   if (!selectedCompany) {
     redirect("/")
   }
   if (selectedCompany === "marker_ofek") {
     redirect("/marker-ofek")
+  }
+  if (selectedCompany === "building_management_co") {
+    redirect("/facility")
   }
 
   const [rpc, secondary, buildingsResult] = await Promise.all([

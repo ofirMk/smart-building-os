@@ -596,11 +596,11 @@ export default function GanttMsProjectEditor({
   }, [tasks, hasChildren])
 
   return (
-    <div dir="rtl" className="flex min-h-0 flex-col gap-3 bg-white text-slate-900">
+    <div dir="rtl" className="flex min-h-0 flex-col gap-3 bg-card text-foreground">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <BarChart3 className="size-4 shrink-0 text-indigo-600" aria-hidden />
-          <h2 className="truncate text-sm font-bold text-slate-900">עורך גאנט — משאבים ותקציב</h2>
+          <h2 className="truncate text-sm font-bold text-foreground">עורך גאנט — משאבים ותקציב</h2>
           <span className="hidden text-xs text-slate-500 sm:inline">
             {projectCode ? `${projectName} (${projectCode})` : projectName}
           </span>
@@ -615,7 +615,7 @@ export default function GanttMsProjectEditor({
                 if (id) router.push(`/marker-ofek/projects/${id}/gantt-editor`)
               }}
             >
-              <SelectTrigger className="h-8 w-[min(100%,220px)] border-slate-200 bg-white text-xs">
+              <SelectTrigger className="h-8 w-[min(100%,220px)] border-slate-200 bg-card text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -675,7 +675,7 @@ export default function GanttMsProjectEditor({
           >
             גלול להיום
           </Button>
-          <div className="flex rounded-md border border-slate-200 bg-slate-50 p-0.5">
+          <div className="flex rounded-md border border-slate-200 bg-background p-0.5">
             {TIME_ZOOM_PRESETS.map((z) => (
               <button
                 key={z.id}
@@ -773,7 +773,7 @@ export default function GanttMsProjectEditor({
             </div>
             <div className="max-h-52 space-y-1 overflow-y-auto rounded border border-slate-100 p-2 text-start text-xs">
               {hammockCandidates.map((t) => (
-                <label key={t.id} className="flex cursor-pointer items-center gap-2 py-0.5 hover:bg-slate-50">
+                <label key={t.id} className="flex cursor-pointer items-center gap-2 py-0.5 hover:bg-background">
                   <Checkbox
                     checked={hammockIds.has(t.id)}
                     onCheckedChange={(v) => {
@@ -799,7 +799,7 @@ export default function GanttMsProjectEditor({
       </Dialog>
 
       {tasks.length === 0 ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-10 text-center text-sm text-slate-600">
+        <div className="rounded-lg border border-slate-200 bg-background/50 p-10 text-center text-sm text-slate-600">
           אין משימות — הוסיפו משימה או טענו מבנה WBS.
         </div>
       ) : sanitizedGanttTasks.length === 0 ? (
@@ -809,7 +809,7 @@ export default function GanttMsProjectEditor({
       ) : (
         <div
           className={cn(
-            "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
+            "overflow-hidden rounded-lg border border-slate-200 bg-card shadow-sm",
             "[&_.mo-gantt-root]:flex [&_.mo-gantt-root]:flex-row-reverse"
           )}
         >

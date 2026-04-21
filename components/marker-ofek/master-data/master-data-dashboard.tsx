@@ -440,7 +440,7 @@ function SupplierRow({
     })
   }
   return (
-    <tr className="hover:bg-white/[0.03]">
+    <tr className="hover:bg-card/[0.03]">
       <td className="p-2">
         <Input
           value={local.name}
@@ -760,7 +760,7 @@ function PartRow({
     setLocal(row)
   }, [row])
   return (
-    <tr className="hover:bg-white/[0.03]">
+    <tr className="hover:bg-card/[0.03]">
       <td className="p-1">
         <select
           className="h-9 w-full rounded-md border border-white/10 bg-slate-900/50 px-2 text-xs"

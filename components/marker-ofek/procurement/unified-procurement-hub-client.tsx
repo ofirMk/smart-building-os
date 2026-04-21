@@ -54,7 +54,7 @@ import type {
 const NONE = "__none__"
 
 const glass =
-  "rounded-2xl border border-white/[0.07] bg-white/[0.04] shadow-[0_12px_48px_-18px_rgba(0,0,0,0.5)] backdrop-blur-2xl ring-1 ring-white/[0.06]"
+  "rounded-2xl border border-white/[0.07] bg-card/[0.04] shadow-[0_12px_48px_-18px_rgba(0,0,0,0.5)] backdrop-blur-2xl ring-1 ring-white/[0.06]"
 
 const glassFloat =
   "rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-950/75 to-slate-950/55 p-4 shadow-[0_8px_40px_-12px_rgba(16,185,129,0.45)] backdrop-blur-2xl ring-1 ring-emerald-500/15"
@@ -714,7 +714,7 @@ export function UnifiedProcurementHubClient({
 
   return (
     <div dir="rtl" className="min-h-[calc(100vh-6rem)] bg-[#070b12] text-slate-100">
-      <div className="border-b border-white/5 bg-white/[0.02] px-4 py-3 backdrop-blur-md md:px-8">
+      <div className="border-b border-white/5 bg-card/[0.02] px-4 py-3 backdrop-blur-md md:px-8">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/30 to-blue-600/30 ring-1 ring-white/10">
@@ -810,7 +810,7 @@ export function UnifiedProcurementHubClient({
                       }
                       disabled={editingLocked}
                     >
-                      <SelectTrigger className="h-11 rounded-xl border-white/10 bg-white/5">
+                      <SelectTrigger className="h-11 rounded-xl border-white/10 bg-card/5">
                         <SelectValue placeholder="בחרו" />
                       </SelectTrigger>
                       <SelectContent>
@@ -833,7 +833,7 @@ export function UnifiedProcurementHubClient({
                         value={orderDate}
                         onChange={(e) => setOrderDate(e.target.value)}
                         disabled={editingLocked}
-                        className="h-11 rounded-xl border-white/10 bg-white/5 pe-10"
+                        className="h-11 rounded-xl border-white/10 bg-card/5 pe-10"
                       />
                     </div>
                   </div>
@@ -848,7 +848,7 @@ export function UnifiedProcurementHubClient({
                       onChange={(e) => setSupplierQuery(e.target.value)}
                       placeholder="שם / ח.פ…"
                       disabled={editingLocked}
-                      className="h-10 rounded-xl border-white/10 bg-white/5 ps-9"
+                      className="h-10 rounded-xl border-white/10 bg-card/5 ps-9"
                     />
                   </div>
                   <Select
@@ -858,7 +858,7 @@ export function UnifiedProcurementHubClient({
                     }
                         disabled={editingLocked}
                   >
-                    <SelectTrigger className="h-11 rounded-xl border-white/10 bg-white/5">
+                    <SelectTrigger className="h-11 rounded-xl border-white/10 bg-card/5">
                       <SelectValue placeholder="בחרו ספק" />
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
@@ -925,7 +925,7 @@ export function UnifiedProcurementHubClient({
                     onChange={(e) => setPartFilter(e.target.value)}
                     placeholder="חיפוש מקט״י…"
                         disabled={editingLocked}
-                    className="h-9 max-w-xs rounded-lg border-white/10 bg-white/5 text-xs"
+                    className="h-9 max-w-xs rounded-lg border-white/10 bg-card/5 text-xs"
                   />
                 </div>
                 <div className="space-y-4">
@@ -942,7 +942,7 @@ export function UnifiedProcurementHubClient({
                     return (
                       <div
                         key={row.id}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm"
+                        className="rounded-xl border border-white/[0.08] bg-card/[0.03] p-4 backdrop-blur-sm"
                       >
                         <div className="mb-2 flex items-center justify-between">
                           <span className="text-[11px] text-slate-500">
@@ -985,7 +985,7 @@ export function UnifiedProcurementHubClient({
                                 }
                               }}
                             >
-                              <SelectTrigger className="mt-1 h-11 rounded-xl border-white/10 bg-white/5">
+                              <SelectTrigger className="mt-1 h-11 rounded-xl border-white/10 bg-card/5">
                                 <SelectValue placeholder="בחרו" />
                               </SelectTrigger>
                               <SelectContent className="max-h-64">
@@ -1028,7 +1028,7 @@ export function UnifiedProcurementHubClient({
                                 })
                               }
                             >
-                              <SelectTrigger className="mt-1 h-10 rounded-xl border-white/10 bg-white/5 text-xs">
+                              <SelectTrigger className="mt-1 h-10 rounded-xl border-white/10 bg-card/5 text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1054,7 +1054,7 @@ export function UnifiedProcurementHubClient({
                               onChange={(e) =>
                                 setLine(row.id, { quantity: e.target.value })
                               }
-                              className="mt-1 h-10 rounded-xl border-white/10 bg-white/5"
+                              className="mt-1 h-10 rounded-xl border-white/10 bg-card/5"
                             />
                           </div>
                           <div>
@@ -1065,12 +1065,12 @@ export function UnifiedProcurementHubClient({
                               onChange={(e) =>
                                 setLine(row.id, { unitPrice: e.target.value })
                               }
-                              className="mt-1 h-10 rounded-xl border-white/10 bg-white/5"
+                              className="mt-1 h-10 rounded-xl border-white/10 bg-card/5"
                             />
                           </div>
                           <div>
                             <Label className="text-[11px] text-slate-500">סכום</Label>
-                            <div className="mt-1 flex h-10 items-center rounded-xl bg-white/5 px-3 text-sm tabular-nums">
+                            <div className="mt-1 flex h-10 items-center rounded-xl bg-card/5 px-3 text-sm tabular-nums">
                               {ils.format(lt)}
                             </div>
                           </div>
@@ -1176,7 +1176,7 @@ export function UnifiedProcurementHubClient({
                         type="date"
                         value={receiptDate}
                         onChange={(e) => setReceiptDate(e.target.value)}
-                        className="mt-1 h-10 rounded-xl border-white/10 bg-white/5"
+                        className="mt-1 h-10 rounded-xl border-white/10 bg-card/5"
                       />
                     </div>
                     <div>
@@ -1184,7 +1184,7 @@ export function UnifiedProcurementHubClient({
                       <Input
                         value={warehouseLocation}
                         onChange={(e) => setWarehouseLocation(e.target.value)}
-                        className="mt-1 h-10 rounded-xl border-white/10 bg-white/5"
+                        className="mt-1 h-10 rounded-xl border-white/10 bg-card/5"
                       />
                     </div>
                   </div>
@@ -1371,7 +1371,7 @@ export function UnifiedProcurementHubClient({
             ) : null}
 
             {selectedPoId && poReceipts.length > 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+              <div className="rounded-2xl border border-white/10 bg-card/[0.02] p-4">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   קבלות למסמך
                 </p>
@@ -1447,7 +1447,7 @@ export function UnifiedProcurementHubClient({
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="h-8 rounded-lg text-emerald-400 hover:bg-white/5 hover:text-emerald-300"
+                className="h-8 rounded-lg text-emerald-400 hover:bg-card/5 hover:text-emerald-300"
                 onClick={() => {
                   resetBlank()
                   router.replace("/marker-ofek/procurement?new=1")
@@ -1463,7 +1463,7 @@ export function UnifiedProcurementHubClient({
                 value={poSearch}
                 onChange={(e) => setPoSearch(e.target.value)}
                 placeholder="חיפוש מס׳ הזמנה / ספק…"
-                className="h-10 rounded-xl border-white/10 bg-white/5 ps-9 text-sm"
+                className="h-10 rounded-xl border-white/10 bg-card/5 ps-9 text-sm"
               />
             </div>
           </div>
@@ -1483,7 +1483,7 @@ export function UnifiedProcurementHubClient({
                     "mb-2 w-full rounded-xl px-3 py-2.5 text-start transition-colors",
                     active
                       ? "bg-emerald-500/15 ring-1 ring-emerald-500/40"
-                      : "hover:bg-white/5"
+                      : "hover:bg-card/5"
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -1550,7 +1550,7 @@ function StageChip({ label, on }: { label: string, on: boolean }) {
         "rounded-full px-4 py-1.5 text-xs font-medium transition-colors",
         on
           ? "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-500/50"
-          : "bg-white/5 text-slate-500"
+          : "bg-card/5 text-slate-500"
       )}
     >
       {label}

@@ -48,7 +48,7 @@ const tiles: {
 
 export function InventoryHub() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -82,10 +82,10 @@ export function InventoryHub() {
         {tiles.map((t) => (
           <div
             key={t.href}
-            className="flex flex-col rounded-xl border border-slate-100 bg-white p-6"
+            className="flex flex-col rounded-xl border border-slate-100 bg-card p-6"
           >
             <div className="mb-4 flex items-start gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg border border-slate-100 bg-white">
+              <div className="flex size-10 items-center justify-center rounded-lg border border-slate-100 bg-card">
                 <ProcurementIcon icon={t.icon} className="size-5" />
               </div>
               <div>
@@ -97,7 +97,7 @@ export function InventoryHub() {
               href={t.href}
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "mt-auto w-fit border-slate-100 text-indigo-600 hover:bg-white"
+                "mt-auto w-fit border-slate-100 text-indigo-600 hover:bg-card"
               )}
             >
               {t.action}

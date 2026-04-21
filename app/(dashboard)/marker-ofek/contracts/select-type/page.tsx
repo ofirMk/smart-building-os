@@ -14,11 +14,11 @@ import {
 export default function NewContractSelectionPage() {
   return (
     <div
-      className="flex min-h-[80vh] flex-col items-center justify-center bg-slate-50 p-6"
+      className="flex min-h-[80vh] flex-col items-center justify-center bg-background p-6"
       dir="rtl"
     >
       <div className="mb-12 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+        <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
           סוג חוזה חדש
         </h1>
         <p className="mt-4 text-lg text-slate-500">
@@ -28,7 +28,7 @@ export default function NewContractSelectionPage() {
 
       <div className="grid w-full max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
         <Link href="/marker-ofek/entities/new?kind=client&lock=1" className="group">
-          <Card className="h-full border-2 bg-white transition-all hover:border-blue-500 hover:shadow-xl">
+          <Card className="h-full border-2 bg-card transition-all hover:border-blue-500 hover:shadow-xl">
             <CardHeader>
               <div className="mb-4 w-fit rounded-2xl bg-blue-50 p-4 transition-colors group-hover:bg-blue-600 group-hover:text-white">
                 <Building2 className="h-10 w-10" aria-hidden />
@@ -49,7 +49,7 @@ export default function NewContractSelectionPage() {
         </Link>
 
         <Link href="/marker-ofek/contracts/create-subcontractor" className="group">
-          <Card className="h-full border-2 bg-white transition-all hover:border-green-500 hover:shadow-xl">
+          <Card className="h-full border-2 bg-card transition-all hover:border-green-500 hover:shadow-xl">
             <CardHeader>
               <div className="mb-4 w-fit rounded-2xl bg-green-50 p-4 transition-colors group-hover:bg-green-600 group-hover:text-white">
                 <Users className="h-10 w-10" aria-hidden />

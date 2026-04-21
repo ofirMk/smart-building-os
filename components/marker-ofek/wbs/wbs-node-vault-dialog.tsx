@@ -221,7 +221,7 @@ export function WbsNodeVaultDialog({
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
+            <div className="rounded-lg border border-slate-100 bg-background/60 p-3">
               <Label className="text-xs text-slate-600">תיקיית יעד בכספת</Label>
               <Select
                 value={uploadFolderId || undefined}
@@ -233,7 +233,7 @@ export function WbsNodeVaultDialog({
                 }}
                 disabled={folderRows.length === 0}
               >
-                <SelectTrigger className="mt-1 border-slate-100 bg-white text-sm text-indigo-900">
+                <SelectTrigger className="mt-1 border-slate-100 bg-card text-sm text-indigo-900">
                   <SelectValue placeholder="בחרו תיקייה" />
                 </SelectTrigger>
                 <SelectContent>
@@ -251,11 +251,11 @@ export function WbsNodeVaultDialog({
               <Input
                 value={docKind}
                 onChange={(e) => setDocKind(e.target.value)}
-                className="mt-1 border-slate-100 bg-white text-sm text-indigo-900"
+                className="mt-1 border-slate-100 bg-card text-sm text-indigo-900"
                 placeholder="תוכניות"
               />
               <div className="mt-2">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-slate-50">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 bg-card px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-background">
                   <Upload className="size-4" aria-hidden />
                   {uploading ? "מעלה…" : "העלאה לכספת וצירוף"}
                   <input
@@ -279,7 +279,7 @@ export function WbsNodeVaultDialog({
               ) : linkedFileRows.length === 0 ? (
                 <p className="text-sm text-slate-500">אין מסמכים מקושרים.</p>
               ) : (
-                <ul className="space-y-1 rounded-lg border border-slate-100 bg-white">
+                <ul className="space-y-1 rounded-lg border border-slate-100 bg-card">
                   {linkedFileRows.map((l) => (
                     <li
                       key={l.link_id}
@@ -310,14 +310,14 @@ export function WbsNodeVaultDialog({
 
             <div>
               <p className="mb-2 text-xs font-semibold text-slate-500">מסמכים בכספת הפרויקט</p>
-              <div className="max-h-64 space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-white p-2">
+              <div className="max-h-64 space-y-3 overflow-y-auto rounded-lg border border-slate-100 bg-card p-2">
                 {vault.length === 0 && !busy ? (
                   <p className="px-2 py-4 text-center text-sm text-slate-500">הכספת ריקה.</p>
                 ) : null}
                 {folderRows.map((folder) => {
                   const inFolder = fileRows.filter((f) => f.parent_document_id === folder.id)
                   return (
-                    <div key={folder.id} className="rounded-md border border-slate-100 bg-slate-50/50 p-2">
+                    <div key={folder.id} className="rounded-md border border-slate-100 bg-background/50 p-2">
                       <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold text-indigo-900">
                         <Folder className="size-3.5 shrink-0 text-indigo-600" aria-hidden />
                         {folder.title?.trim() ?? folder.vault_folder_key}
@@ -331,7 +331,7 @@ export function WbsNodeVaultDialog({
                             return (
                               <li
                                 key={d.id}
-                                className="flex flex-wrap items-center gap-2 rounded border border-transparent bg-white px-2 py-1.5 text-sm hover:border-slate-100"
+                                className="flex flex-wrap items-center gap-2 rounded border border-transparent bg-card px-2 py-1.5 text-sm hover:border-slate-100"
                               >
                                 <FileText className="size-4 shrink-0 text-slate-400" aria-hidden />
                                 <span className="min-w-0 flex-1 truncate text-indigo-900">
@@ -362,7 +362,7 @@ export function WbsNodeVaultDialog({
                   const rootFiles = fileRows.filter((f) => !f.parent_document_id)
                   if (rootFiles.length === 0) return null
                   return (
-                    <div className="rounded-md border border-dashed border-slate-200 bg-white p-2">
+                    <div className="rounded-md border border-dashed border-slate-200 bg-card p-2">
                       <p className="mb-1.5 text-xs font-semibold text-slate-500">בשורש הכספת</p>
                       <ul className="space-y-0.5">
                         {rootFiles.map((d) => {

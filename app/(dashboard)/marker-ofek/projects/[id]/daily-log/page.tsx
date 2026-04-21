@@ -66,7 +66,7 @@ export default async function ProjectDailyLogPage({
   }
 
   return (
-    <div className="min-h-0 flex-1 space-y-4 bg-white pb-12 pt-2">
+    <div className="min-h-0 flex-1 space-y-4 bg-card pb-12 pt-2">
       <Link
         href={`/marker-ofek/projects/${id}`}
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 hover:text-indigo-700"

@@ -82,7 +82,7 @@ export function TendersPricingClient({ projectId }: { projectId: string | null }
 
   if (!projectId) {
     return (
-      <div className="bg-white px-2 py-10 text-center text-sm text-slate-500">
+      <div className="bg-card px-2 py-10 text-center text-sm text-slate-500">
         בחרו מכרז ב
         <Link className="text-indigo-600 underline" href={TENDERS_ROUTES.hub}>
           מרכז המכרזים
@@ -92,7 +92,7 @@ export function TendersPricingClient({ projectId }: { projectId: string | null }
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -127,14 +127,14 @@ export function TendersPricingClient({ projectId }: { projectId: string | null }
         </div>
       ) : (
         <>
-          <section className="grid gap-6 rounded-xl border border-slate-100 bg-white p-6 md:grid-cols-2">
+          <section className="grid gap-6 rounded-xl border border-slate-100 bg-card p-6 md:grid-cols-2">
             <div className="space-y-4">
               <h2 className="text-sm font-semibold text-[#1e293b]">מחשבון סיכון ועומס</h2>
               <div className="grid gap-2">
                 <Label className="text-slate-500">סיכון % (על עלות ישירה)</Label>
                 <input
                   type="number"
-                  className="h-10 rounded-md border border-slate-100 bg-white px-3 font-mono tabular-nums"
+                  className="h-10 rounded-md border border-slate-100 bg-card px-3 font-mono tabular-nums"
                   value={risk}
                   onChange={(e) => setRisk(Number(e.target.value))}
                 />
@@ -143,7 +143,7 @@ export function TendersPricingClient({ projectId }: { projectId: string | null }
                 <Label className="text-slate-500">עומס כללי % (על עלות ישירה)</Label>
                 <input
                   type="number"
-                  className="h-10 rounded-md border border-slate-100 bg-white px-3 font-mono tabular-nums"
+                  className="h-10 rounded-md border border-slate-100 bg-card px-3 font-mono tabular-nums"
                   value={oh}
                   onChange={(e) => setOh(Number(e.target.value))}
                 />

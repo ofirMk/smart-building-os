@@ -262,7 +262,7 @@ export default function MoInvoicePrintPage() {
     <div
       dir="rtl"
       lang="he"
-      className="bg-slate-50 text-slate-900 print:bg-white print:p-0"
+      className="bg-background text-foreground print:bg-white print:p-0"
     >
       <div className="mx-auto max-w-3xl px-4 py-6 print:max-w-none print:px-8 print:py-6 print:shadow-none">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
@@ -284,7 +284,7 @@ export default function MoInvoicePrintPage() {
         </div>
 
         <article
-          className="mo-print-he rounded-lg border-2 border-slate-800 bg-white p-6 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none"
+          className="mo-print-he rounded-lg border-2 border-slate-800 bg-card p-6 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none"
           aria-label="מסמך להדפסה"
         >
           <header className="border-b-2 border-slate-800 pb-4 print:border-black">
@@ -348,7 +348,7 @@ export default function MoInvoicePrintPage() {
           </header>
 
           <section className="mt-6 space-y-4 text-sm">
-            <div className="rounded-md border border-slate-200 bg-slate-50/80 p-4 print:border-black print:bg-white">
+            <div className="rounded-md border border-slate-200 bg-background/80 p-4 print:border-black print:bg-white">
               <p className="text-xs font-bold tracking-wide text-slate-500 print:text-black">
                 לכבוד
               </p>

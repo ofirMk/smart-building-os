@@ -88,7 +88,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium outline-hidden select-none transition-[background-color,color] duration-150 ease-out hover:bg-zinc-100 data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900 data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:hover:bg-red-50 data-[variant=destructive]:data-[highlighted]:bg-red-50 data-[variant=destructive]:data-[highlighted]:text-destructive dark:data-[variant=destructive]:hover:bg-red-950/40 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium outline-hidden select-none transition-[background-color,color] duration-150 ease-out hover:bg-background data-[highlighted]:bg-background data-[highlighted]:text-zinc-900 data-inset:ps-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:hover:bg-red-50 data-[variant=destructive]:data-[highlighted]:bg-red-50 data-[variant=destructive]:data-[highlighted]:text-destructive dark:data-[variant=destructive]:hover:bg-red-950/40 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
         className
       )}
       {...props}

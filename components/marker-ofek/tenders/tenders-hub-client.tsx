@@ -67,7 +67,7 @@ function statusLabel(s: MoTenderProjectStatus): string {
 function statusBadgeClass(s: MoTenderProjectStatus): string {
   switch (s) {
     case "draft":
-      return "border-slate-200 bg-slate-50 text-slate-700"
+      return "border-slate-200 bg-background text-slate-700"
     case "submitted":
       return "border-amber-200 bg-amber-50 text-amber-900"
     case "won":
@@ -75,7 +75,7 @@ function statusBadgeClass(s: MoTenderProjectStatus): string {
     case "lost":
       return "border-rose-200 bg-rose-50 text-rose-900"
     default:
-      return "border-slate-200 bg-white text-slate-700"
+      return "border-slate-200 bg-card text-slate-700"
   }
 }
 
@@ -197,7 +197,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
     toast.success(
       res.alreadyConverted ? "החוזה כבר קיים — לא בוצעה המרה נוספת" : "המכרז הומר לחוזה פעיל",
       {
-        className: "border border-slate-100 bg-white",
+        className: "border border-slate-100 bg-card",
         description:
           res.totalAmount != null ? (
             <span className="font-currency-mono text-sm tabular-nums text-slate-700">
@@ -214,7 +214,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-8 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -240,7 +240,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                 id="tender-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-10 min-w-[200px] border-slate-100 bg-white"
+                className="h-10 min-w-[200px] border-slate-100 bg-card"
                 placeholder="לדוגמה: מגדלי השרון"
               />
             </div>
@@ -252,7 +252,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                 id="tender-code"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="h-10 w-32 border-slate-100 bg-white"
+                className="h-10 w-32 border-slate-100 bg-card"
                 placeholder="T-102"
               />
             </div>
@@ -268,7 +268,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
         }
       />
 
-      <section className="rounded-xl border border-slate-100 bg-white">
+      <section className="rounded-xl border border-slate-100 bg-card">
         <div className="border-b border-slate-100 px-4 py-3 md:px-6">
           <h2 className="text-sm font-semibold text-[#1e293b]">מכרזים פעילים</h2>
           <p className="mt-1 text-xs text-slate-500">
@@ -328,7 +328,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                                 void handleLinkChange(r.id, "project", v ?? "__none__")
                               }}
                             >
-                              <SelectTrigger className="h-9 border-slate-100 bg-white text-start text-sm">
+                              <SelectTrigger className="h-9 border-slate-100 bg-card text-start text-sm">
                                 <SelectValue placeholder="בחרו פרויקט" />
                               </SelectTrigger>
                               <SelectContent>
@@ -351,7 +351,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                                 void handleLinkChange(r.id, "entity", v ?? "__none__")
                               }}
                             >
-                              <SelectTrigger className="h-9 border-slate-100 bg-white text-start text-sm">
+                              <SelectTrigger className="h-9 border-slate-100 bg-card text-start text-sm">
                                 <SelectValue placeholder="בחרו ישות" />
                               </SelectTrigger>
                               <SelectContent>
@@ -378,7 +378,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                           </div>
                           <Link
                             href={`/marker-ofek/finance/contracts/${linkContractId}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-white px-3 py-1.5 font-currency-mono text-sm font-medium text-emerald-900 shadow-sm transition-colors hover:bg-emerald-100/80"
+                            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-card px-3 py-1.5 font-currency-mono text-sm font-medium text-emerald-900 shadow-sm transition-colors hover:bg-emerald-100/80"
                           >
                             פתיחת מרכז חיוב
                           </Link>
@@ -392,7 +392,7 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                           type="button"
                           size="sm"
                           variant="secondary"
-                          className="h-9 border border-slate-200 bg-white"
+                          className="h-9 border border-slate-200 bg-card"
                           disabled={submittingId === r.id}
                           onClick={() => void handleSubmitTender(r.id)}
                         >
@@ -425,25 +425,25 @@ export function TendersHubClient({ canConvertTender }: { canConvertTender: boole
                       )}
                       <Link
                         href={`${TENDERS_ROUTES.pricing}${q}`}
-                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-slate-50"
+                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-background"
                       >
                         תמחור
                       </Link>
                       <Link
                         href={`${TENDERS_ROUTES.boq}${q}`}
-                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-slate-50"
+                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-background"
                       >
                         BoQ
                       </Link>
                       <Link
                         href={`${TENDERS_ROUTES.comparison}${q}`}
-                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-slate-50"
+                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-background"
                       >
                         השוואה
                       </Link>
                       <Link
                         href={`${TENDERS_ROUTES.wbs}${q}`}
-                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-slate-50"
+                        className="inline-flex h-9 items-center rounded-lg border border-slate-100 px-3 text-xs font-medium text-indigo-600 hover:bg-background"
                       >
                         WBS
                       </Link>

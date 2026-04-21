@@ -138,10 +138,10 @@ export function DekelPricePickerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[min(92vh,620px)] gap-0 overflow-hidden border-slate-100 bg-white p-0 sm:max-w-xl"
+        className="max-h-[min(92vh,620px)] gap-0 overflow-hidden border-slate-100 bg-card p-0 sm:max-w-xl"
         showCloseButton
       >
-        <DialogHeader className="border-b border-slate-100 bg-white px-4 py-3">
+        <DialogHeader className="border-b border-slate-100 bg-card px-4 py-3">
           <DialogTitle className="flex items-center gap-2 text-[#1e293b]">
             <Library className="size-5 text-indigo-600" aria-hidden />
             משוך מדקל
@@ -158,7 +158,7 @@ export function DekelPricePickerDialog({
           </p>
         ) : null}
 
-        <div className="border-b border-slate-100 bg-white px-3 py-2">
+        <div className="border-b border-slate-100 bg-card px-3 py-2">
           <p className="mb-2 text-[11px] font-medium text-slate-500">קטגוריות מהירות</p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -168,7 +168,7 @@ export function DekelPricePickerDialog({
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                 categoryRibbon === null
                   ? "border-indigo-200 bg-indigo-50 text-indigo-900"
-                  : "border-slate-100 bg-white text-slate-600 hover:bg-slate-50"
+                  : "border-slate-100 bg-card text-slate-600 hover:bg-background"
               )}
             >
               הכל
@@ -182,7 +182,7 @@ export function DekelPricePickerDialog({
                   "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                   categoryRibbon === c
                     ? "border-indigo-200 bg-indigo-50 text-indigo-900"
-                    : "border-slate-100 bg-white text-slate-600 hover:bg-slate-50"
+                    : "border-slate-100 bg-card text-slate-600 hover:bg-background"
                 )}
               >
                 {c}
@@ -191,7 +191,7 @@ export function DekelPricePickerDialog({
           </div>
         </div>
 
-        <div className="grid gap-3 border-b border-slate-100 bg-white px-4 py-3">
+        <div className="grid gap-3 border-b border-slate-100 bg-card px-4 py-3">
           <div className="grid gap-1">
             <Label htmlFor="dekel-q" className="text-xs text-slate-500">
               חיפוש
@@ -200,7 +200,7 @@ export function DekelPricePickerDialog({
               id="dekel-q"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="border-slate-100 bg-white"
+              className="border-slate-100 bg-card"
               placeholder="תיאור, מק״ט, קטגוריה…"
               dir="rtl"
               autoComplete="off"
@@ -214,7 +214,7 @@ export function DekelPricePickerDialog({
               id="dekel-mult"
               value={multiplier}
               onChange={(e) => setMultiplier(e.target.value)}
-              className="border-slate-100 bg-white font-currency-mono tabular-nums"
+              className="border-slate-100 bg-card font-currency-mono tabular-nums"
               inputMode="decimal"
               dir="ltr"
             />
@@ -224,7 +224,7 @@ export function DekelPricePickerDialog({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-white px-2 py-2">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-card px-2 py-2">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
               <Loader2 className="size-5 animate-spin" aria-hidden />
@@ -233,10 +233,10 @@ export function DekelPricePickerDialog({
           ) : rows.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">אין תוצאות</p>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-100 bg-white">
+            <div className="overflow-hidden rounded-lg border border-slate-100 bg-card">
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/80 text-start text-[11px] text-slate-500">
+                  <tr className="border-b border-slate-100 bg-background/80 text-start text-[11px] text-slate-500">
                     <th className="px-3 py-2 font-medium">תיאור · יח׳</th>
                     <th className="px-2 py-2 text-end font-medium">מחיר דקל</th>
                     <th className="w-8 px-0 py-2 text-center font-normal text-slate-400">

@@ -61,7 +61,7 @@ import { parseApiData } from "@/lib/utils/api-client"
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 const ils = new Intl.NumberFormat("he-IL", {
@@ -533,12 +533,12 @@ export function SubcontractorBillingWorkspace() {
   return (
     <>
       <form
-        className="print:hidden flex min-h-0 min-w-0 flex-1 flex-col bg-white [color-scheme:light]"
+        className="print:hidden flex min-h-0 min-w-0 flex-1 flex-col bg-card [color-scheme:light]"
         onSubmit={handleSubmit(onApproveFinal)}
       >
         <DenseMasterDetailTemplate
           dir="rtl"
-          className="min-h-0 flex-1 text-slate-900"
+          className="min-h-0 flex-1 text-foreground"
           eyebrow="Marker Ofek · כספים"
           title="אישור חשבון קבלן משנה"
           description="אישור תשלום חלקי — Claimed / Approved, ניכויים והוראות שינוי (דמה)."
@@ -554,7 +554,7 @@ export function SubcontractorBillingWorkspace() {
                   "shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-bold",
                   locked
                     ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                    : "border-slate-200 bg-slate-50 text-slate-700"
+                    : "border-slate-200 bg-background text-slate-700"
                 )}
               >
                 {statusLabelHe(documentStatus)}
@@ -564,7 +564,7 @@ export function SubcontractorBillingWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 border-slate-200 bg-white text-sm text-slate-800"
+                className="h-8 gap-1 border-slate-200 bg-card text-sm text-slate-800"
                 onClick={onPrint}
               >
                 <Printer className="size-3.5 opacity-90" aria-hidden />
@@ -574,7 +574,7 @@ export function SubcontractorBillingWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-white text-sm text-slate-800"
+                className="h-8 border-slate-200 bg-card text-sm text-slate-800"
                 disabled={locked}
                 onClick={onSaveDraft}
               >
@@ -591,7 +591,7 @@ export function SubcontractorBillingWorkspace() {
             </>
           }
           master={
-            <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
               {defectWarning ? (
                 <div
                   className="mb-3 flex gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
@@ -637,19 +637,19 @@ export function SubcontractorBillingWorkspace() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-6 gap-2 text-xs">
-                    <div className="col-span-3 rounded-xl border border-rose-200 bg-white p-2">
+                    <div className="col-span-3 rounded-xl border border-rose-200 bg-card p-2">
                       <p className="text-[10px] uppercase tracking-wider text-rose-700">חשיפה כוללת</p>
                       <p className="font-mono text-sm font-semibold text-rose-950">
                         {ils.format(offsetGuard.exposureAmount)}
                       </p>
                     </div>
-                    <div className="col-span-3 rounded-xl border border-rose-200 bg-white p-2">
+                    <div className="col-span-3 rounded-xl border border-rose-200 bg-card p-2">
                       <p className="text-[10px] uppercase tracking-wider text-rose-700">שורות חשופות</p>
                       <p className="font-mono text-sm font-semibold text-rose-950">
                         {offsetGuard.unoffsetLineIds.length}
                       </p>
                     </div>
-                    <div className="col-span-6 rounded-xl border border-rose-200 bg-white p-2">
+                    <div className="col-span-6 rounded-xl border border-rose-200 bg-card p-2">
                       <p className="text-[10px] uppercase tracking-wider text-rose-700">
                         PO לא מקוזזים
                       </p>
@@ -807,7 +807,7 @@ export function SubcontractorBillingWorkspace() {
             </div>
           }
           detail={
-            <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-white p-1.5 shadow-sm">
+            <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-card p-1.5 shadow-sm">
               <div className="relative min-h-0 flex-1 overflow-auto px-0 pb-2 pt-1 md:px-2">
                 <Tabs
                   value={activeDetailTab}
@@ -825,7 +825,7 @@ export function SubcontractorBillingWorkspace() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1 border-slate-200 bg-white text-sm"
+                    className="h-8 gap-1 border-slate-200 bg-card text-sm"
                     disabled={locked}
                     onClick={appendBillingLine}
                   >
@@ -834,7 +834,7 @@ export function SubcontractorBillingWorkspace() {
                   </Button>
                 </div>
 
-                <div className="rounded-md border border-slate-200 bg-white md:rounded-lg">
+                <div className="rounded-md border border-slate-200 bg-card md:rounded-lg">
                   <Table dir="rtl" className="relative">
                     <TableHeader>
                       <TableRow className="border-slate-200 hover:bg-transparent">
@@ -861,7 +861,7 @@ export function SubcontractorBillingWorkspace() {
                           role="button"
                           tabIndex={0}
                           className={cn(
-                            "border-slate-100 hover:bg-slate-50/80",
+                            "border-slate-100 hover:bg-background/80",
                             lineFocus === index &&
                               "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/40"
                           )}
@@ -941,7 +941,7 @@ export function SubcontractorBillingWorkspace() {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7 border-slate-200 bg-white"
+                              className="h-7 w-7 border-slate-200 bg-card"
                               disabled={locked || lineFields.length <= 1}
                               onClick={() => removeBillingLineAt(index)}
                               aria-label="מחק שורה"
@@ -978,7 +978,7 @@ export function SubcontractorBillingWorkspace() {
                   </Table>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-3 shadow-inner">
+                <div className="mt-4 rounded-lg border border-slate-200 bg-background/90 px-3 py-3 shadow-inner">
                   <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
                     <div>
                       <p className="text-xs font-bold text-slate-800">
@@ -992,7 +992,7 @@ export function SubcontractorBillingWorkspace() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1 border-slate-200 bg-white text-sm"
+                      className="h-8 gap-1 border-slate-200 bg-card text-sm"
                       disabled={locked}
                       onClick={appendChangeOrderRow}
                     >
@@ -1001,7 +1001,7 @@ export function SubcontractorBillingWorkspace() {
                     </Button>
                   </div>
 
-                  <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+                  <div className="overflow-x-auto rounded-md border border-slate-200 bg-card">
                     <Table dir="rtl">
                       <TableHeader>
                         <TableRow className="border-slate-200 hover:bg-transparent">
@@ -1018,7 +1018,7 @@ export function SubcontractorBillingWorkspace() {
                         {changeOrderFields.map((coField, coIndex) => (
                           <TableRow
                             key={coField.id}
-                            className="border-slate-100 hover:bg-slate-50/80"
+                            className="border-slate-100 hover:bg-background/80"
                           >
                             <TableCell className="px-2 py-1 align-middle">
                               <Input
@@ -1048,7 +1048,7 @@ export function SubcontractorBillingWorkspace() {
                                 type="button"
                                 variant="outline"
                                 size="icon"
-                                className="h-7 w-7 border-slate-200 bg-white"
+                                className="h-7 w-7 border-slate-200 bg-card"
                                 disabled={locked}
                                 onClick={() => removeChangeOrderAt(coIndex)}
                                 aria-label="מחק הוראת שינוי"
@@ -1096,11 +1096,11 @@ export function SubcontractorBillingWorkspace() {
                       </p>
                     ) : null}
                     <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                      <div className="rounded-lg border border-slate-200 bg-background p-2">
                         <p className="text-[10px] text-slate-500">Base Material Deduction</p>
                         <p className="font-mono font-semibold">{ils.format(materialDeductions?.baseAmount ?? 0)}</p>
                       </div>
-                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                      <div className="rounded-lg border border-slate-200 bg-background p-2">
                         <p className="text-[10px] text-slate-500">Procurement Commission %</p>
                         <p className="font-mono font-semibold">
                           {(materialDeductions?.procurementCommissionPct ?? 0).toFixed(2)}%
@@ -1113,7 +1113,7 @@ export function SubcontractorBillingWorkspace() {
                         </p>
                       </div>
                     </div>
-                    <div className="rounded-md border border-slate-200 bg-white">
+                    <div className="rounded-md border border-slate-200 bg-card">
                       <Table>
                         <TableHeader>
                           <TableRow>

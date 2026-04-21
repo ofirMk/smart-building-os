@@ -164,7 +164,7 @@ export function EntityMasterDetailClient({
           </button>
         </div>
 
-        <div className="flex-1 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex-1 rounded-lg border border-slate-200 bg-card shadow-sm">
           {activeTab === "financials" ? (
             <form onSubmit={handleSubmit(onSubmit)} className="p-6">
               <div className="mb-6 flex items-center justify-between">
@@ -279,7 +279,7 @@ export function EntityMasterDetailClient({
               </div>
 
               {contractRows.length === 0 ? (
-                <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50">
+                <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-background">
                   <div className="text-center">
                     <FileText className="mx-auto mb-2 h-10 w-10 text-slate-400" />
                     <p className="font-medium text-slate-600">

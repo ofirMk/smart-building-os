@@ -13,6 +13,12 @@ export type SendTransactionalEmailInput = {
   html: string
   /** כותרת Reply-To אופציונלית */
   replyTo?: string
+  /** Attachments encoded as base64 content */
+  attachments?: Array<{
+    filename: string
+    contentBase64: string
+    contentType?: string
+  }>
 }
 
 export type SendTransactionalEmailResult =
@@ -57,6 +63,11 @@ async function sendResend(input: SendTransactionalEmailInput): Promise<SendTrans
       subject: input.subject,
       html: input.html,
       reply_to: input.replyTo,
+      attachments: (input.attachments ?? []).map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.contentBase64,
+        type: attachment.contentType ?? "application/octet-stream",
+      })),
     }),
   })
 
@@ -95,6 +106,11 @@ async function sendPostmark(input: SendTransactionalEmailInput): Promise<SendTra
       Subject: input.subject,
       HtmlBody: input.html,
       ReplyTo: input.replyTo,
+      Attachments: (input.attachments ?? []).map((attachment) => ({
+        Name: attachment.filename,
+        Content: attachment.contentBase64,
+        ContentType: attachment.contentType ?? "application/octet-stream",
+      })),
       MessageStream: "outbound",
     }),
   })

@@ -18,7 +18,15 @@ export async function ensureProjectVaultDefaultFolders(projectId: string): Promi
   const pid = String(projectId ?? "").trim()
   if (!pid) return
   const supabase = await createSupabaseServerAuthClient()
-  await ensureDefaultVaultFoldersForProjectId(supabase, pid)
+  try {
+    await ensureDefaultVaultFoldersForProjectId(supabase, pid)
+  } catch (error) {
+    // Never crash Project Hub for vault bootstrap drift; log and continue.
+    console.error("[vault:init] failed to ensure default folders", {
+      projectId: pid,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
 }
 
 async function ensureDefaultVaultFoldersForProjectId(
@@ -43,7 +51,8 @@ async function ensureDefaultVaultFoldersForProjectId(
       file_path: null,
       title: f.title,
       document_kind: f.title,
-      mime_type: null,
+      mime_type: "application/x-directory",
+      size: null,
       is_folder: true,
       vault_folder_key: f.key,
       version_group_id: versionGroupId,

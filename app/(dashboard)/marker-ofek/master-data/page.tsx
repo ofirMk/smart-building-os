@@ -50,7 +50,7 @@ export default async function MasterDataPage({
     <Suspense
       fallback={
         <div
-          className="flex min-h-[40vh] items-center justify-center bg-white text-sm text-slate-500"
+          className="flex min-h-[40vh] items-center justify-center bg-card text-sm text-slate-500"
           dir="rtl"
         >
           טוען נתוני מאסטר…

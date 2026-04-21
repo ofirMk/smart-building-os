@@ -196,9 +196,9 @@ function statusBadgeClass(s: TaskStatus): string {
     case "in_progress":
       return "border-sky-200 bg-sky-50 text-sky-900"
     case "planned":
-      return "border-slate-200 bg-slate-50 text-slate-700"
+      return "border-slate-200 bg-background text-slate-700"
     default:
-      return "border-slate-200 bg-slate-50 text-slate-700"
+      return "border-slate-200 bg-background text-slate-700"
   }
 }
 
@@ -216,9 +216,9 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
   return (
     <div
       dir="rtl"
-      className="min-h-[calc(100vh-4rem)] w-full bg-white text-slate-900"
+      className="min-h-[calc(100vh-4rem)] w-full bg-card text-foreground"
     >
-      <div className="border-b border-slate-200 bg-white px-3 py-2.5 md:px-4">
+      <div className="border-b border-slate-200 bg-card px-3 py-2.5 md:px-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -231,7 +231,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
             >
               <SelectTrigger
                 size="sm"
-                className="h-8 max-w-[min(100%,20rem)] border-slate-200 bg-white text-sm font-semibold text-slate-900"
+                className="h-8 max-w-[min(100%,20rem)] border-slate-200 bg-card text-sm font-semibold text-foreground"
                 aria-label="בחירת פרויקט"
               >
                 <SelectValue />
@@ -260,7 +260,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
               size="sm"
               className={cn(
                 "h-8 gap-1 border-slate-200 px-2.5 text-xs font-semibold",
-                view === "months" && "border-slate-300 bg-slate-100 text-slate-900"
+                view === "months" && "border-slate-300 bg-slate-100 text-foreground"
               )}
               onClick={() => setView("months")}
             >
@@ -273,7 +273,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
               size="sm"
               className={cn(
                 "h-8 gap-1 border-slate-200 px-2.5 text-xs font-semibold",
-                view === "weeks" && "border-slate-300 bg-slate-100 text-slate-900"
+                view === "weeks" && "border-slate-300 bg-slate-100 text-foreground"
               )}
               onClick={() => setView("weeks")}
             >
@@ -292,7 +292,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
         {/* Timeline panel */}
         <div className="order-2 flex min-h-0 min-w-0 flex-col border-slate-200 max-lg:border-t lg:order-1 lg:border-s">
           <div
-            className="sticky top-0 z-20 border-b border-slate-200 bg-white"
+            className="sticky top-0 z-20 border-b border-slate-200 bg-card"
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(${colCount}, minmax(${view === "months" ? 56 : 28}px, 1fr))`,
@@ -322,7 +322,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
             {tasks.map((task, rowIndex) => (
               <div
                 key={task.id}
-                className="relative grid h-11 shrink-0 border-b border-slate-200 bg-white"
+                className="relative grid h-11 shrink-0 border-b border-slate-200 bg-card"
                 style={{
                   gridTemplateColumns: `repeat(${colCount}, minmax(${view === "months" ? 56 : 28}px, 1fr))`,
                 }}
@@ -330,7 +330,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
                 {Array.from({ length: colCount }).map((_, ci) => (
                   <div
                     key={ci}
-                    className="border-s border-slate-100 bg-slate-50/40 first:border-s-0"
+                    className="border-s border-slate-100 bg-background/40 first:border-s-0"
                     aria-hidden
                   />
                 ))}
@@ -363,8 +363,8 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
         </div>
 
         {/* Task list — WBS */}
-        <div className="order-1 flex min-h-0 flex-col border-slate-200 bg-white lg:order-2 lg:border-e">
-          <div className="sticky top-0 z-20 flex h-[41px] shrink-0 items-end border-b border-slate-200 bg-white px-2 pb-1.5 pt-2">
+        <div className="order-1 flex min-h-0 flex-col border-slate-200 bg-card lg:order-2 lg:border-e">
+          <div className="sticky top-0 z-20 flex h-[41px] shrink-0 items-end border-b border-slate-200 bg-card px-2 pb-1.5 pt-2">
             <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
               WBS / משימות
             </span>
@@ -374,7 +374,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
               key={task.id}
               className="flex h-11 shrink-0 flex-col justify-center gap-0.5 border-b border-slate-200 px-2 py-1"
             >
-              <p className="line-clamp-2 text-xs font-semibold leading-tight text-slate-900">
+              <p className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
                 {task.nameHe}
               </p>
               <div className="flex flex-wrap items-center gap-1.5">

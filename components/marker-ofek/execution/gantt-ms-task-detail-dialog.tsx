@@ -288,10 +288,10 @@ export function GanttMsTaskDetailDialog({
                   return (
                     <div
                       key={a.id}
-                      className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-2 py-1.5"
+                      className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-background/80 px-2 py-1.5"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-900">{r?.name ?? a.resource_id}</p>
+                        <p className="truncate text-sm font-medium text-foreground">{r?.name ?? a.resource_id}</p>
                         {r?.profession ? <p className="truncate text-xs text-slate-500">{r.profession}</p> : null}
                       </div>
                       <div className="flex items-center gap-1">
@@ -345,7 +345,7 @@ export function GanttMsTaskDetailDialog({
               </Select>
             </div>
             {boqRow ? (
-              <div className="rounded-md border border-slate-100 bg-white px-2 py-2 text-xs text-slate-600">
+              <div className="rounded-md border border-slate-100 bg-card px-2 py-2 text-xs text-slate-600">
                 <p>
                   <span className="font-semibold">יחידה:</span> {boqRow.unit}
                 </p>

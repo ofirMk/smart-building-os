@@ -391,7 +391,7 @@ export function ContractBillingCenterClient({
               href={`/marker-ofek/contracts/${initial.contractId}`}
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "border-slate-200 text-[#1e293b] hover:bg-slate-50"
+                "border-slate-200 text-[#1e293b] hover:bg-background"
               )}
             >
               פתיחת כרטיס חוזה
@@ -454,7 +454,7 @@ export function ContractBillingCenterClient({
                   </p>
                 ) : (
                   <table className="w-full border-collapse text-right">
-                    <thead className="sticky top-0 z-[1] border-b border-slate-100 bg-slate-50/95 text-[11px] font-medium text-slate-500 backdrop-blur-sm">
+                    <thead className="sticky top-0 z-[1] border-b border-slate-100 bg-background/95 text-[11px] font-medium text-slate-500 backdrop-blur-sm">
                       <tr>
                         <th className="p-3 text-start">סעיף חוזה</th>
                         <th className="p-3 text-center font-currency-mono">
@@ -472,7 +472,7 @@ export function ContractBillingCenterClient({
                       {syncRows.map((row) => (
                         <tr
                           key={row.lineId}
-                          className="transition-colors hover:bg-slate-50/80"
+                          className="transition-colors hover:bg-background/80"
                         >
                           <td className="p-3 font-medium text-slate-800">
                             {row.label}
@@ -531,7 +531,7 @@ export function ContractBillingCenterClient({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/40 p-4">
+              <div className="flex justify-end gap-3 border-t border-slate-100 bg-background/40 p-4">
                 <button
                   type="button"
                   onClick={closeSyncDialog}
@@ -600,7 +600,7 @@ export function ContractBillingCenterClient({
             חשבונות חלקיים ושורות חיוב
           </h2>
           {initial.partialAccounts.length === 0 ? (
-            <p className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-8 text-center text-sm text-slate-500">
+            <p className="rounded-xl border border-slate-100 bg-background/50 px-4 py-8 text-center text-sm text-slate-500">
               אין עדיין חשבונות חלקיים לחוזה זה. ניתן ליצור מתוך כרטיס החוזה.
             </p>
           ) : (
@@ -680,7 +680,7 @@ export function ContractBillingCenterClient({
                             "gap-2 border-slate-200",
                             exceptionsOnly
                               ? "border-slate-400 bg-slate-100/80 text-[#1e293b]"
-                              : "text-slate-700 hover:bg-slate-50"
+                              : "text-slate-700 hover:bg-background"
                           )}
                         >
                           הצג חריגים בלבד
@@ -692,7 +692,7 @@ export function ContractBillingCenterClient({
                           onClick={() => openSyncDialog(pa.id)}
                           className={cn(
                             buttonVariants({ variant: "outline", size: "sm" }),
-                            "gap-2 border-slate-200 text-slate-800 hover:bg-slate-50"
+                            "gap-2 border-slate-200 text-slate-800 hover:bg-background"
                           )}
                         >
                           <GitCompareArrows className="size-4" aria-hidden />
@@ -719,7 +719,7 @@ export function ContractBillingCenterClient({
                   </div>
                   {gapHunterEnabled ? (
                     <div
-                      className="border-b border-slate-100 bg-slate-50/30 px-4 py-3"
+                      className="border-b border-slate-100 bg-background/30 px-4 py-3"
                       aria-label="פערי ביצוע מול חיוב — לוח בקרה"
                     >
                       <div className="grid gap-2 sm:grid-cols-2">
@@ -791,7 +791,7 @@ export function ContractBillingCenterClient({
                           }}
                           className={cn(
                             buttonVariants({ variant: "outline", size: "sm" }),
-                            "gap-2 border-indigo-200 bg-white text-indigo-800 hover:bg-indigo-50 disabled:opacity-50"
+                            "gap-2 border-indigo-200 bg-card text-indigo-800 hover:bg-indigo-50 disabled:opacity-50"
                           )}
                         >
                           {pdfPartialId === pa.id ? (
@@ -1084,7 +1084,7 @@ export function ContractBillingCenterClient({
                   </Table>
                     </div>
                     <aside
-                      className="border-t border-slate-100 bg-slate-50/50 p-4 lg:border-s lg:border-t-0 lg:border-slate-100"
+                      className="border-t border-slate-100 bg-background/50 p-4 lg:border-s lg:border-t-0 lg:border-slate-100"
                       aria-label="סיכום כספי לחשבון חלקי"
                     >
                       <PartialFinancialSummarySidebar
@@ -1214,7 +1214,7 @@ function ContractInvoicingProgressBar({
           )}
         </p>
       </div>
-      <div className="h-3 w-full overflow-hidden rounded-full border border-slate-100 bg-slate-50">
+      <div className="h-3 w-full overflow-hidden rounded-full border border-slate-100 bg-background">
         <div
           className="h-full rounded-full bg-indigo-600 transition-[width] duration-300"
           style={{ width: `${pct}%` }}

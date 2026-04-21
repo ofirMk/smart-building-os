@@ -37,7 +37,7 @@ export default async function MarkerOfekPartnerFinanceProjectPage({
   const row = res.data.projects[0]
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 bg-white px-6 py-10 text-[#0f172a]" dir="rtl">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 bg-card px-6 py-10 text-[#0f172a]" dir="rtl">
       <div className="flex flex-col gap-4">
         <Button
           variant="ghost"
@@ -59,7 +59,7 @@ export default async function MarkerOfekPartnerFinanceProjectPage({
         </div>
       </div>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-slate-500">מקורות וקישורים</h2>
         <ul className="flex flex-col gap-2 text-sm">
           <li>
@@ -92,7 +92,7 @@ export default async function MarkerOfekPartnerFinanceProjectPage({
         </ul>
       </section>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-slate-500">פירוט רווחיות</h2>
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between gap-4 border-b border-slate-100 pb-2">

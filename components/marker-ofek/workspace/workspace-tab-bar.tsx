@@ -42,7 +42,7 @@ export function WorkspaceTabBar() {
     <div
       dir="rtl"
       data-diamond-workspace-tabbar
-      className="flex w-full shrink-0 items-center gap-1 border-b border-slate-100 bg-white px-2 py-1.5 print:hidden"
+      className="flex w-full shrink-0 items-center gap-1 border-b border-slate-100 bg-card px-2 py-1.5 print:hidden"
     >
       <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         {openTabs.map((tab, tabIdx) => {
@@ -82,7 +82,7 @@ export function WorkspaceTabBar() {
                 type="button"
                 className={cn(
                   "shrink-0 rounded p-1",
-                  active ? "text-white/80 hover:bg-white/10" : "text-slate-500 hover:bg-slate-200"
+                  active ? "text-white/80 hover:bg-card/10" : "text-slate-500 hover:bg-slate-200"
                 )}
                 aria-label={tab.pinned ? "הסר נעיצה" : "נעץ לשונית"}
                 onClick={() => togglePinTab(tab.id)}
@@ -94,7 +94,7 @@ export function WorkspaceTabBar() {
                   type="button"
                   className={cn(
                     "shrink-0 rounded p-1",
-                    active ? "text-white/80 hover:bg-white/10" : "text-slate-500 hover:bg-slate-200"
+                    active ? "text-white/80 hover:bg-card/10" : "text-slate-500 hover:bg-slate-200"
                   )}
                   aria-label="סגור לשונית"
                   onClick={() => closeTab(tab.id)}

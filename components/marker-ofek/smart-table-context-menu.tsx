@@ -74,7 +74,7 @@ export function SmartTableContextMenuPortal({
       ref={layerRef}
       role="menu"
       className={cn(
-        "fixed z-[200] w-[min(16rem,calc(100vw-1rem))] rounded-xl border border-slate-100 bg-white py-1 text-sm shadow-lg",
+        "fixed z-[200] w-[min(16rem,calc(100vw-1rem))] rounded-xl border border-slate-100 bg-card py-1 text-sm shadow-lg",
         "duration-100 animate-in fade-in-0 zoom-in-95"
       )}
       style={{ left, top }}
@@ -94,7 +94,7 @@ export function SmartTableContextMenuPortal({
           }}
           className={cn(
             "flex w-full items-center gap-2 px-3 py-2 text-start text-slate-800 transition-colors",
-            "hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40",
+            "hover:bg-background disabled:pointer-events-none disabled:opacity-40",
             a.destructive && "text-rose-700 hover:bg-rose-50"
           )}
         >

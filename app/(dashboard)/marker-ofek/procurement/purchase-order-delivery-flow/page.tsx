@@ -382,7 +382,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
   const defaultUom = uoms[0]?.id ?? ""
 
   const master = (
-    <DenseMasterPanel className="border-slate-200 bg-white p-2.5">
+    <DenseMasterPanel className="border-slate-200 bg-card p-2.5">
       <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200/90 pb-2">
         {(
           [
@@ -471,7 +471,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
             <p
               className={cn(
                 ERP_DENSE_INPUT_CLASS,
-                "flex items-center border border-dashed border-slate-300 bg-slate-50 font-mono"
+                "flex items-center border border-dashed border-slate-300 bg-background font-mono"
               )}
               dir="ltr"
             >
@@ -486,7 +486,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
 
   const detail = (
     <div className="flex min-h-0 w-full min-w-0 max-w-none flex-col gap-2 bg-transparent">
-      <DenseDetailPanel className="border-slate-200 bg-white p-2">
+      <DenseDetailPanel className="border-slate-200 bg-card p-2">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/90 pb-2">
           <div className="flex min-w-0 items-center gap-2">
             <PackageCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -553,7 +553,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
                   animate={rowMotion.animate}
                   exit={rowMotion.exit}
                   transition={rowMotion.transition}
-                  className="group border-b border-slate-200/90 transition-colors hover:bg-slate-50"
+                  className="group border-b border-slate-200/90 transition-colors hover:bg-background"
                 >
                   <TableCell className="py-1.5 align-middle">
                     <Select
@@ -663,7 +663,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
       </DenseDetailPanel>
 
       {phase !== "draft" && polRows.length > 0 ? (
-        <DenseDetailPanel className="mt-1 border-slate-200 bg-slate-50 p-2">
+        <DenseDetailPanel className="mt-1 border-slate-200 bg-background p-2">
           <p className="mb-2 border-b border-slate-200/90 pb-1.5 text-xs font-semibold">
             תעודת משלוח — קבלה במחסן
           </p>
@@ -709,7 +709,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
                 {polRows.map((r) => (
                   <tr
                     key={r.id}
-                    className="border-b border-slate-100 transition-colors hover:bg-white"
+                    className="border-b border-slate-100 transition-colors hover:bg-card"
                   >
                     <td className="px-2 py-1.5 align-top">
                       <span className="font-medium leading-snug">{r.label}</span>
@@ -773,7 +773,7 @@ export default function PurchaseOrderDeliveryFlowPage() {
       description="טיוטת PO עם שורות מקט״י, הנפקה, ורישום קבלה במחסן — צפיפות Priority / מסך מלא."
       leading={<Truck className="size-5 text-primary" aria-hidden />}
       backLink={{ href: "/marker-ofek/procurement", label: "חזרה לרכש" }}
-      className="w-full min-w-0 max-w-none gap-2 bg-white pb-6 pt-0"
+      className="w-full min-w-0 max-w-none gap-2 bg-card pb-6 pt-0"
       master={master}
       detail={detail}
     />

@@ -136,7 +136,7 @@ function PulseKpiCard({
   return (
     <Card
       size="sm"
-      className="border-slate-200/80 bg-white shadow-sm"
+      className="border-slate-200/80 bg-card shadow-sm"
     >
       <CardHeader className="border-b border-slate-100 pb-3">
         <CardTitle className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -144,7 +144,7 @@ function PulseKpiCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
-        <p className="font-currency-mono text-2xl font-semibold tracking-tight text-slate-900">
+        <p className="font-currency-mono text-2xl font-semibold tracking-tight text-foreground">
           {value}
         </p>
         {hint ? (
@@ -161,7 +161,7 @@ function CoreModuleCard({ pillar }: { pillar: MarkerOfekPillar }) {
   return (
     <Card
       className={cn(
-        "group relative flex min-h-[280px] flex-col overflow-hidden border-slate-200/90 bg-white shadow-md transition-shadow duration-200",
+        "group relative flex min-h-[280px] flex-col overflow-hidden border-slate-200/90 bg-card shadow-md transition-shadow duration-200",
         "hover:border-slate-300 hover:shadow-lg",
         "focus-within:ring-2 focus-within:ring-slate-900/10"
       )}
@@ -169,11 +169,11 @@ function CoreModuleCard({ pillar }: { pillar: MarkerOfekPillar }) {
       <Link
         href={pillar.href}
         className={cn(
-          "flex flex-1 flex-col p-7 text-slate-900 outline-none",
+          "flex flex-1 flex-col p-7 text-foreground outline-none",
           "focus-visible:ring-2 focus-visible:ring-slate-900/25 focus-visible:ring-offset-2"
         )}
       >
-        <span className="mb-5 flex size-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-700">
+        <span className="mb-5 flex size-14 items-center justify-center rounded-2xl border border-slate-100 bg-background text-slate-700">
           <Icon className="size-7" strokeWidth={1.35} aria-hidden />
         </span>
         <span className="text-2xl font-semibold tracking-tight">{pillar.navTitle}</span>
@@ -229,12 +229,12 @@ export function DiamondStandardDashboardV1() {
     <div
       dir="rtl"
       lang="he"
-      className="mx-auto w-full max-w-[1600px] bg-white px-4 py-8 text-slate-900 md:px-8 md:py-10"
+      className="mx-auto w-full max-w-[1600px] bg-card px-4 py-8 text-foreground md:px-8 md:py-10"
     >
       {/* Header */}
       <header className="mb-10 flex flex-col gap-2 border-b border-slate-100 pb-8 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             בוקר טוב, אופיר
           </h1>
           <p className="text-sm text-slate-500">לוח בקרה — סטנדרט יהלום V1.0</p>
@@ -276,7 +276,7 @@ export function DiamondStandardDashboardV1() {
         <div className="mb-8 text-center md:text-start">
           <h2
             id="diamond-core-heading"
-            className="text-lg font-semibold tracking-tight text-slate-900 md:text-xl"
+            className="text-lg font-semibold tracking-tight text-foreground md:text-xl"
           >
             הליבה — מודולים
           </h2>
@@ -299,11 +299,11 @@ export function DiamondStandardDashboardV1() {
 
       {/* Executive charts */}
       <section className="mb-12" aria-labelledby="diamond-charts-heading">
-        <Card className="border-slate-200/90 bg-white shadow-sm">
+        <Card className="border-slate-200/90 bg-card shadow-sm">
           <CardHeader className="border-b border-slate-100">
             <CardTitle
               id="diamond-charts-heading"
-              className="text-base font-semibold text-slate-900"
+              className="text-base font-semibold text-foreground"
             >
               הכנסות מול הוצאות (6 חודשים קדימה)
             </CardTitle>
@@ -313,7 +313,7 @@ export function DiamondStandardDashboardV1() {
           </CardHeader>
           <CardContent className="pt-6">
             {!chartReady ? (
-              <div className="h-[320px] animate-pulse rounded-lg bg-slate-50" />
+              <div className="h-[320px] animate-pulse rounded-lg bg-background" />
             ) : (
               <div className="h-[320px] w-full min-h-[300px]" dir="ltr">
                 <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={300}>
@@ -382,7 +382,7 @@ export function DiamondStandardDashboardV1() {
 
       {/* Collapsible tasks — default closed */}
       <section aria-label="משימות פתוחות">
-        <Card className="border-slate-200/90 bg-white shadow-sm">
+        <Card className="border-slate-200/90 bg-card shadow-sm">
           <CardContent className="py-2">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="open-tasks" className="border-0">
@@ -401,7 +401,7 @@ export function DiamondStandardDashboardV1() {
                           href={a.href}
                           className={cn(
                             "flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-2.5 text-xs text-slate-700 outline-none",
-                            "hover:border-slate-100 hover:bg-slate-50",
+                            "hover:border-slate-100 hover:bg-background",
                             "focus-visible:ring-2 focus-visible:ring-slate-900/20 focus-visible:ring-offset-2"
                           )}
                         >
@@ -415,7 +415,7 @@ export function DiamondStandardDashboardV1() {
                             />
                             <span>{a.label}</span>
                           </span>
-                          <span className="font-currency-mono tabular-nums text-slate-900">
+                          <span className="font-currency-mono tabular-nums text-foreground">
                             {a.count}
                           </span>
                         </Link>

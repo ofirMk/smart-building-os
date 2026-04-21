@@ -157,7 +157,7 @@ export default function MarkerOfekSettingsPage() {
         </p>
       </div>
 
-      <Card className="border border-slate-100 bg-white shadow-sm">
+      <Card className="border border-slate-100 bg-card shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">מרכז הגדרות חכם</CardTitle>
           <CardDescription>

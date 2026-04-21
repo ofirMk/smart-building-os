@@ -27,7 +27,7 @@ export function TendersWbsShell({
   const base = "/marker-ofek/tenders/wbs"
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-white px-2 pb-10 md:px-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-card px-2 pb-10 md:px-4">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
@@ -46,13 +46,13 @@ export function TendersWbsShell({
         subtitle="עורך עץ עבודה, תבניות, והחלה לגאנט — לצד קידוד שורות כתב כמויות במכרז."
       />
 
-      <div className="flex flex-wrap gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-1">
+      <div className="flex flex-wrap gap-2 rounded-xl border border-slate-100 bg-background/50 p-1">
         <Link
           href={base}
           className={cn(
             "rounded-lg px-4 py-2 text-xs font-semibold transition-colors",
             mode === "editor"
-              ? "bg-white text-indigo-700 shadow-sm"
+              ? "bg-card text-indigo-700 shadow-sm"
               : "text-slate-500 hover:text-[#0f172a]"
           )}
         >
@@ -63,7 +63,7 @@ export function TendersWbsShell({
           className={cn(
             "rounded-lg px-4 py-2 text-xs font-semibold transition-colors",
             mode === "boq"
-              ? "bg-white text-indigo-700 shadow-sm"
+              ? "bg-card text-indigo-700 shadow-sm"
               : "text-slate-500 hover:text-[#0f172a]"
           )}
         >
@@ -74,7 +74,7 @@ export function TendersWbsShell({
       {mode === "editor" ? (
         <WbsStructureEditorClient projects={projects} />
       ) : (
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm">
           <p className="mb-4 text-xs text-slate-500">
             לקידוד שורות ה־BoQ נדרש מזהה מכרז בכתובת:{" "}
             <span className="font-currency-mono text-indigo-700 tabular-nums">?projectId=…</span>{" "}

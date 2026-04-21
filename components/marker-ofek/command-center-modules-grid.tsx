@@ -88,20 +88,20 @@ function statusMeta(level: CommandCenterTile["level"]) {
       label: "תקין",
       dot: "bg-emerald-500",
       badge:
-        "border border-emerald-200/90 bg-emerald-50/90 text-slate-900 shadow-sm",
+        "border border-emerald-200/90 bg-emerald-50/90 text-foreground shadow-sm",
     }
   }
   if (level === "yellow") {
     return {
       label: "למעקב",
       dot: "bg-amber-400",
-      badge: "border border-amber-200/90 bg-amber-50 text-slate-900 shadow-sm",
+      badge: "border border-amber-200/90 bg-amber-50 text-foreground shadow-sm",
     }
   }
   return {
     label: "סיכון",
     dot: "bg-red-500",
-    badge: "border border-red-200/90 bg-red-50 text-slate-900 shadow-sm",
+    badge: "border border-red-200/90 bg-red-50 text-foreground shadow-sm",
   }
 }
 
@@ -142,7 +142,7 @@ function ModuleCardShell({
       animate={isDragging ? { scale: 1.04 } : { scale: 1 }}
       transition={{ type: "spring", stiffness: 520, damping: 38 }}
       className={cn(
-        "relative flex h-full min-h-0 flex-col justify-between rounded-xl border bg-white px-6 pb-6 pt-4 transition-[border-color,box-shadow,opacity] duration-200",
+        "relative flex h-full min-h-0 flex-col justify-between rounded-xl border bg-card px-6 pb-6 pt-4 transition-[border-color,box-shadow,opacity] duration-200",
         isDragging
           ? "z-30 border-emerald-300/80 shadow-2xl ring-2 ring-emerald-500/15"
           : editMode
@@ -158,7 +158,7 @@ function ModuleCardShell({
             <button
               type="button"
               onClick={onRestore}
-              className="rounded-md border border-slate-200 bg-white/95 p-1 text-slate-600 shadow-sm hover:bg-slate-50"
+              className="rounded-md border border-slate-200 bg-card/95 p-1 text-slate-600 shadow-sm hover:bg-background"
               aria-label="הצג מודול"
             >
               <RotateCcw className="size-3.5" aria-hidden />
@@ -167,7 +167,7 @@ function ModuleCardShell({
             <button
               type="button"
               onClick={onHide}
-              className="rounded-md border border-slate-200 bg-white/95 p-1 text-slate-600 shadow-sm hover:bg-red-50 hover:text-red-700"
+              className="rounded-md border border-slate-200 bg-card/95 p-1 text-slate-600 shadow-sm hover:bg-red-50 hover:text-red-700"
               aria-label="הסתר מודול"
             >
               <X className="size-3.5" aria-hidden />
@@ -190,7 +190,7 @@ function ModuleCardShell({
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 {dragHandleSlot}
                 <div className="shrink-0">
-                  <span className="flex size-12 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-700 shadow-sm">
+                  <span className="flex size-12 items-center justify-center rounded-xl border border-slate-200/80 bg-card text-slate-700 shadow-sm">
                     <Icon className="size-6 stroke-[1.5]" aria-hidden />
                   </span>
                 </div>
@@ -210,7 +210,7 @@ function ModuleCardShell({
               </Badge>
             </div>
             <div className="mb-3 flex h-14 items-start">
-              <h2 className="line-clamp-2 w-full text-start text-base font-bold leading-snug text-slate-900 lg:text-lg">
+              <h2 className="line-clamp-2 w-full text-start text-base font-bold leading-snug text-foreground lg:text-lg">
                 {tile.title}
               </h2>
             </div>

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 function ProjectSetupFallback() {
   return (
     <div
-      className="flex min-h-[min(420px,50vh)] items-center justify-center bg-white text-sm text-slate-500"
+      className="flex min-h-[min(420px,50vh)] items-center justify-center bg-card text-sm text-slate-500"
       dir="rtl"
     >
       טוען הקמת פרויקט…
@@ -22,7 +22,7 @@ function ProjectSetupFallback() {
 
 export default function NewMarkerOfekProjectPage() {
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
       <Suspense fallback={<ProjectSetupFallback />}>
         <ProjectSetupWorkspace />
       </Suspense>

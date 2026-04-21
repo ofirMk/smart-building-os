@@ -50,7 +50,7 @@ const DEMO_ASSETS: CompanyAsset[] = [
 
 export default function ProcurementAssetsPage() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-white pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-6 bg-card pb-10">
       <Link
         href="/marker-ofek"
         className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"

@@ -63,7 +63,7 @@ export function CommandPaletteHeaderTrigger() {
       type="button"
       onClick={palette.open}
       className={cn(
-        "inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm",
+        "inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200/90 bg-card px-2.5 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm",
         "transition-colors hover:border-emerald-500/40 hover:text-emerald-700",
         "dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:border-emerald-500/50 dark:hover:text-emerald-300"
       )}

@@ -235,10 +235,10 @@ export default function ContractVaultClient({
         חזרה למרכז חוזה וחשבונות
       </Link>
 
-      <header className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+      <header className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-indigo-950">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-background text-indigo-950">
               <Shield className="size-6" strokeWidth={1.5} aria-hidden />
             </span>
             <div>
@@ -265,7 +265,7 @@ export default function ContractVaultClient({
         </div>
       </header>
 
-      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
+      <section className="rounded-xl border border-slate-100 bg-card p-4 shadow-sm sm:p-6">
         <Label htmlFor="vault-project" className="text-indigo-950">
           פרויקט
         </Label>
@@ -275,7 +275,7 @@ export default function ContractVaultClient({
         >
           <SelectTrigger
             id="vault-project"
-            className="mt-2 h-11 border-slate-100 bg-white"
+            className="mt-2 h-11 border-slate-100 bg-card"
           >
             <SelectValue placeholder="בחרו פרויקט לצפייה ברשימה" />
           </SelectTrigger>
@@ -306,7 +306,7 @@ export default function ContractVaultClient({
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-100 hover:bg-slate-50/80">
+                <TableRow className="border-slate-100 hover:bg-background/80">
                   <TableHead>קובץ</TableHead>
                   <TableHead>רגישות</TableHead>
                   <TableHead className="font-currency-mono">גודל</TableHead>
@@ -375,7 +375,7 @@ export default function ContractVaultClient({
                 value={projectId}
                 onValueChange={(v) => setProjectId(v ?? "")}
               >
-                <SelectTrigger className="border-slate-100 bg-white">
+                <SelectTrigger className="border-slate-100 bg-card">
                   <SelectValue placeholder="בחרו פרויקט" />
                 </SelectTrigger>
                 <SelectContent>
@@ -396,7 +396,7 @@ export default function ContractVaultClient({
                   setSensitive((v ?? "standard") as VaultSensitiveLevel)
                 }
               >
-                <SelectTrigger className="border-slate-100 bg-white">
+                <SelectTrigger className="border-slate-100 bg-card">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -411,7 +411,7 @@ export default function ContractVaultClient({
               </Select>
             </div>
 
-            <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+            <div className="rounded-lg border border-slate-100 bg-background/50 p-3">
               <p className="mb-3 text-sm font-medium text-indigo-950">
                 מורשי צפייה במסמך
               </p>
@@ -459,7 +459,7 @@ export default function ContractVaultClient({
                 type="file"
                 disabled={!gateOpenForFile}
                 className={cn(
-                  "text-sm file:me-3 file:rounded-md file:border file:border-slate-100 file:bg-white file:px-3 file:py-1.5",
+                  "text-sm file:me-3 file:rounded-md file:border file:border-slate-100 file:bg-card file:px-3 file:py-1.5",
                   !gateOpenForFile && "cursor-not-allowed opacity-45"
                 )}
                 accept=".pdf,.png,.jpg,.jpeg,.webp,.txt"

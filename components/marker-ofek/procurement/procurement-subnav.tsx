@@ -44,7 +44,7 @@ export function ProcurementSubnav({ className }: { className?: string }) {
   return (
     <nav
       className={cn(
-        "flex flex-wrap gap-2 rounded-xl border border-slate-100 bg-white p-2",
+        "flex flex-wrap gap-2 rounded-xl border border-slate-100 bg-card p-2",
         className
       )}
       aria-label="רכש — תת־מודולים"
@@ -58,8 +58,8 @@ export function ProcurementSubnav({ className }: { className?: string }) {
             className={cn(
               "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
               active
-                ? "border border-indigo-200 bg-white text-indigo-800 shadow-sm"
-                : "border border-transparent text-slate-600 hover:border-slate-100 hover:bg-white"
+                ? "border border-indigo-200 bg-card text-indigo-800 shadow-sm"
+                : "border border-transparent text-slate-600 hover:border-slate-100 hover:bg-card"
             )}
           >
             <ProcurementIcon icon={Icon} className="size-4" />

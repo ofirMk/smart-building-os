@@ -86,11 +86,11 @@ export function DiamondSidekick() {
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", stiffness: 320, damping: 34 }}
           className={cn(
-            "fixed inset-y-0 start-0 z-[60] flex w-[min(100vw,420px)] flex-col border-e border-slate-200 bg-white shadow-xl print:hidden"
+            "fixed inset-y-0 start-0 z-[60] flex w-[min(100vw,420px)] flex-col border-e border-slate-200 bg-card shadow-xl print:hidden"
           )}
         >
           <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
-            <p className="text-[13px] font-semibold text-slate-900">Diamond Sidekick</p>
+            <p className="text-[13px] font-semibold text-foreground">Diamond Sidekick</p>
             <Button
               type="button"
               variant="ghost"
@@ -103,7 +103,7 @@ export function DiamondSidekick() {
             </Button>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-            <section className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+            <section className="rounded-xl border border-slate-100 bg-background/80 p-3">
               <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-slate-800">
                 <MessageCircle className="size-4 text-emerald-600" />
                 WhatsApp
@@ -116,14 +116,14 @@ export function DiamondSidekick() {
                 href="https://web.whatsapp.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[12px] font-medium text-slate-800 shadow-sm hover:bg-slate-50"
+                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-card px-3 text-[12px] font-medium text-slate-800 shadow-sm hover:bg-background"
               >
                 <ExternalLink className="size-3.5" />
                 פתיחת WhatsApp Web
               </Link>
             </section>
 
-            <section className="rounded-xl border border-slate-100 bg-white p-3">
+            <section className="rounded-xl border border-slate-100 bg-card p-3">
               <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-slate-800">
                 <Mail className="size-4 text-indigo-700" />
                 EmailBridge (SSO)
@@ -145,7 +145,7 @@ export function DiamondSidekick() {
             </section>
 
             {browserEnabled ? (
-              <section className="flex min-h-[240px] flex-1 flex-col rounded-xl border border-slate-100 bg-white p-3">
+              <section className="flex min-h-[240px] flex-1 flex-col rounded-xl border border-slate-100 bg-card p-3">
                 <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-slate-800">
                   <Globe className="size-4 text-sky-600" />
                   דפדפן פנימי
@@ -191,13 +191,13 @@ export function DiamondSidekick() {
                     טען
                   </Button>
                 </div>
-                <div className="relative min-h-[200px] flex-1 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                <div className="relative min-h-[200px] flex-1 overflow-hidden rounded-lg border border-slate-200 bg-background">
                   {iframeSrc ? (
                     <iframe
                       key={iframeKey}
                       title="דפדפן פנימי"
                       src={iframeSrc}
-                      className="size-full min-h-[200px] bg-white"
+                      className="size-full min-h-[200px] bg-card"
                       sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin"
                       referrerPolicy="no-referrer"
                     />

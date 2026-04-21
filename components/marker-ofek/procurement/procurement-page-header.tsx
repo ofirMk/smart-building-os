@@ -27,12 +27,12 @@ export function ProcurementPageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-4 rounded-xl border border-slate-100 bg-white p-6 md:flex-row md:items-center md:justify-between md:p-8",
+        "flex flex-col gap-4 rounded-xl border border-slate-100 bg-card p-6 md:flex-row md:items-center md:justify-between md:p-8",
         className
       )}
     >
       <div className="flex min-w-0 items-start gap-4">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-card">
           <ProcurementIcon icon={icon} className="size-6" />
         </div>
         <div className="min-w-0 space-y-1">

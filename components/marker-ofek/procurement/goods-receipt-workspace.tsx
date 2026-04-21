@@ -52,7 +52,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 function parseQty(v: unknown): number {
@@ -271,12 +271,12 @@ export default function GoodsReceiptWorkspace() {
 
   return (
     <form
-      className="flex min-h-0 min-w-0 flex-1 flex-col bg-white [color-scheme:light]"
+      className="flex min-h-0 min-w-0 flex-1 flex-col bg-card [color-scheme:light]"
       onSubmit={handleSubmit(onPostReceipt)}
     >
       <DenseMasterDetailTemplate
         dir="rtl"
-        className="min-h-0 flex-1 text-slate-900"
+        className="min-h-0 flex-1 text-foreground"
         eyebrow="Marker Ofek · רכש"
         title="קליטת סחורה (GR)"
         description="קליטה מול הזמנת רכש מאושרת — תעודת משלוח וכמויות שהתקבלו (דמה)."
@@ -291,7 +291,7 @@ export default function GoodsReceiptWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-sm text-slate-800"
+              className="h-8 gap-1 border-slate-200 bg-card text-sm text-slate-800"
               onClick={onSaveDraft}
             >
               <Save className="size-3.5 opacity-90" aria-hidden />
@@ -301,7 +301,7 @@ export default function GoodsReceiptWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-white text-sm text-slate-800"
+              className="h-8 gap-1 border-slate-200 bg-card text-sm text-slate-800"
               onClick={onAttachDeliveryNote}
             >
               <Paperclip className="size-3.5 opacity-90" aria-hidden />
@@ -321,7 +321,7 @@ export default function GoodsReceiptWorkspace() {
           <div className="flex flex-col gap-2">
             <div
               className={cn(
-                "relative overflow-hidden rounded-lg border bg-white p-3 shadow-sm transition",
+                "relative overflow-hidden rounded-lg border bg-card p-3 shadow-sm transition",
                 isDragActive
                   ? "border-sky-400 ring-2 ring-sky-100"
                   : "border-slate-200",
@@ -364,7 +364,7 @@ export default function GoodsReceiptWorkspace() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 gap-1 border-slate-200 bg-white text-xs text-slate-800"
+                  className="h-8 gap-1 border-slate-200 bg-card text-xs text-slate-800"
                   disabled={isAnalyzing}
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -388,7 +388,7 @@ export default function GoodsReceiptWorkspace() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50/90 p-3 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-background/90 p-3 shadow-sm">
               <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-slate-600">
                 <Sparkles className="size-3.5 text-emerald-600" aria-hidden />
                 שדות עם מילוי AI מסומנים לאימות לפני אישור
@@ -491,7 +491,7 @@ export default function GoodsReceiptWorkspace() {
                     "flex h-8 items-center rounded-md border px-2 text-xs text-slate-800",
                     isAiField("supplierName")
                       ? "border-emerald-300 bg-emerald-50/60"
-                      : "border-slate-200 bg-white"
+                      : "border-slate-200 bg-card"
                   )}
                 >
                   {ocrSupplierName || "—"}
@@ -507,12 +507,12 @@ export default function GoodsReceiptWorkspace() {
           </div>
         }
         detail={
-          <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-white p-1.5 shadow-sm">
+          <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-card p-1.5 shadow-sm">
             <div className="px-1 pb-2 pt-1 md:px-2">
               <p className="mb-2 text-xs font-bold text-slate-800">
                 שורות קליטה
               </p>
-              <div className="rounded-md border border-slate-200 bg-white md:rounded-lg">
+              <div className="rounded-md border border-slate-200 bg-card md:rounded-lg">
                 <Table dir="rtl" className="relative">
                   <TableHeader>
                     <TableRow className="border-slate-200 hover:bg-transparent">
@@ -542,7 +542,7 @@ export default function GoodsReceiptWorkspace() {
                       return (
                         <TableRow
                           key={field.id}
-                          className="border-slate-100 hover:bg-slate-50/80"
+                          className="border-slate-100 hover:bg-background/80"
                         >
                           <TableCell className="px-2 py-1.5 align-middle font-mono text-xs text-slate-800">
                             <input
@@ -562,7 +562,7 @@ export default function GoodsReceiptWorkspace() {
                                 valueAsNumber: true,
                               })}
                             />
-                            <span className="text-sm text-slate-900">
+                            <span className="text-sm text-foreground">
                               {row?.itemName ?? "—"}
                             </span>
                           </TableCell>

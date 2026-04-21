@@ -70,7 +70,7 @@ export default async function FinancePnLPage() {
       </header>
 
       <ol className="space-y-4">
-        <li className="rounded-xl border border-slate-100 border-s-teal-300 bg-white p-5 shadow-sm ring-1 ring-teal-100">
+        <li className="rounded-xl border border-slate-100 border-s-teal-300 bg-card p-5 shadow-sm ring-1 ring-teal-100">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700">
             רמה 1 — רווח גולמי פרויקט
           </p>
@@ -81,7 +81,7 @@ export default async function FinancePnLPage() {
             {ils.format(l1)}
           </p>
         </li>
-        <li className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <li className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
             רמה 2 — רווח שטח (תפעולי)
           </p>
@@ -92,7 +92,7 @@ export default async function FinancePnLPage() {
             {ils.format(l2Field)}
           </p>
         </li>
-        <li className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <li className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-violet-700">
             עומס הנהלה חודשי (פורטפוליו)
           </p>

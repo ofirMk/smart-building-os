@@ -75,7 +75,7 @@ export function GanttMsResourcePoolDialog({ open, onOpenChange, projectId, resou
           </p>
         </DialogHeader>
 
-        <form onSubmit={submit} className="space-y-3 rounded-lg border border-slate-100 bg-slate-50/80 p-3 text-start">
+        <form onSubmit={submit} className="space-y-3 rounded-lg border border-slate-100 bg-background/80 p-3 text-start">
           <p className="text-[11px] font-semibold text-slate-600">הוספת משאב חדש</p>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="space-y-1">
@@ -128,8 +128,8 @@ export function GanttMsResourcePoolDialog({ open, onOpenChange, projectId, resou
                 </tr>
               ) : (
                 resources.map((r) => (
-                  <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50/80">
-                    <td className="px-2 py-1.5 font-medium text-slate-900">{r.name}</td>
+                  <tr key={r.id} className="border-t border-slate-100 hover:bg-background/80">
+                    <td className="px-2 py-1.5 font-medium text-foreground">{r.name}</td>
                     <td className="px-2 py-1.5 text-slate-600">{r.profession || "—"}</td>
                     <td className="px-2 py-1.5 font-currency-mono tabular-nums text-slate-800">
                       {r.cost_per_day.toLocaleString("he-IL", { maximumFractionDigits: 0 })}

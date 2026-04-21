@@ -91,7 +91,7 @@ export function WorkspaceParallelSplitControl() {
           <label className="grid gap-1.5 text-xs font-medium text-slate-600">
             לשונית משנית
             <select
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900"
+              className="h-10 w-full rounded-lg border border-slate-200 bg-card px-2 text-sm text-foreground"
               value={secondaryPick}
               onChange={(e) => setSecondaryPick(e.target.value)}
             >

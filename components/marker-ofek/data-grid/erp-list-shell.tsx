@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-/** RTL page column for MDM / ERP list screens (sits on bg-slate-50 shell). */
+/** RTL page column for MDM / ERP list screens (sits on bg-background shell). */
 export function ErpListPageRoot({
   children,
   className,
@@ -95,7 +95,7 @@ export function ErpListTitleBlock({
         </span>
       ) : null}
       <div className="min-w-0">
-        <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+        <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
           {title}
         </h1>
         {description ? (
@@ -147,7 +147,7 @@ export function ErpDataCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
+        "overflow-hidden rounded-lg border border-slate-200 bg-card shadow-sm",
         className
       )}
     >

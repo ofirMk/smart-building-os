@@ -42,7 +42,7 @@ function IndigoSwitch({
     >
       <span
         className={cn(
-          "pointer-events-none absolute top-0.5 size-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out",
+          "pointer-events-none absolute top-0.5 size-6 rounded-full bg-card shadow-sm transition-transform duration-200 ease-out",
           checked ? "translate-x-[1.375rem]" : "translate-x-0.5"
         )}
       />
@@ -99,7 +99,7 @@ export function ModuleManagerClient() {
             }}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
-              "gap-2 border-indigo-100 bg-white text-indigo-900 shadow-sm hover:bg-indigo-50/80"
+              "gap-2 border-indigo-100 bg-card text-indigo-900 shadow-sm hover:bg-indigo-50/80"
             )}
           >
             איפוס סימון סיום ראשוני
@@ -117,14 +117,14 @@ export function ModuleManagerClient() {
             onClick={() => resetAll()}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
-              "border-slate-100 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+              "border-slate-100 bg-card text-slate-700 shadow-sm hover:bg-background"
             )}
           >
             איפוס לברירת מחדל (הכל פעיל)
           </button>
         </div>
 
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-white shadow-sm">
+        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-card shadow-sm">
           {MODULE_IDS.map((id: ModuleId) => {
             const meta = MODULE_SWITCHBOARD_META[id]
             const on = modules[id] === true
@@ -156,9 +156,9 @@ export function ModuleManagerClient() {
         </ul>
       </section>
 
-      <p className="rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
+      <p className="rounded-lg border border-slate-100 bg-card px-3 py-2 text-xs text-slate-500 shadow-sm">
         רכיבים חדשים יירשמו ב־
-        <code className="mx-1 rounded border border-slate-100 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-indigo-800">
+        <code className="mx-1 rounded border border-slate-100 bg-background px-1.5 py-0.5 font-mono text-[10px] text-indigo-800">
           lib/marker-ofek/module-registry.ts
         </code>
         כדי שיופיעו כאן.
@@ -168,7 +168,7 @@ export function ModuleManagerClient() {
         href="/marker-ofek/settings"
         className={cn(
           buttonVariants({ variant: "outline", size: "sm" }),
-          "w-fit gap-2 border-slate-100 bg-white text-indigo-700 shadow-sm hover:bg-indigo-50/60"
+          "w-fit gap-2 border-slate-100 bg-card text-indigo-700 shadow-sm hover:bg-indigo-50/60"
         )}
       >
         <ArrowRight className="size-4 rotate-180" aria-hidden />

@@ -98,10 +98,10 @@ export function TaskPlanVaultSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 overflow-hidden border-slate-100 bg-white p-0 sm:max-w-xl md:max-w-3xl"
+        className="flex w-full flex-col gap-0 overflow-hidden border-slate-100 bg-card p-0 sm:max-w-xl md:max-w-3xl"
         dir="rtl"
       >
-        <SheetHeader className="border-b border-slate-100 bg-white px-4 py-4 text-start">
+        <SheetHeader className="border-b border-slate-100 bg-card px-4 py-4 text-start">
           <SheetTitle className="text-indigo-900">תוכניות ומסמכים למשימה</SheetTitle>
           <SheetDescription className="text-start text-slate-600">
             {taskName ? <span className="font-medium text-indigo-900">{taskName}</span> : null}
@@ -133,7 +133,7 @@ export function TaskPlanVaultSheet({
                       <button
                         type="button"
                         onClick={() => void openPreview(d)}
-                        className={`flex w-full items-start gap-2 px-3 py-3 text-start text-sm transition-colors hover:bg-slate-50 ${
+                        className={`flex w-full items-start gap-2 px-3 py-3 text-start text-sm transition-colors hover:bg-background ${
                           previewId === d.id ? "bg-indigo-50/80" : ""
                         }`}
                       >
@@ -156,7 +156,7 @@ export function TaskPlanVaultSheet({
             )}
           </div>
 
-          <div className="flex min-h-[50vh] flex-1 flex-col bg-slate-50/50">
+          <div className="flex min-h-[50vh] flex-1 flex-col bg-background/50">
             {!previewId ? (
               <p className="m-auto px-4 text-center text-sm text-slate-500">
                 בחרו מסמך מהרשימה לתצוגה מהירה.
@@ -170,7 +170,7 @@ export function TaskPlanVaultSheet({
               <iframe
                 title={active.title ?? "PDF"}
                 src={previewUrl}
-                className="h-full min-h-[480px] w-full flex-1 border-0 bg-white"
+                className="h-full min-h-[480px] w-full flex-1 border-0 bg-card"
               />
             ) : previewUrl ? (
               <div className="m-auto flex max-w-sm flex-col items-center gap-3 p-6 text-center">
@@ -183,7 +183,7 @@ export function TaskPlanVaultSheet({
                   rel="noreferrer"
                   className={cn(
                     buttonVariants({ variant: "outline" }),
-                    "inline-flex items-center gap-2 border-slate-200 bg-white"
+                    "inline-flex items-center gap-2 border-slate-200 bg-card"
                   )}
                 >
                   <ExternalLink className="size-4" aria-hidden />

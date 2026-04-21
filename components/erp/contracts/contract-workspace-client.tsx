@@ -1,0 +1,1 @@
+export { ContractWorkspaceClient } from '@/components/erp/workspaces/contracts/contract-workspace-client'

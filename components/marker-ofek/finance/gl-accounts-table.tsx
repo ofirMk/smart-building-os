@@ -39,8 +39,8 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
   }, [initialAccounts, searchTerm, filterGroup])
 
   return (
-    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row">
+    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm">
+      <div className="flex flex-col items-center justify-between gap-4 border-b border-slate-200 bg-background p-4 sm:flex-row">
         <div className="relative w-full sm:w-72">
           <Search className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -57,7 +57,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
           <select
             value={filterGroup}
             onChange={(e) => setFilterGroup(e.target.value)}
-            className="w-full rounded-md border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
+            className="w-full rounded-md border border-slate-200 bg-card py-2 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto"
           >
             <option value="all">כל קבוצות המאזן</option>
             {uniqueGroups.map((group) => (
@@ -85,9 +85,9 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
               filteredAccounts.map((account) => (
                 <tr
                   key={account.id}
-                  className="transition-colors hover:bg-slate-50"
+                  className="transition-colors hover:bg-background"
                 >
-                  <td className="p-3 font-mono font-medium text-slate-900">
+                  <td className="p-3 font-mono font-medium text-foreground">
                     {account.account_code}
                   </td>
                   <td className="p-3">
@@ -121,7 +121,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
           </tbody>
         </table>
       </div>
-      <div className="border-t border-slate-200 bg-slate-50 p-3 text-left text-xs text-slate-500">
+      <div className="border-t border-slate-200 bg-background p-3 text-left text-xs text-slate-500">
         סה״כ חשבונות מוצגים: {filteredAccounts.length}
       </div>
     </div>

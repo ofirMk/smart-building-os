@@ -71,7 +71,7 @@ export default function SubcontractorSyncClient({
 
   if (derivatives.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-100 bg-white p-8 text-center text-sm text-slate-600 shadow-sm">
+      <div className="rounded-xl border border-slate-100 bg-card p-8 text-center text-sm text-slate-600 shadow-sm">
         אין משימות נגזרות בפרויקט. צרו משימת נגזרת קשורה למאסטר דרך פעולת השרת{" "}
         <code className="rounded bg-slate-100 px-1">createDerivativeTask</code> או עדכון DB לאחר
         המיגרציה.
@@ -106,7 +106,7 @@ export default function SubcontractorSyncClient({
             <li
               key={row.id}
               className={`rounded-xl border p-4 shadow-sm ${
-                diamond ? "border-red-300 bg-red-50/80" : "border-slate-100 bg-white"
+                diamond ? "border-red-300 bg-red-50/80" : "border-slate-100 bg-card"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -195,7 +195,7 @@ export default function SubcontractorSyncClient({
                   value={row.contract_id ?? "__none__"}
                   onValueChange={(v) => void onContractChange(String(row.id), String(v))}
                 >
-                  <SelectTrigger className="h-9 w-full max-w-xs border-slate-200 bg-white text-start text-xs">
+                  <SelectTrigger className="h-9 w-full max-w-xs border-slate-200 bg-card text-start text-xs">
                     <SelectValue placeholder="בחרו חוזה" />
                   </SelectTrigger>
                   <SelectContent>

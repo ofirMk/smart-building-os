@@ -40,7 +40,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-white text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
+  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
 const labelClass = "text-xs font-semibold text-slate-600"
 
 export function MaterialIssueWorkspace() {
@@ -76,7 +76,7 @@ export function MaterialIssueWorkspace() {
     >
       <DenseMasterDetailTemplate
         dir="rtl"
-        className="min-h-0 flex-1 bg-white text-slate-900 [color-scheme:light]"
+        className="min-h-0 flex-1 bg-card text-foreground [color-scheme:light]"
         eyebrow="Marker Ofek · ביצוע"
         title="ניפוק ציוד לשטח"
         description="אישור ניפוק חומרים לפרויקט לפי שורות (דמה)."
@@ -95,7 +95,7 @@ export function MaterialIssueWorkspace() {
           </Button>
         }
         master={
-          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-card p-3 shadow-sm">
           <div className="flex flex-wrap gap-4">
             <div className="flex min-w-[200px] flex-1 flex-col gap-1">
               <span className={labelClass}>פרויקט</span>
@@ -195,7 +195,7 @@ export function MaterialIssueWorkspace() {
         }
         detail={
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto pb-2">
-          <div className="rounded-md border border-slate-200 bg-white md:rounded-lg">
+          <div className="rounded-md border border-slate-200 bg-card md:rounded-lg">
           <Table dir="rtl">
             <TableHeader>
               <TableRow className="border-slate-200 hover:bg-transparent">
@@ -220,7 +220,7 @@ export function MaterialIssueWorkspace() {
               {fields.map((field, index) => (
                 <TableRow
                   key={field.id}
-                  className="border-slate-100 hover:bg-slate-50/80"
+                  className="border-slate-100 hover:bg-background/80"
                 >
                   <TableCell className="px-2 py-1.5 align-middle">
                     <Input
@@ -282,7 +282,7 @@ export function MaterialIssueWorkspace() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8 border-slate-200 bg-white"
+                      className="h-8 w-8 border-slate-200 bg-card"
                       disabled={fields.length <= 1}
                       onClick={() => remove(index)}
                       aria-label="מחק שורה"
@@ -301,7 +301,7 @@ export function MaterialIssueWorkspace() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1 border-slate-200 bg-white text-sm"
+            className="h-8 gap-1 border-slate-200 bg-card text-sm"
             onClick={() =>
               append({
                 sku: "",

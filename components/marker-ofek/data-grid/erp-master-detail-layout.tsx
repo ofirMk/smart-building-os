@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 export type ErpBreadcrumbItem = { label: string; href?: string | null }
 
-/** Page column for master–detail screens (on bg-slate-50 shell). */
+/** Page column for master–detail screens (on bg-background shell). */
 export function ErpMasterDetailLayout({
   children,
   className,
@@ -35,7 +35,7 @@ export function ErpMasterDetailLayout({
         <header className="border-b border-slate-100 pb-4 text-start">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+              <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
                 {title}
               </h1>
               {subtitle ? (
@@ -43,7 +43,7 @@ export function ErpMasterDetailLayout({
               ) : null}
             </div>
             {status ? (
-              <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm">
+              <span className="shrink-0 rounded-md border border-slate-200 bg-card px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm">
                 {status}
               </span>
             ) : null}
@@ -117,7 +117,7 @@ export function ErpMasterDetailPageHeader({
       <ErpMasterDetailBreadcrumbs items={breadcrumbs} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 text-start">
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+          <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
             {title}
           </h1>
           {subtitle ? (
@@ -148,7 +148,7 @@ export function ErpMasterCard({
   return (
     <section
       className={cn(
-        "rounded-lg border border-slate-200 bg-white p-6 shadow-sm",
+        "rounded-lg border border-slate-200 bg-card p-6 shadow-sm",
         className
       )}
       aria-labelledby={title ? headingId : undefined}
@@ -177,7 +177,7 @@ export function ErpTabsWrapper({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
+        "overflow-hidden rounded-lg border border-slate-200 bg-card shadow-sm",
         className
       )}
     >
