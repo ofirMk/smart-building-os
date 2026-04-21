@@ -494,7 +494,7 @@ export function TopNavBar({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "sticky z-[70] flex min-h-[3.25rem] shrink-0 flex-col border-b border-border/70 bg-card/95 text-foreground shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
+          "sticky relative z-[999] flex min-h-[3.25rem] shrink-0 flex-col border-b border-border/70 bg-card/95 text-foreground shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
           isHoldenErpShell ? "shadow-[0_1px_0_0_rgb(226_232_240/0.9)]" : "",
           stickyClassName,
           className

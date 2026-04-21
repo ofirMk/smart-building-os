@@ -107,7 +107,7 @@ export function DashboardNavDrawerPanel({
   if (isMarker) {
     return (
       <div
-        className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-card px-2 pb-4 pt-2 text-foreground"
+        className="flex h-full min-h-0 w-full shrink-0 flex-col overflow-y-auto bg-card px-2 pb-4 pt-2 text-foreground"
         dir="rtl"
       >
         <MarkerOfekDrawerNavContent
@@ -127,7 +127,7 @@ export function DashboardNavDrawerPanel({
 
   return (
     <div
-      className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-card px-3 pb-4 pt-3 text-foreground"
+      className="flex h-full min-h-0 w-full shrink-0 flex-col overflow-y-auto bg-card px-3 pb-4 pt-3 text-foreground"
       dir="rtl"
     >
       <SidebarProjectContextSwitcher />

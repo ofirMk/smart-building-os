@@ -145,7 +145,10 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
     <nav
       dir="rtl"
       aria-label="ניווט מודולים עליון"
-      className={cn("relative flex flex-wrap items-center justify-center gap-1", className)}
+      className={cn(
+        "relative z-[999] flex flex-wrap items-center justify-center gap-1",
+        className
+      )}
       onMouseLeave={scheduleClose}
     >
       <Link
@@ -178,7 +181,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
             <Link
               href={rootHref}
               className={cn(
-                "inline-flex h-8 items-center gap-1 rounded-md border border-transparent bg-card px-3 text-base font-semibold text-muted-foreground transition-all duration-200 ease-in-out hover:border-border hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "inline-flex h-8 items-center gap-1 rounded-md border border-transparent bg-card px-3 text-sm font-semibold text-muted-foreground transition-all duration-200 ease-in-out hover:border-border hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-base",
                 (moduleActive || openPillar === pillar.id) &&
                   "border-primary/40 bg-accent text-accent-foreground"
               )}
@@ -197,7 +200,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
       })}
 
       <div
-        className="pointer-events-none absolute start-1/2 top-full z-[100] mt-2 flex w-screen -translate-x-1/2 justify-center"
+        className="pointer-events-none absolute start-1/2 top-full z-[999] mt-2 flex w-screen -translate-x-1/2 justify-center"
         onMouseEnter={clearCloseTimer}
         onMouseLeave={scheduleClose}
       >
