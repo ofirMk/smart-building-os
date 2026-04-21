@@ -95,23 +95,29 @@ export default function CreateSubcontractorContractPage() {
   React.useEffect(() => {
     const controller = new AbortController()
     setProjects([])
+    setItems([])
     setProjectsError(null)
     setLoadingProjects(true)
     void (async () => {
+      const itemsPromise = apiGet<Array<z.infer<typeof itemRowSchema>>>(
+        "/api/erp/master-data/items",
+        {
+          schema: itemsSchema,
+          signal: controller.signal,
+        }
+      ).catch((error: unknown) => {
+        if (controller.signal.aborted) return null
+        if (error instanceof Error && error.name === "AbortError") return null
+        return []
+      })
+
       try {
-        const [rows, itemRows] = await Promise.all([
-          apiGet<ProjectRow[]>("/api/projects?status=ACTIVE", {
-            schema: projectsSchema,
-            signal: controller.signal,
-          }),
-          apiGet<Array<z.infer<typeof itemRowSchema>>>("/api/erp/master-data/items", {
-            schema: itemsSchema,
-            signal: controller.signal,
-          }),
-        ])
+        const rows = await apiGet<ProjectRow[]>("/api/projects?status=ACTIVE", {
+          schema: projectsSchema,
+          signal: controller.signal,
+        })
         if (controller.signal.aborted) return
         setProjects(rows)
-        setItems(itemRows)
       } catch (error) {
         if (controller.signal.aborted) return
         if (error instanceof Error && error.name === "AbortError") return
@@ -119,6 +125,10 @@ export default function CreateSubcontractorContractPage() {
       } finally {
         if (!controller.signal.aborted) setLoadingProjects(false)
       }
+
+      const itemRows = await itemsPromise
+      if (controller.signal.aborted || itemRows === null) return
+      setItems(itemRows)
     })()
     return () => controller.abort()
   }, [])

@@ -1,68 +1,154 @@
-"use client";
+"use client"
 
-import React from "react";
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { Building2, Lock, User } from "lucide-react"
 
-type CompanyCookie = "marker_ofek" | "holden_group" | "none";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { writeActiveCompanyCookie } from "@/lib/company-context"
 
-function setSelectedCompanyCookie(company: CompanyCookie) {
-  if (typeof document === "undefined") return;
-  const maxAge = company === "none" ? 0 : 60 * 60 * 24 * 180;
-  document.cookie = `selected_company=${company}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
-}
+type LoginCompanyId =
+  | "marker_ofek"
+  | "holden_buildings"
+  | "hh_electrical_panels"
+  | "holden_group"
+
+const LOGIN_COMPANIES: { id: LoginCompanyId; label: string }[] = [
+  { id: "marker_ofek", label: "מרקר אופק" },
+  { id: "holden_buildings", label: "הולדן מבנים" },
+  { id: "hh_electrical_panels", label: "ח.ח לוחות חשמל" },
+  { id: "holden_group", label: "הולדן גרופ" },
+]
 
 export default function RootPage() {
+  const router = useRouter()
+  const [username, setUsername] = React.useState("")
+  const [password, setPassword] = React.useState("")
+  const [company, setCompany] = React.useState<LoginCompanyId | "">("")
+  const [error, setError] = React.useState<string | null>(null)
+  const [comingSoonCompany, setComingSoonCompany] = React.useState<string | null>(null)
+
+  function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    if (!username.trim() || !password.trim() || !company) {
+      setError("נא למלא שם משתמש, סיסמה ולבחור חברה.")
+      return
+    }
+
+    if (company === "marker_ofek") {
+      writeActiveCompanyCookie("marker_ofek")
+      router.push("/marker-ofek/projects")
+      return
+    }
+
+    const selectedLabel =
+      LOGIN_COMPANIES.find((option) => option.id === company)?.label ?? "החברה שבחרתם"
+    setComingSoonCompany(selectedLabel)
+  }
+
   return (
     <div
       dir="rtl"
-      className="min-h-svh bg-[#09090b] px-6 py-10 text-white font-sans md:px-10"
+      className="flex min-h-screen items-center justify-center bg-background px-4 py-8 text-foreground md:px-8"
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
-        <header className="space-y-3 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-100 md:text-6xl">
-            קבוצת הולדן
-          </h1>
-          <p className="text-base text-zinc-400 md:text-lg">פורטל כניסה למערכות הקבוצה</p>
-        </header>
-
-        <section className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <a
-            href="/marker-ofek/command-center"
-            onClick={() => setSelectedCompanyCookie("marker_ofek")}
-            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-400 hover:bg-violet-500/10 hover:shadow-xl hover:shadow-violet-500/10"
-          >
-            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">
-              ביצוע ורכש
+      <Card className="w-full max-w-md border-border shadow-xl">
+        <CardHeader className="space-y-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            sys-mk.com
+          </p>
+          <CardTitle className="text-2xl font-bold">Holden Group Gatekeeper</CardTitle>
+          <p className="text-sm text-muted-foreground">התחברות למערכות קבוצת הולדן</p>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={handleLogin}>
+            <div className="grid gap-1.5">
+              <Label htmlFor="username">שם משתמש</Label>
+              <div className="relative">
+                <User className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  className="pe-10"
+                  placeholder="הזינו שם משתמש"
+                  autoComplete="username"
+                />
+              </div>
             </div>
-            <p className="mt-3 max-w-xs text-sm text-zinc-400">
-              ERP הנדסה, חוזים ופרויקטים
-            </p>
-          </a>
 
-          <a
-            href="/holden"
-            onClick={() => setSelectedCompanyCookie("holden_group")}
-            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-xl hover:shadow-cyan-500/10"
-          >
-            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">הולדן ניהול מבנים</div>
-          </a>
+            <div className="grid gap-1.5">
+              <Label htmlFor="password">סיסמה</Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="pe-10"
+                  placeholder="הזינו סיסמה"
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
 
-          <a
-            href="/hh-panels"
-            onClick={() => setSelectedCompanyCookie("none")}
-            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:bg-blue-500/10 hover:shadow-xl hover:shadow-blue-500/10"
-          >
-            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">ח.ח. לוחות חשמל</div>
-          </a>
+            <div className="grid gap-1.5">
+              <Label htmlFor="company">חברה</Label>
+              <div className="relative">
+                <Building2 className="pointer-events-none absolute end-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Select value={company} onValueChange={(value) => setCompany(value as LoginCompanyId)}>
+                  <SelectTrigger id="company" className="pe-10">
+                    <SelectValue placeholder="בחרו חברה" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOGIN_COMPANIES.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <a
-            href="/hq"
-            onClick={() => setSelectedCompanyCookie("none")}
-            className="group flex min-h-64 flex-col items-center justify-center rounded-3xl border-2 border-zinc-700 bg-zinc-900/60 px-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-500/10 hover:shadow-xl hover:shadow-amber-500/10"
-          >
-            <div className="text-3xl font-bold text-zinc-100 md:text-4xl">הנהלת הקבוצה</div>
-          </a>
-        </section>
-      </div>
+            {error ? <p className="text-xs text-destructive">{error}</p> : null}
+
+            <Button type="submit" className="w-full">
+              כניסה למערכת
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {comingSoonCompany ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+          <Card className="w-full max-w-sm border-border text-center shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-xl">בקרוב</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                סביבת <span className="font-semibold text-foreground">{comingSoonCompany}</span>{" "}
+                תעלה בקרוב.
+              </p>
+              <Button type="button" onClick={() => setComingSoonCompany(null)}>
+                סגירה
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </div>
-  );
+  )
 }

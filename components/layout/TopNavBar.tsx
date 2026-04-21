@@ -555,8 +555,7 @@ export function TopNavBar({
                 "size-9 shrink-0 rounded-lg border border-slate-200 bg-card text-slate-600 shadow-sm",
                 "transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
                 "hover:bg-muted hover:text-foreground hover:shadow-md",
-                "active:scale-[0.96]",
-                isMarkerWorkspace && "lg:hidden"
+                "active:scale-[0.96]"
               )}
             />
             <Link
