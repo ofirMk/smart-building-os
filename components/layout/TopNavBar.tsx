@@ -19,13 +19,10 @@ import {
   Sparkles,
   Users,
   WalletCards,
-  UserRound,
 } from "lucide-react"
 
-import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
 import { ActiveCompanyBadge } from "@/components/layout/active-company-badge"
 import { MarkerOfekHeaderNav } from "@/components/marker-ofek/layout/header"
-import { NotificationBell } from "@/components/marker-ofek/layout/notification-bell"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -247,36 +244,6 @@ function megaActive(pathname: string, id: MegaId): boolean {
   return items.some((it) => isPathUnder(pathname, it.href))
 }
 
-function MotionDropdown({
-  open,
-  children,
-  align = "end",
-}: {
-  open: boolean
-  children: React.ReactNode
-  align?: "end" | "start"
-}) {
-  const reduce = useReducedMotion()
-  return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: -6, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={reduce ? undefined : { opacity: 0, y: -4, scale: 0.99 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className={cn(
-            "absolute top-[calc(100%+6px)] z-[60] min-w-[13rem] overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl ring-1 ring-slate-900/[0.04]",
-            align === "end" ? "end-0" : "start-0"
-          )}
-        >
-          {children}
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
-  )
-}
-
 function MegaMenuPanel({
   id,
   open,
@@ -433,10 +400,8 @@ export function TopNavBar({
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const navClusterRef = React.useRef<HTMLDivElement>(null)
 
-  const [profileOpen, setProfileOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
   const [searchQ, setSearchQ] = React.useState("")
-  const profileRef = React.useRef<HTMLDivElement>(null)
 
   const clearCloseTimer = React.useCallback(() => {
     if (closeTimer.current) {
@@ -477,15 +442,6 @@ export function TopNavBar({
   }, [])
 
   React.useEffect(() => setOpenMega(null), [pathname])
-
-  React.useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      const t = e.target as Node
-      if (profileRef.current && !profileRef.current.contains(t)) setProfileOpen(false)
-    }
-    document.addEventListener("mousedown", onDoc)
-    return () => document.removeEventListener("mousedown", onDoc)
-  }, [])
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -550,14 +506,6 @@ export function TopNavBar({
           )}
         >
           <div className="flex min-w-0 items-center gap-2 justify-self-start md:gap-3">
-            <NavDrawerTrigger
-              className={cn(
-                "size-9 shrink-0 rounded-lg border border-slate-200 bg-card text-slate-600 shadow-sm",
-                "transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                "hover:bg-muted hover:text-foreground hover:shadow-md",
-                "active:scale-[0.96]"
-              )}
-            />
             <Link
               href="/marker-ofek/command-center"
               className="group flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-muted"
@@ -698,7 +646,7 @@ export function TopNavBar({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 border-slate-200 bg-card px-2 text-xs font-medium text-slate-700 shadow-sm"
+              className="h-8 gap-1.5 border-slate-200 bg-card px-2 text-xs font-medium text-foreground shadow-sm"
               onClick={() => setSearchOpen(true)}
               aria-label="חיפוש מהיר"
             >
@@ -708,66 +656,6 @@ export function TopNavBar({
                 ⌘K
               </kbd>
             </Button>
-
-            <NotificationBell
-              onOpenChange={(next) => {
-                if (next) setProfileOpen(false)
-              }}
-            />
-
-            <div className="relative" ref={profileRef}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-              className="h-8 gap-1 rounded-lg ps-2 pe-1.5 text-foreground hover:bg-accent"
-                onClick={() => {
-                  setProfileOpen((o) => !o)
-                }}
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
-              >
-                <span className="flex size-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <UserRound className="size-4" aria-hidden />
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "size-4 opacity-60 transition-transform duration-200",
-                    profileOpen && "rotate-180"
-                  )}
-                  aria-hidden
-                />
-              </Button>
-              <MotionDropdown open={profileOpen} align="end">
-                <div className="py-1 text-start">
-                  <p className="px-3 py-2 text-[11px] font-medium text-muted-foreground">
-                    חשבון
-                  </p>
-                  <Link
-                    href="/marker-ofek/settings"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    הגדרות אישיות
-                  </Link>
-                  <Link
-                    href="/marker-ofek/settings/user-permissions"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    הרשאות
-                  </Link>
-                  <div className="my-1 h-px bg-border" />
-                  <button
-                    type="button"
-                    className="w-full rounded-md px-3 py-2 text-start text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    יציאה (דמו)
-                  </button>
-                </div>
-              </MotionDropdown>
-            </div>
           </div>
         </div>
 

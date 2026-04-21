@@ -9,11 +9,7 @@ import {
   CommandPaletteHeaderTrigger,
   CommandPaletteProvider,
 } from "@/components/dashboard/command-palette"
-import { CommentNotificationBell } from "@/components/dashboard/comment-notification-bell"
 import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tracker"
-import { DashboardNavDrawerPanel } from "@/components/dashboard/dashboard-nav-drawer-panel"
-import { NavDrawerProvider } from "@/components/dashboard/nav-drawer-context"
-import { NavDrawerSheet } from "@/components/dashboard/nav-drawer-sheet"
 import { TopNavBar } from "@/components/layout/TopNavBar"
 import { CompanyContextGate } from "@/components/layout/company-context-gate"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
@@ -56,7 +52,7 @@ import type { HrWelcomePayload } from "@/lib/marker-ofek/diamond-navigator-curri
 import type { WorkspaceSettingsSnapshot } from "@/lib/marker-ofek/workspace-types"
 import { DEFAULT_WORKSPACE_SNAPSHOT } from "@/lib/marker-ofek/user-workspace-shared"
 import { cn } from "@/lib/utils"
-import { companyDisplayName, type CompanyContextId } from "@/lib/company-context"
+import type { CompanyContextId } from "@/lib/company-context"
 
 type Crumb = { label: string; href: string | null }
 
@@ -214,7 +210,6 @@ export function DashboardShell({
     <SmartWorkspaceProvider initial={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}>
     <CommandPaletteProvider>
     <AiAssistantScreenProvider>
-    <NavDrawerProvider>
       {mirrorBannerOn && mirrorBannerLabel ? (
         <MirrorModeBanner label={mirrorBannerLabel} />
       ) : null}
@@ -257,11 +252,6 @@ export function DashboardShell({
                 </span>
               ))}
             </div>
-            <div className="mb-1 flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-background px-2 py-0.5 text-[10px] font-semibold tracking-[0.04em] text-slate-700">
-                חברה פעילה: {companyDisplayName(selectedCompany)}
-              </span>
-            </div>
             <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               {headerBrand}
             </p>
@@ -283,9 +273,6 @@ export function DashboardShell({
             ) : null}
             <ThemeToggle />
             <FullscreenToggle />
-            {userRole === "admin" ? (
-              <CommentNotificationBell className="text-muted-foreground transition-colors duration-300 ease-in-out hover:text-foreground" />
-            ) : null}
             {isMarkerOfekPath(pathname) ? <WorkspaceScenarioSwitcher /> : null}
             {isMarkerOfekPath(pathname) ? <WorkspaceEfficiencyHost enabled /> : null}
             {isMarkerOfekPath(pathname) ? <SaveWorkspaceButton /> : null}
@@ -322,18 +309,6 @@ export function DashboardShell({
           </footer>
         ) : null}
       </div>
-      <NavDrawerSheet>
-        <DashboardNavDrawerPanel
-          userRole={userRole}
-          showPartnerFinanceNav={showPartnerFinanceNav}
-          showHoldingExecutiveNav={showHoldingExecutiveNav}
-          showUserPermissionsNav={showUserPermissionsNav}
-          showAiUserSetupNav={showAiUserSetupNav}
-          scopedProjectCount={scopedProjectCount}
-          applyEmptyPortfolioNav={applyEmptyPortfolioNav}
-        />
-      </NavDrawerSheet>
-    </NavDrawerProvider>
       <AiAssistant
         hostFirstName={hostFirstName}
         hrWelcome={hrWelcome}
