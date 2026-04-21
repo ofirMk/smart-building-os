@@ -181,6 +181,14 @@
   }
 
   /**
+   * Legacy utility-class normalization:
+   * force semantic readable text for hardcoded neutral dark tones.
+   */
+  :where(.text-slate-800, .text-slate-900, .text-gray-800, .text-gray-900) {
+    color: hsl(var(--foreground));
+  }
+
+  /**
    * Hebrew-first: מיקום ופונט ל-placeholders (הטקסט ב-placeholder חייב להיות בעברית בקוד).
    * שדות עם dir="ltr" (מספרים, קוד) — לא נכללים.
    */
