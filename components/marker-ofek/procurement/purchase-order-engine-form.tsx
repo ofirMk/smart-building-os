@@ -54,8 +54,8 @@ import {
 import { purchaseOrderEngineDefaultsFromMockPo } from "@/lib/marker-ofek/procurement-mock-dashboard-pos"
 
 const fieldClass =
-  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15 md:text-sm"
-const labelClass = "text-xs font-semibold text-slate-600"
+  "h-8 max-w-md border-input bg-card text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:border-ring/60 focus-visible:ring-ring/20 md:text-sm"
+const labelClass = "text-xs font-semibold text-muted-foreground"
 const cellPad = "px-2 py-1 align-middle"
 
 const supplierLookupSchema = z.array(z.object({ id: z.string(), name: z.string() }))
@@ -115,6 +115,7 @@ export function PurchaseOrderEngineForm() {
   >([])
   const [lookupLoading, setLookupLoading] = React.useState(true)
   const [lookupError, setLookupError] = React.useState<string | null>(null)
+  const [lookupAttempt, setLookupAttempt] = React.useState(0)
 
   React.useEffect(() => {
     const controller = new AbortController()
@@ -149,7 +150,7 @@ export function PurchaseOrderEngineForm() {
       }
     })()
     return () => controller.abort()
-  }, [])
+  }, [lookupAttempt])
 
   const subtotal = React.useMemo(() => {
     if (!watchedLines?.length) return 0
@@ -208,7 +209,7 @@ export function PurchaseOrderEngineForm() {
   return (
     <div
       dir="rtl"
-      className="w-full max-w-full pb-12 [color-scheme:light]"
+      className="min-w-0 w-full max-w-full pb-12 [color-scheme:light]"
     >
       <form
         onSubmit={handleSubmit(onValid, onInvalid)}
@@ -227,7 +228,7 @@ export function PurchaseOrderEngineForm() {
               <h1 className="text-base font-bold tracking-tight text-foreground md:text-lg">
                 מרחב עבודה — הזמנת רכש
               </h1>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Phase 2.1 — Procurement Workspace · בקרת תקציב ומע״מ
               </p>
             </div>
@@ -236,7 +237,7 @@ export function PurchaseOrderEngineForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm"
+                className="h-8 border-input bg-card px-3 text-xs font-medium text-foreground shadow-sm"
                 onClick={saveDraft}
               >
                 <Save className="size-3.5" aria-hidden />
@@ -253,7 +254,7 @@ export function PurchaseOrderEngineForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm"
+                className="h-8 border-input bg-card px-3 text-xs font-medium text-foreground shadow-sm"
                 onClick={exportPdf}
               >
                 <FileDown className="size-3.5" aria-hidden />
@@ -263,7 +264,7 @@ export function PurchaseOrderEngineForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm"
+                className="h-8 border-input bg-card px-3 text-xs font-medium text-foreground shadow-sm"
                 onClick={attachDocuments}
               >
                 <Paperclip className="size-3.5" aria-hidden />
@@ -274,7 +275,7 @@ export function PurchaseOrderEngineForm() {
           <div className="pb-2">
             <Link
               href="/marker-ofek/procurement/purchase-orders/from-boq"
-              className="text-[11px] font-medium text-emerald-800 underline-offset-4 hover:underline"
+              className="text-[11px] font-medium text-primary underline-offset-4 hover:underline"
             >
               מסלול מתקדם — הזמנה ממכרז (BoQ)
             </Link>
@@ -301,15 +302,29 @@ export function PurchaseOrderEngineForm() {
           staleMessage={lookupError ?? undefined}
           highVarianceMessage="חריגת תקציב גבוהה - המשך נחסם עד לאישור חריגה."
         />
+        {lookupError ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <span>טעינת נתוני ייחוס נכשלה. ניתן לנסות טעינה מחדש.</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 border-amber-300 bg-card text-amber-900"
+              onClick={() => setLookupAttempt((prev) => prev + 1)}
+            >
+              נסה שוב
+            </Button>
+          </div>
+        ) : null}
 
         {/* 2. Smart header — dual cards */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5">
-            <h2 className="mb-3 border-b border-slate-200 pb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm md:p-5">
+            <h2 className="mb-3 border-b border-border pb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
               כרטיס א׳ — ספק ופרויקט
             </h2>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-1.5">
+            <div className="grid justify-items-start gap-4 sm:grid-cols-3">
+              <div className="w-full max-w-md space-y-1.5">
                 <Label className={labelClass}>ספק</Label>
                 <Controller
                   control={control}
@@ -348,7 +363,7 @@ export function PurchaseOrderEngineForm() {
                 ) : null}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="w-full max-w-md space-y-1.5">
                 <Label className={labelClass}>פרויקט</Label>
                 <Controller
                   control={control}
@@ -385,7 +400,7 @@ export function PurchaseOrderEngineForm() {
                 ) : null}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="w-full max-w-md space-y-1.5">
                 <Label htmlFor="po-expected-delivery" className={labelClass}>
                   תאריך אספקה נדרש
                 </Label>
@@ -405,8 +420,8 @@ export function PurchaseOrderEngineForm() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5">
-            <h2 className="mb-3 border-b border-slate-200 pb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm md:p-5">
+            <h2 className="mb-3 border-b border-border pb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
               כרטיס ב׳ — תובנות חיות (מוק)
             </h2>
             {projectInsights ? (
@@ -437,7 +452,7 @@ export function PurchaseOrderEngineForm() {
                 </div>
               </dl>
             ) : (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 בחרו פרויקט כדי להציג מדדי תקציב (דמו).
               </p>
             )}
@@ -582,7 +597,7 @@ export function PurchaseOrderEngineForm() {
                         <Input
                           className={cn(
                             fieldClass,
-                            "w-full min-w-[140px] text-slate-800"
+                            "w-full min-w-[140px] text-foreground"
                           )}
                           placeholder="מפרט / אסמכתא"
                           {...register(`lines.${index}.lineNotes`)}

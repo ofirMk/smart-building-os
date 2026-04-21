@@ -14,7 +14,6 @@ import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tra
 import { DashboardNavDrawerPanel } from "@/components/dashboard/dashboard-nav-drawer-panel"
 import { NavDrawerProvider } from "@/components/dashboard/nav-drawer-context"
 import { NavDrawerSheet } from "@/components/dashboard/nav-drawer-sheet"
-import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
 import { TopNavBar } from "@/components/layout/TopNavBar"
 import { CompanyContextGate } from "@/components/layout/company-context-gate"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
@@ -223,7 +222,7 @@ export function DashboardShell({
       {requiresCompanySelection ? <CompanyContextGate /> : null}
       <div
         className={cn(
-          "flex min-h-screen min-w-0 w-full max-w-none flex-1 flex-col overflow-x-hidden bg-background text-foreground",
+          "flex h-screen min-h-0 min-w-0 w-full max-w-none flex-1 flex-col overflow-hidden bg-background text-foreground",
           requiresCompanySelection && "hidden",
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
         )}
@@ -235,15 +234,6 @@ export function DashboardShell({
             mirrorBannerOn ? MIRROR_BANNER_STICKY_TOP_CLASS : "top-0"
           }
         >
-          <NavDrawerTrigger
-            className={cn(
-              "size-9 shrink-0 rounded-lg",
-              "border border-slate-200 bg-card text-slate-600 shadow-sm",
-              "transition-[transform,box-shadow,background-color,color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
-              "hover:bg-muted hover:text-foreground hover:shadow-md",
-              "active:scale-[0.96] motion-reduce:active:scale-100"
-            )}
-          />
           <div className="flex min-w-0 flex-1 flex-col text-start">
             <div className="mb-0.5 flex items-center gap-1 overflow-x-auto text-[10px] text-muted-foreground">
               {crumbs.map((crumb, idx) => (
@@ -313,7 +303,7 @@ export function DashboardShell({
         <SmartWorkspaceChrome>
           <main
             dir="rtl"
-            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-2 overflow-x-hidden overflow-y-auto bg-background px-2 py-2 text-foreground print:bg-background print:p-0 md:px-3 md:py-3"
+            className="relative z-0 flex h-[calc(100vh-4rem)] min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-2 overflow-hidden bg-background px-2 py-2 text-foreground print:bg-background print:p-0 md:px-3 md:py-3"
           >
             {children}
           </main>

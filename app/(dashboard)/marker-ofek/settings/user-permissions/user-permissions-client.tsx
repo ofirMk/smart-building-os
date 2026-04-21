@@ -16,6 +16,8 @@ import {
   type ModuleId,
 } from "@/lib/marker-ofek/module-registry"
 import { buttonVariants } from "@/components/ui/button-variants"
+import { MasterDetailWorkspace } from "@/components/layout/MasterDetailWorkspace"
+import { SettingsMasterNav } from "@/components/marker-ofek/settings/settings-master-nav"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowRight, Loader2 } from "lucide-react"
@@ -153,8 +155,13 @@ export function UserPermissionsClient() {
   }
 
   return (
-    <div className="bg-card font-sans text-[#0f172a] rtl" dir="rtl">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10">
+    <MasterDetailWorkspace
+      title="הרשאות משתמשים — מודולים"
+      description="שליטה בהרשאות גישה ונראות מודולים לכל משתמש"
+      master={<SettingsMasterNav />}
+      detail={
+        <div className="font-sans text-[#0f172a] rtl" dir="rtl">
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-2 py-2">
         <header className="pharmacy-hero-card p-6 md:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
             {branding.organizationName}
@@ -258,7 +265,9 @@ export function UserPermissionsClient() {
           <ArrowRight className="size-4 rotate-180" aria-hidden />
           ניהול מודולים (אצלך)
         </Link>
-      </div>
-    </div>
+          </div>
+        </div>
+      }
+    />
   )
 }

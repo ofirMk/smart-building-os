@@ -62,7 +62,10 @@ export function MasterDetailWorkspace({
     <div
       dir={locale === "he" ? "rtl" : "ltr"}
       lang={locale === "he" ? "he" : "en"}
-      className={cn("w-full min-w-0 max-w-full space-y-3 bg-background p-3 lg:p-4", className)}
+      className={cn(
+        "flex h-[calc(100vh-4rem)] w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden bg-background p-3 lg:p-4",
+        className
+      )}
     >
       <Card className="border-slate-200 bg-card shadow-sm">
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
@@ -76,23 +79,23 @@ export function MasterDetailWorkspace({
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-10">
-        <aside className="space-y-2 lg:col-span-3 lg:sticky lg:top-16 lg:self-start">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-10">
+        <aside className="min-h-0 space-y-2 lg:col-span-3">
           <Card className="border-slate-200 bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">{localizeLabel(masterLabel, locale)}</CardTitle>
               <CardDescription className="text-[11px]">{fieldHint(masterLabel, locale)}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2">{master}</CardContent>
+            <CardContent className="h-full min-h-0 overflow-y-auto p-2">{master}</CardContent>
           </Card>
         </aside>
-        <main className="lg:col-span-7">
+        <main className="min-h-0 lg:col-span-7">
           <Card className="border-slate-200 bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">{localizeLabel(detailLabel, locale)}</CardTitle>
               <CardDescription className="text-[11px]">{fieldHint(detailLabel, locale)}</CardDescription>
             </CardHeader>
-            <CardContent className="p-2">{detail}</CardContent>
+            <CardContent className="h-full min-h-0 overflow-y-auto p-2">{detail}</CardContent>
           </Card>
         </main>
       </div>

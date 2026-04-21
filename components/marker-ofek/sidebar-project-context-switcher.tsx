@@ -91,13 +91,13 @@ export function SidebarProjectContextSwitcher() {
   )
 
   return (
-    <section className="mb-2 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+    <section className="mb-2 rounded-xl border border-border bg-card p-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
       <div className="mb-2 flex items-center justify-between">
-        <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-700">
+        <p className="flex items-center gap-1 text-[11px] font-semibold text-foreground">
           <BriefcaseBusiness className="size-3.5" />
           Project Context
         </p>
-        {loading ? <Loader2 className="size-3.5 animate-spin text-slate-500" /> : null}
+        {loading ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" /> : null}
       </div>
       <Select
         value={activeProjectId || "none"}
@@ -113,7 +113,7 @@ export function SidebarProjectContextSwitcher() {
         }}
         disabled={loading || projects.length === 0}
       >
-        <SelectTrigger size="sm" className="h-8 border-slate-200 bg-card text-xs">
+        <SelectTrigger size="sm" className="h-8 border-border bg-muted/50 text-xs">
           <SelectValue placeholder="בחר פרויקט פעיל">
             {activeProject?.name}
           </SelectValue>
@@ -131,11 +131,11 @@ export function SidebarProjectContextSwitcher() {
         </SelectContent>
       </Select>
       <div className="mt-2 flex items-center justify-between">
-        <span className="truncate text-[11px] text-slate-600">
+        <span className="truncate text-[11px] text-muted-foreground">
           {activeProject ? activeProject.name : "לא נבחר פרויקט"}
         </span>
         {activeProject ? (
-          <Badge variant="outline" className="h-5 border-emerald-200 bg-emerald-50 text-[10px] text-emerald-800">
+          <Badge variant="outline" className="h-5 border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-500">
             ACTIVE
           </Badge>
         ) : null}

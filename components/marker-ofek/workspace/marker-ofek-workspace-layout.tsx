@@ -119,7 +119,7 @@ function MarkerOfekWorkspaceChrome({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="min-h-0 min-w-0 flex-1"
+          className="min-h-0 min-w-0 flex-1 overflow-hidden"
         >
           {children}
         </motion.div>
@@ -145,9 +145,9 @@ export function MarkerOfekWorkspaceLayout({
     return (
       <div
         dir="rtl"
-        className="flex min-h-[14rem] items-center justify-center rounded-xl border border-slate-100 bg-[#FFFFFF] px-6 py-20"
+        className="flex min-h-[14rem] items-center justify-center rounded-xl border border-border bg-card px-6 py-20"
       >
-        <p className="text-sm font-medium text-slate-500">טוען סביבת עבודה…</p>
+        <p className="text-sm font-medium text-muted-foreground">טוען סביבת עבודה…</p>
       </div>
     )
   }

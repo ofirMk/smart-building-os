@@ -1,8 +1,13 @@
 import Link from "next/link"
+import type { Metadata } from "next"
 import { LayoutDashboard } from "lucide-react"
 
 import { MasterPlanTracker } from "@/components/dashboard/master-plan-tracker"
 import { Button } from "@/components/ui/button"
+
+export const metadata: Metadata = {
+  title: "דף הבית",
+}
 
 /**
  * דף הבית של מרקר אופק — מפת דרכים לשדרוג Holden ERP וקישור למרכז הפיקוד.

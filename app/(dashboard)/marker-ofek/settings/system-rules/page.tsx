@@ -6,6 +6,8 @@ import { ArrowRight, Loader2, Percent, Save, Shield } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { MasterDetailWorkspace } from "@/components/layout/MasterDetailWorkspace"
+import { SettingsMasterNav } from "@/components/marker-ofek/settings/settings-master-nav"
 import {
   Card,
   CardContent,
@@ -100,11 +102,12 @@ export default function MarkerOfekSystemRulesPage() {
   }
 
   return (
-    <div
-      dir="rtl"
-      lang="he"
-      className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-12 pt-2"
-    >
+    <MasterDetailWorkspace
+      title="כללי מערכת (מס ותאימות)"
+      description="חוקי מערכת גלובליים בתצורת Master-Detail"
+      master={<SettingsMasterNav />}
+      detail={
+        <div dir="rtl" lang="he" className="space-y-6">
       <Link
         href="/marker-ofek/settings"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -149,7 +152,7 @@ export default function MarkerOfekSystemRulesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="sys-vat">מע״מ ברירת מחדל (%)</Label>
                 <Input
                   id="sys-vat"
@@ -160,7 +163,7 @@ export default function MarkerOfekSystemRulesPage() {
                   className="max-w-[140px] font-currency-mono tabular-nums"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-lg space-y-2">
                 <Label>אכיפת תעודות ספק (ניכוי / ניהול ספרים)</Label>
                 <Select
                   value={taxMode}
@@ -204,6 +207,8 @@ export default function MarkerOfekSystemRulesPage() {
           ) : null}
         </form>
       )}
-    </div>
+        </div>
+      }
+    />
   )
 }

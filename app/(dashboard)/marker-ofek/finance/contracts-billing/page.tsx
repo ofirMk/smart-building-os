@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { Metadata } from "next"
 import {
   Archive,
   FileSignature,
@@ -10,6 +11,10 @@ import {
 } from "lucide-react"
 
 import { getOrganizationBranding } from "@/lib/marker-ofek/organization-branding"
+
+export const metadata: Metadata = {
+  title: "חוזים וחיובים",
+}
 
 /** סדר זהב: יצירת חוזה → כספת → תנאים כספיים → חשבונות חלקיים (אחרונים לפני כספים גלובליים). */
 const TILES = [
@@ -63,30 +68,30 @@ export default async function ContractsBillingHubPage() {
     <div
       dir="rtl"
       lang="he"
-      className="mx-auto w-full max-w-6xl space-y-10 pb-16"
+      className="mx-auto w-full max-w-6xl space-y-6 pb-10"
     >
       <Link
         href="/marker-ofek/command-center"
-        className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-950"
+        className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-all duration-200 ease-in-out hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         חזרה למרכז הפיקוד
       </Link>
 
-      <header className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm sm:p-8">
+      <header className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="flex flex-wrap items-start gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-background text-indigo-950">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-primary">
             <Landmark className="size-6" strokeWidth={1.5} aria-hidden />
           </span>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {branding.organizationName}
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-indigo-950 sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               חוזה וחשבונות
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               סדר זהב: חוזים וכספת לפני חשבונות חלקיים. חשבוניות מס, חיוב ותזרים — תחת מודול{" "}
-              <span className="font-currency-mono text-[13px] text-indigo-950">כספים</span>{" "}
+              <span className="font-currency-mono text-[13px] text-primary">כספים</span>{" "}
               בסרגל הצד.
             </p>
           </div>
@@ -103,15 +108,15 @@ export default async function ContractsBillingHubPage() {
             <Link
               key={t.href}
               href={t.href}
-              className="group flex flex-col rounded-xl border border-slate-100 bg-card p-5 shadow-sm transition-colors hover:border-slate-200 hover:shadow-md"
+              className="group flex flex-col rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-200 ease-in-out hover:border-primary hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <span className="mb-3 flex size-10 items-center justify-center rounded-lg border border-slate-100 bg-background text-indigo-950 transition-colors group-hover:bg-indigo-950/5">
+              <span className="mb-3 flex size-10 items-center justify-center rounded-lg border border-border bg-background text-primary transition-all duration-200 ease-in-out group-hover:bg-accent">
                 <Icon className="size-5" strokeWidth={1.5} aria-hidden />
               </span>
-              <h2 className="text-base font-semibold text-indigo-950">
+              <h2 className="text-base font-semibold text-foreground">
                 {t.title}
               </h2>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
                 {t.desc}
               </p>
             </Link>
@@ -119,11 +124,11 @@ export default async function ContractsBillingHubPage() {
         })}
       </nav>
 
-      <section className="rounded-xl border border-slate-100 bg-card p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-indigo-950">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-foreground">
           מודול כספים (מס׳ 5 בסדר הזהב)
         </h3>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-muted-foreground">
           קיצור דרך; הרשימה המלאה תחת «כספים» בתפריט.
         </p>
         <ul className="mt-3 flex flex-wrap gap-2">
@@ -131,7 +136,7 @@ export default async function ContractsBillingHubPage() {
             <li key={s.href}>
               <Link
                 href={s.href}
-                className="font-currency-mono inline-flex rounded-lg border border-slate-100 bg-background/80 px-3 py-2 text-[13px] font-medium text-indigo-950 transition-colors hover:bg-slate-100"
+                className="font-currency-mono inline-flex rounded-lg border border-border bg-background/80 px-3 py-2 text-[13px] font-medium text-foreground transition-all duration-200 ease-in-out hover:border-primary hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {s.title}
               </Link>

@@ -6,6 +6,8 @@ import { ArrowRight, Building2, Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { MasterDetailWorkspace } from "@/components/layout/MasterDetailWorkspace"
+import { SettingsMasterNav } from "@/components/marker-ofek/settings/settings-master-nav"
 import {
   Card,
   CardContent,
@@ -125,11 +127,12 @@ export default function MarkerOfekCompanyMdmPage() {
   }
 
   return (
-    <div
-      dir="rtl"
-      lang="he"
-      className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-12 pt-2"
-    >
+    <MasterDetailWorkspace
+      title="פרופיל חברה (MDM)"
+      description="ניהול נתוני חברה, מס ובנק בתצורת Master-Detail"
+      master={<SettingsMasterNav />}
+      detail={
+        <div dir="rtl" lang="he" className="space-y-6">
       <Link
         href="/marker-ofek/settings"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -169,11 +172,11 @@ export default function MarkerOfekCompanyMdmPage() {
               <CardDescription>שם החברה מוצג מ־company_profile (קריאה בלבד כאן).</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
+              <div className="max-w-lg space-y-2 sm:col-span-2">
                 <Label>שם חברה</Label>
                 <Input value={companyName} disabled className="bg-muted/50" dir="rtl" />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="co-legal">ח.פ / ע.מ</Label>
                 <Input
                   id="co-legal"
@@ -190,7 +193,7 @@ export default function MarkerOfekCompanyMdmPage() {
                   )}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="co-vat">מספר עוסק / מע״מ</Label>
                 <Input
                   id="co-vat"
@@ -216,7 +219,7 @@ export default function MarkerOfekCompanyMdmPage() {
               <CardDescription>חשבון הבנק של החברה לתשלומים.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
+              <div className="max-w-lg space-y-2 sm:col-span-2">
                 <Label htmlFor="co-bank">שם בנק</Label>
                 <Input
                   id="co-bank"
@@ -232,7 +235,7 @@ export default function MarkerOfekCompanyMdmPage() {
                   )}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="co-branch">סניף</Label>
                 <Input
                   id="co-branch"
@@ -249,7 +252,7 @@ export default function MarkerOfekCompanyMdmPage() {
                   )}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="co-account">מספר חשבון</Label>
                 <Input
                   id="co-account"
@@ -274,7 +277,7 @@ export default function MarkerOfekCompanyMdmPage() {
               <CardTitle>יצירת קשר</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <div className="space-y-2">
+              <div className="max-w-lg space-y-2">
                 <Label htmlFor="co-addr">כתובת</Label>
                 <Input
                   id="co-addr"
@@ -285,7 +288,7 @@ export default function MarkerOfekCompanyMdmPage() {
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="max-w-md space-y-2">
                   <Label htmlFor="co-phone">טלפון</Label>
                   <Input
                     id="co-phone"
@@ -296,7 +299,7 @@ export default function MarkerOfekCompanyMdmPage() {
                     className="font-mono"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="max-w-md space-y-2">
                   <Label htmlFor="co-mail">דוא״ל</Label>
                   <Input
                     id="co-mail"
@@ -336,6 +339,8 @@ export default function MarkerOfekCompanyMdmPage() {
           ) : null}
         </form>
       )}
-    </div>
+        </div>
+      }
+    />
   )
 }

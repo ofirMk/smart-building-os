@@ -90,6 +90,8 @@ const profitabilitySnapshotSchema = z.object({
   }),
 })
 
+type ProfitabilitySnapshot = z.infer<typeof profitabilitySnapshotSchema>
+
 function statusLabelHe(s: MoProjectStatus): string {
   switch (s) {
     case "active":
@@ -135,11 +137,12 @@ function formatRelativeCountdown(target: Date, now: Date) {
 function DualProgressRings({
   budgetPct,
   workPct,
+  reduceMotion,
 }: {
   budgetPct: number
   workPct: number
+  reduceMotion: boolean
 }) {
-  const reduce = useReducedMotion()
   const rOuter = 44
   const rInner = 32
   const c = 50
@@ -173,7 +176,7 @@ function DualProgressRings({
           strokeLinecap="round"
           strokeDasharray={`${outerDash} ${outerCirc}`}
           transform={`rotate(-90 ${c} ${c})`}
-          initial={reduce ? false : { strokeDasharray: `0 ${outerCirc}` }}
+          initial={reduceMotion ? false : { strokeDasharray: `0 ${outerCirc}` }}
           animate={{ strokeDasharray: `${outerDash} ${outerCirc}` }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
         />
@@ -195,7 +198,7 @@ function DualProgressRings({
           strokeLinecap="round"
           strokeDasharray={`${innerDash} ${innerCirc}`}
           transform={`rotate(-90 ${c} ${c})`}
-          initial={reduce ? false : { strokeDasharray: `0 ${innerCirc}` }}
+          initial={reduceMotion ? false : { strokeDasharray: `0 ${innerCirc}` }}
           animate={{ strokeDasharray: `${innerDash} ${innerCirc}` }}
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
         />
@@ -235,15 +238,16 @@ const liftHover = {
 function HubCard({
   children,
   className,
+  reduceMotion,
 }: {
   children: React.ReactNode
   className?: string
+  reduceMotion: boolean
 }) {
-  const reduce = useReducedMotion()
   return (
     <motion.div
       initial="rest"
-      whileHover={reduce ? undefined : "hover"}
+      whileHover={reduceMotion ? undefined : "hover"}
       animate="rest"
       variants={liftHover}
       className={cn(
@@ -254,6 +258,204 @@ function HubCard({
     >
       {children}
     </motion.div>
+  )
+}
+
+function ProfitabilityValue({
+  loading,
+  value,
+  description,
+  valueClassName,
+  loadingLabel,
+}: {
+  loading: boolean
+  value: string
+  description: string
+  valueClassName?: string
+  loadingLabel: string
+}) {
+  if (loading) {
+    return <p className="text-xs text-slate-500">{loadingLabel}</p>
+  }
+
+  return (
+    <>
+      <p className={cn("font-currency-mono text-2xl font-black tabular-nums text-foreground", valueClassName)}>
+        {value}
+      </p>
+      <p className="text-[11px] text-slate-600">{description}</p>
+    </>
+  )
+}
+
+function BillingVarianceContent({
+  loading,
+  profitability,
+}: {
+  loading: boolean
+  profitability: ProfitabilitySnapshot | null
+}) {
+  if (loading) {
+    return <p className="text-xs text-slate-500">טוען וריאנס חיובים...</p>
+  }
+
+  if (!profitability?.billingVariance?.length) {
+    return <p className="text-xs text-slate-500">אין נתוני חיוב להצגה.</p>
+  }
+
+  return (
+    <div className="space-y-2">
+      {profitability.billingVariance.slice(-5).map((row) => {
+        const max = Math.max(row.submittedTotal, row.approvedTotal, 1)
+        const submittedPct = Math.round((row.submittedTotal / max) * 100)
+        const approvedPct = Math.round((row.approvedTotal / max) * 100)
+        return (
+          <div key={`${row.label}-${row.period ?? "na"}`} className="space-y-1">
+            <p className="truncate text-[11px] font-semibold text-foreground">
+              {row.label}
+            </p>
+            <div className="space-y-1">
+              <div className="h-2 rounded bg-muted">
+                <div
+                  className="h-2 rounded bg-slate-400"
+                  style={{ width: `${submittedPct}%` }}
+                />
+              </div>
+              <div className="h-2 rounded bg-emerald-100">
+                <div
+                  className="h-2 rounded bg-emerald-500"
+                  style={{ width: `${approvedPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function ActivityFeedList({
+  rows,
+  reduceMotion,
+  timeZone,
+}: {
+  rows: ProjectMasterHubMock["activity"]
+  reduceMotion: boolean
+  timeZone: string
+}) {
+  return (
+    <ul className="divide-y divide-slate-100">
+      <AnimatePresence initial={false}>
+        {rows.slice(0, 5).map((row, i) => (
+          <motion.li
+            key={`${row.kind}-${row.at}-${i}`}
+            initial={reduceMotion ? false : { opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04 }}
+            className="px-4 py-3"
+          >
+            {row.kind === "daily_log" ? (
+              <div className="flex gap-3">
+                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <span className="text-[10px] font-bold">DL</span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      {row.title}
+                    </p>
+                    <span className="text-[10px] text-slate-500 tabular-nums">
+                      {formatHeTime(new Date(row.at), timeZone)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-slate-600">
+                    {row.detail}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {row.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <Banknote className="size-4" aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      {row.title}
+                    </p>
+                    <Badge className="h-5 border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-900">
+                      מאושר לתשלום
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-[12px] text-slate-600">
+                    {row.detail} · {row.supplier}
+                  </p>
+                  <p className="mt-1 font-currency-mono text-sm font-bold tabular-nums text-foreground">
+                    {ilsFull.format(row.amountNis)}
+                  </p>
+                  <p className="text-[10px] text-slate-500 tabular-nums">
+                    {formatHeTime(new Date(row.at), timeZone)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </motion.li>
+        ))}
+      </AnimatePresence>
+    </ul>
+  )
+}
+
+function GanttChartsCard({
+  ganttCharts,
+  reduceMotion,
+}: {
+  ganttCharts?: GanttRecord[]
+  reduceMotion: boolean
+}) {
+  if (!ganttCharts?.length) return null
+
+  return (
+    <HubCard reduceMotion={reduceMotion} className="p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <BarChart3 className="size-4 text-indigo-600" aria-hidden />
+        <p className="text-sm font-bold text-foreground">תרשימי גאנט</p>
+      </div>
+      <ul className="space-y-2">
+        {ganttCharts.map((g) => (
+          <li key={g.id}>
+            <Link
+              href={`/marker-ofek/projects/gantt/${g.id}`}
+              className="block rounded-lg border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {g.name}
+              <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
+                {g.status === "active" ? "פעיל" : g.status}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 border-t border-slate-100 pt-3">
+        <Link
+          href="/marker-ofek/projects/gantt"
+          className="text-[11px] font-semibold text-primary transition-all duration-200 ease-in-out hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          כל הגאנטים בארגון ←
+        </Link>
+      </div>
+    </HubCard>
   )
 }
 
@@ -268,11 +470,9 @@ export function ProjectMasterHub360(props: {
 }) {
   const { projectId, displayName, internalCode, status, addressLine, mock, ganttCharts } =
     props
-  const reduce = useReducedMotion()
+  const reduceMotion = useReducedMotion() ?? false
   const [now, setNow] = React.useState(() => new Date())
-  const [profitability, setProfitability] = React.useState<
-    z.infer<typeof profitabilitySnapshotSchema> | null
-  >(null)
+  const [profitability, setProfitability] = React.useState<ProfitabilitySnapshot | null>(null)
   const [profitabilityLoading, setProfitabilityLoading] = React.useState(false)
   const [profitabilityError, setProfitabilityError] = React.useState<string | null>(null)
   const [exportingExecutive, setExportingExecutive] = React.useState(false)
@@ -324,31 +524,6 @@ export function ProjectMasterHub360(props: {
       controller.abort()
     }
   }, [projectId])
-
-  const localTimeLabel = formatHeTime(now, mock.timeZone)
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: reduce
-        ? { duration: 0.2 }
-        : { staggerChildren: 0.055, delayChildren: 0.06 },
-    },
-  }
-
-  const easeOut = [0.22, 1, 0.36, 1] as const
-  const item = {
-    hidden: reduce
-      ? { opacity: 1 }
-      : { opacity: 0, y: 14, filter: "blur(4px)" },
-    show: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 0.45, ease: easeOut },
-    },
-  }
 
   const sortedActivity = React.useMemo(() => {
     return [...mock.activity].sort(
@@ -471,6 +646,31 @@ export function ProjectMasterHub360(props: {
     }
   }, [displayName, internalCode, profitability, projectId])
 
+  const localTimeLabel = formatHeTime(now, mock.timeZone)
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: reduceMotion
+        ? { duration: 0.2 }
+        : { staggerChildren: 0.055, delayChildren: 0.06 },
+    },
+  }
+
+  const easeOut = [0.22, 1, 0.36, 1] as const
+  const item = {
+    hidden: reduceMotion
+      ? { opacity: 1 }
+      : { opacity: 0, y: 14, filter: "blur(4px)" },
+    show: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.45, ease: easeOut },
+    },
+  }
+
   return (
     <motion.div
       dir="rtl"
@@ -519,7 +719,7 @@ export function ProjectMasterHub360(props: {
               <motion.span
                 className="flex size-9 items-center justify-center rounded-lg bg-card text-sky-600 shadow-sm ring-1 ring-sky-100"
                 animate={
-                  reduce
+                  reduceMotion
                     ? undefined
                     : { scale: [1, 1.04, 1], opacity: [1, 0.92, 1] }
                 }
@@ -562,10 +762,11 @@ export function ProjectMasterHub360(props: {
           variants={item}
           className="grid grid-cols-1 gap-3 lg:grid-cols-3"
         >
-          <HubCard className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <HubCard reduceMotion={reduceMotion} className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <DualProgressRings
               budgetPct={mock.financial.budgetExhaustedPct}
               workPct={mock.financial.workCompletedPct}
+              reduceMotion={reduceMotion}
             />
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-1.5 text-foreground">
@@ -593,7 +794,7 @@ export function ProjectMasterHub360(props: {
             </div>
           </HubCard>
 
-          <HubCard>
+          <HubCard reduceMotion={reduceMotion}>
             <div className="flex items-center gap-1.5 text-foreground">
               <Package className="size-4 text-indigo-600" aria-hidden />
               <p className="text-sm font-bold">סיכום רכש</p>
@@ -634,7 +835,7 @@ export function ProjectMasterHub360(props: {
             </div>
           </HubCard>
 
-          <HubCard>
+          <HubCard reduceMotion={reduceMotion}>
             <div className="flex items-center gap-1.5 text-foreground">
               <Truck className="size-4 text-violet-600" aria-hidden />
               <p className="text-sm font-bold">ציר זמן — 3 אבני דרך הבאות</p>
@@ -671,83 +872,42 @@ export function ProjectMasterHub360(props: {
         </motion.div>
 
         <motion.div variants={item} className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <HubCard className="space-y-2">
+          <HubCard reduceMotion={reduceMotion} className="space-y-2">
             <div className="flex items-center gap-2">
               <Banknote className="size-4 text-emerald-700" aria-hidden />
               <p className="text-sm font-bold text-foreground">Net Profitability</p>
             </div>
-            {profitabilityLoading ? (
-              <p className="text-xs text-slate-500">טוען נתוני רווחיות...</p>
-            ) : (
-              <>
-                <p className="font-currency-mono text-2xl font-black tabular-nums text-foreground">
-                  {ilsFull.format(profitability?.netProfitability ?? 0)}
-                </p>
-                <p className="text-[11px] text-slate-600">
-                  מאושר לקוח − חשבונות קבלן משנה − חומרים ישירים + קיזוזים/עמלות
-                </p>
-              </>
-            )}
+            <ProfitabilityValue
+              loading={profitabilityLoading}
+              loadingLabel="טוען נתוני רווחיות..."
+              value={ilsFull.format(profitability?.netProfitability ?? 0)}
+              description="מאושר לקוח − חשבונות קבלן משנה − חומרים ישירים + קיזוזים/עמלות"
+            />
           </HubCard>
 
-          <HubCard className="space-y-2">
+          <HubCard reduceMotion={reduceMotion} className="space-y-2">
             <div className="flex items-center gap-2">
               <AlertCircle className="size-4 text-red-700" aria-hidden />
               <p className="text-sm font-bold text-foreground">Offset Exposure</p>
             </div>
-            {profitabilityLoading ? (
-              <p className="text-xs text-slate-500">טוען חשיפת קיזוז...</p>
-            ) : (
-              <>
-                <p className="font-currency-mono text-2xl font-black tabular-nums text-red-700">
-                  {ilsFull.format(profitability?.offsetExposure ?? 0)}
-                </p>
-                <p className="text-[11px] text-slate-600">
-                  סכום שורות רכש לא מקוזזות המחוברות לקבלני משנה בפרויקט
-                </p>
-              </>
-            )}
+            <ProfitabilityValue
+              loading={profitabilityLoading}
+              loadingLabel="טוען חשיפת קיזוז..."
+              value={ilsFull.format(profitability?.offsetExposure ?? 0)}
+              valueClassName="text-red-700"
+              description="סכום שורות רכש לא מקוזזות המחוברות לקבלני משנה בפרויקט"
+            />
           </HubCard>
 
-          <HubCard className="space-y-2">
+          <HubCard reduceMotion={reduceMotion} className="space-y-2">
             <div className="flex items-center gap-2">
               <BarChart3 className="size-4 text-primary" aria-hidden />
               <p className="text-sm font-bold text-foreground">Billing Variance</p>
             </div>
-            {profitabilityLoading ? (
-              <p className="text-xs text-slate-500">טוען וריאנס חיובים...</p>
-            ) : profitability?.billingVariance?.length ? (
-              <div className="space-y-2">
-                {profitability.billingVariance.slice(-5).map((row) => {
-                  const max = Math.max(row.submittedTotal, row.approvedTotal, 1)
-                  const submittedPct = Math.round((row.submittedTotal / max) * 100)
-                  const approvedPct = Math.round((row.approvedTotal / max) * 100)
-                  return (
-                    <div key={`${row.label}-${row.period ?? "na"}`} className="space-y-1">
-                      <p className="truncate text-[11px] font-semibold text-foreground">
-                        {row.label}
-                      </p>
-                      <div className="space-y-1">
-                        <div className="h-2 rounded bg-muted">
-                          <div
-                            className="h-2 rounded bg-slate-400"
-                            style={{ width: `${submittedPct}%` }}
-                          />
-                        </div>
-                        <div className="h-2 rounded bg-emerald-100">
-                          <div
-                            className="h-2 rounded bg-emerald-500"
-                            style={{ width: `${approvedPct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500">אין נתוני חיוב להצגה.</p>
-            )}
+            <BillingVarianceContent
+              loading={profitabilityLoading}
+              profitability={profitability}
+            />
           </HubCard>
         </motion.div>
         {profitabilityError ? (
@@ -762,7 +922,7 @@ export function ProjectMasterHub360(props: {
         >
           {/* RTL: first in DOM = inline-start = right — wide feed on the right */}
           <section className="order-1 min-w-0 lg:col-span-8 xl:col-span-9">
-            <HubCard className="p-0">
+            <HubCard reduceMotion={reduceMotion} className="p-0">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Zap className="size-4 text-amber-500" aria-hidden />
@@ -774,112 +934,18 @@ export function ProjectMasterHub360(props: {
                   מיזוג יומני עבודה + חשבונות קבלני משנה מאושרים
                 </span>
               </div>
-              <ul className="divide-y divide-slate-100">
-                <AnimatePresence initial={false}>
-                  {sortedActivity.slice(0, 5).map((row, i) => (
-                    <motion.li
-                      key={`${row.kind}-${row.at}-${i}`}
-                      initial={reduce ? false : { opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      className="px-4 py-3"
-                    >
-                      {row.kind === "daily_log" ? (
-                        <div className="flex gap-3">
-                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                            <span className="text-[10px] font-bold">DL</span>
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-foreground">
-                                {row.title}
-                              </p>
-                              <span className="text-[10px] text-slate-500 tabular-nums">
-                                {formatHeTime(new Date(row.at), mock.timeZone)}
-                              </span>
-                            </div>
-                            <p className="mt-0.5 text-[12px] leading-relaxed text-slate-600">
-                              {row.detail}
-                            </p>
-                            <div className="mt-1.5 flex flex-wrap gap-1">
-                              {row.tags.map((t) => (
-                                <span
-                                  key={t}
-                                  className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                                >
-                                  {t}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex gap-3">
-                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
-                            <Banknote className="size-4" aria-hidden />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-foreground">
-                                {row.title}
-                              </p>
-                              <Badge className="h-5 border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-900">
-                                מאושר לתשלום
-                              </Badge>
-                            </div>
-                            <p className="mt-0.5 text-[12px] text-slate-600">
-                              {row.detail} · {row.supplier}
-                            </p>
-                            <p className="mt-1 font-currency-mono text-sm font-bold tabular-nums text-foreground">
-                              {ilsFull.format(row.amountNis)}
-                            </p>
-                            <p className="text-[10px] text-slate-500 tabular-nums">
-                              {formatHeTime(new Date(row.at), mock.timeZone)}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </ul>
+              <ActivityFeedList
+                rows={sortedActivity}
+                reduceMotion={reduceMotion}
+                timeZone={mock.timeZone}
+              />
             </HubCard>
           </section>
 
           <aside className="order-2 space-y-3 lg:col-span-4 xl:col-span-3">
-            {ganttCharts && ganttCharts.length > 0 ? (
-              <HubCard className="p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <BarChart3 className="size-4 text-indigo-600" aria-hidden />
-                  <p className="text-sm font-bold text-foreground">תרשימי גאנט</p>
-                </div>
-                <ul className="space-y-2">
-                  {ganttCharts.map((g) => (
-                    <li key={g.id}>
-                      <Link
-                        href={`/marker-ofek/projects/gantt/${g.id}`}
-                        className="block rounded-lg border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        {g.name}
-                        <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
-                          {g.status === "active" ? "פעיל" : g.status}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-3 border-t border-slate-100 pt-3">
-                  <Link
-                    href="/marker-ofek/projects/gantt"
-                    className="text-[11px] font-semibold text-primary transition-all duration-200 ease-in-out hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    כל הגאנטים בארגון ←
-                  </Link>
-                </div>
-              </HubCard>
-            ) : null}
+            <GanttChartsCard ganttCharts={ganttCharts} reduceMotion={reduceMotion} />
 
-            <HubCard className="p-4">
+            <HubCard reduceMotion={reduceMotion} className="p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="size-4 text-amber-500" aria-hidden />
                 <p className="text-sm font-bold text-foreground">
@@ -900,8 +966,8 @@ export function ProjectMasterHub360(props: {
               <div className="grid grid-cols-1 gap-2.5">
                 <Link href="/marker-ofek/procurement/purchase-orders/new">
                   <motion.div
-                    whileHover={reduce ? undefined : { scale: 1.02 }}
-                    whileTap={reduce ? undefined : { scale: 0.99 }}
+                    whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                     className="flex items-center gap-3 rounded-xl border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-3 shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                   >
                     <span className="flex size-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shadow-inner">
@@ -920,8 +986,8 @@ export function ProjectMasterHub360(props: {
 
                 <Link href={`/marker-ofek/projects/${projectId}/daily-log`}>
                   <motion.div
-                    whileHover={reduce ? undefined : { scale: 1.02 }}
-                    whileTap={reduce ? undefined : { scale: 0.99 }}
+                    whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                     className="flex items-center gap-3 rounded-xl border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-3 shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                   >
                     <span className="flex size-12 items-center justify-center rounded-xl bg-amber-100 text-amber-900 shadow-inner">
@@ -940,8 +1006,8 @@ export function ProjectMasterHub360(props: {
 
                 <Link href={`/marker-ofek/projects/${projectId}/contract-ai`}>
                   <motion.div
-                    whileHover={reduce ? undefined : { scale: 1.02 }}
-                    whileTap={reduce ? undefined : { scale: 0.99 }}
+                    whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                     className="flex items-center gap-3 rounded-xl border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-3 shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                   >
                     <span className="flex size-12 items-center justify-center rounded-xl bg-sky-100 text-sky-900 shadow-inner">

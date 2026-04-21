@@ -266,7 +266,7 @@ function MotionDropdown({
           exit={reduce ? undefined : { opacity: 0, y: -4, scale: 0.99 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           className={cn(
-            "absolute top-[calc(100%+6px)] z-[60] min-w-[13rem] overflow-hidden rounded-xl border border-border bg-card p-1 shadow-xl ring-1 ring-slate-900/[0.04]",
+            "absolute top-[calc(100%+6px)] z-[60] min-w-[13rem] overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl ring-1 ring-slate-900/[0.04]",
             align === "end" ? "end-0" : "start-0"
           )}
         >
@@ -313,12 +313,12 @@ function MegaMenuPanel({
           }}
           className={cn(
             "pointer-events-auto absolute start-1/2 top-full z-[55] mt-2 w-[min(26rem,calc(100vw-2rem))] -translate-x-1/2 rtl:translate-x-1/2",
-            "rounded-xl border border-border bg-card p-2 shadow-xl ring-1 ring-slate-900/[0.06]"
+            "rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-xl ring-1 ring-slate-900/[0.06]"
           )}
           style={{ transformOrigin: "top center" }}
         >
-          <div className="border-b border-slate-100 px-2 pb-2 pt-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <div className="border-b border-border px-2 pb-2 pt-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {data.label}
             </p>
           </div>
@@ -332,18 +332,18 @@ function MegaMenuPanel({
                     onClick={onLinkNavigate}
                     className={cn(
                       "group/mega flex items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors duration-200",
-                      "hover:bg-gradient-to-l hover:from-emerald-50/80 hover:via-white hover:to-sky-50/60",
+                      "hover:bg-accent/60",
                       "hover:shadow-sm"
                     )}
                   >
-                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition-colors group-hover/mega:bg-emerald-100 group-hover/mega:text-emerald-800">
+                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover/mega:bg-accent group-hover/mega:text-accent-foreground">
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1 text-start">
-                      <span className="block text-sm font-semibold text-foreground transition-colors group-hover/mega:text-emerald-900">
+                      <span className="block text-sm font-semibold text-foreground transition-colors group-hover/mega:text-accent-foreground">
                         {item.title}
                       </span>
-                      <span className="mt-0.5 block text-[11px] leading-snug text-slate-500 group-hover/mega:text-slate-600">
+                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground group-hover/mega:text-accent-foreground/80">
                         {item.subtitle}
                       </span>
                     </span>
@@ -537,7 +537,7 @@ export function TopNavBar({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "sticky z-[50] flex min-h-[3.25rem] shrink-0 flex-col border-b border-border/70 bg-card/80 text-foreground shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
+          "sticky z-[70] flex min-h-[3.25rem] shrink-0 flex-col border-b border-border/70 bg-card/95 text-foreground shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
           isHoldenErpShell ? "shadow-[0_1px_0_0_rgb(226_232_240/0.9)]" : "",
           stickyClassName,
           className
@@ -555,7 +555,8 @@ export function TopNavBar({
                 "size-9 shrink-0 rounded-lg border border-slate-200 bg-card text-slate-600 shadow-sm",
                 "transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
                 "hover:bg-muted hover:text-foreground hover:shadow-md",
-                "active:scale-[0.96]"
+                "active:scale-[0.96]",
+                isMarkerWorkspace && "lg:hidden"
               )}
             />
             <Link
@@ -614,8 +615,8 @@ export function TopNavBar({
 
           {/* Main top navigation — single source for Marker Ofek from sidebar config */}
           {isMarkerWorkspace ? (
-            <div className="hidden min-w-0 justify-self-center overflow-hidden lg:block" dir="rtl">
-              <MarkerOfekHeaderNav className="mx-auto w-fit max-w-[min(56rem,100%)]" />
+            <div className="min-w-0 justify-self-center overflow-visible" dir="rtl">
+              <MarkerOfekHeaderNav className="mx-auto w-full max-w-[min(80rem,100%)] justify-center" />
             </div>
           ) : (
             <div
@@ -745,22 +746,22 @@ export function TopNavBar({
                   </p>
                   <Link
                     href="/marker-ofek/settings"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
+                    className="block rounded-md px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setProfileOpen(false)}
                   >
                     הגדרות אישיות
                   </Link>
                   <Link
                     href="/marker-ofek/settings/user-permissions"
-                    className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
+                    className="block rounded-md px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setProfileOpen(false)}
                   >
                     הרשאות
                   </Link>
-                  <div className="my-1 h-px bg-slate-100" />
+                  <div className="my-1 h-px bg-border" />
                   <button
                     type="button"
-                    className="w-full rounded-md px-3 py-2 text-start text-sm text-slate-700 hover:bg-muted"
+                    className="w-full rounded-md px-3 py-2 text-start text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setProfileOpen(false)}
                   >
                     יציאה (דמו)

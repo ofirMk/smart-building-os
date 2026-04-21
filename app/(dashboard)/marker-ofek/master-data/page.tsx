@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import type { Metadata } from "next"
 
 import { MasterDataDashboard } from "@/components/marker-ofek/master-data/master-data-dashboard"
 import {
@@ -8,6 +9,10 @@ import {
   fetchSuppliersV2Action,
   fetchUnitsOfMeasureAction,
 } from "@/lib/holden-erp/master-data-actions"
+
+export const metadata: Metadata = {
+  title: "מאסטר דאטה",
+}
 
 const VALID_TABS = new Set([
   "suppliers",

@@ -16,7 +16,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { MasterDetailWorkspace } from "@/components/layout/MasterDetailWorkspace"
 import { MoAccessRequestsPanel } from "@/components/marker-ofek/settings/mo-access-requests-panel"
+import { SettingsMasterNav } from "@/components/marker-ofek/settings/settings-master-nav"
 import { DEFAULT_ORGANIZATION_DISPLAY_NAME } from "@/lib/marker-ofek/organization-branding-public"
 import { COMPANY_PROFILE_COLUMNS } from "@/lib/marker-ofek/supabase-fields"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
@@ -136,84 +138,74 @@ export default function MarkerOfekSettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col gap-6 pb-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href="/marker-ofek/contracts"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowRight className="size-4 rotate-180" aria-hidden />
-          חזרה לחוזים
-        </Link>
-      </div>
-
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-          הגדרות ארגון — פרטים רשמיים למס
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          פרטים אלה מופיעים במסמכי חשבון חלקי והדפסות לפי דרישות רשות המסים
-          בישראל.
-        </p>
-      </div>
-
-      <Card className="border border-slate-100 bg-card shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">מרכז הגדרות חכם</CardTitle>
-          <CardDescription>
-            מע״מ, הצמדות, עכבון, מודולים והרשאות — דף מפת דרכים אחד.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link
-            href="/marker-ofek/settings/smart"
-            className="inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:underline"
-          >
-            פתיחת מרכז ההגדרות החכם
-          </Link>
-        </CardContent>
-      </Card>
-
-      <MoAccessRequestsPanel />
-
-      <Card className="border border-indigo-100 bg-indigo-50/30 shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">ניהול מודולים</CardTitle>
-          <CardDescription>
-            הפעלה וכיבוי של אזורים במערכת (גאנט, חיוב, Gap Hunter, נכסים, דשבורד
-            הנהלה).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link
-            href="/marker-ofek/settings/modules"
-            className="inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:underline"
-          >
-            פתיחת מפת המתגים
-          </Link>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <div className="flex min-h-[30vh] flex-col items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="size-8 animate-spin" aria-hidden />
-          <p className="text-sm">טוען…</p>
-        </div>
-      ) : !rowId ? (
-        <Card className="border-amber-500/40 bg-amber-500/5">
-          <CardHeader>
-            <CardTitle>חסרה טבלת company_profile</CardTitle>
-            <CardDescription>
-              הריצו ב-Supabase את הקובץ{" "}
-              <code className="rounded bg-muted px-1 text-xs">
-                marker_ofek_tax_compliance.sql
-              </code>{" "}
-              ואז רעננו את העמוד.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        <form onSubmit={(e) => void handleSave(e)} className="space-y-6">
+    <MasterDetailWorkspace
+      title="הגדרות ארגון — פרטים רשמיים למס"
+      description="תצורת ארגון בסגנון Master-Detail עם פאנל ניווט קבוע"
+      master={<SettingsMasterNav />}
+      detail={
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href="/marker-ofek/contracts"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowRight className="size-4 rotate-180" aria-hidden />
+              חזרה לחוזים
+            </Link>
+          </div>
+          <Card className="border border-slate-100 bg-card shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">מרכז הגדרות חכם</CardTitle>
+              <CardDescription>
+                מע״מ, הצמדות, עכבון, מודולים והרשאות — דף מפת דרכים אחד.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link
+                href="/marker-ofek/settings/smart"
+                className="inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:underline"
+              >
+                פתיחת מרכז ההגדרות החכם
+              </Link>
+            </CardContent>
+          </Card>
+          <MoAccessRequestsPanel />
+          <Card className="border border-indigo-100 bg-indigo-50/30 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">ניהול מודולים</CardTitle>
+              <CardDescription>
+                הפעלה וכיבוי של אזורים במערכת (גאנט, חיוב, Gap Hunter, נכסים, דשבורד הנהלה).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link
+                href="/marker-ofek/settings/modules"
+                className="inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:underline"
+              >
+                פתיחת מפת המתגים
+              </Link>
+            </CardContent>
+          </Card>
+          {loading ? (
+            <div className="flex min-h-[30vh] flex-col items-center justify-center gap-2 text-muted-foreground">
+              <Loader2 className="size-8 animate-spin" aria-hidden />
+              <p className="text-sm">טוען…</p>
+            </div>
+          ) : !rowId ? (
+            <Card className="border-amber-500/40 bg-amber-500/5">
+              <CardHeader>
+                <CardTitle>חסרה טבלת company_profile</CardTitle>
+                <CardDescription>
+                  הריצו ב-Supabase את הקובץ{" "}
+                  <code className="rounded bg-muted px-1 text-xs">
+                    marker_ofek_tax_compliance.sql
+                  </code>{" "}
+                  ואז רעננו את העמוד.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : (
+            <form onSubmit={(e) => void handleSave(e)} className="space-y-6">
           <Card className="border-border/70 shadow-sm">
             <CardHeader className="border-b border-border/60 pb-4">
               <div className="flex items-start gap-3">
@@ -229,7 +221,7 @@ export default function MarkerOfekSettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="grid gap-5 pt-6">
-              <div className="space-y-2">
+              <div className="max-w-lg space-y-2">
                 <Label htmlFor="co-name">שם חברה</Label>
                 <Input
                   id="co-name"
@@ -240,7 +232,7 @@ export default function MarkerOfekSettingsPage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="co-legal">ח.פ / ע.מ</Label>
                 <Input
                   id="co-legal"
@@ -252,7 +244,7 @@ export default function MarkerOfekSettingsPage() {
                   disabled={saving}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="max-w-lg space-y-2">
                 <Label htmlFor="co-address">כתובת</Label>
                 <Textarea
                   id="co-address"
@@ -265,7 +257,7 @@ export default function MarkerOfekSettingsPage() {
                 />
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="max-w-md space-y-2">
                   <Label htmlFor="co-phone">טלפון</Label>
                   <Input
                     id="co-phone"
@@ -275,7 +267,7 @@ export default function MarkerOfekSettingsPage() {
                     disabled={saving}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="max-w-md space-y-2">
                   <Label htmlFor="co-email">דוא&quot;ל</Label>
                   <Input
                     id="co-email"
@@ -287,7 +279,7 @@ export default function MarkerOfekSettingsPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="max-w-md space-y-2">
                 <Label htmlFor="co-deductions">מס&apos; תיק ניכויים</Label>
                 <Input
                   id="co-deductions"
@@ -299,7 +291,7 @@ export default function MarkerOfekSettingsPage() {
                 />
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="max-w-md space-y-2">
                   <Label htmlFor="co-vat">מע״מ ברירת מחדל (%)</Label>
                   <Input
                     id="co-vat"
@@ -312,7 +304,7 @@ export default function MarkerOfekSettingsPage() {
                     disabled={saving}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="max-w-md space-y-2">
                   <Label htmlFor="co-retention">עכבון ברירת מחדל (%)</Label>
                   <Input
                     id="co-retention"
@@ -326,7 +318,7 @@ export default function MarkerOfekSettingsPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="max-w-lg space-y-2">
                 <Label htmlFor="co-index-src">מקור מדד / הצמדה (טקסט חופשי)</Label>
                 <Input
                   id="co-index-src"
@@ -354,8 +346,10 @@ export default function MarkerOfekSettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </form>
-      )}
-    </div>
+            </form>
+          )}
+        </div>
+      }
+    />
   )
 }

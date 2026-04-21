@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import type { MarkerOfekProjectRow } from "@/types/marker-ofek"
 
 export const metadata: Metadata = {
-  title: "פרויקטים — מרקר אופק",
+  title: "פרויקטים",
   description: "מרכזי רווח — פרויקטים פעילים",
 }
 

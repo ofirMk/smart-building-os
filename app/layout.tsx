@@ -37,8 +37,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Marker Ofek | מרקר אופק",
-    template: "%s · מרקר אופק",
+    template: "%s | מרקר אופק",
+    default: "מרקר אופק - מערכת ניהול",
   },
   description: "מערכת ניהול פרויקטים ו-ERP מבוססת AI",
   manifest: "/manifest-tenant.json",
@@ -61,7 +61,7 @@ export default function RootLayout({
           heebo.variable,
           rubik.variable,
           jetbrainsMono.variable,
-          "min-h-screen w-full overflow-x-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
+          "h-screen w-full overflow-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
         )}
         dir="rtl"
         suppressHydrationWarning
@@ -75,8 +75,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delay={0}>
-            <div className="flex min-h-screen w-full flex-col">
-              <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex h-screen w-full flex-col overflow-hidden">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 {children}
               </div>
             </div>

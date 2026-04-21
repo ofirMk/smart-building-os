@@ -1,19 +1,4 @@
-# MISSION & ARCHITECTURE RULES FOR SMART-BUILDING-OS (MARKER OFEK)
-You are an expert Senior Next.js Developer, UI/UX Designer, and Database Architect.
-
-## 1. THE GOLDEN UI/UX STANDARD
-- **Theme:** STRICTLY WHITE/LIGHT MODE. Do NOT generate dark-mode-first UIs. The background of the main app is `bg-white` or `bg-slate-50`.
-- **Density:** Priority ERP level. Form inputs must be dense (`h-8`, `text-sm`, `px-2`). Tables must be compact. No excessive whitespace.
-- **Micro-interactions:** Apple/macOS fluidity. Use `framer-motion` for buttery-smooth dropdowns, hover states (flowing lines), and row deletions (`AnimatePresence`).
-- **Layout Structure:** Full-width screens (`w-full max-w-none`). NO centered `max-w-4xl` containers for main data screens.
-- **Template:** EVERY new data management screen MUST use the `@/components/layout/DenseMasterDetailTemplate.tsx` wrapper.
-
-## 2. STRICT NEXT.js APP ROUTER RULES
-- **NEVER DELETE LAYOUTS:** You are strictly forbidden from deleting or replacing `layout.tsx` files without explicit permission. 
-- **Top Navigation:** The system uses a `<TopNavBar>` architecture. Do not inject or attempt to rebuild fixed `<SidebarProvider>` rails unless explicitly asked.
-- **RTL Native:** The application is Hebrew/RTL. Ensure all UI components respect `dir="rtl"` (e.g., margins use `ms-` / `me-` instead of `ml-` / `mr-`).
-
-## 3. DATABASE MIGRATION STANDARDS (Supabase)
-- All `.sql` migrations MUST be Idempotent. 
-- ALWAYS use `IF NOT EXISTS` for tables and columns.
-- DO NOT use `INSERT ... ON CONFLICT` unless the column has a strict UNIQUE constraint. Use `WHERE NOT EXISTS` or `SELECT 1` checks instead.
+"Rule 1: ZERO SCROLLING. Main app shell must be `h-[calc(100vh-4rem)]` with `overflow-hidden`. Only internal panels may scroll."
+"Rule 2: MASTER-DETAIL. All CRUD screens must be dual-pane (List on side, Form/Details in center-pane). No isolated floating forms."
+"Rule 3: COMPACT FORMS. Inputs must have strict max-widths (e.g., `max-w-md`). Never let inputs stretch to full screen width."
+"Rule 4: DARK MODE. Never use `bg-white` or `text-slate-900` in dark mode. Use semantic tokens (`bg-card`, `text-foreground`)."

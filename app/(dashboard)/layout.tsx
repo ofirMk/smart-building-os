@@ -1,8 +1,13 @@
+import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
 import { DashboardProviders } from "@/components/dashboard-providers"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { getDashboardLayoutProps } from "@/lib/dashboard/dashboard-layout-props"
+
+export const metadata: Metadata = {
+  title: "לוח בקרה",
+}
 
 export default async function DashboardLayout({
   children,

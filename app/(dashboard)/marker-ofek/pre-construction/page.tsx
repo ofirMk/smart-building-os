@@ -6,7 +6,7 @@ import { loadPreConstructionDashboardData } from "@/lib/marker-ofek/pre-construc
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "מרכז שליטה — קדם ביצוע | מרקר אופק",
+  title: "מרכז שליטה - קדם ביצוע",
   description:
     "דשבורד מכרזים: מדדים, שווי צנרת BoQ, והתפלגות סטטוס מסמכים לפני ביצוע.",
 }

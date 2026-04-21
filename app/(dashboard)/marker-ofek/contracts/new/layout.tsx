@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "חוזה חדש — מרקר אופק",
-  description: "יצירת חוזה חדש וכתב כמויות — מרקר אופק",
+  title: "חוזה חדש",
+  description: "יצירת חוזה חדש וכתב כמויות",
 }
 
 export default function NewContractLayout({
