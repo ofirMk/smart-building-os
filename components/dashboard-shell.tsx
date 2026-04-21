@@ -10,6 +10,9 @@ import {
   CommandPaletteProvider,
 } from "@/components/dashboard/command-palette"
 import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tracker"
+import { DashboardNavDrawerPanel } from "@/components/dashboard/dashboard-nav-drawer-panel"
+import { NavDrawerProvider } from "@/components/dashboard/nav-drawer-context"
+import { NavDrawerSheet } from "@/components/dashboard/nav-drawer-sheet"
 import { TopNavBar } from "@/components/layout/TopNavBar"
 import { CompanyContextGate } from "@/components/layout/company-context-gate"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
@@ -207,6 +210,7 @@ export function DashboardShell({
     <SmartWorkspaceProvider initial={initialWorkspace ?? DEFAULT_WORKSPACE_SNAPSHOT}>
     <CommandPaletteProvider>
     <AiAssistantScreenProvider>
+    <NavDrawerProvider>
       {mirrorBannerOn && mirrorBannerLabel ? (
         <MirrorModeBanner label={mirrorBannerLabel} />
       ) : null}
@@ -308,6 +312,18 @@ export function DashboardShell({
           </footer>
         ) : null}
       </div>
+      <NavDrawerSheet>
+        <DashboardNavDrawerPanel
+          userRole={userRole}
+          showPartnerFinanceNav={showPartnerFinanceNav}
+          showHoldingExecutiveNav={showHoldingExecutiveNav}
+          showUserPermissionsNav={showUserPermissionsNav}
+          showAiUserSetupNav={showAiUserSetupNav}
+          scopedProjectCount={scopedProjectCount}
+          applyEmptyPortfolioNav={applyEmptyPortfolioNav}
+        />
+      </NavDrawerSheet>
+    </NavDrawerProvider>
       <AiAssistant
         hostFirstName={hostFirstName}
         hrWelcome={hrWelcome}

@@ -197,7 +197,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
       })}
 
       <div
-        className="pointer-events-none absolute start-1/2 top-full z-[65] mt-2 flex w-screen -translate-x-1/2 justify-center"
+        className="pointer-events-none absolute start-1/2 top-full z-[100] mt-2 flex w-screen -translate-x-1/2 justify-center"
         onMouseEnter={clearCloseTimer}
         onMouseLeave={scheduleClose}
       >

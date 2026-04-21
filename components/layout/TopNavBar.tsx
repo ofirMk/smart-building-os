@@ -21,6 +21,7 @@ import {
   WalletCards,
 } from "lucide-react"
 
+import { NavDrawerTrigger } from "@/components/dashboard/nav-drawer-trigger"
 import { ActiveCompanyBadge } from "@/components/layout/active-company-badge"
 import { MarkerOfekHeaderNav } from "@/components/marker-ofek/layout/header"
 import { Button } from "@/components/ui/button"
@@ -506,6 +507,14 @@ export function TopNavBar({
           )}
         >
           <div className="flex min-w-0 items-center gap-2 justify-self-start md:gap-3">
+            <NavDrawerTrigger
+              className={cn(
+                "size-9 shrink-0 rounded-lg border border-slate-700 bg-slate-900/50 text-slate-200 shadow-sm",
+                "transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                "hover:bg-slate-800 hover:text-slate-100 hover:shadow-md",
+                "active:scale-[0.96]"
+              )}
+            />
             <Link
               href="/marker-ofek/command-center"
               className="group flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-muted"
