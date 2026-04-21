@@ -49,7 +49,7 @@ export function BentoSmartList<TItem>({
   const denseHeadClass = density === "compact" ? "h-8 text-[10px]" : "h-10 text-xs"
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <Table>
         <TableHeader>
           <TableRow className="bg-background hover:bg-background">
@@ -66,7 +66,7 @@ export function BentoSmartList<TItem>({
             <TableRow>
               <TableCell
                 colSpan={columns.length + (rowActions ? 1 : 0)}
-                className="h-20 text-center text-xs text-slate-500"
+                className="h-20 text-center text-xs text-muted-foreground"
               >
                 {emptyState ?? "אין נתונים להצגה"}
               </TableCell>
@@ -82,7 +82,7 @@ export function BentoSmartList<TItem>({
                   className={cn(
                     "group/list-row transition-colors",
                     onRowClick && "cursor-pointer",
-                    selected ? "bg-emerald-50/60 hover:bg-emerald-50/70" : "hover:bg-muted/70"
+                    selected ? "bg-accent/80 hover:bg-accent" : "hover:bg-muted/70"
                   )}
                 >
                   {columns.map((column) => (
@@ -123,7 +123,7 @@ export function SmartListDensityToggle({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-card p-0.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]",
+        "inline-flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]",
         className
       )}
       role="group"
@@ -133,7 +133,7 @@ export function SmartListDensityToggle({
         type="button"
         onClick={() => onChange("compact")}
         className={cn(
-          "inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors",
+          "inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
           density === "compact" ? "bg-muted text-foreground" : "hover:bg-muted"
         )}
         aria-pressed={density === "compact"}
@@ -145,7 +145,7 @@ export function SmartListDensityToggle({
         type="button"
         onClick={() => onChange("comfortable")}
         className={cn(
-          "inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors",
+          "inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors",
           density === "comfortable" ? "bg-muted text-foreground" : "hover:bg-muted"
         )}
         aria-pressed={density === "comfortable"}
@@ -182,7 +182,7 @@ export function SmartListExportActions({
             event.stopPropagation()
             void onExcel()
           }}
-          className="h-7 w-7 p-0 text-slate-500 hover:text-emerald-700"
+          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
           aria-label="יצוא ל-Excel"
         >
           {working ? (
@@ -202,7 +202,7 @@ export function SmartListExportActions({
             event.stopPropagation()
             void onPdf()
           }}
-          className="h-7 w-7 p-0 text-slate-500 hover:text-rose-700"
+          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
           aria-label="יצוא ל-PDF"
         >
           {working ? (
@@ -225,14 +225,14 @@ export function SmartListStatusPill({
 }) {
   const className =
     tone === "success"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
       : tone === "warning"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
       : tone === "danger"
-      ? "border-rose-200 bg-rose-50 text-rose-800"
+      ? "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400"
       : tone === "info"
-      ? "border-blue-200 bg-blue-50 text-blue-800"
-      : "border-slate-200 bg-background text-slate-700"
+      ? "border-primary/35 bg-primary/10 text-primary"
+      : "border-border bg-background text-muted-foreground"
 
   return (
     <Badge variant="outline" className={cn("rounded-md text-[10px]", className)}>

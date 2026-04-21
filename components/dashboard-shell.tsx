@@ -223,7 +223,7 @@ export function DashboardShell({
       {requiresCompanySelection ? <CompanyContextGate /> : null}
       <div
         className={cn(
-          "flex h-full min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden bg-background text-foreground",
+          "flex min-h-screen min-w-0 w-full max-w-none flex-1 flex-col overflow-x-hidden bg-background text-foreground",
           requiresCompanySelection && "hidden",
           mirrorBannerOn && MIRROR_BANNER_INSET_PT_CLASS
         )}
@@ -313,7 +313,7 @@ export function DashboardShell({
         <SmartWorkspaceChrome>
           <main
             dir="rtl"
-            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-4 overflow-x-hidden overflow-y-auto bg-background px-2 py-3 text-foreground print:bg-background print:p-0 md:px-4 md:py-4"
+            className="relative z-0 flex min-h-0 flex-1 w-full min-w-0 max-w-none flex-col gap-2 overflow-x-hidden overflow-y-auto bg-background px-2 py-2 text-foreground print:bg-background print:p-0 md:px-3 md:py-3"
           >
             {children}
           </main>

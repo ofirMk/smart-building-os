@@ -537,7 +537,7 @@ export function TopNavBar({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "sticky z-[50] flex min-h-[3.75rem] shrink-0 flex-col border-b border-border/70 bg-card/80 text-foreground shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
+          "sticky z-[50] flex min-h-[3.25rem] shrink-0 flex-col border-b border-border/70 bg-card/80 text-foreground shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
           isHoldenErpShell ? "shadow-[0_1px_0_0_rgb(226_232_240/0.9)]" : "",
           stickyClassName,
           className
@@ -545,7 +545,7 @@ export function TopNavBar({
       >
         <div
           className={cn(
-            "relative flex w-full items-center gap-3 px-3 py-2 md:px-5",
+            "relative flex w-full items-center gap-2 px-2 py-1.5 md:px-3",
             children ? "border-b border-slate-100/90" : ""
           )}
         >
@@ -614,8 +614,8 @@ export function TopNavBar({
 
           {/* Main top navigation — single source for Marker Ofek from sidebar config */}
           {isMarkerWorkspace ? (
-            <div className="hidden min-w-0 flex-1 overflow-x-auto lg:block" dir="rtl">
-              <MarkerOfekHeaderNav className="w-max min-w-full" />
+            <div className="hidden min-w-0 flex-1 overflow-hidden lg:block" dir="rtl">
+              <MarkerOfekHeaderNav className="w-full" />
             </div>
           ) : (
             <div
@@ -693,7 +693,7 @@ export function TopNavBar({
             </div>
           )}
 
-          <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
+          <div className="flex shrink-0 items-center gap-1">
             <Button
               type="button"
               variant="outline"
@@ -720,14 +720,14 @@ export function TopNavBar({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-9 gap-1 rounded-lg ps-2 pe-1.5 text-slate-800 hover:bg-slate-100"
+              className="h-8 gap-1 rounded-lg ps-2 pe-1.5 text-foreground hover:bg-accent"
                 onClick={() => {
                   setProfileOpen((o) => !o)
                 }}
                 aria-expanded={profileOpen}
                 aria-haspopup="menu"
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-slate-200/90 text-slate-700">
+                <span className="flex size-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <UserRound className="size-4" aria-hidden />
                 </span>
                 <ChevronDown
@@ -772,7 +772,7 @@ export function TopNavBar({
         </div>
 
         {children ? (
-          <div className="flex min-h-[3rem] w-full items-start gap-2 bg-card px-3 py-2 md:px-5">
+          <div className="flex min-h-[2.5rem] w-full items-start gap-2 bg-card px-2 py-1.5 md:px-3">
             {children}
           </div>
         ) : null}

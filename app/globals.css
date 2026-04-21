@@ -169,7 +169,15 @@
     @apply text-xl font-semibold tracking-tight text-foreground md:text-2xl;
   }
   :where(a, button, [role="button"], summary, input, select, textarea, label[for]) {
-    @apply transition-colors duration-200;
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  :where(button, [role="button"], a[href], [data-slot="tabs-trigger"], [data-slot="select-trigger"]) {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  :where(button, [role="button"], [data-slot="tabs-trigger"]) {
+    @apply hover:bg-accent hover:text-accent-foreground hover:shadow-md;
   }
 
   /**
@@ -331,6 +339,43 @@
     font-size: 11px;
     font-variant-numeric: tabular-nums;
     text-anchor: end;
+  }
+
+  /**
+   * Dark-mode compatibility layer for legacy hardcoded utility classes.
+   * Keeps older screens readable until each route is fully tokenized.
+   */
+  .dark .bg-white,
+  .dark .bg-slate-50,
+  .dark .bg-gray-100 {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+  }
+
+  .dark .text-blue-600,
+  .dark .text-blue-700,
+  .dark .text-blue-800 {
+    color: rgb(96 165 250);
+  }
+
+  .dark .text-indigo-600,
+  .dark .text-indigo-700,
+  .dark .text-indigo-800 {
+    color: rgb(129 140 248);
+  }
+
+  .dark .text-slate-700,
+  .dark .text-slate-800,
+  .dark .text-slate-900,
+  .dark .text-black {
+    color: hsl(var(--foreground));
+  }
+
+  .dark .bg-blue-50,
+  .dark .bg-blue-100,
+  .dark .bg-indigo-50,
+  .dark .bg-indigo-100 {
+    background-color: color-mix(in srgb, hsl(var(--primary)) 14%, hsl(var(--card)));
   }
 
 }

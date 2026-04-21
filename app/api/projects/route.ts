@@ -49,6 +49,16 @@ function toProjectDto(row: ProjectRow) {
   }
 }
 
+function isSchemaCacheError(message: string | undefined): boolean {
+  if (!message) return false
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes("schema cache") ||
+    normalized.includes("could not find the table") ||
+    normalized.includes("erp_proj_projects")
+  )
+}
+
 export async function GET(req: NextRequest) {
   const gate = await requireMasterDataApiContext(req)
   if (!gate.ok) return gate.response
@@ -71,7 +81,74 @@ export async function GET(req: NextRequest) {
   }
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    if (!isSchemaCacheError(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const { data: legacyData, error: legacyError } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false })
+
+    if (legacyError) {
+      return NextResponse.json(
+        {
+          error:
+            "Projects source is unavailable. Run: NOTIFY pgrst, 'reload schema'; and retry.",
+          detail: legacyError.message,
+        },
+        { status: 500 }
+      )
+    }
+
+    const normalized =
+      ((legacyData ?? []) as Array<Record<string, unknown>>)
+        .map((row) => {
+          const rawStatus = String(row.status ?? "DRAFT").toUpperCase()
+          const statusValue: ProjectStatus =
+            rawStatus === "ACTIVE" || rawStatus === "COMPLETED" || rawStatus === "DRAFT"
+              ? rawStatus
+              : "DRAFT"
+          const projectNumber =
+            String(
+              row.project_number ??
+                row.internal_project_code ??
+                row.projectNumber ??
+                ""
+            ).trim() || String(row.id ?? "").slice(0, 8)
+          return {
+            id: String(row.id ?? ""),
+            companyId: String(row.company_id ?? companyId),
+            projectNumber,
+            name: String(row.name ?? "פרויקט ללא שם"),
+            status: statusValue,
+            startDate:
+              row.start_date == null
+                ? null
+                : String(row.start_date),
+            endDate: row.end_date == null ? null : String(row.end_date),
+            projectManagerId:
+              row.project_manager_id == null
+                ? null
+                : String(row.project_manager_id),
+          }
+        })
+        .filter((row) => row.id.length > 0)
+        .filter((row) =>
+          status === "ACTIVE" || status === "COMPLETED" || status === "DRAFT"
+            ? row.status === status
+            : true
+        )
+        .filter((row) => {
+          if (!q) return true
+          const haystack = `${row.name} ${row.projectNumber}`.toLowerCase()
+          return haystack.includes(q.toLowerCase())
+        })
+
+    return NextResponse.json({ data: normalized })
+  }
 
   return NextResponse.json({
     data: ((data ?? []) as ProjectRow[]).map(toProjectDto),

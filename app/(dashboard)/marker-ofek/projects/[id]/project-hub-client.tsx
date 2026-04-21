@@ -419,7 +419,7 @@ function BaselineBillDataPreview({
 
   return (
     <div
-      className="rounded-xl border border-cyan-500/25 bg-gradient-to-br from-cyan-950/30 via-background to-background p-4 shadow-inner"
+      className="rounded-xl border border-cyan-500/25 bg-gradient-to-br from-cyan-950/30 via-background to-background p-3 shadow-inner"
       dir="rtl"
     >
       <h3 className="mb-4 text-sm font-semibold text-cyan-200/90">
@@ -507,7 +507,7 @@ function BaselineBillDataPreview({
                       })}
                       %
                     </td>
-                    <td className="px-3 py-2 font-bold text-blue-600 tabular-nums">
+                    <td className="px-3 py-2 font-bold text-primary tabular-nums">
                       {currentPerformance.toLocaleString("he-IL", {
                         maximumFractionDigits: 2,
                       })}
@@ -576,6 +576,10 @@ export function MarkerOfekProjectHubClient({
     useFormState({ control: baselineForm.control })
 
   const selectedContractId = baselineForm.watch("contract_id") ?? ""
+  const selectedContractLabel = React.useMemo(() => {
+    const row = contracts.find((contract) => contract.id === selectedContractId.trim())
+    return row ? baselineContractSelectLabel(row) : ""
+  }, [contracts, selectedContractId])
   const baselineItems = baselinePreview?.items ?? []
   const baselineSubmitDisabled =
     !selectedContractId.trim() ||
@@ -703,7 +707,7 @@ export function MarkerOfekProjectHubClient({
   const progressUrl = `/marker-ofek/execution/progress-reports/new?projectId=${encodeURIComponent(project.id)}`
 
   return (
-    <Tabs defaultValue="details" className="w-full gap-4">
+    <Tabs defaultValue="details" className="w-full gap-2">
       <TabsList
         variant="line"
         className="mb-1 h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0"
@@ -756,17 +760,17 @@ export function MarkerOfekProjectHubClient({
           </CardContent>
         </Card>
 
-        <Card className="border-slate-100 bg-card">
+        <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-base text-indigo-900">לו״ז וביצוע (גאנט)</CardTitle>
-            <CardDescription className="text-slate-600">
+            <CardTitle className="text-base text-foreground">לו״ז וביצוע (גאנט)</CardTitle>
+            <CardDescription className="text-muted-foreground">
               ניהול משימות, כספת תוכניות לפי WBS, וסנכרון שטח
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-500"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               render={
                 <Link href={`/marker-ofek/execution/gantt/${encodeURIComponent(project.id)}`} />
               }
@@ -860,7 +864,7 @@ export function MarkerOfekProjectHubClient({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor="baseline-pdf-input">קובץ חשבון (PDF)</Label>
                 <Input
@@ -924,7 +928,9 @@ export function MarkerOfekProjectHubClient({
                           id="baseline-contract-select"
                           className="w-full max-w-md"
                         >
-                          <SelectValue placeholder="בחרו חוזה…" />
+                          <SelectValue placeholder="בחרו חוזה…">
+                            {selectedContractLabel || undefined}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent diamondEntity="contracts">
                           {contracts.map((c) => (
@@ -956,7 +962,7 @@ export function MarkerOfekProjectHubClient({
                     </p>
                   ) : null}
                   {Object.keys(baselineFormErrors).length > 0 ? (
-                    <div className="mb-4 max-h-40 overflow-auto rounded border-2 border-red-500 bg-red-100 p-4 text-left font-mono text-sm text-red-900 dir-ltr">
+                    <div className="mb-4 max-h-40 overflow-auto rounded border border-destructive/50 bg-destructive/10 p-3 text-left font-mono text-sm text-destructive dir-ltr">
                       <strong>Form Validation Blocked Submission:</strong>
                       <pre className="mt-2 whitespace-pre-wrap break-words">
                         {JSON.stringify(baselineFormErrors, null, 2)}

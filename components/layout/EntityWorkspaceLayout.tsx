@@ -28,14 +28,14 @@ export function EntityWorkspaceLayout({
     <div
       dir="rtl"
       className={cn(
-        "w-full max-w-full min-w-0 space-y-3 bg-background text-foreground p-3 lg:p-4",
+        "flex h-[calc(100dvh-4rem)] min-h-0 w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden bg-background p-2 text-foreground lg:p-3",
         className
       )}
     >
       <Card className="border-border bg-card shadow-sm">
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
           <div className="min-w-0">
-            <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
+            <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
             {description ? (
               <CardDescription className="mt-1 text-xs text-muted-foreground">
                 {description}
@@ -46,8 +46,8 @@ export function EntityWorkspaceLayout({
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-10">
-        <aside className="space-y-2 lg:col-span-3 lg:sticky lg:top-16 lg:self-start">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-10">
+        <aside className="min-h-0 space-y-2 lg:col-span-3 lg:sticky lg:top-16 lg:self-start lg:overflow-y-auto">
           <Card className="border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Contextual Intelligence</CardTitle>
@@ -58,7 +58,7 @@ export function EntityWorkspaceLayout({
             <CardContent className="p-2">{sidebar}</CardContent>
           </Card>
         </aside>
-        <main className="lg:col-span-7">{main}</main>
+        <main className="min-h-0 overflow-y-auto lg:col-span-7">{main}</main>
       </div>
 
       {footerActions ? (

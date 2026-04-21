@@ -247,7 +247,7 @@ function HubCard({
       animate="rest"
       variants={liftHover}
       className={cn(
-        "rounded-xl border border-slate-200/90 bg-card p-3 shadow-sm ring-1 ring-slate-900/[0.04]",
+        "rounded-xl border border-border bg-card p-2.5 shadow-sm ring-1 ring-border/40",
         "will-change-transform [transform-style:preserve-3d]",
         className
       )}
@@ -474,14 +474,14 @@ export function ProjectMasterHub360(props: {
   return (
     <motion.div
       dir="rtl"
-      className="w-full bg-gradient-to-b from-white via-slate-50/80 to-slate-50 pb-10"
+      className="w-full bg-gradient-to-b from-background via-muted/20 to-background pb-4"
       variants={container}
       initial="hidden"
       animate="show"
     >
-      <motion.div variants={item} className="border-b border-slate-200/80 bg-card/90 px-3 py-3 md:px-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 space-y-2">
+      <motion.div variants={item} className="border-b border-border bg-card/90 px-2 py-2 md:px-3">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-1.5">
             <Link
               href="/marker-ofek/projects"
               className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-emerald-700"
@@ -508,14 +508,14 @@ export function ProjectMasterHub360(props: {
                 </span>
               ) : null}
             </p>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-foreground">
               <span className="font-semibold text-foreground">מנהל אתר: </span>
               {mock.siteManager}
             </p>
           </div>
 
           <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:items-stretch lg:w-auto lg:min-w-[280px]">
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white px-3 py-2 shadow-sm">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-gradient-to-br from-card to-muted/30 px-2.5 py-2 shadow-sm">
               <motion.span
                 className="flex size-9 items-center justify-center rounded-lg bg-card text-sky-600 shadow-sm ring-1 ring-sky-100"
                 animate={
@@ -539,7 +539,7 @@ export function ProjectMasterHub360(props: {
                 </p>
               </div>
             </div>
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50/90 to-white px-3 py-2 shadow-sm">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-gradient-to-br from-card to-muted/30 px-2.5 py-2 shadow-sm">
               <span className="flex size-9 items-center justify-center rounded-lg bg-card text-emerald-600 shadow-sm ring-1 ring-emerald-100">
                 <CalendarClock className="size-5" aria-hidden />
               </span>
@@ -568,7 +568,7 @@ export function ProjectMasterHub360(props: {
               workPct={mock.financial.workCompletedPct}
             />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-slate-800">
+              <div className="flex items-center gap-1.5 text-foreground">
                 <Gauge className="size-4 text-amber-600" aria-hidden />
                 <p className="text-sm font-bold">Financial Pulse</p>
               </div>
@@ -594,7 +594,7 @@ export function ProjectMasterHub360(props: {
           </HubCard>
 
           <HubCard>
-            <div className="flex items-center gap-1.5 text-slate-800">
+            <div className="flex items-center gap-1.5 text-foreground">
               <Package className="size-4 text-indigo-600" aria-hidden />
               <p className="text-sm font-bold">סיכום רכש</p>
             </div>
@@ -626,7 +626,7 @@ export function ProjectMasterHub360(props: {
               {mock.procurement.recentSuppliers.map((s) => (
                 <span
                   key={s}
-                  className="rounded-full border border-slate-200 bg-card px-2 py-0.5 text-[10px] font-medium text-slate-700"
+                  className="rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                 >
                   {s}
                 </span>
@@ -635,7 +635,7 @@ export function ProjectMasterHub360(props: {
           </HubCard>
 
           <HubCard>
-            <div className="flex items-center gap-1.5 text-slate-800">
+            <div className="flex items-center gap-1.5 text-foreground">
               <Truck className="size-4 text-violet-600" aria-hidden />
               <p className="text-sm font-bold">ציר זמן — 3 אבני דרך הבאות</p>
             </div>
@@ -711,7 +711,7 @@ export function ProjectMasterHub360(props: {
 
           <HubCard className="space-y-2">
             <div className="flex items-center gap-2">
-              <BarChart3 className="size-4 text-indigo-700" aria-hidden />
+              <BarChart3 className="size-4 text-primary" aria-hidden />
               <p className="text-sm font-bold text-foreground">Billing Variance</p>
             </div>
             {profitabilityLoading ? (
@@ -724,11 +724,11 @@ export function ProjectMasterHub360(props: {
                   const approvedPct = Math.round((row.approvedTotal / max) * 100)
                   return (
                     <div key={`${row.label}-${row.period ?? "na"}`} className="space-y-1">
-                      <p className="truncate text-[11px] font-semibold text-slate-700">
+                      <p className="truncate text-[11px] font-semibold text-foreground">
                         {row.label}
                       </p>
                       <div className="space-y-1">
-                        <div className="h-2 rounded bg-slate-100">
+                        <div className="h-2 rounded bg-muted">
                           <div
                             className="h-2 rounded bg-slate-400"
                             style={{ width: `${submittedPct}%` }}
@@ -786,7 +786,7 @@ export function ProjectMasterHub360(props: {
                     >
                       {row.kind === "daily_log" ? (
                         <div className="flex gap-3">
-                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                             <span className="text-[10px] font-bold">DL</span>
                           </span>
                           <div className="min-w-0 flex-1">
@@ -805,7 +805,7 @@ export function ProjectMasterHub360(props: {
                               {row.tags.map((t) => (
                                 <span
                                   key={t}
-                                  className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700"
+                                  className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
                                 >
                                   {t}
                                 </span>
@@ -858,7 +858,7 @@ export function ProjectMasterHub360(props: {
                     <li key={g.id}>
                       <Link
                         href={`/marker-ofek/projects/gantt/${g.id}`}
-                        className="block rounded-lg border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-indigo-300 hover:from-indigo-50/60"
+                        className="block rounded-lg border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         {g.name}
                         <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
@@ -871,7 +871,7 @@ export function ProjectMasterHub360(props: {
                 <div className="mt-3 border-t border-slate-100 pt-3">
                   <Link
                     href="/marker-ofek/projects/gantt"
-                    className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-900"
+                    className="text-[11px] font-semibold text-primary transition-all duration-200 ease-in-out hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     כל הגאנטים בארגון ←
                   </Link>
@@ -890,7 +890,7 @@ export function ProjectMasterHub360(props: {
                 type="button"
                 size="sm"
                 variant="outline"
-                className="mb-3 h-8 w-full justify-center border-slate-200 bg-card text-xs"
+                className="mb-3 h-8 w-full justify-center border-border bg-card text-xs transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 disabled={profitabilityLoading || exportingExecutive}
                 onClick={() => void exportExecutiveSummary()}
               >
@@ -902,7 +902,7 @@ export function ProjectMasterHub360(props: {
                   <motion.div
                     whileHover={reduce ? undefined : { scale: 1.02 }}
                     whileTap={reduce ? undefined : { scale: 0.99 }}
-                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-3 shadow-sm transition-colors hover:border-emerald-300 hover:from-emerald-50/50"
+                    className="flex items-center gap-3 rounded-xl border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-3 shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                   >
                     <span className="flex size-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shadow-inner">
                       <ShoppingCart className="size-6" aria-hidden />
@@ -922,7 +922,7 @@ export function ProjectMasterHub360(props: {
                   <motion.div
                     whileHover={reduce ? undefined : { scale: 1.02 }}
                     whileTap={reduce ? undefined : { scale: 0.99 }}
-                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-3 shadow-sm transition-colors hover:border-amber-300 hover:from-amber-50/40"
+                    className="flex items-center gap-3 rounded-xl border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-3 shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                   >
                     <span className="flex size-12 items-center justify-center rounded-xl bg-amber-100 text-amber-900 shadow-inner">
                       <AlertCircle className="size-6" aria-hidden />
@@ -942,7 +942,7 @@ export function ProjectMasterHub360(props: {
                   <motion.div
                     whileHover={reduce ? undefined : { scale: 1.02 }}
                     whileTap={reduce ? undefined : { scale: 0.99 }}
-                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-l from-white to-slate-50 px-3 py-3 shadow-sm transition-colors hover:border-sky-300 hover:from-sky-50/50"
+                    className="flex items-center gap-3 rounded-xl border border-border bg-gradient-to-l from-background to-muted/40 px-3 py-3 shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                   >
                     <span className="flex size-12 items-center justify-center rounded-xl bg-sky-100 text-sky-900 shadow-inner">
                       <FileUp className="size-6" aria-hidden />
@@ -962,13 +962,13 @@ export function ProjectMasterHub360(props: {
               <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
                 <Link
                   href={`/marker-ofek/execution/gantt/${projectId}`}
-                  className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-background"
+                  className="inline-flex h-8 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   גאנט מלא
                 </Link>
                 <Link
                   href={`/projects/${projectId}/wall`}
-                  className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-card px-3 text-xs font-medium text-slate-800 shadow-sm transition-colors hover:bg-background"
+                  className="inline-flex h-8 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground shadow-sm transition-all duration-200 ease-in-out hover:bg-accent hover:text-accent-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   קיר פרויקט
                 </Link>

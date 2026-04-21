@@ -42,7 +42,7 @@ export function WorkspaceTabBar() {
     <div
       dir="rtl"
       data-diamond-workspace-tabbar
-      className="flex w-full shrink-0 items-center gap-1 border-b border-slate-100 bg-card px-2 py-1.5 print:hidden"
+      className="flex w-full shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 print:hidden"
     >
       <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         {openTabs.map((tab, tabIdx) => {
@@ -54,15 +54,15 @@ export function WorkspaceTabBar() {
               className={cn(
                 "flex max-w-[200px] shrink-0 items-center gap-0.5 rounded-md border text-[12px] transition-colors",
                 active
-                  ? "border-indigo-950 bg-indigo-950 text-white"
-                  : "border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200/90"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
               {hotkeyIdx != null ? (
                 <span
                   className={cn(
                     "font-currency-mono tabular-nums text-[10px] font-semibold opacity-80",
-                    active ? "text-white/90" : "text-slate-500",
+                    active ? "text-primary-foreground/90" : "text-muted-foreground",
                     "ps-1.5"
                   )}
                   title={`Alt+${hotkeyIdx}`}
@@ -82,7 +82,7 @@ export function WorkspaceTabBar() {
                 type="button"
                 className={cn(
                   "shrink-0 rounded p-1",
-                  active ? "text-white/80 hover:bg-card/10" : "text-slate-500 hover:bg-slate-200"
+                  active ? "text-primary-foreground/80 hover:bg-primary-foreground/10" : "text-muted-foreground hover:bg-accent"
                 )}
                 aria-label={tab.pinned ? "הסר נעיצה" : "נעץ לשונית"}
                 onClick={() => togglePinTab(tab.id)}
@@ -94,7 +94,7 @@ export function WorkspaceTabBar() {
                   type="button"
                   className={cn(
                     "shrink-0 rounded p-1",
-                    active ? "text-white/80 hover:bg-card/10" : "text-slate-500 hover:bg-slate-200"
+                    active ? "text-primary-foreground/80 hover:bg-primary-foreground/10" : "text-muted-foreground hover:bg-accent"
                   )}
                   aria-label="סגור לשונית"
                   onClick={() => closeTab(tab.id)}
@@ -106,7 +106,7 @@ export function WorkspaceTabBar() {
           )
         })}
       </div>
-      <div className="flex shrink-0 items-center gap-1 border-s border-slate-100 ps-2">
+      <div className="flex shrink-0 items-center gap-1 border-s border-border ps-2">
         <Button
           type="button"
           variant="ghost"
@@ -115,7 +115,7 @@ export function WorkspaceTabBar() {
           disabled={!splitView}
           className={cn(
             "h-8 gap-1 text-[11px]",
-            pinActive && "bg-indigo-950 text-white hover:bg-indigo-900 hover:text-white"
+            pinActive && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
           )}
           onClick={() => toggleSplitPrimaryPin()}
         >
@@ -129,7 +129,7 @@ export function WorkspaceTabBar() {
           title="Ctrl+\\"
           className={cn(
             "h-8 gap-1 text-[11px]",
-            splitView && "bg-slate-100 text-indigo-950"
+            splitView && "bg-muted text-foreground"
           )}
           onClick={() => setSplitView(!splitView)}
         >
@@ -140,7 +140,7 @@ export function WorkspaceTabBar() {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-8 text-[11px] text-slate-600"
+          className="h-8 text-[11px] text-muted-foreground"
           onClick={() => closeAllTabs()}
         >
           סגור הכל

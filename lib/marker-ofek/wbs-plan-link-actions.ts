@@ -22,10 +22,33 @@ export async function ensureProjectVaultDefaultFolders(projectId: string): Promi
     await ensureDefaultVaultFoldersForProjectId(supabase, pid)
   } catch (error) {
     // Never crash Project Hub for vault bootstrap drift; log and continue.
+    const sbError = toSupabaseErrorPayload(error)
     console.error("[vault:init] failed to ensure default folders", {
       projectId: pid,
       error: error instanceof Error ? error.message : String(error),
+      code: sbError.code,
+      details: sbError.details,
+      hint: sbError.hint,
+      status: sbError.status,
     })
+  }
+}
+
+function toSupabaseErrorPayload(error: unknown): {
+  code: string | null
+  details: string | null
+  hint: string | null
+  status: number | null
+} {
+  if (!error || typeof error !== "object") {
+    return { code: null, details: null, hint: null, status: null }
+  }
+  const row = error as Record<string, unknown>
+  return {
+    code: typeof row.code === "string" ? row.code : null,
+    details: typeof row.details === "string" ? row.details : null,
+    hint: typeof row.hint === "string" ? row.hint : null,
+    status: typeof row.status === "number" ? row.status : null,
   }
 }
 
@@ -35,16 +58,31 @@ async function ensureDefaultVaultFoldersForProjectId(
 ) {
   const pid = String(projectId ?? "").trim()
   if (!pid) return
-  for (const f of VAULT_DEFAULT_FOLDERS) {
-    const { data: existing, error: exErr } = await supabase
-      .schema("public")
-      .from("project_documents")
-      .select("id")
-      .eq("project_id", pid)
-      .eq("vault_folder_key", f.key)
-      .maybeSingle()
-    if (exErr) throw new Error(exErr.message)
-    if (existing?.id) continue
+  const { data: existingRows, error: exErr } = await supabase
+    .schema("public")
+    .from("project_documents")
+    .select("vault_folder_key")
+    .eq("project_id", pid)
+    .eq("is_folder", true)
+    .not("vault_folder_key", "is", null)
+
+  if (exErr) throw exErr
+
+  const existingKeys = new Set(
+    (existingRows ?? [])
+      .map((row) =>
+        (row as { vault_folder_key?: string | null }).vault_folder_key == null
+          ? ""
+          : String((row as { vault_folder_key?: string | null }).vault_folder_key).trim()
+      )
+      .filter(Boolean)
+  )
+
+  const missingFolders = VAULT_DEFAULT_FOLDERS.filter(
+    (folder) => !existingKeys.has(folder.key)
+  )
+
+  for (const f of missingFolders) {
     const versionGroupId = crypto.randomUUID()
     const { error: insErr } = await supabase.schema("public").from("project_documents").insert({
       project_id: pid,
@@ -60,7 +98,11 @@ async function ensureDefaultVaultFoldersForProjectId(
       is_current: true,
       parent_document_id: null,
     })
-    if (insErr) throw new Error(insErr.message)
+    if (insErr) {
+      // Race-safe idempotency: another request inserted this folder first.
+      if (insErr.code === "23505") continue
+      throw insErr
+    }
   }
 }
 

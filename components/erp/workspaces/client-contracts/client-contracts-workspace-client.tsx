@@ -295,9 +295,9 @@ function changeOrderTypeLabel(type: ErpChangeOrder["changeType"]): string {
 }
 
 function changeOrderTypeClass(type: ErpChangeOrder["changeType"]): string {
-  if (type === "NEW_LINE") return "border-emerald-200 bg-emerald-50 text-emerald-800"
-  if (type === "QTY_CHANGE") return "border-amber-200 bg-amber-50 text-amber-800"
-  return "border-blue-200 bg-blue-50 text-blue-800"
+  if (type === "NEW_LINE") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+  if (type === "QTY_CHANGE") return "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+  return "border-primary/35 bg-primary/10 text-primary"
 }
 
 function getActiveCompanyIdFromCookie(): CompanyContextId | null {
@@ -2234,9 +2234,9 @@ export function ClientContractsWorkspaceClient({
                               {moneyOneDecimal(simulationProjection.projectedBillTotal)}
                             </p>
                           </div>
-                          <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
+                          <div className="rounded-xl border border-primary/35 bg-primary/10 p-3">
                             <p className="text-[11px] text-slate-600">Net Cash Inflow</p>
-                            <p className="font-mono text-xl font-semibold text-blue-700">
+                            <p className="font-mono text-xl font-semibold text-primary">
                               {moneyOneDecimal(simulationProjection.netCashInflow)}
                             </p>
                             <p className="mt-1 text-[11px] text-slate-500">
@@ -2381,13 +2381,13 @@ export function ClientContractsWorkspaceClient({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-7 text-indigo-700"
+                                      className="h-7 text-primary"
                                       disabled={co.priceOverrideStatus !== "REQUESTED" || saving}
                                       onClick={() => void authorizeChangeOrderPriceOverride(co)}
                                     >
                                       <WandSparkles className="size-4" />
                                     </Button>
-                                    <Button size="sm" variant="ghost" className="h-7 text-red-600" disabled={co.isLocked || saving} onClick={() => void deleteChangeOrder(co)}>
+                                    <Button size="sm" variant="ghost" className="h-7 text-destructive" disabled={co.isLocked || saving} onClick={() => void deleteChangeOrder(co)}>
                                       <Trash2 className="size-4" />
                                     </Button>
                                   </div>

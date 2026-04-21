@@ -61,7 +61,7 @@ export default function RootLayout({
           heebo.variable,
           rubik.variable,
           jetbrainsMono.variable,
-          "h-[100dvh] min-h-0 w-full overflow-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
+          "min-h-screen w-full overflow-x-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
         )}
         dir="rtl"
         suppressHydrationWarning
@@ -75,8 +75,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delay={0}>
-            <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
-              <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+            <div className="flex min-h-screen w-full flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
                 {children}
               </div>
             </div>

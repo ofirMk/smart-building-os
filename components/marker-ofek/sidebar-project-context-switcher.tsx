@@ -31,6 +31,18 @@ const projectsSchema = z.array(projectSchema)
 
 type ProjectOption = z.infer<typeof projectSchema>
 
+function userFacingProjectError(message: string): string {
+  const normalized = message.toLowerCase()
+  if (
+    normalized.includes("schema cache") ||
+    normalized.includes("could not find the table") ||
+    normalized.includes("erp_proj_projects")
+  ) {
+    return "מטמון סכמת הפרויקטים אינו מעודכן. הריצו NOTIFY pgrst, 'reload schema'; ונסו שוב."
+  }
+  return message
+}
+
 export function SidebarProjectContextSwitcher() {
   const [projects, setProjects] = React.useState<ProjectOption[]>([])
   const [activeProjectId, setActiveProjectId] = React.useState<string>("")
@@ -60,7 +72,11 @@ export function SidebarProjectContextSwitcher() {
       } catch (fetchError) {
         if (controller.signal.aborted) return
         setProjects([])
-        setError(fetchError instanceof Error ? fetchError.message : "טעינת פרויקטים נכשלה")
+        setError(
+          userFacingProjectError(
+            fetchError instanceof Error ? fetchError.message : "טעינת פרויקטים נכשלה"
+          )
+        )
       } finally {
         if (!controller.signal.aborted) setLoading(false)
       }
@@ -127,7 +143,7 @@ export function SidebarProjectContextSwitcher() {
           type="button"
           variant="ghost"
           size="sm"
-          className="mt-1 h-6 px-1 text-[10px] text-rose-700"
+          className="mt-1 h-auto w-full justify-start px-1 text-start text-[10px] text-amber-700"
           onClick={() => window.location.reload()}
         >
           {error}
