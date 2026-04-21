@@ -11,14 +11,15 @@ import { cn } from "@/lib/utils"
  * Toggles `light` ↔ `dark` via next-themes (`attribute="class"` on `<html>`).
  */
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  const isDark = resolvedTheme === "dark"
+  const activeTheme = theme === "system" ? resolvedTheme : theme
+  const isDark = activeTheme === "dark"
 
   return (
     <Button
@@ -28,8 +29,8 @@ export function ThemeToggle() {
       onClick={() => setTheme(isDark ? "light" : "dark")}
       disabled={!mounted}
       className={cn(
-        "relative shrink-0 rounded-lg border border-slate-100 bg-white shadow-sm transition-colors",
-        "text-slate-900 hover:bg-slate-50",
+        "relative shrink-0 rounded-lg border border-border bg-card shadow-sm transition-colors",
+        "text-foreground hover:bg-accent",
         "disabled:pointer-events-none disabled:opacity-60"
       )}
       aria-label={mounted ? (isDark ? "מעבר למצב בהיר" : "מעבר למצב כהה") : "טעינת ערכת נושא"}

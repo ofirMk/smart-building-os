@@ -104,41 +104,41 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 10%;
-    --popover-foreground: 210 40% 98%;
+    --background: 240 4% 12%;
+    --foreground: 0 0% 80%;
+    --card: 240 3% 15%;
+    --card-foreground: 0 0% 80%;
+    --popover: 240 3% 15%;
+    --popover-foreground: 0 0% 80%;
     --primary: 243.4 75.4% 58.6%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --secondary: 240 3% 18%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 240 3% 18%;
+    --muted-foreground: 240 2% 59%;
+    --accent: 240 3% 20%;
+    --accent-foreground: 0 0% 80%;
     --destructive: 0 62.8% 30.6%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 240 3% 24%;
+    --input: 240 3% 24%;
     --ring: 243.4 75.4% 58.6%;
     --chart-1: 243.4 75.4% 58.6%;
     --chart-2: 239.6 68.4% 59.2%;
     --chart-3: 215 20.2% 65.1%;
     --chart-4: 217.2 32.6% 17.5%;
     --chart-5: 215.3 25% 26.7%;
-    --sidebar: 222.2 47.4% 11.2%;
-    --sidebar-foreground: 210 40% 98%;
+    --sidebar: 240 3% 15%;
+    --sidebar-foreground: 0 0% 80%;
     --sidebar-primary: 243.4 75.4% 58.6%;
     --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-accent: 240 3% 20%;
+    --sidebar-accent-foreground: 0 0% 80%;
+    --sidebar-border: 240 3% 24%;
     --sidebar-ring: 243.4 75.4% 58.6%;
-    --bg-main: 222.2 84% 4.9%;
-    --bg-grid: 222.2 84% 10%;
-    --text-primary: 210 40% 98%;
-    --border-muted: 217.2 32.6% 17.5%;
+    --bg-main: 240 4% 12%;
+    --bg-grid: 240 3% 15%;
+    --text-primary: 0 0% 80%;
+    --border-muted: 240 3% 24%;
     --accent-primary: 243.4 75.4% 58.6%;
   }
 

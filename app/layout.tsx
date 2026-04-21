@@ -61,16 +61,16 @@ export default function RootLayout({
           heebo.variable,
           rubik.variable,
           jetbrainsMono.variable,
-          "h-[100dvh] min-h-0 w-full overflow-hidden bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-100"
+          "h-[100dvh] min-h-0 w-full overflow-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
         )}
         dir="rtl"
         suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="system"
           storageKey="smart-building-theme"
-          enableSystem={false}
+          enableSystem
           enableColorScheme
           disableTransitionOnChange
         >
