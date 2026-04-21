@@ -68,10 +68,10 @@ export default async function MarkerOfekProjectsDashboardPage() {
               <p className="text-xs font-medium uppercase tracking-wider text-violet-600/90">
                 מרקר אופק
               </p>
-              <h1 className="text-pretty text-2xl font-bold tracking-tight text-[#1e293b] md:text-3xl">
+              <h1 className="text-pretty text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                 פרויקטים
               </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
+              <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 מרכזי רווח (Profit Center): רשימת פרויקטים פעילים — חוזים, גאנט,
                 יומני עבודה, תוכניות ומשאבים.
               </p>

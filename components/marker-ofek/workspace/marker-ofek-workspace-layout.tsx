@@ -84,7 +84,7 @@ function MarkerOfekWorkspaceChrome({
                   className={cn(
                     "inline-flex max-w-[11rem] truncate rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
                     pathname === tab.href
-                      ? "bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/20"
+                      ? "border border-slate-700 bg-slate-800 text-slate-100 shadow-sm"
                       : "text-muted-foreground hover:bg-muted/90 hover:text-foreground"
                   )}
                 >

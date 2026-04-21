@@ -61,7 +61,7 @@ export function GlobalProjectSearch() {
 
   return (
     <div className="relative w-full max-w-md">
-      <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+      <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <input
         id="global-project-search-input"
         value={query}
@@ -85,22 +85,22 @@ export function GlobalProjectSearch() {
           window.setTimeout(() => setOpen(false), 120)
         }}
         placeholder="חיפוש פרויקט (Ctrl+K)"
-        className="h-10 w-full rounded-xl border border-slate-200 bg-card pe-10 ps-3 text-sm text-[#1e293b] shadow-sm outline-none ring-0 transition focus:border-indigo-300"
+        className="h-10 w-full rounded-xl border border-border bg-background pe-10 ps-3 text-sm text-foreground shadow-sm outline-none ring-0 transition placeholder:text-muted-foreground focus:border-border"
         aria-label="חיפוש פרויקטים גלובלי"
       />
       {open && filtered.length > 0 ? (
-        <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-100 bg-card p-1 shadow-sm">
+        <div className="absolute z-30 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-sm">
           {filtered.map((project) => (
             <button
               key={project.id}
               type="button"
               onMouseDown={() => navigateToProject(project.id)}
-              className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-start text-sm hover:bg-violet-500/10"
+              className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-start text-sm hover:bg-accent"
             >
-              <span className="truncate text-slate-800">
+              <span className="truncate text-foreground">
                 {project.name}
               </span>
-              <span className="shrink-0 text-xs text-slate-500">
+              <span className="shrink-0 text-xs text-muted-foreground">
                 {project.internal_project_code ?? "ללא קוד"}
               </span>
             </button>

@@ -192,10 +192,7 @@ export function DashboardShell({
     if (isMarkerOfekPath(pathname) && markerWorkspaceSubtitle?.trim()) {
       return markerWorkspaceSubtitle.trim()
     }
-    return (
-      guyRahumimWelcomeMessage(userEmail) ??
-      "תפעול נכסים ברמה הגבוהה ביותר וחוויית דיירים"
-    )
+    return guyRahumimWelcomeMessage(userEmail)
   }, [pathname, markerWorkspaceSubtitle, userEmail])
   const crumbs = useMemo(
     () => buildHebrewCrumbs(pathname, branding.organizationName),
@@ -258,9 +255,11 @@ export function DashboardShell({
             <h1 className="page-title truncate">
               {title}
             </h1>
-            <p className="hidden text-[11px] font-normal leading-snug text-muted-foreground sm:block">
-              {headerSubtitle}
-            </p>
+            {headerSubtitle ? (
+              <p className="hidden text-[11px] font-normal leading-snug text-muted-foreground sm:block">
+                {headerSubtitle}
+              </p>
+            ) : null}
           </div>
           {isMarkerOfekExecutiveContext(pathname) ? <GlobalProjectSearch /> : null}
           <MarkerOfekModuleHeaderActions />

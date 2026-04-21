@@ -54,7 +54,7 @@ export function WorkspaceTabBar() {
               className={cn(
                 "flex max-w-[200px] shrink-0 items-center gap-0.5 rounded-md border text-[12px] transition-colors",
                 active
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-slate-700 bg-slate-800 text-slate-100"
                   : "border-transparent bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
@@ -62,7 +62,7 @@ export function WorkspaceTabBar() {
                 <span
                   className={cn(
                     "font-currency-mono tabular-nums text-[10px] font-semibold opacity-80",
-                    active ? "text-primary-foreground/90" : "text-muted-foreground",
+                    active ? "text-slate-200" : "text-muted-foreground",
                     "ps-1.5"
                   )}
                   title={`Alt+${hotkeyIdx}`}
@@ -82,7 +82,7 @@ export function WorkspaceTabBar() {
                 type="button"
                 className={cn(
                   "shrink-0 rounded p-1",
-                  active ? "text-primary-foreground/80 hover:bg-primary-foreground/10" : "text-muted-foreground hover:bg-accent"
+                  active ? "text-slate-200 hover:bg-slate-700/70" : "text-muted-foreground hover:bg-accent"
                 )}
                 aria-label={tab.pinned ? "הסר נעיצה" : "נעץ לשונית"}
                 onClick={() => togglePinTab(tab.id)}
@@ -94,7 +94,7 @@ export function WorkspaceTabBar() {
                   type="button"
                   className={cn(
                     "shrink-0 rounded p-1",
-                    active ? "text-primary-foreground/80 hover:bg-primary-foreground/10" : "text-muted-foreground hover:bg-accent"
+                    active ? "text-slate-200 hover:bg-slate-700/70" : "text-muted-foreground hover:bg-accent"
                   )}
                   aria-label="סגור לשונית"
                   onClick={() => closeTab(tab.id)}
@@ -115,7 +115,7 @@ export function WorkspaceTabBar() {
           disabled={!splitView}
           className={cn(
             "h-8 gap-1 text-[11px]",
-            pinActive && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+            pinActive && "bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-slate-100"
           )}
           onClick={() => toggleSplitPrimaryPin()}
         >

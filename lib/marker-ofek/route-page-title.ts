@@ -19,6 +19,16 @@ const titles: Record<string, string> = {
   "/chat": "צ'אט AI",
 }
 
+function fallbackTitleFromPath(pathname: string): string {
+  const clean = pathname.split("?")[0]?.replace(/\/+$/, "") || ""
+  const parts = clean.split("/").filter(Boolean)
+  const raw = parts.at(-1) ?? ""
+  if (!raw) return "לוח בקרה"
+  if (/^[0-9a-f-]{8,}$/i.test(raw)) return "פריט"
+  const readable = raw.replace(/[-_]+/g, " ").trim()
+  return readable ? readable : "לוח בקרה"
+}
+
 export function titleForPath(pathname: string): string {
   if (
     pathname === "/marker-ofek/command-center" ||
@@ -104,5 +114,5 @@ export function titleForPath(pathname: string): string {
   const match = Object.keys(titles).find(
     (k) => k !== "/" && k !== "/dashboard" && pathname.startsWith(k)
   )
-  return match ? titles[match] : "בניין חכם"
+  return match ? titles[match] : fallbackTitleFromPath(pathname)
 }

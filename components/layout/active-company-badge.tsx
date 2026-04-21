@@ -14,20 +14,18 @@ import { cn } from "@/lib/utils"
 const ACTIVE_COMPANY_BADGE_THEME = {
   marker_ofek: {
     icon: Layers3,
-    chipClassName:
-      "border-emerald-200 bg-gradient-to-l from-emerald-50 to-white text-emerald-800",
-    iconClassName: "bg-emerald-100 text-emerald-700",
+    chipClassName: "bg-slate-900/50 border-slate-800 text-slate-200",
+    iconClassName: "bg-slate-800 text-slate-200",
   },
   holden_group: {
     icon: Building2,
-    chipClassName: "border-blue-200 bg-gradient-to-l from-blue-50 to-white text-blue-800",
-    iconClassName: "bg-blue-100 text-blue-700",
+    chipClassName: "bg-slate-900/50 border-slate-800 text-slate-200",
+    iconClassName: "bg-slate-800 text-slate-200",
   },
   building_management_co: {
     icon: Building,
-    chipClassName:
-      "border-amber-200 bg-gradient-to-l from-amber-50 to-white text-amber-800",
-    iconClassName: "bg-amber-100 text-amber-700",
+    chipClassName: "bg-slate-900/50 border-slate-800 text-slate-200",
+    iconClassName: "bg-slate-800 text-slate-200",
   },
 } satisfies Record<
   CompanyContextId,
@@ -81,7 +79,7 @@ export function ActiveCompanyBadge({ companyId, className }: ActiveCompanyBadgeP
     <div
       className={cn(
         "inline-flex h-9 items-center gap-2 rounded-full border px-3 shadow-[0_2px_16px_rgba(15,23,42,0.08)]",
-        "ring-1 ring-white/90 backdrop-blur-sm",
+        "backdrop-blur-sm",
         theme.chipClassName,
         className
       )}
@@ -96,8 +94,10 @@ export function ActiveCompanyBadge({ companyId, className }: ActiveCompanyBadgeP
       >
         <Icon className="size-3.5" aria-hidden />
       </span>
-      <span className="text-[10px] font-semibold tracking-wide text-slate-500">חברה פעילה</span>
-      <span className="max-w-[11rem] truncate text-xs font-semibold">{displayName}</span>
+      <span className="text-[10px] font-semibold tracking-wide text-slate-300">חברה פעילה</span>
+      <span className="max-w-[11rem] truncate text-xs font-semibold text-slate-100">
+        {displayName}
+      </span>
     </div>
   )
 }
