@@ -146,7 +146,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
       dir="rtl"
       aria-label="ניווט מודולים עליון"
       className={cn(
-        "relative z-[999] flex flex-wrap items-center justify-center gap-1",
+        "relative z-[9999] pointer-events-auto flex flex-wrap items-center justify-center gap-1",
         className
       )}
       onMouseLeave={scheduleClose}
@@ -200,7 +200,7 @@ export function MarkerOfekHeaderNav({ className }: { className?: string }) {
       })}
 
       <div
-        className="pointer-events-none absolute start-1/2 top-full z-[999] mt-2 flex w-screen -translate-x-1/2 justify-center"
+        className="pointer-events-none absolute start-1/2 top-full z-[9999] mt-2 flex w-screen -translate-x-1/2 justify-center"
         onMouseEnter={clearCloseTimer}
         onMouseLeave={scheduleClose}
       >

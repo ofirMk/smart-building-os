@@ -226,6 +226,7 @@ export function DashboardShell({
       >
         <TopNavBar
           isHoldenErpShell={isHoldenErpShell}
+          className="pointer-events-auto isolate z-[9999]"
           stickyClassName={
             mirrorBannerOn ? MIRROR_BANNER_STICKY_TOP_CLASS : "top-0"
           }
@@ -293,7 +294,10 @@ export function DashboardShell({
         <SmartWorkspaceChrome>
           <main
             dir="rtl"
-            className="relative z-0 flex h-[calc(100vh-4rem)] min-h-0 w-full min-w-0 max-w-none flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto bg-background px-2 py-2 text-foreground print:bg-background print:p-0 md:px-3 md:py-3"
+            className={cn(
+              "relative z-0 flex h-[calc(100vh-4rem)] min-h-0 w-full min-w-0 max-w-none flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto bg-background px-2 py-2 text-foreground print:bg-background print:p-0 md:px-3 md:py-3",
+              isMarkerOfekPath(pathname) && "pt-16 md:pt-16"
+            )}
           >
             {children}
           </main>
