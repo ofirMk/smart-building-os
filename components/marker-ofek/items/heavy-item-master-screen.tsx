@@ -38,6 +38,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 
+import { AddSupplierPriceModal } from "./add-supplier-price-modal"
+
 type ProductFamily = {
   id: string
   familyCode: string
@@ -50,6 +52,31 @@ type UomOption = {
   descriptionHe: string
   nameEn: string
   companyId: string | null
+}
+
+type SupplierRecord = {
+  id: string
+  companyId: string
+  supplierNum: string
+  name: string
+  taxId: string | null
+  type: string
+  paymentTerms: string | null
+}
+
+type SupplierItemRecord = {
+  id: string
+  companyId: string
+  itemId: string
+  supplierId: string
+  supplierSku: string | null
+  basePrice: number
+  discountPercentage: number
+  currency: string
+  uom: string | null
+  validFrom: string | null
+  validTo: string | null
+  isPreferred: boolean
 }
 
 type ItemRecord = {
@@ -115,6 +142,10 @@ export function HeavyItemMasterScreen() {
   const [items, setItems] = React.useState<ItemRecord[]>([])
   const [families, setFamilies] = React.useState<ProductFamily[]>([])
   const [uoms, setUoms] = React.useState<UomOption[]>([])
+  const [suppliers, setSuppliers] = React.useState<SupplierRecord[]>([])
+  const [supplierItems, setSupplierItems] = React.useState<SupplierItemRecord[]>([])
+  const [supplierItemsLoading, setSupplierItemsLoading] = React.useState(false)
+  const [addPriceModalOpen, setAddPriceModalOpen] = React.useState(false)
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [searchTerm, setSearchTerm] = React.useState("")
   const [createOpen, setCreateOpen] = React.useState(false)
@@ -158,16 +189,33 @@ export function HeavyItemMasterScreen() {
     ]
   }, [selectedItem])
 
+  // רשומות המחירון לפריט המסומן. ממופה דרך `loadSupplierItemsForItem` מתוך `useEffect`
+  // במקביל ל-`selectedId`. התצוגה משולבת עם מפת הספקים להצגת שם למשתמש.
   const purchasingRows = React.useMemo(() => {
     if (!selectedItem) return []
-    const tier = selectedItem.minOrderQuantity > 10 ? 0.93 : 0.97
-    const basePrice = Number(selectedItem.minOrderQuantity || 1) * 11
-    return [
-      { supplier: "ספק אבן ובטון", unitPrice: basePrice, delivery: "4 ימי עסקים", terms: "שוטף + 30" },
-      { supplier: "לוגיסטיקה חכמה", unitPrice: Math.round(basePrice * tier), delivery: "2 ימי עסקים", terms: "שוטף + 45" },
-      { supplier: "מרכז אספקה ארצי", unitPrice: Math.round(basePrice * 1.05), delivery: "7 ימי עסקים", terms: "שוטף + 60" },
-    ]
-  }, [selectedItem])
+    const supplierMap = new Map(suppliers.map((s) => [s.id, s]))
+    return supplierItems.map((row) => {
+      const supplier = supplierMap.get(row.supplierId)
+      const supplierLabel = supplier
+        ? `${supplier.supplierNum} · ${supplier.name}`
+        : row.supplierId
+      const netPrice =
+        row.discountPercentage > 0
+          ? row.basePrice * (1 - row.discountPercentage / 100)
+          : row.basePrice
+      return {
+        id: row.id,
+        supplierLabel,
+        supplierSku: row.supplierSku,
+        currency: row.currency,
+        basePrice: row.basePrice,
+        discountPercentage: row.discountPercentage,
+        netPrice,
+        isPreferred: row.isPreferred,
+        validTo: row.validTo,
+      }
+    })
+  }, [selectedItem, supplierItems, suppliers])
 
   const movementRows = React.useMemo(() => {
     if (!selectedItem) return []
@@ -181,7 +229,7 @@ export function HeavyItemMasterScreen() {
   const loadData = React.useCallback(async () => {
     setLoading(true)
     try {
-      const [itemRows, familyRows, uomRows] = await Promise.all([
+      const [itemRows, familyRows, uomRows, supplierRows] = await Promise.all([
         masterDataFetch<ItemRecord[]>("/api/erp/master-data/items").catch(
           () => [] as ItemRecord[]
         ),
@@ -191,16 +239,21 @@ export function HeavyItemMasterScreen() {
         masterDataFetch<UomOption[]>("/api/master-data/uoms").catch(
           () => [] as UomOption[]
         ),
+        masterDataFetch<SupplierRecord[]>("/api/master-data/suppliers").catch(
+          () => [] as SupplierRecord[]
+        ),
       ])
       setItems(itemRows)
       setFamilies(familyRows)
       setUoms(uomRows)
+      setSuppliers(supplierRows)
       setSelectedId((prev) => prev ?? itemRows[0]?.id ?? null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "טעינת נתונים נכשלה")
       setItems([])
       setFamilies([])
       setUoms([])
+      setSuppliers([])
       setSelectedId(null)
     } finally {
       setLoading(false)
@@ -210,6 +263,34 @@ export function HeavyItemMasterScreen() {
   React.useEffect(() => {
     void loadData()
   }, [loadData])
+
+  // טעינת מחירי-ספקים לפריט המסומן. ממומש ל-callback כדי להפעיל מחדש מ-onSuccess
+  // של המודל לאחר הוספת מחיר חדש.
+  const reloadSupplierItems = React.useCallback(async () => {
+    if (!selectedId) {
+      setSupplierItems([])
+      return
+    }
+    setSupplierItemsLoading(true)
+    try {
+      const rows = await masterDataFetch<SupplierItemRecord[]>(
+        `/api/master-data/supplier-items?itemId=${encodeURIComponent(selectedId)}`
+      )
+      setSupplierItems(rows)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "טעינת מחירי ספקים נכשלה"
+      )
+      setSupplierItems([])
+    } finally {
+      setSupplierItemsLoading(false)
+    }
+  }, [selectedId])
+
+  // טעינה מחדש בכל מעבר בין פריטים, למנוע הצגת מידע גקול מפריט אחר.
+  React.useEffect(() => {
+    void reloadSupplierItems()
+  }, [reloadSupplierItems])
 
   React.useEffect(() => {
     if (!selectedItem) {
@@ -797,30 +878,73 @@ export function HeavyItemMasterScreen() {
                       </TabsContent>
 
                       <TabsContent value="purchase-prices" className="mt-3 min-h-0 flex-1 overflow-y-auto">
+                        <div className="flex items-center justify-between gap-2 pb-2">
+                          <div className="text-xs text-muted-foreground">
+                            {supplierItemsLoading
+                              ? "טוען מחירי ספקים..."
+                              : `${purchasingRows.length} מחירים קשורים לפריט`}
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={!selectedItem}
+                            onClick={() => setAddPriceModalOpen(true)}
+                          >
+                            הוסף מחיר ספק
+                          </Button>
+                        </div>
                         <div className="rounded-lg border border-border">
                           <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="text-start">ספק</TableHead>
-                                <TableHead className="text-start">מחיר ליחידה</TableHead>
-                                <TableHead className="text-start">זמן אספקה</TableHead>
-                                <TableHead className="text-start">תנאי תשלום</TableHead>
+                                <TableHead className="text-start">מק"ט ספק</TableHead>
+                                <TableHead className="text-start">מטבע</TableHead>
+                                <TableHead className="text-start">מחיר בסיס</TableHead>
+                                <TableHead className="text-start">הנחה %</TableHead>
+                                <TableHead className="text-start">מחיר נטו</TableHead>
+                                <TableHead className="text-start">מועדף</TableHead>
+                                <TableHead className="text-start">תוקף עד</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {purchasingRows.length === 0 ? (
                                 <TableRow>
-                                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                                    אין נתוני ספקים להצגה.
+                                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                                    {supplierItemsLoading
+                                      ? "טוען..."
+                                      : "אין נתוני ספקים להצגה."}
                                   </TableCell>
                                 </TableRow>
                               ) : (
                                 purchasingRows.map((row) => (
-                                  <TableRow key={row.supplier}>
-                                    <TableCell>{row.supplier}</TableCell>
-                                    <TableCell>₪{row.unitPrice.toLocaleString("he-IL")}</TableCell>
-                                    <TableCell>{row.delivery}</TableCell>
-                                    <TableCell>{row.terms}</TableCell>
+                                  <TableRow key={row.id}>
+                                    <TableCell>{row.supplierLabel}</TableCell>
+                                    <TableCell>{row.supplierSku ?? "—"}</TableCell>
+                                    <TableCell>{row.currency}</TableCell>
+                                    <TableCell>
+                                      {row.basePrice.toLocaleString("he-IL", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                    </TableCell>
+                                    <TableCell>
+                                      {row.discountPercentage.toLocaleString("he-IL", {
+                                        maximumFractionDigits: 2,
+                                      })}
+                                      %
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      {row.netPrice.toLocaleString("he-IL", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                    </TableCell>
+                                    <TableCell>
+                                      {row.isPreferred ? "★ מועדף" : "—"}
+                                    </TableCell>
+                                    <TableCell>{row.validTo ?? "—"}</TableCell>
                                   </TableRow>
                                 ))
                               )}
@@ -1011,6 +1135,17 @@ export function HeavyItemMasterScreen() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AddSupplierPriceModal
+        itemId={selectedItem?.id ?? null}
+        itemSku={selectedItem?.sku ?? null}
+        isOpen={addPriceModalOpen}
+        onClose={() => setAddPriceModalOpen(false)}
+        onSuccess={() => {
+          // ריענון מיידי של הטבלה אחרי שמירה מוצלחת כדי שהשורה החדשה תופיע מיד.
+          void reloadSupplierItems()
+        }}
+      />
     </div>
   )
 }

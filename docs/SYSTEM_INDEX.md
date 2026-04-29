@@ -55,6 +55,7 @@
 | **F2 Drill-Down (Priority parity)** — hook + LookupField + Sheet + QuickCreate forms | `lib/marker-ofek/hooks/use-f2-listener.ts`, `components/marker-ofek/forms/`, `components/marker-ofek/master-data/quick-create-*.tsx` |
 | **Layout Invariants** (אין גלילה גלובלית, Flexbox סטרילי, חוקי-rem) | `docs/architecture/layout-invariants.md` + `data-layout-region` ב-`app/layout.tsx` ו-`components/dashboard-shell.tsx` |
 | **Top Navigation** (Salient-style, h-16, RTL, mega-menu לבנייה) | `components/layout/top-navigation.tsx` — מקור-אמת יחיד למבנה התפריט (NAV_ITEMS). בנייה → שרשרת רכש → כרטיס פריט |
+| **Vendor Catalog Pricing (Phase 5)** — מחירי ספקים על פריט: API קנוני (`erp_md_suppliers` / `erp_md_supplier_items`, RLS tenant-isolation, אכיפת `x-active-company-id`), טאב "מחירי קניה אפשריים" עם refetch ריאקטיבי, מודל הזנה מהיר עם `react-hook-form` + `zod` + Switch + חישוב נטו ב-`useMemo`. **Render-prop ב-`SelectValue`** של Base UI להצגת `${supplierNum} · ${name}` במקום UUID. שתילת ספקי דמה (PLAS/CHUL/TAMB) למניעת state חסום בענף בנייה. | `app/api/master-data/suppliers/`, `app/api/master-data/supplier-items/`, `components/marker-ofek/items/heavy-item-master-screen.tsx`, `components/marker-ofek/items/add-supplier-price-modal.tsx`, `supabase/migrations/20260729120000_seed_marker_ofek_demo_suppliers.sql` |
 
 ---
 

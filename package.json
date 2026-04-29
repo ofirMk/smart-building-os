@@ -81,7 +81,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "patch-package": "^8.0.1",
-    "supabase": "^2.87.2",
+    "supabase": "^2.95.6",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
