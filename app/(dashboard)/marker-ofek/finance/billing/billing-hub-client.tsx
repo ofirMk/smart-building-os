@@ -88,7 +88,7 @@ export function BillingHubClient({
 
   return (
     <div
-      className="min-h-[calc(100vh-4rem)] bg-[#FFFFFF] px-4 py-8 md:px-8"
+      className="flex-1 min-h-0 overflow-y-auto bg-[#FFFFFF] px-4 py-8 md:px-8"
       dir="rtl"
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">

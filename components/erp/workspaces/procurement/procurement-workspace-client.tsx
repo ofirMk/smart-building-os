@@ -266,8 +266,8 @@ export function ProcurementWorkspaceClient() {
         requestJson<ApiResponse<ErpPurchaseOrder[]>>("/api/erp/procurement/purchase-orders", { signal }),
         requestJson<ApiResponse<ErpGoodsReceipt[]>>("/api/erp/procurement/goods-receipts", { signal }),
         requestJson<ApiResponse<ErpVendorInvoice[]>>("/api/erp/procurement/vendor-invoices", { signal }),
-        requestJson<ApiResponse<Supplier[]>>("/api/suppliers", { signal }),
-        requestJson<ApiResponse<Project[]>>("/api/projects", { signal }),
+        requestJson<ApiResponse<Supplier[]>>("/api/erp/master-data/suppliers", { signal }),
+        requestJson<ApiResponse<Project[]>>("/api/erp/projects", { signal }),
         requestJson<ApiResponse<ItemLookup[]>>("/api/erp/master-data/items", { signal }),
       ])
       if (signal?.aborted) return
@@ -986,7 +986,7 @@ export function ProcurementWorkspaceClient() {
     : ""
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]" dir="rtl">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]" dir="rtl">
       <EntityWorkspace
         title="Procurement Command Center"
         description="מסך פקודות מלא לרכש: הזמנות, תעודות קליטה וחשבוניות ספק."

@@ -8,7 +8,6 @@ import { BarChart3 } from "lucide-react"
 import {
   DenseMasterDetailTemplate,
   DenseDetailPanel,
-  DenseMasterPanel,
   ERP_DENSE_INPUT_CLASS,
   ERP_DENSE_LABEL_CLASS,
 } from "@/components/layout/DenseMasterDetailTemplate"

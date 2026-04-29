@@ -2,11 +2,21 @@
 
 do $$
 begin
-  begin
-    alter type public.mo_po_status add value if not exists 'pending_ceo_approval';
-  exception
-    when duplicate_object then null;
-  end;
+  if exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'mo_po_status'
+  ) then
+    begin
+      alter type public.mo_po_status add value if not exists 'pending_ceo_approval';
+    exception
+      when duplicate_object then null;
+    end;
+  else
+    raise notice 'Skipping mo_po_status enum update: type public.mo_po_status does not exist';
+  end if;
 end
 $$;
 

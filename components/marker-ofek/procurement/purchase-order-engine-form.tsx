@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
@@ -14,6 +13,7 @@ import {
   Save,
   Trash2,
 } from "lucide-react"
+import { toast } from "sonner"
 import {
   Controller,
   useFieldArray,
@@ -51,7 +51,6 @@ import {
   type PurchaseOrderEngineInput,
   type PurchaseOrderEngineOutput,
 } from "@/lib/marker-ofek/po-engine-schema"
-import { purchaseOrderEngineDefaultsFromMockPo } from "@/lib/marker-ofek/procurement-mock-dashboard-pos"
 
 const fieldClass =
   "h-8 max-w-md border-input bg-card text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:border-ring/60 focus-visible:ring-ring/20 md:text-sm"
@@ -76,14 +75,8 @@ function formatNis(n: number): string {
   }).format(n)
 }
 
-export function PurchaseOrderEngineForm() {
-  const searchParams = useSearchParams()
-  const mockPo = searchParams.get("mockPo")?.trim() ?? ""
-
-  const defaults = React.useMemo((): PurchaseOrderEngineInput => {
-    const fromBoard = purchaseOrderEngineDefaultsFromMockPo(mockPo)
-    return fromBoard ?? defaultPurchaseOrderEngineValues()
-  }, [mockPo])
+export function PurchaseOrderEngineForm({ mockPo: _mockPo = "" }: { mockPo?: string }) {
+  const defaults = React.useMemo((): PurchaseOrderEngineInput => defaultPurchaseOrderEngineValues(), [])
 
   const form = useForm<
     PurchaseOrderEngineInput,
@@ -186,7 +179,8 @@ export function PurchaseOrderEngineForm() {
 
   const onValid: SubmitHandler<PurchaseOrderEngineOutput> = (data) => {
     if (!guard.assertReady()) return
-    console.log("[PO Engine] validated purchase order:", data)
+    const lineCount = data.lines.length
+    toast.success(`ההזמנה אומתה (${lineCount} שורות)`)
   }
 
   const onInvalid = () => {
@@ -195,15 +189,16 @@ export function PurchaseOrderEngineForm() {
 
   function saveDraft() {
     if (!guard.assertReady()) return
-    console.log("[PO Engine] save draft (no full validation):", getValues())
+    const values = getValues()
+    toast.success(`טיוטה נשמרה (${values.lines.length} שורות)`)
   }
 
   function exportPdf() {
-    console.log("[PO Engine] export PDF (mock)")
+    toast.message("יצוא PDF יתחבר ביישום מלא")
   }
 
   function attachDocuments() {
-    console.log("[PO Engine] attach documents (mock)")
+    toast.message("צירוף מסמכים יתחבר ביישום מלא")
   }
 
   return (
@@ -219,7 +214,7 @@ export function PurchaseOrderEngineForm() {
         {/* 1. Action ribbon — SAP-style */}
         <div
           className={cn(
-            "sticky top-0 z-30 -mx-1 border-b border-slate-200 bg-card/95 px-1 backdrop-blur-sm",
+            "sticky top-0 z-30 -mx-1 border-b border-border bg-card/95 px-1 backdrop-blur-sm",
             "supports-[backdrop-filter]:bg-card/90"
           )}
         >
@@ -337,7 +332,7 @@ export function PurchaseOrderEngineForm() {
                       <SelectTrigger
                         size="sm"
                         className={cn(
-                          "h-8 w-full border-slate-200 bg-card text-sm text-foreground",
+                          "h-8 w-full border-border bg-card text-sm text-foreground",
                           formState.errors.supplierId && "border-red-300"
                         )}
                         onBlur={field.onBlur}
@@ -346,7 +341,7 @@ export function PurchaseOrderEngineForm() {
                       >
                         <SelectValue placeholder="בחרו ספק" />
                       </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-card">
+                      <SelectContent className="border border-border bg-card">
                         {(suppliers.length > 0 ? suppliers : []).map((s) => (
                           <SelectItem key={s.id} value={s.id} className="text-sm">
                             {s.name}
@@ -376,14 +371,14 @@ export function PurchaseOrderEngineForm() {
                       <SelectTrigger
                         size="sm"
                         className={cn(
-                          "h-8 w-full border-slate-200 bg-card text-sm text-foreground",
+                          "h-8 w-full border-border bg-card text-sm text-foreground",
                           formState.errors.projectId && "border-red-300"
                         )}
                         aria-invalid={!!formState.errors.projectId}
                       >
                         <SelectValue placeholder="בחרו פרויקט" />
                       </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-card">
+                      <SelectContent className="border border-border bg-card">
                         {(projects.length > 0 ? projects : []).map((p) => (
                           <SelectItem key={p.id} value={p.id} className="text-sm">
                             {p.name}
@@ -426,16 +421,16 @@ export function PurchaseOrderEngineForm() {
             </h2>
             {projectInsights ? (
               <dl className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-slate-100 bg-background/80 px-3 py-2">
-                  <dt className="text-[11px] font-medium text-slate-500">
+                <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+                  <dt className="text-[11px] font-medium text-muted-foreground">
                     תקציב מאושר
                   </dt>
                   <dd className="mt-1 text-sm font-bold tabular-nums text-foreground">
                     {formatNis(projectInsights.approvedNis)}
                   </dd>
                 </div>
-                <div className="rounded-lg border border-slate-100 bg-background/80 px-3 py-2">
-                  <dt className="text-[11px] font-medium text-slate-500">
+                <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+                  <dt className="text-[11px] font-medium text-muted-foreground">
                     נוצל עד כה
                   </dt>
                   <dd className="mt-1 text-sm font-bold tabular-nums text-foreground">
@@ -460,11 +455,11 @@ export function PurchaseOrderEngineForm() {
         </div>
 
         {/* 3. Power grid — line items */}
-        <section className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm md:p-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-sm md:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
             <div>
               <h2 className="text-sm font-bold text-foreground">שורות הזמנה</h2>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-muted-foreground">
                 רשת שורות — פריט, כמות, מחיר, הערות, סה״כ
               </p>
             </div>
@@ -472,7 +467,7 @@ export function PurchaseOrderEngineForm() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-slate-200 bg-card text-xs text-slate-800"
+              className="h-8 border-border bg-card text-xs text-foreground"
               onClick={() =>
                 append({
                   catalogItemId: "",
@@ -487,10 +482,10 @@ export function PurchaseOrderEngineForm() {
             </Button>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-card">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-background text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                <tr className="border-b border-border bg-background text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   <th className={cn(cellPad, "min-w-[200px]")}>פריט</th>
                   <th className={cn(cellPad, "w-24")}>כמות</th>
                   <th className={cn(cellPad, "w-28")}>מחיר יחידה</th>
@@ -512,7 +507,7 @@ export function PurchaseOrderEngineForm() {
                   return (
                     <tr
                       key={fieldRow.id}
-                      className="border-b border-slate-100 last:border-b-0"
+                      className="border-b border-border/70 last:border-b-0"
                     >
                       <td className={cellPad}>
                         <Controller
@@ -525,7 +520,7 @@ export function PurchaseOrderEngineForm() {
                             >
                               <SelectTrigger
                                 size="sm"
-                                className="h-8 w-full border-slate-200 bg-card text-sm text-foreground"
+                                className="h-8 w-full border-border bg-card text-sm text-foreground"
                                 aria-invalid={
                                   !!formState.errors.lines?.[index]
                                     ?.catalogItemId
@@ -533,7 +528,7 @@ export function PurchaseOrderEngineForm() {
                               >
                                 <SelectValue placeholder="בחרו פריט" />
                               </SelectTrigger>
-                              <SelectContent className="border border-slate-200 bg-card">
+                              <SelectContent className="border border-border bg-card">
                                 {(items.length > 0 ? items : []).map((c) => (
                                   <SelectItem
                                     key={c.id}
@@ -541,7 +536,7 @@ export function PurchaseOrderEngineForm() {
                                     className="text-sm"
                                   >
                                     <span className="font-medium">{c.description}</span>
-                                    <span className="mr-2 text-slate-500">
+                                    <span className="mr-2 text-muted-foreground">
                                       ({c.itemNumber})
                                     </span>
                                   </SelectItem>
@@ -621,8 +616,8 @@ export function PurchaseOrderEngineForm() {
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               className={cn(
-                                "inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-transparent text-slate-600 outline-none transition-colors",
-                                "hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-500/25"
+                                "inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-transparent outline-none transition-colors",
+                                "text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/30"
                               )}
                               aria-label="תפריט פעולות שורה"
                             >
@@ -630,21 +625,21 @@ export function PurchaseOrderEngineForm() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="min-w-[14rem] border border-slate-200 bg-card text-sm text-foreground shadow-md"
+                              className="min-w-[14rem] border border-border bg-card text-sm text-foreground shadow-md"
                             >
                               <DropdownMenuItem
                                 disabled
-                                className="text-slate-500"
+                                className="text-muted-foreground"
                               >
                                 היסטוריית מחירים לפריט
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 disabled
-                                className="text-slate-500"
+                                className="text-muted-foreground"
                               >
                                 בדיקת מלאי
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-slate-200" />
+                              <DropdownMenuSeparator className="bg-border" />
                               <DropdownMenuItem
                                 variant="destructive"
                                 disabled={fields.length <= 1}
@@ -658,7 +653,7 @@ export function PurchaseOrderEngineForm() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="size-8 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                            className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                             disabled={fields.length <= 1}
                             onClick={() => remove(index)}
                             aria-label="מחיקת שורה"
@@ -683,13 +678,13 @@ export function PurchaseOrderEngineForm() {
         </section>
 
         {/* 4. Control footer — totals + budget context */}
-        <section className="rounded-xl border border-slate-200 bg-background/50 p-4 md:p-5">
+        <section className="rounded-xl border border-border bg-background/50 p-4 md:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-bold text-slate-800">סיכום כספי ובקרה</p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs font-bold text-foreground">סיכום כספי ובקרה</p>
+              <p className="text-[11px] text-muted-foreground">
                 תקרת אישור להזמנה (דמו):{" "}
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-foreground">
                   {formatNis(PROJECT_BUDGET_LIMIT_NIS)}
                 </span>
                 {overBudget ? (
@@ -700,20 +695,20 @@ export function PurchaseOrderEngineForm() {
               </p>
             </div>
 
-            <div className="w-full max-w-sm space-y-2 rounded-lg border border-slate-200 bg-card p-4 text-sm shadow-sm">
-              <div className="flex justify-between gap-4 text-slate-600">
+            <div className="w-full max-w-sm space-y-2 rounded-lg border border-border bg-card p-4 text-sm shadow-sm">
+              <div className="flex justify-between gap-4 text-muted-foreground">
                 <span>סכום ביניים (לפני מע״מ)</span>
                 <span className="tabular-nums font-medium text-foreground">
                   {formatNis(subtotal)}
                 </span>
               </div>
-              <div className="flex justify-between gap-4 text-slate-600">
+              <div className="flex justify-between gap-4 text-muted-foreground">
                 <span>מע״מ ({Math.round(PO_ENGINE_VAT_RATE * 100)}%)</span>
                 <span className="tabular-nums font-medium text-foreground">
                   {formatNis(vatAmount)}
                 </span>
               </div>
-              <div className="border-t border-slate-200 pt-2">
+              <div className="border-t border-border pt-2">
                 <div className="flex justify-between gap-4">
                   <span className="font-bold text-foreground">סה״כ לתשלום</span>
                   <span
@@ -730,7 +725,7 @@ export function PurchaseOrderEngineForm() {
           </div>
         </section>
 
-        <p className="text-center text-[11px] text-slate-500">
+        <p className="text-center text-[11px] text-muted-foreground">
           שליחת &quot;שלח לאישור מנכ״ל&quot; מאמתת את הטופס ומדפיסה לקונסול (אין שמירת DB
           בשלב זה).
         </p>

@@ -6,7 +6,7 @@ import { TechnicalCatalogWorkspace } from "@/components/marker-ofek/catalog/tech
 export const metadata: Metadata = {
   title: "קטלוג פריטים טכני (מאסטר)",
   description:
-    "Phase 2 — מרחב עבודה Master-Detail לקטלוג מאסטר (Priority-style)",
+    "Phase 2 — מרחב עבודה Master-Detail לקטלוג מאסטר",
 }
 
 function CatalogFallback() {

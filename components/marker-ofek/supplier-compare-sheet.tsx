@@ -12,7 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 
 type SupplierRow = {
@@ -20,7 +20,7 @@ type SupplierRow = {
   supplier_sku: string | null
   unit_price: number
   discount_pct: number
-  last_updated: string
+  last_updated: string | null
   entities: unknown
 }
 
@@ -99,24 +99,46 @@ export function SupplierCompareSheet({
       setLoading(true)
       setError(null)
       try {
-        const supabase = createSupabaseBrowserClient()
-        const { data, error: qErr } = await supabase
-          .from("supplier_items")
-          .select(
-            "id, supplier_sku, unit_price, discount_pct, last_updated, entities ( name )"
+        const [supplierItems, suppliers] = await Promise.all([
+          masterDataFetch<
+            Array<{
+              id: string
+              supplierId: string
+              supplierSku: string | null
+              basePrice: number
+              discountPercentage: number
+              aiLastParsedAt: string | null
+              validFrom: string | null
+            }>
+          >(`/api/erp/master-data/supplier-items?itemId=${masterItemId}`),
+          masterDataFetch<Array<{ id: string; name: string }>>(
+            "/api/erp/master-data/suppliers"
+          ),
+        ])
+        const supplierNameMap = new Map(
+          suppliers.map((supplier) => [supplier.id, supplier.name])
+        )
+        if (!cancelled) {
+          setRows(
+            supplierItems
+              .map((row) => ({
+                id: row.id,
+                supplier_sku: row.supplierSku,
+                unit_price: Number(row.basePrice ?? 0),
+                discount_pct: Number(row.discountPercentage ?? 0),
+                last_updated: row.aiLastParsedAt ?? row.validFrom,
+                entities: { name: supplierNameMap.get(row.supplierId) ?? "—" },
+              }))
+              .sort((a, b) => a.unit_price - b.unit_price)
           )
-          .eq("master_item_id", masterItemId)
-          .order("unit_price", { ascending: true })
-
-        if (qErr) throw qErr
-        if (!cancelled) setRows((data as SupplierRow[]) ?? [])
+        }
       } catch (e) {
         if (!cancelled) {
           setRows([])
           setError(
             e instanceof Error
               ? e.message
-              : "טעינת ספקים נכשלה — ודאו שקיימת טבלת supplier_items"
+              : "טעינת ספקים נכשלה — בדקו הגדרות מאסטר דאטה"
           )
         }
       } finally {

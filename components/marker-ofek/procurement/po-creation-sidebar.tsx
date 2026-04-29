@@ -102,11 +102,11 @@ function Tile({
       dir="rtl"
     >
       <header className="mb-2 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-700">
-          <span className="text-slate-500">{icon}</span>
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+          <span className="text-muted-foreground">{icon}</span>
           {title}
         </p>
-        {loading ? <Loader2 className="size-3.5 animate-spin text-slate-500" /> : null}
+        {loading ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" /> : null}
       </header>
       {children}
     </section>
@@ -223,7 +223,7 @@ function useBudgetRemaining(input: {
     void (async () => {
       try {
         const payload = await apiGet<z.infer<typeof projectProfitabilitySchema>>(
-          `/api/projects/${projectId}/profitability`,
+          `/api/erp/projects/${projectId}/profitability`,
           { schema: projectProfitabilitySchema, signal: controller.signal }
         )
         if (controller.signal.aborted) return
@@ -304,7 +304,7 @@ export function PoCreationSidebar({
         tone="tint"
       >
         {!supplierId ? (
-          <p className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-2 py-2 text-[11px] text-slate-500">
+          <p className="rounded-xl border border-dashed border-border bg-card/60 px-2 py-2 text-[11px] text-muted-foreground">
             בחרו ספק להצגת בריאות התקשרות.
           </p>
         ) : vendor.error ? (
@@ -313,25 +313,25 @@ export function PoCreationSidebar({
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-xl border border-slate-200 bg-card p-2">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-border bg-card p-2">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Credit Score
               </p>
               <p className="font-mono font-semibold text-foreground">
                 {creditScore > 0 ? creditScore.toFixed(1) : "—"}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-card p-2">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-border bg-card p-2">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 On-Time Delivery
               </p>
               <p className="font-mono font-semibold text-foreground">
                 {onTimePct > 0 ? `${onTimePct.toFixed(1)}%` : "—"}
               </p>
             </div>
-            <div className="col-span-2 flex items-center justify-between rounded-xl border border-slate-200 bg-card p-2 text-[11px]">
-              <span className="text-slate-500">Payment Terms</span>
-              <span className="font-mono text-slate-800">
+            <div className="col-span-2 flex items-center justify-between rounded-xl border border-border bg-card p-2 text-[11px]">
+              <span className="text-muted-foreground">Payment Terms</span>
+              <span className="font-mono text-foreground">
                 {vendor.data?.paymentTerms ?? "—"}
               </span>
             </div>
@@ -361,7 +361,7 @@ export function PoCreationSidebar({
         loading={budget.loading}
       >
         {!projectId ? (
-          <p className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-2 py-2 text-[11px] text-slate-500">
+          <p className="rounded-xl border border-dashed border-border bg-card/60 px-2 py-2 text-[11px] text-muted-foreground">
             בחרו פרויקט להצגת יתרה תקציבית.
           </p>
         ) : budget.error ? (
@@ -373,7 +373,7 @@ export function PoCreationSidebar({
             <p className="font-mono text-sm font-semibold text-foreground">
               {formatIls1Decimal(budget.data.remaining)}
             </p>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
@@ -386,31 +386,31 @@ export function PoCreationSidebar({
                 style={{ width: `${Math.round(budgetRatio * 100)}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
               <span>
                 Budget:{" "}
-                <span className="font-mono text-slate-700">
+                <span className="font-mono text-foreground">
                   {formatIls1Decimal(budget.data.budget)}
                 </span>
               </span>
               <span>
                 Committed:{" "}
-                <span className="font-mono text-slate-700">
+                <span className="font-mono text-foreground">
                   {formatIls1Decimal(budget.data.actual)}
                 </span>
               </span>
             </div>
             {budgetSubChapter || resourceId ? (
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-muted-foreground">
                 Scope:{" "}
-                <span className="font-mono text-slate-700">
+                <span className="font-mono text-foreground">
                   {budgetSubChapter ?? "—"} / {resourceId ?? "—"}
                 </span>
               </p>
             ) : null}
           </div>
         ) : (
-          <p className="text-[11px] text-slate-500">אין נתוני תקציב.</p>
+          <p className="text-[11px] text-muted-foreground">אין נתוני תקציב.</p>
         )}
       </Tile>
 
@@ -420,7 +420,7 @@ export function PoCreationSidebar({
         loading={history.loading}
       >
         {!itemId ? (
-          <p className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-2 py-2 text-[11px] text-slate-500">
+          <p className="rounded-xl border border-dashed border-border bg-card/60 px-2 py-2 text-[11px] text-muted-foreground">
             בחרו פריט להצגת היסטוריית מחירים.
           </p>
         ) : history.error ? (
@@ -430,24 +430,24 @@ export function PoCreationSidebar({
         ) : history.data ? (
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2 text-[11px]">
-              <div className="rounded-xl border border-slate-200 bg-card p-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">
+              <div className="rounded-xl border border-border bg-card p-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   Avg
                 </p>
                 <p className="font-mono font-semibold text-foreground">
                   {formatIls1Decimal(history.data.avgPrice)}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-card p-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">
+              <div className="rounded-xl border border-border bg-card p-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   Last
                 </p>
                 <p className="font-mono font-semibold text-foreground">
                   {formatIls1Decimal(history.data.lastPaidPrice)}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-card p-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">
+              <div className="rounded-xl border border-border bg-card p-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   Samples
                 </p>
                 <p className="font-mono font-semibold text-foreground">
@@ -485,13 +485,13 @@ export function PoCreationSidebar({
                 ) : null}
               </div>
             ) : (
-              <p className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-2 py-1.5 text-[11px] text-slate-500">
+              <p className="rounded-xl border border-dashed border-border bg-card/60 px-2 py-1.5 text-[11px] text-muted-foreground">
                 הזינו מחיר יחידה להשוואה מול הממוצע ההיסטורי.
               </p>
             )}
           </div>
         ) : (
-          <p className="text-[11px] text-slate-500">אין נתונים היסטוריים.</p>
+          <p className="text-[11px] text-muted-foreground">אין נתונים היסטוריים.</p>
         )}
       </Tile>
     </div>

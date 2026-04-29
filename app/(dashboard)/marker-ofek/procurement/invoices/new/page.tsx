@@ -568,9 +568,9 @@ export default function NewInvoiceAiPage() {
           העלאת PDF או תמונה — חילוץ שדות ב־Gemini 2.5 Flash ושמירה ב־
           <code className="rounded bg-muted px-1 text-xs">invoices</code>{" "}
           + upsert לטבלאות{" "}
-          <code className="rounded bg-muted px-1 text-xs">items_catalog</code>{" "}
+          <code className="rounded bg-muted px-1 text-xs">erp_md_items</code>{" "}
           ו־
-          <code className="rounded bg-muted px-1 text-xs">supplier_items</code>
+          <code className="rounded bg-muted px-1 text-xs">erp_md_supplier_items</code>
           .
         </p>
       </header>

@@ -109,7 +109,7 @@ export function ItemsWorkspaceClient() {
   const loadItems = React.useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     try {
-      const rows = await requestData<ItemRecord[]>("/api/items", itemRecordsSchema, { signal })
+      const rows = await requestData<ItemRecord[]>("/api/erp/master-data/items", itemRecordsSchema, { signal })
       if (signal?.aborted) return
       setItems(rows)
       setSelectedId((prev) => prev ?? rows[0]?.id ?? null)
@@ -126,7 +126,7 @@ export function ItemsWorkspaceClient() {
   const loadDetail = React.useCallback(async (id: string, signal?: AbortSignal) => {
     setLoadingDetail(true)
     try {
-      const item = await requestData<ItemRecord>(`/api/items/${id}`, itemRecordSchema, { signal })
+      const item = await requestData<ItemRecord>(`/api/erp/master-data/items/${id}`, itemRecordSchema, { signal })
       if (signal?.aborted) return
       setSelected(item)
       setDraft(item)
@@ -174,7 +174,7 @@ export function ItemsWorkspaceClient() {
     if (!draft) return
     setSaving(true)
     try {
-      await requestData(`/api/items/${draft.id}`, z.any(), {
+      await requestData(`/api/erp/master-data/items/${draft.id}`, z.any(), {
         method: "PUT",
         body: JSON.stringify({
           description: draft.description,
@@ -202,7 +202,7 @@ export function ItemsWorkspaceClient() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <EntityWorkspace
         title="פריטים - Workspace"
         description="Master Grid צפוף עם אזור Detail טאבס מוטמע."

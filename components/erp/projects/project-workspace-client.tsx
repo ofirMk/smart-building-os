@@ -165,7 +165,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   const loadProject = React.useCallback(async () => {
     setLoadingProject(true)
     try {
-      const result = await requestJson<ApiResponse<ErpProject>>(`/api/projects/${projectId}`)
+      const result = await requestJson<ApiResponse<ErpProject>>(`/api/erp/projects/${projectId}`)
       setProject(result.data)
       projectForm.reset({
         projectNumber: result.data.projectNumber,
@@ -187,7 +187,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   const loadVersions = React.useCallback(async () => {
     setLoadingVersions(true)
     try {
-      const result = await requestJson<ApiResponse<ErpPlanningVersion[]>>(`/api/projects/${projectId}/versions`)
+      const result = await requestJson<ApiResponse<ErpPlanningVersion[]>>(`/api/erp/projects/${projectId}/versions`)
       const rows = result.data ?? []
       setVersions(rows)
       setSelectedVersionId((prev) => {
@@ -249,7 +249,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   async function saveProject(values: ProjectInput) {
     setSavingProject(true)
     try {
-      await requestJson<ApiResponse<ErpProject>>(`/api/projects/${projectId}`, {
+      await requestJson<ApiResponse<ErpProject>>(`/api/erp/projects/${projectId}`, {
         method: "PUT",
         body: JSON.stringify(values),
       })
@@ -265,7 +265,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   async function approveProject() {
     setSavingProject(true)
     try {
-      await requestJson<ApiResponse<ErpProject>>(`/api/projects/${projectId}`, {
+      await requestJson<ApiResponse<ErpProject>>(`/api/erp/projects/${projectId}`, {
         method: "PUT",
         body: JSON.stringify({ status: "ACTIVE" }),
       })
@@ -281,7 +281,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   async function applyStatusChange() {
     setSavingProject(true)
     try {
-      await requestJson<ApiResponse<ErpProject>>(`/api/projects/${projectId}`, {
+      await requestJson<ApiResponse<ErpProject>>(`/api/erp/projects/${projectId}`, {
         method: "PUT",
         body: JSON.stringify({ status: statusDraft }),
       })
@@ -297,7 +297,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   async function createVersion(values: CreatePlanningVersionInput) {
     setCreatingVersion(true)
     try {
-      const result = await requestJson<ApiResponse<ErpPlanningVersion>>(`/api/projects/${projectId}/versions`, {
+      const result = await requestJson<ApiResponse<ErpPlanningVersion>>(`/api/erp/projects/${projectId}/versions`, {
         method: "POST",
         body: JSON.stringify(values),
       })
@@ -372,7 +372,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div dir="rtl" className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC] px-2 py-2 md:px-3">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC] px-2 py-2 md:px-3">
       <div className="flex w-full max-w-none flex-col gap-2">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           {loadingProject ? (

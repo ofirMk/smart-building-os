@@ -37,7 +37,7 @@ export default async function FieldSnagsPage({ params }: PageProps) {
     ),
   ]
 
-  let nameByEntity = new Map<string, string>()
+  const nameByEntity = new Map<string, string>()
   if (entityIds.length > 0) {
     const { data: ents } = await supabase
       .schema("public")

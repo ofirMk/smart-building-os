@@ -414,7 +414,7 @@ export function InvoiceGeneratorClient({
   return (
     <div
       className={cn(
-        "flex min-h-[calc(100dvh-4rem)] flex-col",
+        "flex flex-1 min-h-0 flex-col",
         diamond ? "bg-slate-950 text-slate-100" : "bg-card"
       )}
       dir="rtl"
@@ -478,7 +478,7 @@ export function InvoiceGeneratorClient({
               : "border-slate-100 bg-background/50"
           )}
         >
-          <div className="sticky top-0 flex h-full min-h-[560px] flex-col p-4 lg:min-h-[calc(100dvh-12rem)]">
+          <div className="sticky top-0 flex h-full min-h-[560px] flex-col p-4 lg:min-h-0">
             <p
               className={cn(
                 "mb-2 text-center text-[10px] font-semibold tracking-wide",

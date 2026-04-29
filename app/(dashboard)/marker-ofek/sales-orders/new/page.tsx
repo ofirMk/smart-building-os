@@ -42,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { createSalesOrderAction } from "@/lib/marker-ofek/sales-order-actions"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn, formatError } from "@/lib/utils"
 
 type ClientRow = { id: string; name: string }
@@ -109,11 +110,12 @@ export default function NewSalesOrderPage() {
             .eq("is_deleted", false)
             .order("name", { ascending: true })
             .limit(800),
-          supabase
-            .from("items_catalog")
-            .select("id, sku, description")
-            .order("description", { ascending: true })
-            .limit(3000),
+          Promise.resolve({
+            data: await masterDataFetch<Array<{ id: string; sku: string; description: string }>>(
+              "/api/erp/master-data/items"
+            ),
+            error: null,
+          }),
         ])
         if (c.error) throw c.error
         if (p.error) throw p.error

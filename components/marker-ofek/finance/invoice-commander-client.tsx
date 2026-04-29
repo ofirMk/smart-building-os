@@ -702,7 +702,7 @@ export function InvoiceCommanderClient({
 
   return (
     <div
-      className="flex min-h-[calc(100dvh-4rem)] flex-col bg-slate-950 text-slate-100"
+      className="flex flex-1 min-h-0 flex-col bg-slate-950 text-slate-100"
       dir="rtl"
     >
       <header className="shrink-0 border-b border-slate-800 bg-slate-950 px-5 py-4 lg:px-8">
@@ -1095,13 +1095,13 @@ export function InvoiceCommanderClient({
 
         {/* תצוגת A4 — דסקטופ שמאל (~58%) */}
         <main className="order-1 flex min-h-[42vh] flex-col bg-slate-950 lg:order-2 lg:min-h-0 lg:flex-1 lg:basis-[58%]">
-          <div className="sticky top-0 z-10 flex flex-col gap-3 p-5 lg:max-h-[calc(100dvh-8rem)] lg:overflow-hidden lg:p-6">
+          <div className="sticky top-0 z-10 flex flex-col gap-3 p-5 lg:max-h-full lg:overflow-hidden lg:p-6">
             <p className="text-center text-xs font-medium tracking-wide text-slate-500 lg:text-start">
               תצוגה חיה · A4
             </p>
             <div className="flex flex-1 items-start justify-center overflow-auto pb-4 lg:min-h-0 lg:items-stretch lg:pb-0">
               <div
-                className="w-full max-w-[min(100%,520px)] overflow-hidden rounded-sm border border-slate-600/40 bg-card shadow-2xl shadow-black/40 lg:max-h-[calc(100dvh-11rem)]"
+                className="w-full max-w-[min(100%,520px)] overflow-hidden rounded-sm border border-slate-600/40 bg-card shadow-2xl shadow-black/40 lg:max-h-full"
                 style={{ aspectRatio: "210 / 297" }}
               >
                 <div className="h-full min-h-[380px] w-full">

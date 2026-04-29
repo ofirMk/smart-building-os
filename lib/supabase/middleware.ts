@@ -41,8 +41,7 @@ function isMarkerOfekErpPath(pathname: string): boolean {
  */
 function isSensitiveInternalApiPath(pathname: string): boolean {
   const prefixes = [
-    "/api/holden-erp",
-    "/api/purchase-orders",
+    "/api/erp/holden",
     "/api/ocr-invoice",
     "/api/hr/analyze-contract",
     "/api/hr-onboarding-chat",

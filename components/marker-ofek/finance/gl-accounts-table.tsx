@@ -39,7 +39,7 @@ export function GlAccountsTable({ initialAccounts }: GlAccountsTableProps) {
   }, [initialAccounts, searchTerm, filterGroup])
 
   return (
-    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm">
       <div className="flex flex-col items-center justify-between gap-4 border-b border-slate-200 bg-background p-4 sm:flex-row">
         <div className="relative w-full sm:w-72">
           <Search className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />

@@ -1,9 +1,11 @@
 "use server"
 
+import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { addDays, format } from "date-fns"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
+import { COMPANY_COOKIE_KEY } from "@/lib/company-context"
 import { isProjectInManagingPartnerScope } from "@/lib/marker-ofek/effective-managing-partner-scope"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { calculateTaskDates, canonicalWbsFlatIds } from "@/lib/marker-ofek/wbs-schedule"
@@ -182,7 +184,8 @@ function safeParseGeneratedWbs(text: string): GeneratedWbs | null {
 async function insertGeneratedWbs(
   supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
   projectId: string,
-  generated: GeneratedWbs
+  generated: GeneratedWbs,
+  companyId: string
 ) {
   const today = format(new Date(), "yyyy-MM-dd")
   let cursor = today
@@ -198,6 +201,7 @@ async function insertGeneratedWbs(
       .from("tasks")
       .insert({
         project_id: projectId,
+        company_id: companyId,
         parent_id: null,
         name: phaseName,
         start_date: phaseStart,
@@ -224,6 +228,7 @@ async function insertGeneratedWbs(
         .from("tasks")
         .insert({
           project_id: projectId,
+          company_id: companyId,
           parent_id: String(phaseRow.id),
           name: wpName,
           start_date: wpStart,
@@ -246,6 +251,7 @@ async function insertGeneratedWbs(
           .from("tasks")
           .insert({
             project_id: projectId,
+            company_id: companyId,
             parent_id: String(wpRow.id),
             name: taskName,
             start_date: tStart,
@@ -268,6 +274,13 @@ async function insertGeneratedWbs(
 }
 
 const FS_HOLIDAYS = new Set<string>()
+
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const id = cookieStore.get(COMPANY_COOKIE_KEY)?.value?.trim()
+  if (!id) throw new Error("חסר הקשר חברה בסשן")
+  return id
+}
 
 function ganttTasksToScheduleTasks(tasks: GanttTaskRow[]) {
   return tasks.map((t) => ({
@@ -1394,6 +1407,7 @@ export async function createTask(input: CreateTaskInput) {
   }
 
   const supabase = await createSupabaseServerAuthClient()
+  const companyId = await resolveActiveCompanyId()
   const parentIdNorm = parentId || null
   const { data: sibRows, error: sibErr } = await supabase
     .schema("public")
@@ -1422,6 +1436,7 @@ export async function createTask(input: CreateTaskInput) {
     .from("tasks")
     .insert({
       project_id: projectId,
+      company_id: companyId,
       parent_id: parentIdNorm,
       parent_task_id: null,
       subcontractor_id: null,
@@ -1471,6 +1486,7 @@ export async function createDerivativeTask(input: {
   if (!name) throw new Error("שם משימה חובה")
 
   const supabase = await createSupabaseServerAuthClient()
+  const companyId = await resolveActiveCompanyId()
   const projectTasks = await fetchProjectTasks(projectId)
   const master = projectTasks.find((t) => t.id === masterTaskId)
   if (!master) throw new Error("משימת מאסטר לא נמצאה בפרויקט")
@@ -1521,6 +1537,7 @@ export async function createDerivativeTask(input: {
     .from("tasks")
     .insert({
       project_id: projectId,
+      company_id: companyId,
       parent_id: wbsParentId,
       parent_task_id: masterTaskId,
       subcontractor_id: subcontractorId,
@@ -1618,6 +1635,7 @@ export async function groupTasksAsHammock(input: {
   if (taskIds.length < 2) throw new Error("יש לבחור לפחות שתי משימות לקיבוץ")
 
   const supabase = await createSupabaseServerAuthClient()
+  const companyId = await resolveActiveCompanyId()
   const tasks = await fetchProjectTasks(projectId)
   const selected = tasks.filter((t) => taskIds.includes(t.id))
   if (selected.length < 2) throw new Error("לא נמצאו משימות תקינות לקיבוץ")
@@ -1640,6 +1658,7 @@ export async function groupTasksAsHammock(input: {
     .from("tasks")
     .insert({
       project_id: projectId,
+      company_id: companyId,
       parent_id: null,
       name,
       description: "משימת ערסל (קיבוץ אוטומטי)",
@@ -2370,7 +2389,8 @@ ${milestoneNames.slice(0, 120).map((n) => `- ${n}`).join("\n")}
     }
   }
 
-  await insertGeneratedWbs(supabase, projectIdTrim, generated)
+  const companyId = await resolveActiveCompanyId()
+  await insertGeneratedWbs(supabase, projectIdTrim, generated, companyId)
   await recalculateWbsSchedule(projectIdTrim)
   revalidatePath(`/marker-ofek/execution/gantt/${projectIdTrim}`)
   revalidatePath(`/marker-ofek/projects/${projectIdTrim}`)

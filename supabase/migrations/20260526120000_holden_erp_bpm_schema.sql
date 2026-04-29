@@ -35,7 +35,13 @@ comment on column public.partial_accounts.counterparty_entity_id is 'ישות נ
 -- ---------------------------------------------------------------------------
 do $$
 begin
-  if not exists (
+  if exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'mo_partial_account_status'
+  ) and not exists (
     select 1
     from pg_enum e
     join pg_type t on e.enumtypid = t.oid
@@ -43,6 +49,14 @@ begin
       and e.enumlabel = 'sent'
   ) then
     alter type public.mo_partial_account_status add value 'sent';
+  elsif not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'mo_partial_account_status'
+  ) then
+    raise notice 'Skipping mo_partial_account_status enum update: type public.mo_partial_account_status does not exist';
   end if;
 end
 $$;

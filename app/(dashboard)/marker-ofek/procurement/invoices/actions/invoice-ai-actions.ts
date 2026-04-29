@@ -5,12 +5,14 @@
  */
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 
 import { extractModelJsonPayload } from "@/lib/ocr-invoice/parse-model-json"
 import { formatError } from "@/lib/format-error"
 import {
   isMissingSuppliersLegalIdColumnError,
 } from "@/lib/marker-ofek/supabase-fields"
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 
@@ -215,6 +217,26 @@ type ExtractedInvoiceFields = {
   items: unknown[]
 }
 
+function toInvoiceAiItem(raw: unknown): InvoiceAiItem {
+  const row =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {}
+  const quantity = num(row.quantity) || 1
+  const unitPrice = num(row.unit_price) || num(row.price)
+  return {
+    description: String(row.description ?? "").trim() || "ללא תיאור",
+    supplier_sku:
+      row.supplier_sku == null ? null : String(row.supplier_sku).trim() || null,
+    quantity,
+    unit_price: unitPrice,
+    total_price:
+      num(row.total_price) ||
+      num(row.amount) ||
+      Math.round(quantity * unitPrice * 100) / 100,
+  }
+}
+
 async function removeInvoiceSourceFile(
   supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
   bucket: string,
@@ -224,11 +246,13 @@ async function removeInvoiceSourceFile(
 }
 
 async function getNextInternalSkuNumber(
-  db: ReturnType<ReturnType<typeof createSupabaseServiceRoleClient>["schema"]>
+  db: ReturnType<ReturnType<typeof createSupabaseServiceRoleClient>["schema"]>,
+  companyId: string
 ): Promise<number> {
   const readRecent = await db
-    .from("items_catalog")
+    .from("erp_md_items")
     .select("internal_sku")
+    .eq("company_id", companyId)
     .order("created_at", { ascending: false })
     .limit(500)
 
@@ -257,6 +281,7 @@ function isUniqueViolation(err: { code?: string | null; message?: string | null 
 async function createCatalogItemWithRetry(
   db: ReturnType<ReturnType<typeof createSupabaseServiceRoleClient>["schema"]>,
   params: {
+    companyId: string
     sequenceStart: number
     description: string
     unit: string
@@ -271,15 +296,22 @@ async function createCatalogItemWithRetry(
     const skuNum = params.sequenceStart + offset
     const internalSku = formatSequentialInternalSku(skuNum)
     const created = await db
-      .from("items_catalog")
+      .from("erp_md_items")
       .insert({
+        company_id: params.companyId,
         internal_sku: internalSku,
-        sku: internalSku,
+        item_number: internalSku,
         description: params.description,
-        unit: params.unit,
-        default_price: params.unitPrice,
-        last_price: params.unitPrice,
-        is_inventory: true,
+        unit_of_measure: params.unit,
+        is_inventory_managed: true,
+        status: "ACTIVE",
+        ai_metadata: {
+          source: "invoice_ai",
+          unit_price: params.unitPrice,
+        },
+        ocr_match_tokens: toOcrTokens([params.description, internalSku]),
+        legacy_default_price: params.unitPrice,
+        legacy_last_price: params.unitPrice,
       })
       .select("id")
       .single()
@@ -299,15 +331,22 @@ async function createCatalogItemWithRetry(
   // Fallback only if many concurrent collisions happened.
   const fallbackSku = `MKT-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`
   const fallback = await db
-    .from("items_catalog")
+    .from("erp_md_items")
     .insert({
+      company_id: params.companyId,
       internal_sku: fallbackSku,
-      sku: fallbackSku,
+      item_number: fallbackSku,
       description: params.description,
-      unit: params.unit,
-      default_price: params.unitPrice,
-      last_price: params.unitPrice,
-      is_inventory: true,
+      unit_of_measure: params.unit,
+      is_inventory_managed: true,
+      status: "ACTIVE",
+      ai_metadata: {
+        source: "invoice_ai_fallback",
+        unit_price: params.unitPrice,
+      },
+      ocr_match_tokens: toOcrTokens([params.description, fallbackSku]),
+      legacy_default_price: params.unitPrice,
+      legacy_last_price: params.unitPrice,
     })
     .select("id")
     .single()
@@ -424,6 +463,25 @@ function parseTrailingNumber(value: string | null | undefined): number {
   return Number(m[1] ?? "0") || 0
 }
 
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const companyId = resolveCompanyContext(cookieStore.get(COMPANY_COOKIE_KEY)?.value)
+  if (!companyId) {
+    throw new Error("Missing active company context")
+  }
+  return companyId
+}
+
+function toOcrTokens(values: Array<string | null | undefined>): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => String(value ?? "").trim())
+        .filter((value) => value.length > 0)
+    )
+  )
+}
+
 type ProcessedInvoiceLine = {
   lineIndex: number
   description: string
@@ -495,6 +553,7 @@ export async function processInvoiceAI(
   const mimeForPart = mime === "image/jpg" ? "image/jpeg" : mime
   const admin = createSupabaseServiceRoleClient()
   const db = admin.schema("public")
+  const companyId = await resolveActiveCompanyId()
   const historyProjectId = formProjectId || explicitProjectId || ""
   const history =
     historyProjectId && Number.isFinite(currentAccountNum)
@@ -668,7 +727,7 @@ export async function processInvoiceAI(
   let updatedItems = 0
   let newItemsAdded = 0
   let updatedSkus = 0
-  let nextInternalSkuNumber = await getNextInternalSkuNumber(db)
+  let nextInternalSkuNumber = await getNextInternalSkuNumber(db, companyId)
   const processedLines: ProcessedInvoiceLine[] = []
   const priceIncreases: Array<{
     lineIndex: number
@@ -699,18 +758,17 @@ export async function processInvoiceAI(
     // a) מיפוי ספק קיים לפי (supplier_id + supplier_sku)
     if (supplierId && normalizedSupplierSku) {
       const mapExisting = await db
-        .from("supplier_items")
-        .select("id, master_item_id, unit_price, last_price")
+        .from("erp_md_supplier_items")
+        .select("id, item_id, base_price")
+        .eq("company_id", companyId)
         .eq("supplier_id", supplierId)
         .eq("supplier_sku", normalizedSupplierSku)
         .maybeSingle()
-      if (!mapExisting.error && mapExisting.data?.master_item_id) {
+      if (!mapExisting.error && mapExisting.data?.item_id) {
         supplierItemId = String(mapExisting.data.id)
-        catalogId = String(mapExisting.data.master_item_id)
+        catalogId = String(mapExisting.data.item_id)
         supplierSku = normalizedSupplierSku
-        previousPrice = Number(
-          mapExisting.data.last_price ?? mapExisting.data.unit_price ?? 0
-        )
+        previousPrice = Number(mapExisting.data.base_price ?? 0)
       }
     }
 
@@ -719,8 +777,9 @@ export async function processInvoiceAI(
       const candidateInternalSku =
         normalizedSupplierSku || safeInternalSku(description, i)
       const byInternalSku = await db
-        .from("items_catalog")
-        .select("id, internal_sku, default_price, last_price")
+        .from("erp_md_items")
+        .select("id, internal_sku, legacy_default_price, legacy_last_price")
+        .eq("company_id", companyId)
         .eq("internal_sku", candidateInternalSku)
         .limit(1)
         .maybeSingle()
@@ -730,15 +789,16 @@ export async function processInvoiceAI(
           byInternalSku.data.internal_sku ?? candidateInternalSku
         )
         previousPrice = Number(
-          byInternalSku.data.last_price ?? byInternalSku.data.default_price ?? 0
+          byInternalSku.data.legacy_last_price ?? byInternalSku.data.legacy_default_price ?? 0
         )
       }
     }
 
     if (!catalogId) {
       const byDesc = await db
-        .from("items_catalog")
-        .select("id, internal_sku, default_price, last_price")
+        .from("erp_md_items")
+        .select("id, internal_sku, legacy_default_price, legacy_last_price")
+        .eq("company_id", companyId)
         .ilike("description", description)
         .limit(1)
         .maybeSingle()
@@ -748,7 +808,7 @@ export async function processInvoiceAI(
           byDesc.data.internal_sku ?? safeInternalSku(description, i)
         )
         previousPrice = Number(
-          byDesc.data.last_price ?? byDesc.data.default_price ?? 0
+          byDesc.data.legacy_last_price ?? byDesc.data.legacy_default_price ?? 0
         )
       }
     }
@@ -757,6 +817,7 @@ export async function processInvoiceAI(
     if (!catalogId) {
       if (!previewOnly) {
         const created = await createCatalogItemWithRetry(db, {
+          companyId,
           sequenceStart: nextInternalSkuNumber,
           description,
           unit,
@@ -778,8 +839,9 @@ export async function processInvoiceAI(
 
     if (!internalSku && catalogId) {
       const readCatalog = await db
-        .from("items_catalog")
+        .from("erp_md_items")
         .select("internal_sku")
+        .eq("company_id", companyId)
         .eq("id", catalogId)
         .maybeSingle()
       internalSku = String(readCatalog.data?.internal_sku ?? safeInternalSku(description, i))
@@ -792,21 +854,27 @@ export async function processInvoiceAI(
     // b) עדכון/יצירת mapping בין מקט ספק למקט פנימי ועדכון מחירים.
     if (catalogId && previewOnly === false && supplierId) {
       const mapRes = await db
-        .from("supplier_items")
-        .select("id, unit_price, last_price")
+        .from("erp_md_supplier_items")
+        .select("id, base_price")
+        .eq("company_id", companyId)
         .eq("supplier_id", supplierId)
         .eq("supplier_sku", supplierSku)
         .maybeSingle()
       if (!mapRes.error && mapRes.data?.id) {
         supplierItemId = String(mapRes.data.id)
         const updateSupplierItemRes = await db
-          .from("supplier_items")
+          .from("erp_md_supplier_items")
           .update({
-            master_item_id: catalogId,
+            item_id: catalogId,
             supplier_sku: supplierSku,
-            unit_price: newUnitPrice,
-            last_price: newUnitPrice,
+            base_price: newUnitPrice,
+            ai_metadata: {
+              source: "invoice_ai",
+              supplier_sku: supplierSku,
+              updated_at: new Date().toISOString(),
+            },
           })
+          .eq("company_id", companyId)
           .eq("id", mapRes.data.id)
         if (updateSupplierItemRes.error) {
           await removeInvoiceSourceFile(supabaseAuth, STORAGE_BUCKET, filePath)
@@ -816,27 +884,39 @@ export async function processInvoiceAI(
           }
         }
         if (previousPrice == null) {
-          previousPrice = Number(mapRes.data.last_price ?? mapRes.data.unit_price ?? 0)
+          previousPrice = Number(mapRes.data.base_price ?? 0)
         }
       } else {
-        const insertedMap = await db.from("supplier_items").insert({
+        const insertedMap = await db.from("erp_md_supplier_items").insert({
+          company_id: companyId,
           supplier_id: supplierId,
-          master_item_id: catalogId,
+          item_id: catalogId,
           supplier_sku: supplierSku,
-          unit_price: newUnitPrice,
-          last_price: newUnitPrice,
+          base_price: newUnitPrice,
+          ai_metadata: {
+            source: "invoice_ai",
+            supplier_sku: supplierSku,
+            created_at: new Date().toISOString(),
+          },
         }).select("id").single()
         if (!insertedMap.error && insertedMap.data?.id) {
           supplierItemId = String(insertedMap.data.id)
         }
       }
       const updateCatalogRes = await db
-        .from("items_catalog")
+        .from("erp_md_items")
         .update({
           internal_sku: internalSku || safeInternalSku(description, i),
-          default_price: newUnitPrice,
-          last_price: newUnitPrice,
+          legacy_default_price: newUnitPrice,
+          legacy_last_price: newUnitPrice,
+          ai_metadata: {
+            source: "invoice_ai",
+            supplier_sku: supplierSku,
+            updated_at: new Date().toISOString(),
+          },
+          ocr_match_tokens: toOcrTokens([description, supplierSku, internalSku]),
         })
+        .eq("company_id", companyId)
         .eq("id", catalogId)
       if (updateCatalogRes.error) {
         await removeInvoiceSourceFile(supabaseAuth, STORAGE_BUCKET, filePath)
@@ -884,17 +964,7 @@ export async function processInvoiceAI(
       invoice_number: extractedData.invoice_number,
       invoice_date: extractedData.invoice_date || new Date().toISOString().split("T")[0],
       total_amount: extractedData.total_amount || extractedData.amount || 0,
-      items: extractedData.items.map((item: any) => ({
-        description: item.description || "ללא תיאור",
-        supplier_sku: item.supplier_sku ?? null,
-        quantity: item.quantity || 1,
-        unit_price: item.unit_price || item.price || 0,
-        total_price:
-          item.total_price ||
-          item.amount ||
-          (item.quantity * (item.unit_price || item.price || 0)) ||
-          0,
-      })),
+      items: extractedData.items.map(toInvoiceAiItem),
     }
     await removeInvoiceSourceFile(supabaseAuth, STORAGE_BUCKET, filePath)
     return {
@@ -982,17 +1052,7 @@ export async function processInvoiceAI(
     invoice_number: extractedData.invoice_number,
     invoice_date: invoicePayload.invoice_date,
     total_amount: totalAmount,
-    items: extractedData.items.map((item: any) => ({
-      description: item.description || "ללא תיאור",
-      supplier_sku: item.supplier_sku ?? null,
-      quantity: item.quantity || 1,
-      unit_price: item.unit_price || item.price || 0,
-      total_price:
-        item.total_price ||
-        item.amount ||
-        (item.quantity * (item.unit_price || item.price || 0)) ||
-        0,
-    })),
+    items: extractedData.items.map(toInvoiceAiItem),
   }
 
   revalidatePath(PROCUREMENT_PATH)

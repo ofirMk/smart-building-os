@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { apiErrorResponse, unknownApiErrorResponse } from "@/lib/api/api-error"
 import { formatWeeklyPulseMessage, sendWeeklyPulseWhatsAppAlert } from "@/lib/erp/notifications"
 import { getDefaultSystemSupportEmail, sendTransactionalEmail } from "@/lib/infrastructure/email-service"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
@@ -129,52 +130,50 @@ function asArchiveSummary(health: GlobalHealthPayload["summary"]) {
 }
 
 export async function GET(req: Request) {
-  const expected = getExpectedAuthHeader()
-  if (!expected) {
-    return NextResponse.json(
-      { ok: false, error: "CRON_SECRET is not configured" },
-      { status: 500 }
+  try {
+    const expected = getExpectedAuthHeader()
+    if (!expected) {
+      return apiErrorResponse(500, "CRON_SECRET_MISSING", "CRON_SECRET is not configured")
+    }
+    if (req.headers.get("authorization") !== expected) {
+      return apiErrorResponse(401, "UNAUTHORIZED", "Unauthorized")
+    }
+
+    const supabase = createSupabaseServiceRoleClient()
+    const activeProjects = await supabase
+      .from("erp_proj_projects")
+      .select("company_id")
+      .eq("status", "ACTIVE")
+    if (activeProjects.error) {
+      return apiErrorResponse(500, "ACTIVE_PROJECTS_QUERY_FAILED", activeProjects.error.message)
+    }
+
+    const companyIds = Array.from(
+      new Set(
+        (activeProjects.data ?? [])
+          .map((row) => (row as { company_id?: string | null }).company_id)
+          .filter((value): value is string => Boolean(value))
+      )
     )
-  }
-  if (req.headers.get("authorization") !== expected) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-  }
+    if (companyIds.length === 0) {
+      return NextResponse.json({ ok: true, message: "No ACTIVE projects found" })
+    }
 
-  const supabase = createSupabaseServiceRoleClient()
-  const activeProjects = await supabase
-    .from("erp_proj_projects")
-    .select("company_id")
-    .eq("status", "ACTIVE")
-  if (activeProjects.error) {
-    return NextResponse.json({ ok: false, error: activeProjects.error.message }, { status: 500 })
-  }
+    const cronSecret = process.env.CRON_SECRET?.trim() ?? ""
+    const baseAppUrl = getBaseAppUrl(req)
+    const recipients = getWeeklyPulseRecipients()
+    const whatsappTargets = await resolveWeeklyPulseManagerTargets(supabase)
+    const dispatchResults: Array<{
+      companyId: string
+      message: string
+      whatsappSent: boolean
+      emailSent: boolean
+      pdfAttachments: number
+      topProjectName: string | null
+      topProjectOffsetVelocityDays: number
+    }> = []
 
-  const companyIds = Array.from(
-    new Set(
-      (activeProjects.data ?? [])
-        .map((row) => (row as { company_id?: string | null }).company_id)
-        .filter((value): value is string => Boolean(value))
-    )
-  )
-  if (companyIds.length === 0) {
-    return NextResponse.json({ ok: true, message: "No ACTIVE projects found" })
-  }
-
-  const cronSecret = process.env.CRON_SECRET?.trim() ?? ""
-  const baseAppUrl = getBaseAppUrl(req)
-  const recipients = getWeeklyPulseRecipients()
-  const whatsappTargets = await resolveWeeklyPulseManagerTargets(supabase)
-  const dispatchResults: Array<{
-    companyId: string
-    message: string
-    whatsappSent: boolean
-    emailSent: boolean
-    pdfAttachments: number
-    topProjectName: string | null
-    topProjectOffsetVelocityDays: number
-  }> = []
-
-  for (const companyId of companyIds) {
+    for (const companyId of companyIds) {
     const globalHealthResponse = await fetch(new URL("/api/erp/analytics/global-health", req.url), {
       method: "GET",
       cache: "no-store",
@@ -371,11 +370,14 @@ export async function GET(req: Request) {
       topProjectName: topProjectByOffsetVelocity?.projectName ?? null,
       topProjectOffsetVelocityDays: Number(topProjectByOffsetVelocity?.offsetVelocityDays ?? 0),
     })
-  }
+    }
 
-  return NextResponse.json({
-    ok: true,
-    processedCompanies: dispatchResults.length,
-    dispatchResults,
-  })
+    return NextResponse.json({
+      ok: true,
+      processedCompanies: dispatchResults.length,
+      dispatchResults,
+    })
+  } catch (error) {
+    return unknownApiErrorResponse(500, "ERP_WEEKLY_PULSE_FAILED", error)
+  }
 }

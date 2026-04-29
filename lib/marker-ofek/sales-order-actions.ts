@@ -2,6 +2,8 @@
 
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { formatError } from "@/lib/utils"
+import { cookies } from "next/headers"
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 
 export type SalesOrderLineInput = {
   itemCatalogId: string
@@ -9,6 +11,15 @@ export type SalesOrderLineInput = {
   description: string
   quantity: number
   unitPrice: number
+}
+
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const companyId = resolveCompanyContext(cookieStore.get(COMPANY_COOKIE_KEY)?.value)
+  if (!companyId) {
+    throw new Error("Missing active company context")
+  }
+  return companyId
 }
 
 export async function createSalesOrderAction(input: {
@@ -31,6 +42,7 @@ export async function createSalesOrderAction(input: {
     }
 
     const supabase = await createSupabaseServerAuthClient()
+    const companyId = await resolveActiveCompanyId()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -95,8 +107,9 @@ export async function createSalesOrderAction(input: {
 
     const itemIds = [...new Set(lineRows.map((r) => r.item_catalog_id))]
     const { data: catRows, error: catErr } = await supabase
-      .from("items_catalog")
+      .from("erp_md_items")
       .select("id")
+      .eq("company_id", companyId)
       .in("id", itemIds)
     if (catErr) return { ok: false, error: catErr.message }
     if ((catRows ?? []).length !== itemIds.length) {

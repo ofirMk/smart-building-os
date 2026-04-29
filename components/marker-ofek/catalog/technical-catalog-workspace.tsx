@@ -163,7 +163,7 @@ export function TechnicalCatalogWorkspace() {
           קטלוג פריטים טכני (מאסטר)
         </h1>
         <p className="mt-1 text-xs text-slate-500">
-          Phase 2 — מרחב עבודה Master-Detail (Priority / SAP-style)
+          Phase 2 — מרחב עבודה Master-Detail לקטלוג פריטים
         </p>
       </header>
 
@@ -371,7 +371,7 @@ export function TechnicalCatalogWorkspace() {
               </p>
               <p className="max-w-sm text-xs text-slate-500">
                 התחתית מציגה כרטיס מאסטר עם טאבים: זיהוי, ספקים, MRP ותמחיר — כמו
-                ב-Priority ERP.
+                במערכות ERP מודרניות.
               </p>
             </div>
           ) : (

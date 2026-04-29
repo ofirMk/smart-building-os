@@ -19,6 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { recordIncomingTransaction } from "@/lib/marker-ofek/reconciliation-actions"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { formatError } from "@/lib/utils"
 
 type ProjectOption = {
@@ -31,7 +32,7 @@ type ItemOption = {
   id: string
   description: string
   sku: string | null
-  unit: string | null
+  uom: string | null
 }
 
 function toNum(value: string): number {
@@ -68,13 +69,18 @@ export default function NewDeliveryNotePage() {
               .eq("is_deleted", false)
               .order("created_at", { ascending: false })
               .limit(300),
-            supabase
-              .schema("public")
-              .from("items_catalog")
-              .select("id, description, sku, unit")
-              .eq("is_inventory", true)
-              .order("description", { ascending: true })
-              .limit(1000),
+            Promise.resolve({
+              data: await masterDataFetch<
+                Array<{
+                  id: string
+                  description: string
+                  sku: string | null
+                  uom: string | null
+                  isInventoryManaged: boolean
+                }>
+              >("/api/erp/master-data/items"),
+              error: null,
+            }),
           ])
 
         if (projectsError) throw projectsError
@@ -82,7 +88,11 @@ export default function NewDeliveryNotePage() {
         if (cancelled) return
 
         setProjects((projectsData as ProjectOption[] | null) ?? [])
-        setItems((itemsData as ItemOption[] | null) ?? [])
+        setItems(
+          (((itemsData as ItemOption[] | null) ?? []).filter(
+            (row) => (row as ItemOption & { isInventoryManaged?: boolean }).isInventoryManaged !== false
+          ) as ItemOption[]) ?? []
+        )
       } catch (error) {
         if (!cancelled) toast.error(formatError(error))
       } finally {
@@ -107,7 +117,7 @@ export default function NewDeliveryNotePage() {
     if (!itemCatalogId) return
     const selected = items.find((row) => row.id === itemCatalogId)
     if (!selected) return
-    const nextUnit = String(selected.unit ?? "").trim()
+    const nextUnit = String(selected.uom ?? "").trim()
     if (nextUnit) setUnit(nextUnit)
   }, [itemCatalogId, items])
 

@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { revalidatePath } from "next/cache"
 
 import { extractModelJsonPayload } from "@/lib/ocr-invoice/parse-model-json"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import type {
   ReceiveGoodsInput,
   SaveDraftPurchaseOrderInput,
@@ -210,7 +210,7 @@ export async function scanDeliveryNoteImageAction(input: {
       return { ok: false, error: "חסר מזהה הזמנה או נתיב קובץ" }
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data: blob, error: dlErr } = await supabase.storage
       .from("delivery-notes")
       .download(storagePath)
@@ -379,7 +379,7 @@ function defaultReceiptIdempotencyKey(input: ReceiveGoodsInput): string {
 }
 
 async function resolveSupplierEntityId(
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
   supplierId: string,
   taxId: string | null
 ): Promise<string | null> {
@@ -403,7 +403,7 @@ async function resolveSupplierEntityId(
 }
 
 async function resolveMasterSupplierFromEntity(
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
   entityId: string
 ): Promise<string | null> {
   const { data: byLink } = await supabase
@@ -450,7 +450,7 @@ export async function saveDraftPurchaseOrderAction(
       return { ok: false, error: "נא לבחור ספק" }
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
 
     const { data: proj, error: pErr } = await supabase
       .from("projects")
@@ -655,7 +655,7 @@ export async function issuePurchaseOrderAction(
     if (!id) {
       return { ok: false, error: "חסר מזהה הזמנה" }
     }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data: row, error: qErr } = await supabase
       .from("purchase_orders")
       .select("id, status")
@@ -725,7 +725,7 @@ export async function receiveGoodsAction(
     const idempotencyKey =
       String(input.idempotencyKey ?? "").trim() || defaultReceiptIdempotencyKey(input)
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
 
     const { data: dupRec } = await supabase
       .from("warehouse_receipts")
@@ -979,7 +979,7 @@ export async function fetchProjectPoCommitmentAction(input: {
     if (!projectId) {
       return { ok: false, error: "חסר פרויקט" }
     }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const ex = input.excludePoId?.trim()
     let query = supabase
       .from("purchase_orders")
@@ -1032,7 +1032,7 @@ export async function fetchPurchaseOrderForHubAction(poId: string): Promise<
     if (!id) {
       return { ok: false, error: "חסר מזהה" }
     }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data: po, error: pErr } = await supabase
       .from("purchase_orders")
       .select(

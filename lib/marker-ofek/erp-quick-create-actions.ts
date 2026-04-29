@@ -1,7 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import {
   quickCatalogItemSchema,
@@ -11,6 +13,15 @@ import {
 } from "@/lib/marker-ofek/erp-validation-schemas"
 import { logMoAuditEvent } from "@/lib/marker-ofek/audit-log"
 import { formatError } from "@/lib/utils"
+
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const companyId = resolveCompanyContext(cookieStore.get(COMPANY_COOKIE_KEY)?.value)
+  if (!companyId) {
+    throw new Error("Missing active company context")
+  }
+  return companyId
+}
 
 export async function quickCreateProject(
   raw: unknown
@@ -250,19 +261,35 @@ export async function quickCreateCatalogItem(
       return { ok: false, error: msg || "נתונים לא תקינים" }
     }
     const supabase = await createSupabaseServerAuthClient()
+    const companyId = await resolveActiveCompanyId()
     const {
       data: { user },
     } = await supabase.auth.getUser()
     if (!user?.id) return { ok: false, error: "נדרשת התחברות" }
 
+    const familyRes = await supabase
+      .from("erp_md_product_families")
+      .select("id")
+      .eq("company_id", companyId)
+      .order("family_code", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (familyRes.error || !familyRes.data?.id) {
+      return { ok: false, error: familyRes.error?.message ?? "חסרה משפחת מוצר פעילה לחברה" }
+    }
+
     const { data: inserted, error: insErr } = await supabase
-      .from("items_catalog")
+      .from("erp_md_items")
       .insert({
-        sku: parsed.data.sku.trim(),
+        company_id: companyId,
+        item_number: parsed.data.sku.trim(),
+        internal_sku: parsed.data.sku.trim(),
         description: parsed.data.description.trim(),
-        category: parsed.data.category.trim(),
-        unit: parsed.data.unit?.trim() || null,
-        default_price:
+        product_family_id: familyRes.data.id,
+        unit_of_measure: parsed.data.unit?.trim() || "יחידה",
+        status: "ACTIVE",
+        is_inventory_managed: true,
+        legacy_default_price:
           parsed.data.defaultPrice != null && Number.isFinite(parsed.data.defaultPrice)
             ? parsed.data.defaultPrice
             : null,

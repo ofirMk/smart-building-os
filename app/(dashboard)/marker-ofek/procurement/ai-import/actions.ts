@@ -1,7 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { normalizeProcurementCategory } from "@/lib/marker-ofek/procurement-categories"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
@@ -91,6 +93,25 @@ function parseIssueDateForDb(
 
 function isUniqueViolation(err: { code?: string; message?: string }): boolean {
   return err.code === "23505"
+}
+
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const companyId = resolveCompanyContext(cookieStore.get(COMPANY_COOKIE_KEY)?.value)
+  if (!companyId) {
+    throw new Error("Missing active company context")
+  }
+  return companyId
+}
+
+function toOcrTokens(values: Array<string | null | undefined>): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => String(value ?? "").trim())
+        .filter((value) => value.length > 0)
+    )
+  )
 }
 
 const FALLBACK_SKU_PREFIX = "GEN"
@@ -453,6 +474,7 @@ export async function createProcurementCategory(input: {
 
   try {
     const supabase = await createSupabaseServerAuthClient()
+    const companyId = await resolveActiveCompanyId()
     const {
       data: { user },
       error: userErr,
@@ -525,6 +547,7 @@ export async function listMarkerOfekProjectsForImport(): Promise<
 > {
   try {
     const supabase = await createSupabaseServerAuthClient()
+    const companyId = await resolveActiveCompanyId()
     const {
       data: { user },
       error: userErr,
@@ -587,6 +610,7 @@ export async function saveSupplierInvoiceOcrImport(input: {
 
   try {
     const supabase = await createSupabaseServerAuthClient()
+    const companyId = await resolveActiveCompanyId()
     const {
       data: { user },
       error: userErr,
@@ -777,15 +801,16 @@ export async function saveSupplierInvoiceOcrImport(input: {
         pricesUpdated += 1
       }
 
-      // Data integrity gate (items_catalog): always check supplier SKU against central catalog.
+      // Data integrity gate (erp_md_items): always check supplier SKU against canonical catalog.
       const supplierSku = makat
       const catalogName = normalized_name || original_name || name
       let matchedCatalogId: string | null = null
       if (supplierSku) {
         const bySku = await serviceRole
-          .from("items_catalog")
-          .select("id, additional_attributes")
-          .eq("sku", supplierSku)
+          .from("erp_md_items")
+          .select("id, ai_metadata, ocr_match_tokens")
+          .eq("company_id", companyId)
+          .or(`item_number.eq.${supplierSku},internal_sku.eq.${supplierSku}`)
           .limit(1)
           .maybeSingle()
         if (!bySku.error && bySku.data?.id) {
@@ -794,8 +819,9 @@ export async function saveSupplierInvoiceOcrImport(input: {
       }
       if (!matchedCatalogId && catalogName) {
         const byName = await serviceRole
-          .from("items_catalog")
-          .select("id, additional_attributes")
+          .from("erp_md_items")
+          .select("id, ai_metadata, ocr_match_tokens")
+          .eq("company_id", companyId)
           .ilike("description", catalogName)
           .limit(1)
           .maybeSingle()
@@ -805,18 +831,20 @@ export async function saveSupplierInvoiceOcrImport(input: {
       }
       if (matchedCatalogId) {
         const current = await serviceRole
-          .from("items_catalog")
-          .select("additional_attributes")
+          .from("erp_md_items")
+          .select("ai_metadata")
+          .eq("company_id", companyId)
           .eq("id", matchedCatalogId)
           .maybeSingle()
         const attrs =
-          ((current.data as { additional_attributes?: Record<string, unknown> } | null)
-            ?.additional_attributes as Record<string, unknown> | undefined) ?? {}
+          ((current.data as { ai_metadata?: Record<string, unknown> } | null)
+            ?.ai_metadata as Record<string, unknown> | undefined) ?? {}
         await serviceRole
-          .from("items_catalog")
+          .from("erp_md_items")
           .update({
-            default_price: roundMoney(unit),
-            additional_attributes: {
+            legacy_default_price: roundMoney(unit),
+            legacy_last_price: roundMoney(unit),
+            ai_metadata: {
               ...attrs,
               supplier_sku: supplierSku || attrs.supplier_sku || null,
               last_purchase_price: roundMoney(unit),
@@ -824,7 +852,9 @@ export async function saveSupplierInvoiceOcrImport(input: {
                 parseIssueDateForDb(meta.document_date ?? undefined) ??
                 new Date().toISOString().slice(0, 10),
             },
+            ocr_match_tokens: toOcrTokens([catalogName, supplierSku, supplierForCatalog]),
           })
+          .eq("company_id", companyId)
           .eq("id", matchedCatalogId)
       } else {
         newItemCreationRequiredCount += 1
@@ -1066,6 +1096,7 @@ export async function createRetroPurchaseOrderFromDeliveryScan(input: {
   try {
     const supabase = await createSupabaseServerAuthClient()
     const serviceRole = createSupabaseServiceRoleClient()
+    const companyId = await resolveActiveCompanyId()
 
     const {
       data: { user },
@@ -1146,16 +1177,18 @@ export async function createRetroPurchaseOrderFromDeliveryScan(input: {
       let itemId: string | null = null
       if (supplierSku) {
         const bySku = await serviceRole
-          .from("items_catalog")
+          .from("erp_md_items")
           .select("id")
-          .eq("sku", supplierSku)
+          .eq("company_id", companyId)
+          .or(`item_number.eq.${supplierSku},internal_sku.eq.${supplierSku}`)
           .maybeSingle()
         if (!bySku.error && bySku.data?.id) itemId = String(bySku.data.id)
       }
       if (!itemId) {
         const byName = await serviceRole
-          .from("items_catalog")
+          .from("erp_md_items")
           .select("id")
+          .eq("company_id", companyId)
           .ilike("description", name)
           .limit(1)
           .maybeSingle()
@@ -1164,17 +1197,22 @@ export async function createRetroPurchaseOrderFromDeliveryScan(input: {
       if (!itemId) {
         const sku = supplierSku || `AUTO-${Date.now().toString().slice(-5)}`
         const createdItem = await serviceRole
-          .from("items_catalog")
+          .from("erp_md_items")
           .insert({
-            sku,
+            company_id: companyId,
+            item_number: sku,
+            internal_sku: sku,
             description: name,
-            unit: row.unit_of_measure || "יחידה",
-            default_price: roundMoney(unitPrice),
-            is_inventory: true,
-            additional_attributes: {
+            unit_of_measure: row.unit_of_measure || "יחידה",
+            is_inventory_managed: true,
+            status: "ACTIVE",
+            ai_metadata: {
               supplier_sku: supplierSku || null,
               source: "delivery_note_retro_po",
             },
+            ocr_match_tokens: toOcrTokens([name, supplierSku, supplierName]),
+            legacy_default_price: roundMoney(unitPrice),
+            legacy_last_price: roundMoney(unitPrice),
           })
           .select("id")
           .single()

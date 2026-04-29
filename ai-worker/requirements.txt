@@ -1,0 +1,14 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+httpx>=0.27.0,<0.28.0
+pydantic==2.10.3
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+
+# Phase 4b — CrewAI Stack
+crewai==0.80.0
+crewai-tools==0.17.0
+
+# Gemini LLM ל-CrewAI (דרך litellm ש-CrewAI מתממשבו)
+litellm==1.55.10
+google-generativeai==0.8.3

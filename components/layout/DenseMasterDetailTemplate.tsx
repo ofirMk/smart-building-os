@@ -1,4 +1,6 @@
 /**
+ * @deprecated Use `EntityWorkspace` + `BentoSmartList` + slide-over FocusPane pattern.
+ *
  * DenseMasterDetailTemplate — global ERP shell (wide, data-dense, master/detail).
  *
  * How to use on new screens:
@@ -69,9 +71,9 @@ export function DenseMasterDetailTemplate({
       dir={dir}
       lang={dir === "rtl" ? "he" : undefined}
       className={cn(
-        "flex w-full min-w-0 max-w-none flex-col",
+        "flex flex-1 min-h-0 w-full min-w-0 max-w-none flex-col overflow-hidden",
         "gap-1.5 px-2 pb-3 pt-1 md:px-3",
-        "bg-card text-sm text-foreground antialiased  ",
+        "bg-card text-sm text-foreground antialiased",
         className
       )}
     >
@@ -138,7 +140,7 @@ export function DenseMasterPanel({
     <section
       aria-label="אזור ראשי"
       className={cn(
-        "min-h-0 rounded-md border border-slate-200/90 bg-background/80 p-2 shadow-sm dark:border-border/70 dark:bg-card/40",
+        "min-h-0 rounded-md border border-border bg-background/80 p-2 shadow-sm transition-colors duration-200",
         className
       )}
     >
@@ -159,7 +161,7 @@ export function DenseDetailPanel({
     <section
       aria-label="פירוט שורות"
       className={cn(
-        "min-h-0 flex-1 overflow-hidden rounded-md border border-slate-200/90 bg-card p-1.5 shadow-sm dark:border-border/70 dark:bg-card/30",
+        "min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-card p-1.5 shadow-sm transition-colors duration-200",
         className
       )}
     >

@@ -605,7 +605,7 @@ export async function saveBaselineReport(input: {
     const totalPayable = roundMoney(Number(b.total_approved) || 0)
     const previousBilled = 0
 
-    let sumApprovedThisBill = roundMoney(
+    const sumApprovedThisBill = roundMoney(
       itemRows.reduce((s, row) => s + row.line_total, 0)
     )
 
@@ -873,7 +873,7 @@ export async function buildContractAndBaselineAI(
     const totalPayable = roundMoney(Number(b.total_approved) || 0)
     const previousBilled = 0
 
-    let sumApprovedThisBill = roundMoney(
+    const sumApprovedThisBill = roundMoney(
       itemRows.reduce((s, row) => s + row.line_total, 0)
     )
 

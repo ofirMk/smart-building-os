@@ -170,7 +170,7 @@ export function ProjectDashboardClient({ projectId }: { projectId: string }) {
   }, [data, projectId])
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] space-y-4 bg-[#F8FAFC] p-4" dir="rtl">
+    <div className="flex-1 min-h-0 space-y-4 overflow-y-auto bg-[#F8FAFC] p-4" dir="rtl">
       <header className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-card p-4">
         <div>
           <p className="text-[11px] uppercase tracking-wider text-slate-500">

@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import {
   normalizeSupplierSummaryRows,
   type SupplierSummary,
@@ -42,11 +43,8 @@ type SupplierPriceRow = {
   id: string
   supplier_sku: string | null
   unit_price: number
-  last_updated: string
-  items_catalog:
-    | { sku: string; description: string; unit: string | null }
-    | { sku: string; description: string; unit: string | null }[]
-    | null
+  last_updated: string | null
+  item_details: { sku: string; description: string; unit: string | null } | null
 }
 
 type SupplierInvoiceItemRow = {
@@ -257,15 +255,20 @@ export function MarkerOfekSupplierDrawer() {
       try {
         const supabase = createSupabaseBrowserClient()
         const supplierId = selectedSummary.supplierId
-        const [pricesRes, poRes, invRes] = await Promise.all([
-          supabase
-            .from("supplier_items")
-            .select(
-              "id, supplier_sku, unit_price, last_updated, items_catalog ( sku, description, unit )"
-            )
-            .eq("supplier_id", supplierId)
-            .order("last_updated", { ascending: false })
-            .limit(400),
+        const [supplierItemsRes, itemsRes, poRes, invRes] = await Promise.all([
+          masterDataFetch<
+            Array<{
+              id: string
+              itemId: string
+              supplierSku: string | null
+              basePrice: number
+              aiLastParsedAt: string | null
+              validFrom: string | null
+            }>
+          >(`/api/erp/master-data/supplier-items?supplierId=${supplierId}`),
+          masterDataFetch<Array<{ id: string; sku: string; description: string; uom: string | null }>>(
+            "/api/erp/master-data/items"
+          ),
           supabase
             .from("purchase_orders")
             .select("id, po_number, status, order_date, total_amount")
@@ -280,9 +283,25 @@ export function MarkerOfekSupplierDrawer() {
             .order("invoice_date", { ascending: false })
             .limit(150),
         ])
-        if (pricesRes.error) throw pricesRes.error
         if (poRes.error) throw poRes.error
         if (invRes.error) throw invRes.error
+        const itemMap = new Map(itemsRes.map((row) => [row.id, row]))
+        const mappedPrices: SupplierPriceRow[] = supplierItemsRes
+          .map((row) => {
+            const item = itemMap.get(row.itemId)
+            return {
+              id: row.id,
+              supplier_sku: row.supplierSku,
+              unit_price: Number(row.basePrice ?? 0),
+              last_updated: row.aiLastParsedAt ?? row.validFrom,
+              item_details: item
+                ? { sku: item.sku, description: item.description, unit: item.uom }
+                : null,
+            }
+          })
+          .sort((a, b) =>
+            String(b.last_updated ?? "").localeCompare(String(a.last_updated ?? ""))
+          )
 
         const poRows = (poRes.data ?? []) as Array<{
           id: string
@@ -321,7 +340,7 @@ export function MarkerOfekSupplierDrawer() {
         if (invoiceItemsRes.error) throw invoiceItemsRes.error
 
         if (cancelled) return
-        setPriceRows((pricesRes.data ?? []) as SupplierPriceRow[])
+        setPriceRows(mappedPrices)
         setPoUnitPrices((poLinesRes.data ?? []) as PoLinePrice[])
         setInvoiceItems((invoiceItemsRes.data ?? []) as SupplierInvoiceItemRow[])
         setHistoryRows([
@@ -475,7 +494,7 @@ export function MarkerOfekSupplierDrawer() {
                         </TableHeader>
                         <TableBody>
                           {priceRows.slice(0, 120).map((r) => {
-                            const item = embedOne(r.items_catalog)
+                            const item = r.item_details
                             return (
                               <TableRow key={r.id}>
                                 <TableCell className="font-mono text-xs">

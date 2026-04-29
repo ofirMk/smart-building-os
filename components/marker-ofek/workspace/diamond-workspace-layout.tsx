@@ -107,7 +107,7 @@ export function DiamondWorkspaceLayout({
   return (
     <div
       className={cn(
-        "flex h-[min(100dvh,100vh)] min-h-0 w-full flex-col bg-card",
+        "flex flex-1 min-h-0 w-full flex-col bg-card",
         className
       )}
       dir="rtl"

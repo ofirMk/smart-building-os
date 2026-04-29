@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 
+import { RouteShell } from "@/components/layout/route-shell"
+
 export const metadata: Metadata = {
   title: "כספים",
 }
@@ -9,6 +11,6 @@ export default function MarkerOfekFinanceLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <RouteShell>{children}</RouteShell>
 }
 

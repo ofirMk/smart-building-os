@@ -713,7 +713,7 @@ export function UnifiedProcurementHubClient({
     : undefined
 
   return (
-    <div dir="rtl" className="min-h-[calc(100vh-6rem)] bg-[#070b12] text-slate-100">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#070b12] text-slate-100">
       <div className="border-b border-white/5 bg-card/[0.02] px-4 py-3 backdrop-blur-md md:px-8">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -749,7 +749,7 @@ export function UnifiedProcurementHubClient({
         dir="ltr"
       >
         <main
-          className="order-1 flex min-h-[calc(100vh-8rem)] min-w-0 flex-1 flex-col gap-6 p-4 md:p-8"
+          className="order-1 flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8"
           dir="rtl"
         >
           {loadingPo ? (
@@ -1433,7 +1433,7 @@ export function UnifiedProcurementHubClient({
 
         <aside
           className={cn(
-            "order-2 flex w-full flex-col border-white/5 lg:w-[320px] lg:min-h-[calc(100vh-8rem)] lg:border-l-0 lg:border-r lg:border-white/10",
+            "order-2 flex w-full min-h-0 flex-col border-white/5 lg:w-[320px] lg:border-l-0 lg:border-r lg:border-white/10",
             "bg-[#060912]/90"
           )}
           dir="rtl"

@@ -1724,7 +1724,7 @@ export function useBillingSimulation(options: UseBillingSimulationOptions) {
                 quantity: number
                 unitPrice: number
               }>
-            >(`/api/contracts/${contract.id}/lines`, {
+            >(`/api/erp/contracts/${contract.id}/lines`, {
               schema: subcontractorContractLinesSchema,
               signal: controller.signal,
             })

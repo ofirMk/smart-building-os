@@ -1,7 +1,9 @@
 "use server"
 
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 import { revalidatePath } from "next/cache"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { MarkerOfekProjectDocumentRow } from "@/types/marker-ofek"
 import type { PlanLinkRow } from "@/lib/marker-ofek/wbs-plan-link-types"
@@ -17,8 +19,9 @@ const DOCS_BUCKET =
 export async function ensureProjectVaultDefaultFolders(projectId: string): Promise<void> {
   const pid = String(projectId ?? "").trim()
   if (!pid) return
-  const supabase = await createSupabaseServerAuthClient()
   try {
+    // Bootstrap folders are system-level defaults; use service role to bypass RLS safely.
+    const supabase = createSupabaseServiceRoleClient()
     await ensureDefaultVaultFoldersForProjectId(supabase, pid)
   } catch (error) {
     // Never crash Project Hub for vault bootstrap drift; log and continue.
@@ -53,11 +56,41 @@ function toSupabaseErrorPayload(error: unknown): {
 }
 
 async function ensureDefaultVaultFoldersForProjectId(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerAuthClient>>,
+  supabase: SupabaseClient,
   projectId: string
 ) {
   const pid = String(projectId ?? "").trim()
   if (!pid) return
+  const defaultFolderRows = VAULT_DEFAULT_FOLDERS.map((folder) => ({
+    project_id: pid,
+    file_path: null,
+    title: folder.title,
+    document_kind: folder.title,
+    mime_type: "application/x-directory",
+    size: null,
+    is_folder: true,
+    vault_folder_key: folder.key,
+    version_group_id: crypto.randomUUID(),
+    version_number: 1,
+    is_current: true,
+    parent_document_id: null,
+  }))
+
+  const upsertResult = await supabase
+    .schema("public")
+    .from("project_documents")
+    .upsert(defaultFolderRows, {
+      onConflict: "project_id,vault_folder_key",
+      ignoreDuplicates: true,
+    })
+
+  if (!upsertResult.error) return
+  // Fallback path when `onConflict` is unsupported/missing unique index.
+  if (upsertResult.error.code !== "42P10") {
+    if (upsertResult.error.code === "23505") return
+    throw upsertResult.error
+  }
+
   const { data: existingRows, error: exErr } = await supabase
     .schema("public")
     .from("project_documents")
@@ -135,8 +168,8 @@ export async function listVaultDocumentsForProject(
 ): Promise<MarkerOfekProjectDocumentRow[]> {
   const pid = String(projectId ?? "").trim()
   if (!pid) return []
+  await ensureProjectVaultDefaultFolders(pid)
   const supabase = await createSupabaseServerAuthClient()
-  await ensureDefaultVaultFoldersForProjectId(supabase, pid)
   const { data, error } = await supabase
     .schema("public")
     .from("project_documents")

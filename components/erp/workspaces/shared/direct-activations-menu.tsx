@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -55,25 +56,29 @@ export function DirectActivationsMenu<TEntity>({
         }
       />
       <DropdownMenuContent align="end" className="min-w-56 rounded-xl border border-slate-200 bg-card shadow-sm">
-        <DropdownMenuLabel className="text-xs text-slate-500">{title}</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-xs text-slate-500">{title}</DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        {activations.map((activation) => {
-          const isRunning = runningId === activation.id
-          return (
-            <DropdownMenuItem
-              key={activation.id}
-              disabled={activation.disabled || isRunning}
-              onClick={() => void handleActivation(activation)}
-              className="flex items-center justify-between gap-2 text-right"
-            >
-              <span className="flex flex-col items-start text-right">
-                <span className="text-sm">{activation.label}</span>
-                {activation.hint ? <span className="text-[11px] text-slate-500">{activation.hint}</span> : null}
-              </span>
-              {isRunning ? <Loader2 className="size-3.5 animate-spin text-slate-500" /> : null}
-            </DropdownMenuItem>
-          )
-        })}
+        <DropdownMenuGroup>
+          {activations.map((activation) => {
+            const isRunning = runningId === activation.id
+            return (
+              <DropdownMenuItem
+                key={activation.id}
+                disabled={activation.disabled || isRunning}
+                onClick={() => void handleActivation(activation)}
+                className="flex items-center justify-between gap-2 text-right"
+              >
+                <span className="flex flex-col items-start text-right">
+                  <span className="text-sm">{activation.label}</span>
+                  {activation.hint ? <span className="text-[11px] text-slate-500">{activation.hint}</span> : null}
+                </span>
+                {isRunning ? <Loader2 className="size-3.5 animate-spin text-slate-500" /> : null}
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )

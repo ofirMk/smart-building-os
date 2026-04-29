@@ -34,7 +34,10 @@ export default async function MarkerOfekExecutionPlansPage({ searchParams }: Pag
   const initialBoqRows = initialProjectId ? await fetchProjectBoq(initialProjectId) : []
 
   return (
-    <div dir="rtl" className="min-h-[60vh] bg-zinc-50 font-sans text-zinc-900">
+    <div
+      dir="rtl"
+      className="flex-1 min-h-0 overflow-y-auto bg-zinc-50 font-sans text-zinc-900"
+    >
       <PlansTakeoffClient
         key={initialProjectId || "no-project"}
         projects={projects}

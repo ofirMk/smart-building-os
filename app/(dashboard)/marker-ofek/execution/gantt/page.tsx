@@ -156,7 +156,7 @@ const DATASETS: Record<string, ProjectDataset> = {
 function tasksForWeeks(dataset: ProjectDataset): GanttTask[] {
   const scale = 26 / 6
   return dataset.tasks.map((t) => {
-    let start = Math.max(0, Math.floor(t.colStart * scale))
+    const start = Math.max(0, Math.floor(t.colStart * scale))
     let end = Math.min(26, Math.ceil(t.colEnd * scale))
     if (end <= start) end = Math.min(26, start + 1)
     return { ...t, colStart: start, colEnd: end }
@@ -216,7 +216,7 @@ export default function MarkerOfekExecutionGanttPlanningPage() {
   return (
     <div
       dir="rtl"
-      className="min-h-[calc(100vh-4rem)] w-full bg-card text-foreground"
+      className="flex-1 min-h-0 w-full overflow-y-auto bg-card text-foreground"
     >
       <div className="border-b border-slate-200 bg-card px-3 py-2.5 md:px-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

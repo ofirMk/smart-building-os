@@ -404,7 +404,7 @@ export function BillingControlCenterClient({ workspace }: Props) {
   return (
     <div
       dir="rtl"
-      className="min-h-[calc(100vh-6rem)] bg-background text-foreground"
+      className="flex-1 min-h-0 overflow-y-auto bg-background text-foreground"
     >
       <div className="mx-auto max-w-[1920px] px-4 py-6 md:px-8">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">

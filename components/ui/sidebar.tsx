@@ -184,9 +184,10 @@ function Sidebar({
           data-slot="sidebar"
           data-mobile="true"
           data-drawer-only="true"
+          showCloseButton={false}
           overlayClassName="cursor-pointer bg-black/50 backdrop-blur-md supports-[backdrop-filter]:backdrop-blur-md"
           className={cn(
-            "z-[60] w-(--sidebar-width) border-0 bg-sidebar p-0 text-sidebar-foreground shadow-2xl [&>button]:hidden",
+            "z-[110] w-(--sidebar-width) border-0 bg-sidebar p-0 text-sidebar-foreground shadow-2xl",
             "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform motion-reduce:duration-200"
           )}
           style={
@@ -236,9 +237,10 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
+          showCloseButton={false}
           overlayClassName="cursor-pointer bg-black/50 backdrop-blur-md supports-[backdrop-filter]:backdrop-blur-md"
           className={cn(
-            "z-[60] w-(--sidebar-width) border-0 bg-sidebar p-0 text-sidebar-foreground shadow-2xl [&>button]:hidden",
+            "z-[110] w-(--sidebar-width) border-0 bg-sidebar p-0 text-sidebar-foreground shadow-2xl",
             "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform motion-reduce:duration-200"
           )}
           style={

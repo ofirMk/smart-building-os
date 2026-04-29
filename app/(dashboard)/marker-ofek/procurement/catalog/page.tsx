@@ -28,6 +28,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Table,
   TableBody,
   TableCell,
@@ -37,18 +44,34 @@ import {
 } from "@/components/ui/table"
 import { procurementCurrencyFormatter } from "@/lib/marker-ofek/procurement/format"
 import { TENDERS_ROUTES } from "@/lib/marker-ofek/tenders/nav"
-import { ITEMS_CATALOG_COLUMNS } from "@/lib/marker-ofek/supabase-fields"
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn, formatError } from "@/lib/utils"
-import type { MarkerOfekItemsCatalogRow } from "@/types/marker-ofek"
 
 const PAGE_SIZE = 80
 
 const currencyFormatter = procurementCurrencyFormatter()
 
+type CatalogRow = {
+  id: string
+  sku: string
+  description: string
+  uom: string | null
+  legacyDefaultPrice: number | null
+  isInventoryManaged: boolean
+  category: string | null
+  productFamilyId: string | null
+}
+
+type ProductFamilyRow = {
+  id: string
+  familyCode: string
+  familyName: string
+}
+
 export default function ProcurementCatalogPage() {
   const router = useRouter()
-  const [rows, setRows] = React.useState<MarkerOfekItemsCatalogRow[]>([])
+  const [rows, setRows] = React.useState<CatalogRow[]>([])
+  const [productFamilies, setProductFamilies] = React.useState<ProductFamilyRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -57,13 +80,13 @@ export default function ProcurementCatalogPage() {
   const [ctxMenu, setCtxMenu] = React.useState<{
     x: number
     y: number
-    row: MarkerOfekItemsCatalogRow
+    row: CatalogRow
   } | null>(null)
   const [form, setForm] = React.useState({
     sku: "",
     description: "",
     unit: "",
-    category: "",
+    productFamilyId: "",
     default_price: "",
     is_inventory: false,
   })
@@ -72,15 +95,37 @@ export default function ProcurementCatalogPage() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = createSupabaseBrowserClient()
-      const { data, error: qErr } = await supabase
-        .schema("public")
-        .from("items_catalog")
-        .select(ITEMS_CATALOG_COLUMNS)
-        .order("sku", { ascending: true })
-        .limit(PAGE_SIZE)
-      if (qErr) throw qErr
-      setRows((data as MarkerOfekItemsCatalogRow[]) ?? [])
+      const [items, families] = await Promise.all([
+        masterDataFetch<
+          Array<{
+            id: string
+            sku: string
+            description: string
+            uom: string | null
+            legacyDefaultPrice: number | null
+            isInventoryManaged: boolean
+            productFamilyId: string | null
+          }>
+        >("/api/erp/master-data/items"),
+        masterDataFetch<ProductFamilyRow[]>("/api/erp/master-data/product-families"),
+      ])
+      const familyMap = new Map(families.map((row) => [row.id, row.familyName]))
+      setProductFamilies(families)
+      setRows(
+        items.slice(0, PAGE_SIZE).map((row) => ({
+          id: row.id,
+          sku: row.sku,
+          description: row.description,
+          uom: row.uom,
+          legacyDefaultPrice: row.legacyDefaultPrice,
+          isInventoryManaged: row.isInventoryManaged,
+          productFamilyId: row.productFamilyId,
+          category: row.productFamilyId ? familyMap.get(row.productFamilyId) ?? null : null,
+        }))
+      )
+      if (!form.productFamilyId && families[0]?.id) {
+        setForm((prev) => ({ ...prev, productFamilyId: families[0]!.id }))
+      }
     } catch (e) {
       setError(formatError(e))
       setRows([])
@@ -111,27 +156,31 @@ export default function ProcurementCatalogPage() {
 
     setSaving(true)
     try {
-      const supabase = createSupabaseBrowserClient()
-      const { data, error: insErr } = await supabase
-        .from("items_catalog")
-        .insert({
+      const productFamilyId =
+        form.productFamilyId.trim() || productFamilies[0]?.id || ""
+      if (!productFamilyId) {
+        toast.error("לא נמצאה משפחת מוצר פעילה")
+        return
+      }
+      const data = await masterDataFetch<{ id: string }>("/api/erp/master-data/items", {
+        method: "POST",
+        body: JSON.stringify({
           sku,
           description,
-          unit: form.unit.trim() || null,
-          category: form.category.trim() || null,
-          default_price: defaultPrice,
-          is_inventory: form.is_inventory,
-        })
-        .select("id")
-        .single()
-      if (insErr) throw insErr
+          uom: form.unit.trim() || "יחידה",
+          productFamilyId,
+          isInventoryManaged: form.is_inventory,
+          legacyDefaultPrice: defaultPrice,
+        }),
+        headers: { "Content-Type": "application/json" },
+      })
       toast.success("הפריט נוסף לקטלוג")
       setDialogOpen(false)
       setForm({
         sku: "",
         description: "",
         unit: "",
-        category: "",
+        productFamilyId: productFamilyId,
         default_price: "",
         is_inventory: false,
       })
@@ -153,7 +202,7 @@ export default function ProcurementCatalogPage() {
     })
   }, [rows, searchQuery])
 
-  function catalogContextActions(r: MarkerOfekItemsCatalogRow): SmartContextMenuAction[] {
+  function catalogContextActions(r: CatalogRow): SmartContextMenuAction[] {
     return [
       {
         id: "open",
@@ -170,10 +219,11 @@ export default function ProcurementCatalogPage() {
             ...p,
             sku: `${r.sku}-COPY`,
             description: `${r.description} (עותק)`,
-            unit: r.unit ?? "",
-            category: r.category ?? "",
-            default_price: r.default_price != null ? String(r.default_price) : "",
-            is_inventory: r.is_inventory,
+            unit: r.uom ?? "",
+            productFamilyId: r.productFamilyId ?? "",
+            default_price:
+              r.legacyDefaultPrice != null ? String(r.legacyDefaultPrice) : "",
+            is_inventory: r.isInventoryManaged,
           }))
           setDialogOpen(true)
           toast.message("טופס הוספה", { description: "עודכן לפי השורה — בדקו מק״ט לפני שמירה." })
@@ -235,7 +285,7 @@ export default function ProcurementCatalogPage() {
                 <DialogTitle>פריט חדש בקטלוג</DialogTitle>
                 <DialogDescription>
                   נשמר ב־<code className="rounded border border-slate-100 px-1 font-mono text-xs">
-                    items_catalog
+                    erp_md_items
                   </code>{" "}
                   וזמין לכל מסכי הרכש.
                 </DialogDescription>
@@ -274,15 +324,24 @@ export default function ProcurementCatalogPage() {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="cat-cat">קטגוריה</Label>
-                    <Input
-                      id="cat-cat"
-                      value={form.category}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, category: e.target.value }))
+                    <Label htmlFor="cat-family">משפחת מוצר</Label>
+                    <Select
+                      value={form.productFamilyId || undefined}
+                      onValueChange={(value: string | null) =>
+                        setForm((p) => ({ ...p, productFamilyId: value ?? "" }))
                       }
-                      className="border-slate-200"
-                    />
+                    >
+                      <SelectTrigger id="cat-family" className="border-slate-200 bg-card">
+                        <SelectValue placeholder="בחרו משפחה" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {productFamilies.map((family) => (
+                          <SelectItem key={family.id} value={family.id}>
+                            {family.familyCode} - {family.familyName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="grid gap-1.5">
@@ -393,15 +452,15 @@ export default function ProcurementCatalogPage() {
                       </Link>
                     </TableCell>
                     <TableCell className="max-w-[280px]">{row.description}</TableCell>
-                    <TableCell>{row.unit ?? "—"}</TableCell>
+                    <TableCell>{row.uom ?? "—"}</TableCell>
                     <TableCell>{row.category ?? "—"}</TableCell>
                     <TableCell className="text-end font-currency-mono tabular-nums text-indigo-950">
-                      {row.default_price != null
-                        ? currencyFormatter.format(Number(row.default_price))
+                      {row.legacyDefaultPrice != null
+                        ? currencyFormatter.format(Number(row.legacyDefaultPrice))
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      {row.is_inventory ? (
+                      {row.isInventoryManaged ? (
                         <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs text-indigo-800">
                           כן
                         </span>

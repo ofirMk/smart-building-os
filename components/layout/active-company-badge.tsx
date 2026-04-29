@@ -71,7 +71,7 @@ export function ActiveCompanyBadge({ companyId, className }: ActiveCompanyBadgeP
   const activeCompany = companyId ?? cookieCompany
   if (!activeCompany) return null
 
-  const theme = ACTIVE_COMPANY_BADGE_THEME[activeCompany]
+  const theme = ACTIVE_COMPANY_BADGE_THEME[activeCompany as keyof typeof ACTIVE_COMPANY_BADGE_THEME]
   const Icon = theme.icon
   const displayName = companyDisplayName(activeCompany)
 

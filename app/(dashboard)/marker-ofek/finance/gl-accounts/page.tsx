@@ -8,7 +8,7 @@ export default async function GlAccountsPage() {
   const loadError = result.success ? null : result.error ?? null
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-6 md:p-8">
+    <div className="mx-auto flex flex-1 min-h-0 max-w-7xl flex-col space-y-8 overflow-y-auto p-6 md:p-8">
       <div>
         <h1 className="text-2xl font-bold text-foreground">
           ניהול כרטסת ראשית
@@ -27,8 +27,8 @@ export default async function GlAccountsPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-8">
-        <div className="h-[600px]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-8">
+        <div className="flex-1 min-h-0">
           <GlAccountsTable initialAccounts={accounts} />
         </div>
 

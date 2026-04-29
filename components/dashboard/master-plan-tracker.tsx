@@ -37,7 +37,7 @@ export const MILESTONES = [
   {
     id: 3,
     title: "שלב 3: תבנית מסך אב-בן (Master-Detail)",
-    subtitle: "Priority-style edit screens with tabs",
+    subtitle: "מסכי עריכה מבוססי טאבים בסגנון ERP",
     status: "completed",
   },
   {

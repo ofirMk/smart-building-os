@@ -7,10 +7,16 @@ import { toast } from "sonner"
 import { recordOutgoingTransaction } from "@/lib/marker-ofek/reconciliation-actions"
 import { decodeMilestoneStoredName } from "@/lib/marker-ofek/milestone-name-codec"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { formatError } from "@/lib/utils"
 
 type ProjectOption = { id: string; name: string; internal_project_code: string }
-type InventoryItemOption = { id: string; sku: string; description: string; unit: string | null }
+type InventoryItemOption = {
+  id: string
+  sku: string
+  description: string
+  unit: string | null
+}
 type ContractItemOption = { id: string; name: string; contract_id: string }
 type TxRow = {
   id: string
@@ -18,7 +24,8 @@ type TxRow = {
   unit: string | null
   notes: string | null
   created_at: string
-  items_catalog: { sku?: string; description?: string } | { sku?: string; description?: string }[] | null
+  item_sku: string | null
+  item_description: string | null
   contract_milestones: { name?: string } | { name?: string }[] | null
 }
 
@@ -72,14 +79,24 @@ export default function WarehouseOutgoingPage() {
     const supabase = createSupabaseBrowserClient()
     setLoading(true)
     try {
-      const itemsRes = await supabase
-        .schema("public")
-        .from("items_catalog")
-        .select("id, sku, description, unit")
-        .eq("is_inventory", true)
-        .order("description", { ascending: true })
-      if (itemsRes.error) throw itemsRes.error
-      setInventoryItems((itemsRes.data as InventoryItemOption[]) ?? [])
+      const itemsRes = await masterDataFetch<
+        Array<{
+          id: string
+          sku: string
+          description: string
+          uom: string | null
+          isInventoryManaged: boolean
+        }>
+      >("/api/erp/master-data/items")
+      const inventoryRows = itemsRes
+        .filter((row) => row.isInventoryManaged)
+        .map((row) => ({
+          id: row.id,
+          sku: row.sku,
+          description: row.description,
+          unit: row.uom,
+        }))
+      setInventoryItems(inventoryRows)
 
       const contractsRes = await supabase
         .schema("public")
@@ -106,15 +123,37 @@ export default function WarehouseOutgoingPage() {
       const txRes = await supabase
         .schema("public")
         .from("inventory_transactions")
-        .select(
-          "id, quantity, unit, notes, created_at, items_catalog ( sku, description ), contract_milestones ( name )"
-        )
+        .select("id, quantity, unit, notes, created_at, item_catalog_id, contract_milestones ( name )")
         .eq("project_id", projectId)
         .eq("transaction_type", "outgoing")
         .order("created_at", { ascending: false })
         .limit(50)
       if (txRes.error) throw txRes.error
-      setTransactions((txRes.data as TxRow[]) ?? [])
+      const txRows = (txRes.data as Array<{
+        id: string
+        quantity: number
+        unit: string | null
+        notes: string | null
+        created_at: string
+        item_catalog_id: string | null
+        contract_milestones: { name?: string } | { name?: string }[] | null
+      }>) ?? []
+      const itemById = new Map(inventoryRows.map((row) => [row.id, row]))
+      setTransactions(
+        txRows.map((row) => {
+          const item = row.item_catalog_id ? itemById.get(row.item_catalog_id) : null
+          return {
+            id: row.id,
+            quantity: Number(row.quantity ?? 0),
+            unit: row.unit,
+            notes: row.notes,
+            created_at: row.created_at,
+            item_sku: item?.sku ?? null,
+            item_description: item?.description ?? null,
+            contract_milestones: row.contract_milestones,
+          }
+        })
+      )
     } catch (error) {
       toast.error(formatError(error))
       setInventoryItems([])
@@ -352,7 +391,6 @@ export default function WarehouseOutgoingPage() {
               </thead>
               <tbody>
                 {transactions.map((tx) => {
-                  const item = embedOne(tx.items_catalog)
                   const contract = embedOne(tx.contract_milestones)
                   const decoded = decodeMilestoneStoredName(contract?.name ?? "")
                   const contractLabel =
@@ -363,7 +401,7 @@ export default function WarehouseOutgoingPage() {
                     <tr key={tx.id} className="border-t border-zinc-300">
                       <td className="px-3 py-2 font-mono">{new Date(tx.created_at).toLocaleString("he-IL")}</td>
                       <td className="px-3 py-2">
-                        {item?.sku ?? "—"} - {item?.description ?? "—"}
+                        {tx.item_sku ?? "—"} - {tx.item_description ?? "—"}
                       </td>
                       <td className="px-3 py-2">{contractLabel}</td>
                       <td className="px-3 py-2 font-mono font-bold">

@@ -166,7 +166,7 @@ export default function NavPreviewPage() {
       {/* Mock app chrome — self-contained */}
       <div
         className={cn(
-          "flex h-[min(100dvh,920px)] w-full max-w-[1400px] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40"
+          "flex flex-1 min-h-0 w-full max-w-[1400px] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40"
         )}
       >
         {/* Header */}

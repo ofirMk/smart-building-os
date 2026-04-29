@@ -51,3 +51,15 @@ __pycache__/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# local cloud credentials (never commit service account keys)
+/.credentials/
+/.credentials/*.json
+/.credentials/google-cloud-key.json
+
+# Windows / Drive sync metadata files
+desktop.ini
+**/desktop.ini
+
+# transient local upload/cache artifacts (can contain generated CSS snapshots)
+/.tmp.driveupload/

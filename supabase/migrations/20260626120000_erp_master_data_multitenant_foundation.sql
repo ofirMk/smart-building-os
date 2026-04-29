@@ -62,6 +62,8 @@ create table if not exists public.erp_md_suppliers (
 
 create unique index if not exists erp_md_suppliers_company_supplier_number_uq
   on public.erp_md_suppliers (company_id, supplier_number);
+create unique index if not exists erp_md_suppliers_company_id_uq
+  on public.erp_md_suppliers (company_id, id);
 create index if not exists erp_md_suppliers_company_idx
   on public.erp_md_suppliers (company_id);
 create index if not exists erp_md_suppliers_company_kind_idx

@@ -98,7 +98,7 @@ export default function MarkerOfekResourcesPage() {
   return (
     <div
       dir="rtl"
-      className="mx-auto flex min-h-[60vh] w-full max-w-7xl flex-col gap-6 bg-background p-6 font-sans text-[13px] text-foreground md:p-8"
+      className="mx-auto flex flex-1 min-h-0 w-full max-w-7xl flex-col gap-6 overflow-y-auto bg-background p-6 font-sans text-[13px] text-foreground md:p-8"
     >
       <header className="space-y-2 text-start">
         <div className="inline-flex items-center gap-2 text-primary">

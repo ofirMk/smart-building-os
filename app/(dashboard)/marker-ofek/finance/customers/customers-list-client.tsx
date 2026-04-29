@@ -9,7 +9,6 @@ import { Building2 } from "lucide-react"
 import { MasterDetailWorkspace } from "@/components/layout/MasterDetailWorkspace"
 import type { FinanceCustomerRow } from "@/lib/marker-ofek/finance-customers-actions"
 import { buttonVariants } from "@/components/ui/button-variants"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,

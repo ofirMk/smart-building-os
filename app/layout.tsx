@@ -30,8 +30,6 @@ const rubik = Rubik({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: "#ffffff",
 };
 
@@ -55,13 +53,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className="h-full" suppressHydrationWarning>
+    <html lang="he" dir="rtl" className="h-[100dvh]" suppressHydrationWarning>
       <body
         className={cn(
           heebo.variable,
           rubik.variable,
           jetbrainsMono.variable,
-          "h-screen w-full overflow-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
+          "h-[100dvh] w-full overflow-hidden bg-background font-sans text-foreground antialiased selection:bg-blue-100"
         )}
         dir="rtl"
         suppressHydrationWarning
@@ -75,8 +73,15 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider delay={0}>
-            <div className="flex h-screen w-full flex-col overflow-hidden">
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {/* LAYOUT INVARIANT — אין גלילה גלובלית. ראה dashboard-shell.tsx לפרטים. */}
+            <div
+              className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background"
+              data-layout-region="root-shell"
+            >
+              <div
+                className="flex flex-1 min-h-0 overflow-hidden"
+                data-layout-region="root-content"
+              >
                 {children}
               </div>
             </div>

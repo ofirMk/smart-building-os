@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextResponse, type NextRequest } from "next/server"
 
+import { resolveCompanyContext } from "@/lib/company-context"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 
 export const runtime = "nodejs"
@@ -57,6 +58,30 @@ function parseIsoDateOrNull(s: string | null | undefined): string | null {
 function decodeBase64Url(input: string): Buffer {
   const b64 = input.replace(/-/g, "+").replace(/_/g, "/")
   return Buffer.from(b64, "base64")
+}
+
+function resolveActiveCompanyId(req: NextRequest): string {
+  const fromHeader = req.headers.get("x-company-id")?.trim()
+  const fromEnv = process.env.INGESTION_COMPANY_ID?.trim()
+  const resolved = resolveCompanyContext(fromHeader || fromEnv)
+  if (!resolved) {
+    throw new Error("Missing active company context for ingestion scanner")
+  }
+  return resolved
+}
+
+function nextSupplierNumber(): string {
+  return `SUP-${Date.now().toString().slice(-8)}`
+}
+
+function toOcrTokens(values: Array<string | null | undefined>): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => String(value ?? "").trim())
+        .filter((value) => value.length > 0)
+    )
+  )
 }
 
 async function getGoogleAccessToken(): Promise<string> {
@@ -196,6 +221,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createSupabaseServiceRoleClient()
+    const companyId = resolveActiveCompanyId(req)
     const stats = {
       scannedFiles: 0,
       importedInvoices: 0,
@@ -293,21 +319,20 @@ export async function POST(req: NextRequest) {
 
         const supplierName = extracted.supplier_name.trim() || "Unknown Supplier"
         const { data: supplierExisting } = await supabase
-          .from("entities")
+          .from("erp_md_suppliers")
           .select("id, name")
-          .eq("type", "supplier")
-          .eq("is_deleted", false)
+          .eq("company_id", companyId)
           .ilike("name", supplierName)
           .maybeSingle()
         let supplierId = (supplierExisting as { id?: string } | null)?.id ?? null
         if (!supplierId) {
           const { data: supplierInserted, error: supplierInsertErr } = await supabase
-            .from("entities")
+            .from("erp_md_suppliers")
             .insert({
+              company_id: companyId,
+              supplier_number: nextSupplierNumber(),
               name: supplierName,
-              type: "supplier",
-              contact_info: {},
-              is_deleted: false,
+              supplier_kind: "supplier",
             })
             .select("id")
             .single()
@@ -321,25 +346,31 @@ export async function POST(req: NextRequest) {
           const name = item.description.trim()
           if (!name) continue
           const lookup = await supabase
-            .from("items_catalog")
-            .select("id, sku, description")
+            .from("erp_md_items")
+            .select("id, item_number, description, ai_metadata, ocr_match_tokens")
+            .eq("company_id", companyId)
             .ilike("description", name)
             .maybeSingle()
           let itemId = (lookup.data as { id?: string } | null)?.id ?? null
           if (!itemId) {
             const sku = safeSkuFromName(name)
             const insertItem = await supabase
-              .from("items_catalog")
+              .from("erp_md_items")
               .insert({
-                sku,
+                company_id: companyId,
+                item_number: sku,
+                internal_sku: sku,
                 description: name,
-                unit: item.unit ?? "יחידה",
-                default_price: item.unit_price,
-                is_inventory: true,
-                additional_attributes: {
+                unit_of_measure: item.unit ?? "יחידה",
+                is_inventory_managed: true,
+                status: "ACTIVE",
+                ai_metadata: {
                   supplier_sku: item.supplier_sku ?? null,
                   source: "gmail_2025_scanner",
                 },
+                ocr_match_tokens: toOcrTokens([name, item.supplier_sku ?? null]),
+                legacy_default_price: item.unit_price,
+                legacy_last_price: item.unit_price,
               })
               .select("id")
               .single()
@@ -351,40 +382,54 @@ export async function POST(req: NextRequest) {
           }
 
           const supplierItemExisting = await supabase
-            .from("supplier_items")
+            .from("erp_md_supplier_items")
             .select("id")
-            .eq("master_item_id", itemId)
+            .eq("company_id", companyId)
+            .eq("item_id", itemId)
             .eq("supplier_id", supplierId)
             .maybeSingle()
           if (supplierItemExisting.data?.id) {
             await supabase
-              .from("supplier_items")
+              .from("erp_md_supplier_items")
               .update({
                 supplier_sku: item.supplier_sku ?? null,
-                unit_price: item.unit_price,
+                base_price: item.unit_price,
+                ai_metadata: {
+                  source: "gmail_2025_scanner",
+                  updated_at: new Date().toISOString(),
+                },
               })
+              .eq("company_id", companyId)
               .eq("id", supplierItemExisting.data.id)
           } else {
-            await supabase.from("supplier_items").insert({
-              master_item_id: itemId,
+            await supabase.from("erp_md_supplier_items").insert({
+              company_id: companyId,
+              item_id: itemId,
               supplier_id: supplierId,
               supplier_sku: item.supplier_sku ?? null,
-              unit_price: item.unit_price,
+              base_price: item.unit_price,
               is_preferred: false,
+              ai_metadata: {
+                source: "gmail_2025_scanner",
+                created_at: new Date().toISOString(),
+              },
             })
           }
-
-          const priceDate = extracted.invoice_date ?? new Date().toISOString().slice(0, 10)
-          const priceInsert = await supabase.from("supplier_item_prices").insert({
-            master_item_id: itemId,
-            supplier_id: supplierId,
-            supplier_sku: item.supplier_sku ?? null,
-            last_price: item.unit_price,
-            last_price_date: priceDate,
-          })
-          if (!priceInsert.error) {
-            stats.updatedSupplierPrices += 1
-          }
+          await supabase
+            .from("erp_md_items")
+            .update({
+              ai_metadata: {
+                source: "gmail_2025_scanner",
+                supplier_sku: item.supplier_sku ?? null,
+                invoice_date: extracted.invoice_date,
+                scanned_at: new Date().toISOString(),
+              },
+              ocr_match_tokens: toOcrTokens([name, item.supplier_sku ?? null, supplierName]),
+              legacy_last_price: item.unit_price,
+            })
+            .eq("company_id", companyId)
+            .eq("id", itemId)
+          stats.updatedSupplierPrices += 1
         }
 
         stats.importedInvoices += 1

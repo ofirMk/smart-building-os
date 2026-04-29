@@ -314,7 +314,7 @@ export function MobileFieldClient() {
   return (
     <div
       dir="rtl"
-      className="mx-auto min-h-screen w-full max-w-[390px] space-y-3 bg-background px-3 py-3"
+      className="mx-auto flex-1 min-h-0 w-full max-w-[390px] space-y-3 overflow-y-auto bg-background px-3 py-3"
     >
       <header className="rounded-xl border border-slate-200 bg-card p-3 shadow-sm">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">

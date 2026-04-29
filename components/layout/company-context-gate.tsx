@@ -40,7 +40,7 @@ export function CompanyContextGate() {
 
         <section className="grid gap-4 md:grid-cols-3">
           {COMPANY_CONTEXT_OPTIONS.map((company) => {
-            const Icon = COMPANY_ICONS[company.id]
+            const Icon = COMPANY_ICONS[company.id as keyof typeof COMPANY_ICONS]
             return (
               <button
                 key={company.id}

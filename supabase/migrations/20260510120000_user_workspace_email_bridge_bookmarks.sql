@@ -12,7 +12,9 @@ comment on column public.user_workspace_settings.email_bridge_sso is
 comment on column public.user_workspace_settings.browser_bookmarks is
   'סימניות לדפדפן הפנימי — מערך {label, href} (href יכול להיות מלא או נתיב יחסי לאפליקציה)';
 
-create or replace view public.user_workspace_state as
+drop view if exists public.user_workspace_state;
+
+create view public.user_workspace_state as
 select
   user_id,
   active_tabs,

@@ -9,7 +9,7 @@ export default function ExternalLayout({ children }: { children: ReactNode }) {
     <div
       dir="rtl"
       lang="he"
-      className="flex min-h-[100dvh] min-w-0 flex-1 flex-col bg-card text-foreground [color-scheme:light]"
+      className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden bg-card text-foreground [color-scheme:light]"
     >
       {children}
     </div>

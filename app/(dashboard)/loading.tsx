@@ -1,7 +1,7 @@
 export default function DashboardLoading() {
   return (
     <div
-      className="-mx-4 min-h-[calc(100vh-3.5rem)] bg-[#0a0a0a] px-4 py-6 md:-mx-6 md:px-6 md:py-10"
+      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-[#0a0a0a] px-4 py-6 md:-mx-6 md:px-6 md:py-10"
       dir="rtl"
     >
       <header className="mb-10 border-b border-gray-800 pb-6">

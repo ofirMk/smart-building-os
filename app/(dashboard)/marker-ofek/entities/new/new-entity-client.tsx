@@ -366,7 +366,7 @@ export function NewEntityClient({
                 </div>
                 <div className={embedded ? "space-y-1" : "space-y-2"}>
                   <Label htmlFor="ent-erp-sup" className={denseLbl}>
-                    מספר ספק פריוריטי (erp_supplier_number)
+                    מספר ספק ב-ERP (erp_supplier_number)
                   </Label>
                   <Input
                     id="ent-erp-sup"
@@ -378,7 +378,7 @@ export function NewEntityClient({
                 </div>
                 <div className={embedded ? "space-y-1" : "space-y-2"}>
                   <Label htmlFor="ent-erp-cust" className={denseLbl}>
-                    מספר לקוח פריוריטי (erp_customer_number)
+                    מספר לקוח ב-ERP (erp_customer_number)
                   </Label>
                   <Input
                     id="ent-erp-cust"

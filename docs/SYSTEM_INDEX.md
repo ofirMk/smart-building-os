@@ -40,6 +40,24 @@
 
 ---
 
+## 2ב. הפצת Master Data (Marker Ofek Rollout)
+
+| נושא | מיקום |
+|------|--------|
+| **תוכנית הפצה 4-שלבית** (Shadow → Read-Only → Pilot → GA) | `docs/architecture/rollout-plan-master-data.md` |
+| Focus Mode (env flag, סינון תפריט בלבד) | `lib/marker-ofek/focus-mode.ts` + `decisions/2026-04-26-focus-mode-launch-strategy.md` |
+| **Bulk Import (CSV)** של מק״טים — Stage 1 critical tool | `app/(dashboard)/marker-ofek/items/import/` + `app/api/master-data/items/bulk-import/route.ts` |
+| כרטיס פריט מלא (Priority Stage A — 10 שדות) | `app/(dashboard)/marker-ofek/items/new/priority-item-form-client.tsx` |
+| FP-safe decimal pipe (conversion_factor, price) | `lib/erp/master-data-api.ts` → `sanitizeDecimalString` |
+| Project-scoped flag — דחיה מנומקת | `decisions/2026-04-26-project-scoped-flag-deferred.md` |
+| Sunset של `items_catalog` הישן (trigger 1-way → drop) | `decisions/2026-04-26-sunset-legacy-items-catalog.md` |
+| Performance indexes (cheapest-supplier, preferred) | `supabase/migrations/20260428_supplier_items_perf_indexes.sql` |
+| **F2 Drill-Down (Priority parity)** — hook + LookupField + Sheet + QuickCreate forms | `lib/marker-ofek/hooks/use-f2-listener.ts`, `components/marker-ofek/forms/`, `components/marker-ofek/master-data/quick-create-*.tsx` |
+| **Layout Invariants** (אין גלילה גלובלית, Flexbox סטרילי, חוקי-rem) | `docs/architecture/layout-invariants.md` + `data-layout-region` ב-`app/layout.tsx` ו-`components/dashboard-shell.tsx` |
+| **Top Navigation** (Salient-style, h-16, RTL, mega-menu לבנייה) | `components/layout/top-navigation.tsx` — מקור-אמת יחיד למבנה התפריט (NAV_ITEMS). בנייה → שרשרת רכש → כרטיס פריט |
+
+---
+
 ## 3. סכימה ורכש (PO / CEO)
 
 | נושא | מיקום |

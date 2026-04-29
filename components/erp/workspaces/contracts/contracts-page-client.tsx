@@ -117,7 +117,7 @@ export function ContractsPageClient() {
   } = useErpLookupCache<ProjectLookup>({
     cacheKey: "erp-project-lookups",
     loader: async () => {
-      return apiGet<ProjectLookup[]>("/api/projects", { schema: z.array(projectLookupSchema) })
+      return apiGet<ProjectLookup[]>("/api/erp/projects", { schema: z.array(projectLookupSchema) })
     },
   })
   const {
@@ -186,7 +186,7 @@ export function ContractsPageClient() {
       if (projectId !== "ALL") params.set("projectId", projectId)
       if (supplierId !== "ALL") params.set("supplierId", supplierId)
 
-      const contractsUrl = params.size > 0 ? `/api/contracts?${params.toString()}` : "/api/contracts"
+      const contractsUrl = params.size > 0 ? `/api/contracts?${params.toString()}` : "/api/erp/contracts"
       const nextContracts = await apiGet<ErpContract[]>(contractsUrl, {
         schema: contractsSchema,
         signal,
@@ -242,7 +242,7 @@ export function ContractsPageClient() {
             unitPrice: number
             totalPrice: number
           }[]
-        >(`/api/contracts/${selectedContractId}/lines`, {
+        >(`/api/erp/contracts/${selectedContractId}/lines`, {
           schema: contractLinesSchema,
           signal: controller.signal,
         })
@@ -260,7 +260,7 @@ export function ContractsPageClient() {
   }, [selectedContractId])
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <DenseMasterDetailTemplate
         dir="rtl"
         eyebrow="Contracts & Billing"

@@ -136,14 +136,14 @@ export function ItemsMasterDetailClient() {
   })
 
   const loadFamilies = React.useCallback(async () => {
-    const result = await requestJson<ApiResponse<ProductFamily[]>>("/api/product-families")
+    const result = await requestJson<ApiResponse<ProductFamily[]>>("/api/erp/master-data/product-families")
     setFamilies(result.data ?? [])
   }, [])
 
   const loadItems = React.useCallback(async () => {
     setLoading(true)
     try {
-      const result = await requestJson<ApiResponse<ItemRecord[]>>("/api/items")
+      const result = await requestJson<ApiResponse<ItemRecord[]>>("/api/erp/master-data/items")
       const rows = result.data ?? []
       setItems(rows)
       setSelectedItemId((prev) => prev ?? rows[0]?.id ?? null)
@@ -158,7 +158,7 @@ export function ItemsMasterDetailClient() {
 
   const loadItemDetails = React.useCallback(async (itemId: string) => {
     try {
-      const result = await requestJson<ApiResponse<ItemRecord>>(`/api/items/${itemId}`)
+      const result = await requestJson<ApiResponse<ItemRecord>>(`/api/erp/master-data/items/${itemId}`)
       setSelectedItem(result.data)
       detailForm.reset({
         sku: result.data.sku,
@@ -190,7 +190,7 @@ export function ItemsMasterDetailClient() {
   async function createItem(values: ItemFormInput) {
     setSaving(true)
     try {
-      const result = await requestJson<ApiResponse<ItemRecord>>("/api/items", {
+      const result = await requestJson<ApiResponse<ItemRecord>>("/api/erp/master-data/items", {
         method: "POST",
         body: JSON.stringify(values),
       })
@@ -219,7 +219,7 @@ export function ItemsMasterDetailClient() {
     if (!selectedItem) return
     setSaving(true)
     try {
-      await requestJson<ApiResponse<ItemRecord>>(`/api/items/${selectedItem.id}`, {
+      await requestJson<ApiResponse<ItemRecord>>(`/api/erp/master-data/items/${selectedItem.id}`, {
         method: "PUT",
         body: JSON.stringify(values),
       })
@@ -233,7 +233,7 @@ export function ItemsMasterDetailClient() {
   }
 
   return (
-    <div dir="rtl" className="min-h-[calc(100vh-10rem)] bg-[#F8FAFC] px-4 py-5 md:px-6">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC] px-4 py-5 md:px-6">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">

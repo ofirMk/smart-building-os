@@ -3,7 +3,6 @@
 import type { ReactNode } from "react"
 
 import { CreateTicketDialog } from "@/components/tickets/create-ticket-dialog"
-import { MOCK_TICKETS } from "@/components/tickets/tickets-management-mock-data"
 import { cn } from "@/lib/utils"
 import type { BuildingOption } from "@/lib/buildings"
 import type {
@@ -75,12 +74,13 @@ export function TicketsManagementView({
   usedMockFallback,
   fetchErrorMessage,
 }: TicketsManagementViewProps) {
-  const displayRows = usedMockFallback ? MOCK_TICKETS : rows
-  const showEmptyState = !usedMockFallback && rows.length === 0
+  void usedMockFallback
+  const displayRows = rows
+  const showEmptyState = rows.length === 0
 
   return (
     <div
-      className="-mx-4 min-h-[calc(100vh-3.5rem)] bg-[#0a0a0a] px-4 py-6 font-sans text-gray-100 md:-mx-6 md:px-6 md:py-10"
+      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-[#0a0a0a] px-4 py-6 font-sans text-gray-100 md:-mx-6 md:px-6 md:py-10"
       dir="rtl"
     >
       <header className="mb-8 flex flex-col gap-6 border-b border-gray-800 pb-8 sm:flex-row sm:items-end sm:justify-between">

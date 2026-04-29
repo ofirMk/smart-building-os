@@ -1,14 +1,17 @@
+import type { PreventiveMaintenanceSummaryMock } from "@/components/maintenance/preventive-maintenance-mock-data"
 import { PreventiveMaintenanceDashboard } from "@/components/maintenance/preventive-maintenance-dashboard"
-import {
-  PREVENTIVE_MAINTENANCE_ROWS_MOCK,
-  PREVENTIVE_MAINTENANCE_SUMMARY_MOCK,
-} from "@/components/maintenance/preventive-maintenance-mock-data"
+
+const emptySummary: PreventiveMaintenanceSummaryMock = {
+  maintenancesThisMonth: 0,
+  expiringContractsSoon: 0,
+  activeVendors: 0,
+}
 
 export default function MaintenancePage() {
   return (
     <PreventiveMaintenanceDashboard
-      summary={PREVENTIVE_MAINTENANCE_SUMMARY_MOCK}
-      rows={PREVENTIVE_MAINTENANCE_ROWS_MOCK}
+      summary={emptySummary}
+      rows={[]}
     />
   )
 }

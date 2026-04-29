@@ -27,10 +27,6 @@ import {
 } from "@/components/ui/table"
 import { HighRiskApprovalsWidget } from "@/components/marker-ofek/analytics/high-risk-approvals-widget"
 import {
-  EXECUTIVE_MOCK_CASH_FLOW_FORECAST_3M,
-  EXECUTIVE_MOCK_CEO_ALERTS,
-  EXECUTIVE_MOCK_EXPECTED_CASHFLOW_NEXT_MONTH,
-  EXECUTIVE_MOCK_PROJECTS,
   categoryBudgetUtilizationPercent,
   computeExecutiveCompanyKpis,
   grossMarginPercentOnBilled,
@@ -38,9 +34,15 @@ import {
   type ExecutiveProjectCostCategory,
   type ExecutiveProjectSnapshot,
 } from "@/lib/marker-ofek/executive-analytics-mock-data"
+
 import { MD_QUERY } from "@/lib/marker-ofek/master-detail-nav"
 import { apiGet } from "@/lib/utils/api-client"
 import { cn } from "@/lib/utils"
+
+const EXECUTIVE_MOCK_PROJECTS: ExecutiveProjectSnapshot[] = []
+const EXECUTIVE_MOCK_CEO_ALERTS: ExecutiveCeoAlert[] = []
+const EXECUTIVE_MOCK_CASH_FLOW_FORECAST_3M: { labelHe: string; expectedIn: number; expectedOut: number }[] = []
+const EXECUTIVE_MOCK_EXPECTED_CASHFLOW_NEXT_MONTH = 0
 
 const ExecutiveCashFlowChart = dynamic(
   () =>

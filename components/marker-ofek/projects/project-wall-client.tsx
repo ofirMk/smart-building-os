@@ -211,7 +211,7 @@ export function ProjectWallClient({
               </li>
             ) : (
               posts.map((p) => (
-                <li key={p.id} className="relative ps-3 before:absolute before:start-0 before:top-2 before:h-[calc(100%-0.5rem)] before:w-px before:bg-slate-200 before:content-[''] last:before:hidden">
+                <li key={p.id} className="relative ps-3 before:absolute before:start-0 before:top-2 before:bottom-2 before:w-px before:bg-slate-200 before:content-[''] last:before:hidden">
                   <article className="rounded-xl border border-slate-200 bg-background/50 p-4 shadow-sm">
                     <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0 text-start">

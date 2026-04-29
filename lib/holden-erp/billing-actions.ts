@@ -11,7 +11,7 @@ import {
   fetchSupplierPartsAction,
   fetchUnitsOfMeasureAction,
 } from "@/lib/holden-erp/master-data-actions"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { formatError } from "@/lib/utils"
 import type {
   BillingLineInput,
@@ -93,7 +93,7 @@ export async function createTaxInvoiceAction(
     }
   }
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createSupabaseServerAuthClient()
 
   const { data: incomeRow, error: incomeErr } = await supabase
     .from("gl_accounts")
@@ -269,7 +269,7 @@ export async function fetchBillingAgentsAction(): Promise<
   | { ok: false, error: string }
 > {
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, email")
@@ -301,7 +301,7 @@ export async function fetchProjectsForBillingAction(): Promise<
   | { ok: false, error: string }
 > {
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data, error } = await supabase
       .from("projects")
       .select("id, name, internal_project_code")
@@ -331,7 +331,7 @@ export async function fetchWbsNodesForProjectAction(
   try {
     const pid = projectId?.trim()
     if (!pid) return { ok: true, nodes: [] }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data, error } = await supabase
       .from("erp_project_wbs")
       .select("id, milestone_name")
@@ -374,7 +374,7 @@ export async function fetchPullSourcesForProjectAction(projectId: string): Promi
         purchaseOrders: [],
       }
     }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const { data: reps, error: rErr } = await supabase
       .from("project_progress_reports")
       .select("id, report_month, total_payable, status, bill_month_label")
@@ -448,7 +448,7 @@ export async function fetchBillingPrefillFromSourceAction(input: {
     if (!projectId || !sourceId) {
       return { ok: false, error: "חסר פרויקט או מקור" }
     }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
 
     if (input.sourceType === "progress_report") {
       const { data: rep, error: repErr } = await supabase
@@ -624,7 +624,7 @@ export async function fetchBillingBudgetContextAction(
     if (!pid) {
       return { ok: false, error: "חסר פרויקט" }
     }
-    const supabase = await createServerSupabaseClient()
+    const supabase = await createSupabaseServerAuthClient()
     const [poRes, actRes] = await Promise.all([
       fetchProjectPoCommitmentAction({ projectId: pid }),
       supabase
@@ -762,7 +762,7 @@ export async function createFinalTaxInvoiceAction(
     }
   }
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createSupabaseServerAuthClient()
 
   const idem = buildFinalInvoiceIdempotencyKey(
     payload.projectId,

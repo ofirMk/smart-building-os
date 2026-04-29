@@ -15,8 +15,8 @@ export default function MarkerOfekModuleManagerPage() {
       description="ניהול הפעלה/כיבוי של מודולים ברמת משתמש"
       master={<SettingsMasterNav />}
       detail={
-        <div className="bg-[#fafafa] font-sans text-[#0f172a] rtl" dir="rtl">
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-2 py-2">
+        <div className="flex-1 min-h-0 overflow-y-auto bg-[#fafafa] font-sans text-[#0f172a] rtl" dir="rtl">
+          <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-6 px-2 py-2">
             <ModuleManagerClient />
           </div>
         </div>

@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Suspense } from "react"
 
 import { EntityWorkspace } from "@/components/layout/EntityWorkspace"
 import { PoCreationSidebar } from "@/components/marker-ofek/procurement/po-creation-sidebar"
@@ -11,29 +10,23 @@ export const metadata: Metadata = {
     "Phase 2.1 — מנוע הזמנת רכש עם בקרת תקציב (Budget-locked PO Engine)",
 }
 
-function PoFormFallback() {
-  return (
-    <div
-      className="flex min-h-[min(420px,50vh)] flex-col items-center justify-center gap-2 bg-card p-8 text-sm text-muted-foreground"
-      dir="rtl"
-    >
-      <span className="h-8 w-8 animate-pulse rounded-full bg-muted" aria-hidden />
-      טוען טופס הזמנת רכש…
-    </div>
-  )
-}
+export default async function NewPurchaseOrderPage({
+  searchParams,
+}: {
+  searchParams:
+    | Promise<{ mockPo?: string | string[] | undefined }>
+    | { mockPo?: string | string[] | undefined }
+}) {
+  const resolvedSearchParams = await Promise.resolve(searchParams)
+  const mockPoParam = resolvedSearchParams.mockPo
+  const mockPo = Array.isArray(mockPoParam) ? (mockPoParam[0] ?? "") : (mockPoParam ?? "")
 
-export default function NewPurchaseOrderPage() {
   return (
     <EntityWorkspace
       title="Procurement PO Workspace"
       description="Master-detail 70/30 layout · יצירת הזמנת רכש"
       sidebar={<PoCreationSidebar />}
-      main={
-        <Suspense fallback={<PoFormFallback />}>
-          <PurchaseOrderEngineForm />
-        </Suspense>
-      }
+      main={<PurchaseOrderEngineForm mockPo={mockPo} />}
     />
   )
 }

@@ -119,7 +119,12 @@ function MarkerOfekWorkspaceChrome({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="min-h-0 min-w-0 flex-1 overflow-hidden"
+          // Scroll discipline: overflow-y-auto מאפשר דפים רגילים (טפסים, דאשבורדים)
+          // לגלול בתוך המעטפת. overflow-x-hidden מונע dump אופקי בזמן אנימציית slide.
+          // דפים שמנהלים גלילה עצמית (HeavyItemMasterScreen, BoQ workspace) ממשיכים
+          // לתפקד במצב self-managed (flex-1 + overflow-hidden בשורש שלהם) — ה-overflow-y-auto
+          // כאן לא יקרה כי התוכן הפנימי לא גולש.
+          className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
         >
           {children}
         </motion.div>

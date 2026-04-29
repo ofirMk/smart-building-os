@@ -46,6 +46,9 @@ function fieldHint(label: ThreeWayLabel, locale: WorkspaceLocale) {
   return locale === "he" ? `${label.en} · ${label.key}` : `${label.he} · ${label.key}`
 }
 
+/**
+ * @deprecated Use `EntityWorkspace` + `BentoSmartList` + slide-over FocusPane pattern.
+ */
 export function MasterDetailWorkspace({
   title,
   description,
@@ -63,16 +66,18 @@ export function MasterDetailWorkspace({
       dir={locale === "he" ? "rtl" : "ltr"}
       lang={locale === "he" ? "he" : "en"}
       className={cn(
-        "flex h-[calc(100vh-4rem)] w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden bg-background p-3 lg:p-4",
+        "flex flex-1 min-h-0 w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden bg-background p-3 lg:p-4",
         className
       )}
     >
-      <Card className="border-slate-200 bg-card shadow-sm">
+      <Card className="border-border bg-card shadow-sm">
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
           <div className="min-w-0">
             <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
             {description ? (
-              <CardDescription className="mt-1 text-xs text-slate-500">{description}</CardDescription>
+              <CardDescription className="mt-1 text-xs text-muted-foreground">
+                {description}
+              </CardDescription>
             ) : null}
           </div>
           {headerActions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{headerActions}</div> : null}
@@ -80,28 +85,28 @@ export function MasterDetailWorkspace({
       </Card>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-10">
-        <aside className="min-h-0 space-y-2 lg:col-span-3">
-          <Card className="border-slate-200 bg-card shadow-sm">
+        <aside className="flex min-h-0 flex-col lg:col-span-3">
+          <Card className="flex min-h-0 flex-1 flex-col border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">{localizeLabel(masterLabel, locale)}</CardTitle>
               <CardDescription className="text-[11px]">{fieldHint(masterLabel, locale)}</CardDescription>
             </CardHeader>
-            <CardContent className="h-full min-h-0 overflow-y-auto p-2">{master}</CardContent>
+            <CardContent className="flex-1 min-h-0 overflow-y-auto p-2">{master}</CardContent>
           </Card>
         </aside>
-        <main className="min-h-0 lg:col-span-7">
-          <Card className="border-slate-200 bg-card shadow-sm">
+        <main className="flex min-h-0 flex-col lg:col-span-7">
+          <Card className="flex min-h-0 flex-1 flex-col border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">{localizeLabel(detailLabel, locale)}</CardTitle>
               <CardDescription className="text-[11px]">{fieldHint(detailLabel, locale)}</CardDescription>
             </CardHeader>
-            <CardContent className="h-full min-h-0 overflow-y-auto p-2">{detail}</CardContent>
+            <CardContent className="flex-1 min-h-0 overflow-y-auto p-2">{detail}</CardContent>
           </Card>
         </main>
       </div>
 
       {footerActions ? (
-        <Card className="sticky bottom-0 z-20 border-slate-200 bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/90">
+        <Card className="sticky bottom-0 z-20 border-border bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/90">
           <CardContent className="flex flex-wrap items-center justify-end gap-2 p-3">
             {footerActions}
           </CardContent>

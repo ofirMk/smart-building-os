@@ -1,7 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { evaluateSupplierTaxCompliance } from "@/lib/marker-ofek/entity-supplier-compliance"
 import { poFromBoqServerSchema } from "@/lib/marker-ofek/erp-validation-schemas"
 import { getMoSystemSettings } from "@/lib/marker-ofek/mo-system-settings-actions"
@@ -13,7 +15,7 @@ export type CreatePoFromBoqLine = {
   unit: string | null
   quantity: number
   unitPrice: number
-  /** חובה — FK ל־items_catalog */
+  /** חובה — FK ל־erp_md_items */
   catalogItemId: string
 }
 
@@ -30,6 +32,15 @@ export type CreatePurchaseOrderFromBoqResult =
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const companyId = resolveCompanyContext(cookieStore.get(COMPANY_COOKIE_KEY)?.value)
+  if (!companyId) {
+    throw new Error("Missing active company context")
+  }
+  return companyId
 }
 
 export async function createPurchaseOrderFromBoq(input: {
@@ -52,6 +63,12 @@ export async function createPurchaseOrderFromBoq(input: {
   const { projectId, tenderId, supplierEntityId, lines } = parsed.data
 
   const supabase = await createSupabaseServerAuthClient()
+  let companyId: string
+  try {
+    companyId = await resolveActiveCompanyId()
+  } catch {
+    return { ok: false, error: "Missing active company context" }
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -129,8 +146,9 @@ export async function createPurchaseOrderFromBoq(input: {
 
   const catalogIds = Array.from(new Set(lines.map((l) => l.catalogItemId)))
   const { data: catalogRows, error: catErr } = await supabase
-    .from("items_catalog")
+    .from("erp_md_items")
     .select("id")
+    .eq("company_id", companyId)
     .in("id", catalogIds)
 
   if (catErr) {
@@ -149,9 +167,10 @@ export async function createPurchaseOrderFromBoq(input: {
 
   const minPriceByItem = new Map<string, number>()
   const { data: histRows, error: histErr } = await supabase
-    .from("supplier_item_prices")
-    .select("master_item_id, last_price")
-    .in("master_item_id", catalogIds)
+    .from("erp_md_supplier_items")
+    .select("item_id, base_price")
+    .eq("company_id", companyId)
+    .in("item_id", catalogIds)
     .limit(2000)
 
   if (histErr) {
@@ -159,11 +178,11 @@ export async function createPurchaseOrderFromBoq(input: {
   }
 
   for (const row of (histRows ?? []) as {
-    master_item_id: string | null
-    last_price: number | null
+    item_id: string | null
+    base_price: number | null
   }[]) {
-    const itemId = row.master_item_id ?? ""
-    const p = Number(row.last_price ?? 0)
+    const itemId = row.item_id ?? ""
+    const p = Number(row.base_price ?? 0)
     if (!itemId || !Number.isFinite(p)) continue
     const current = minPriceByItem.get(itemId)
     if (current == null || p < current) minPriceByItem.set(itemId, p)

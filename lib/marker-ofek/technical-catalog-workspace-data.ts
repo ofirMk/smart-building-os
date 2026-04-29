@@ -1,5 +1,5 @@
 /**
- * Master grid + rich detail mocks for Technical Items Catalog (Priority-style workspace).
+ * Master grid + rich detail mocks for Technical Items Catalog (ERP-style workspace).
  */
 
 export type CatalogMasterRow = {

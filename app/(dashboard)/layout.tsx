@@ -25,19 +25,10 @@ export default async function DashboardLayout({
       organizationBranding={p.organizationBranding}
     >
       <DashboardShell
-        userEmail={p.userEmail}
-        userRole={p.userRole}
-        hostGreetingLine={p.hostGreetingLine}
         hostFirstName={p.hostFirstName}
         hrWelcome={p.hrWelcome}
         hrWelcomePending={p.hrWelcomePending}
         initialWorkspace={p.initialWorkspace}
-        showPartnerFinanceNav={p.showPartnerFinanceNav}
-        showHoldingExecutiveNav={p.showHoldingExecutiveNav}
-        showUserPermissionsNav={p.showUserPermissionsNav}
-        showAiUserSetupNav={p.showAiUserSetupNav}
-        scopedProjectCount={p.scopedProjectCount}
-        applyEmptyPortfolioNav={p.applyEmptyPortfolioNav}
         showMirrorSelector={p.showMirrorSelector}
         mirrorViewAs={p.mirrorViewAs}
         mirrorBannerLabel={p.mirrorBannerLabel}

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 import {
   Controller,
   useFieldArray,
@@ -70,7 +71,7 @@ export function BusinessPartnerEntryForm({ initialKind, lockKind }: Props) {
   })
 
   const onValid: SubmitHandler<BusinessPartnerEntryOutput> = (data) => {
-    console.log("[BP] Validated Data:", data)
+    toast.success(`הישות אומתה: ${data.entityName}`)
   }
 
   const onInvalid = () => {

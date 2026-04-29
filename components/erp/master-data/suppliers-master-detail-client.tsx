@@ -328,7 +328,7 @@ export function SuppliersMasterDetailClient() {
   }
 
   return (
-    <div dir="rtl" className="min-h-[calc(100vh-10rem)] bg-[#F8FAFC] px-4 py-5 md:px-6">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC] px-4 py-5 md:px-6">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-all">
           <div className="flex flex-wrap items-center justify-between gap-3">

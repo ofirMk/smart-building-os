@@ -208,8 +208,8 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
     setLoading(true)
     try {
       const [contractRes, linesRes, itemsRes] = await Promise.all([
-        requestJson<ApiResponse<unknown>>(`/api/contracts/${contractId}`, { signal }),
-        requestJson<ApiResponse<unknown>>(`/api/contracts/${contractId}/lines`, { signal }),
+        requestJson<ApiResponse<unknown>>(`/api/erp/contracts/${contractId}`, { signal }),
+        requestJson<ApiResponse<unknown>>(`/api/erp/contracts/${contractId}/lines`, { signal }),
         requestJson<ApiResponse<unknown>>("/api/erp/master-data/items", { signal }),
       ])
       if (signal?.aborted) return
@@ -223,7 +223,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
       setLines(parsedLines.data as ErpContractLine[])
       setItems(parsedItems.data as ItemLookup[])
       const workflowRes = await requestJson<ApiResponse<WorkflowResponse>>(
-        `/api/contracts/${contractId}/workflow`,
+        `/api/erp/contracts/${contractId}/workflow`,
         { signal }
       ).catch(() => ({
         data: {
@@ -292,7 +292,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
     if (!contract) return
     setSavingHeader(true)
     try {
-      await requestJson(`/api/contracts/${contract.id}`, {
+      await requestJson(`/api/erp/contracts/${contract.id}`, {
         method: "PUT",
         body: JSON.stringify({
           title: values.title,
@@ -330,7 +330,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
     }
     setTransitioningTo(nextStatus)
     try {
-      await requestJson(`/api/contracts/${contract.id}`, {
+      await requestJson(`/api/erp/contracts/${contract.id}`, {
         method: "PUT",
         headers: actorRole ? { "x-user-role": actorRole } : undefined,
         body: JSON.stringify({ status: nextStatus }),
@@ -355,7 +355,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
         quantity: values.quantity,
         unitPrice: values.unitPrice,
       }
-      await requestJson(`/api/contracts/${contract.id}/lines`, {
+      await requestJson(`/api/erp/contracts/${contract.id}/lines`, {
         method: "POST",
         body: JSON.stringify(payload),
       })
@@ -380,7 +380,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
     if (!contract) return
     setDeletingLineId(lineId)
     try {
-      await requestJson(`/api/contracts/${contract.id}/lines/${lineId}`, { method: "DELETE" })
+      await requestJson(`/api/erp/contracts/${contract.id}/lines/${lineId}`, { method: "DELETE" })
       toast.success("שורה נמחקה")
       await loadAll()
     } catch (error) {
@@ -425,7 +425,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
     try {
       const pdfBlob = await buildContractReportPdfBlob({ contract, lines })
       const pdfBase64 = await blobToBase64(pdfBlob)
-      await requestJson(`/api/contracts/${contract.id}/report-email`, {
+      await requestJson(`/api/erp/contracts/${contract.id}/report-email`, {
         method: "POST",
         body: JSON.stringify({
           to: values.to,
@@ -494,7 +494,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
   }, [contract, items, lineForm, watchedLineItemId, watchedLineQuantity])
 
   return (
-    <div dir="rtl" className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <DenseMasterDetailTemplate
         title={contract ? `${contract.contractNumber} · ${contract.title}` : "Contract Workspace"}
         description="מסך עבודה ארגוני לניהול חוזה, שורות חוזה, דוח PDF ושליחה במייל."

@@ -21,7 +21,7 @@ export function ContractWorkspaceView({
   detail,
 }: ContractWorkspaceViewProps) {
   return (
-    <div dir="rtl" className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <DenseMasterDetailTemplate
         title={title}
         description={description}

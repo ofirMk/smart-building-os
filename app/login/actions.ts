@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { isAdminOrManagerRole } from "@/lib/auth/user-role"
+import { formatError } from "@/lib/format-error"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
 async function redirectAfterAuth(
@@ -76,18 +77,28 @@ export async function login(formData: FormData): Promise<LoginResult> {
     return { ok: false, error: "יש למלא אימייל וסיסמה" }
   }
 
-  const supabase = await createSupabaseServerAuthClient()
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  try {
+    const supabase = await createSupabaseServerAuthClient()
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-  if (error) {
-    return { ok: false, error: mapAuthError(error) }
+    if (error) {
+      return { ok: false, error: mapAuthError(error) }
+    }
+    if (!data.user?.id || !data.session?.access_token) {
+      return {
+        ok: false,
+        error: "האימות נכשל. בדקו שהאימייל והסיסמה תקינים ונסו שוב.",
+      }
+    }
+
+    await redirectAfterAuth(supabase)
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: formatError(error) }
   }
-
-  await redirectAfterAuth(supabase)
-  return { ok: true }
 }
 
 export async function signup(formData: FormData): Promise<SignupResult> {
@@ -102,29 +113,33 @@ export async function signup(formData: FormData): Promise<SignupResult> {
     return { ok: false, error: "הסיסמה חייבת להכיל לפחות 6 תווים" }
   }
 
-  const supabase = await createSupabaseServerAuthClient()
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: "מנהל מערכת",
-        role: "admin",
+  try {
+    const supabase = await createSupabaseServerAuthClient()
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: "מנהל מערכת",
+          role: "admin",
+        },
       },
-    },
-  })
+    })
 
-  if (error) {
-    return { ok: false, error: mapAuthError(error) }
+    if (error) {
+      return { ok: false, error: mapAuthError(error) }
+    }
+
+    if (data.user && !data.session) {
+      return { ok: true, pendingVerification: true }
+    }
+
+    if (data.user && data.session) {
+      await redirectAfterAuth(supabase)
+    }
+
+    return { ok: false, error: "לא ניתן להשלים את ההרשמה" }
+  } catch (error) {
+    return { ok: false, error: formatError(error) }
   }
-
-  if (data.user && !data.session) {
-    return { ok: true, pendingVerification: true }
-  }
-
-  if (data.user && data.session) {
-    await redirectAfterAuth(supabase)
-  }
-
-  return { ok: false, error: "לא ניתן להשלים את ההרשמה" }
 }

@@ -6,7 +6,7 @@ export default async function MasavPage() {
   const pendingPayments = result.success ? result.data : []
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-7xl flex-col p-6 md:p-8">
+    <div className="mx-auto flex flex-1 min-h-0 max-w-7xl flex-col overflow-y-auto p-6 md:p-8">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold text-foreground">
           מסלקת תשלומים (מס״ב)

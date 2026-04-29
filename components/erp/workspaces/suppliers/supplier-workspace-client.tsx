@@ -134,7 +134,7 @@ export function SupplierWorkspaceClient({ activations }: SupplierWorkspaceClient
   const loadSuppliers = React.useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     try {
-      const rows = await requestData<SupplierRecord[]>("/api/suppliers", supplierRecordsSchema, signal)
+      const rows = await requestData<SupplierRecord[]>("/api/erp/master-data/suppliers", supplierRecordsSchema, signal)
       if (signal?.aborted) return
       setSuppliers(rows)
       setSelectedId((prev) => prev ?? rows[0]?.id ?? null)
@@ -152,7 +152,7 @@ export function SupplierWorkspaceClient({ activations }: SupplierWorkspaceClient
     setLoadingDetail(true)
     try {
       const supplier = await requestData<SupplierRecord>(
-        `/api/suppliers/${id}`,
+        `/api/erp/master-data/suppliers/${id}`,
         supplierRecordSchema,
         signal
       )
@@ -222,7 +222,7 @@ export function SupplierWorkspaceClient({ activations }: SupplierWorkspaceClient
   const activeActivations = activations ?? defaultActivations
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <EntityWorkspace
         title="ספקים - Workspace"
         description="Master Grid ו-Detail Tabs משולבים במסך אחד."

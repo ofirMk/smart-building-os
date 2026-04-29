@@ -70,7 +70,7 @@ export function ProjectProfitabilityDashboard({ projectId }: { projectId: string
       headers.set("x-active-company-id", companyId)
     }
 
-    void fetch(`/api/projects/${projectId}/profitability`, {
+    void fetch(`/api/erp/projects/${projectId}/profitability`, {
       method: "GET",
       signal: controller.signal,
       headers,

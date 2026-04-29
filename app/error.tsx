@@ -21,7 +21,7 @@ export default function Error({
     <div
       dir="rtl"
       lang="he"
-      className="flex min-h-[100dvh] items-center justify-center bg-card p-4 text-foreground [color-scheme:light]"
+      className="flex flex-1 min-h-0 items-center justify-center overflow-y-auto bg-card p-4 text-foreground [color-scheme:light]"
     >
       <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-card p-6 shadow-sm md:p-8">
         <div className="mb-4 flex items-center gap-3">

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+import { apiErrorResponse } from "@/lib/api/api-error"
 import { requireMasterDataApiContext } from "@/lib/erp/master-data-api"
 
 function normalizeRole(role: string | null): string {
@@ -45,9 +46,10 @@ export async function requireMobileFieldApiContext(
   if (!siteManagerOnly && !privileged) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "Field interface allowed only for Site Managers or Managers" },
-        { status: 403 }
+      response: apiErrorResponse(
+        403,
+        "FORBIDDEN_ROLE",
+        "Field interface allowed only for Site Managers or Managers"
       ),
     }
   }
@@ -80,13 +82,13 @@ export async function assertMobileProjectAccess(input: {
   if (projectLookup.error) {
     return {
       ok: false,
-      response: NextResponse.json({ error: projectLookup.error.message }, { status: 500 }),
+      response: apiErrorResponse(500, "PROJECT_LOOKUP_FAILED", projectLookup.error.message),
     }
   }
   if (!projectLookup.data) {
     return {
       ok: false,
-      response: NextResponse.json({ error: "Project not found for active company" }, { status: 404 }),
+      response: apiErrorResponse(404, "PROJECT_NOT_FOUND", "Project not found for active company"),
     }
   }
 
@@ -96,9 +98,10 @@ export async function assertMobileProjectAccess(input: {
     if (!managerId || managerId !== userId) {
       return {
         ok: false,
-        response: NextResponse.json(
-          { error: "Site Manager can access only assigned projects" },
-          { status: 403 }
+        response: apiErrorResponse(
+          403,
+          "PROJECT_ACCESS_DENIED",
+          "Site Manager can access only assigned projects"
         ),
       }
     }

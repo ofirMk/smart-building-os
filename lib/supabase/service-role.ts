@@ -23,3 +23,17 @@ export function createSupabaseServiceRoleClient(): SupabaseClient {
     },
   })
 }
+
+export function createSupabaseServiceRoleClientSafe():
+  | { ok: true; client: SupabaseClient }
+  | { ok: false; error: string; code: "SUPABASE_CONFIG_MISSING" } {
+  try {
+    return { ok: true, client: createSupabaseServiceRoleClient() }
+  } catch (error) {
+    return {
+      ok: false,
+      code: "SUPABASE_CONFIG_MISSING",
+      error: error instanceof Error ? error.message : "Supabase service-role bootstrap failed",
+    }
+  }
+}

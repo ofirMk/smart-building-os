@@ -61,6 +61,7 @@ import {
 } from "@/lib/marker-ofek/drill-down-f2"
 import { normalizeProcurementCategory } from "@/lib/marker-ofek/procurement-categories"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { formatError } from "@/lib/format-error"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -308,19 +309,17 @@ export default function MarkerOfekAiImportPage() {
           .map((row) => displayNormalizedName(row))
           .filter((x) => x && x !== "—")
 
-        const { data: itemsBySku } = makats.length
-          ? await supabase
-              .from("items_catalog")
-              .select("id, sku, description")
-              .in("sku", makats.slice(0, 500))
-          : { data: [] as Array<{ id: string; sku: string; description: string | null }> }
-
-        const { data: itemsByName } = normalizedNames.length
-          ? await supabase
-              .from("items_catalog")
-              .select("id, sku, description")
-              .in("description", normalizedNames.slice(0, 800))
-          : { data: [] as Array<{ id: string; sku: string; description: string | null }> }
+        const allMasterItems = await masterDataFetch<
+          Array<{ id: string; sku: string; description: string }>
+        >("/api/erp/master-data/items")
+        const itemsBySku = makats.length
+          ? allMasterItems.filter((row) => makats.includes(String(row.sku ?? "").trim()))
+          : []
+        const itemsByName = normalizedNames.length
+          ? allMasterItems.filter((row) =>
+              normalizedNames.includes(String(row.description ?? "").trim())
+            )
+          : []
 
         const itemBySku = new Map<
           string,

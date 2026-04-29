@@ -39,6 +39,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -158,41 +159,45 @@ export function WorkspaceScenarioSwitcher() {
           <ChevronDown className="size-3 shrink-0 opacity-60" aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[14rem]">
-          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            בחירת תרחיש
-          </DropdownMenuLabel>
-          {ws.workspaceScenarios.length === 0 ? (
-            <p className="px-2 py-1.5 text-xs text-muted-foreground">אין תרחישים שמורים</p>
-          ) : (
-            ws.workspaceScenarios.map((s) => (
-              <DropdownMenuItem
-                key={s.id}
-                onClick={() => void onApply(s.id)}
-                className={cn(
-                  "gap-2 text-sm",
-                  s.id === ws.activeScenarioId && "bg-emerald-50 font-medium text-emerald-950"
-                )}
-              >
-                <ScenarioIcon name={s.icon} />
-                <span className="truncate">{s.name}</span>
-              </DropdownMenuItem>
-            ))
-          )}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              בחירת תרחיש
+            </DropdownMenuLabel>
+            {ws.workspaceScenarios.length === 0 ? (
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">אין תרחישים שמורים</p>
+            ) : (
+              ws.workspaceScenarios.map((s) => (
+                <DropdownMenuItem
+                  key={s.id}
+                  onClick={() => void onApply(s.id)}
+                  className={cn(
+                    "gap-2 text-sm",
+                    s.id === ws.activeScenarioId && "bg-emerald-50 font-medium text-emerald-950"
+                  )}
+                >
+                  <ScenarioIcon name={s.icon} />
+                  <span className="truncate">{s.name}</span>
+                </DropdownMenuItem>
+              ))
+            )}
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              setName("")
-              setSaveOpen(true)
-            }}
-            className="gap-2 text-sm"
-          >
-            <Plus className="size-3.5 text-emerald-600" aria-hidden />
-            שמור תצוגה נוכחית כתרחיש…
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEditOpen(true)} className="gap-2 text-sm">
-            <Pencil className="size-3.5 text-slate-600" aria-hidden />
-            ניהול תרחישים…
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={() => {
+                setName("")
+                setSaveOpen(true)
+              }}
+              className="gap-2 text-sm"
+            >
+              <Plus className="size-3.5 text-emerald-600" aria-hidden />
+              שמור תצוגה נוכחית כתרחיש…
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditOpen(true)} className="gap-2 text-sm">
+              <Pencil className="size-3.5 text-slate-600" aria-hidden />
+              ניהול תרחישים…
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 

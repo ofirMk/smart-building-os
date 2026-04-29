@@ -64,14 +64,14 @@ const MAPPING_FIELDS: {
     key: "trial_balance_group",
     label: "קבוצת מאזן בוחן",
     description:
-      "אופציונלי — בייבוא Priority היררכיה נגזרת מקוד החשבון (* / **)",
+      "אופציונלי — בייבוא מ-ERP היררכיה נגזרת מקוד החשבון (* / **)",
     required: false,
   },
   {
     key: "financial_statement_category",
     label: "קטגוריית דוח כספי",
     description:
-      "אופציונלי — בייבוא Priority היררכיה נגזרת מקוד החשבון (* / **)",
+      "אופציונלי — בייבוא מ-ERP היררכיה נגזרת מקוד החשבון (* / **)",
     required: false,
   },
   {

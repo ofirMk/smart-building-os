@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { RouteShell } from "@/components/layout/route-shell"
 import { resolveContractTitle } from "@/lib/metadata/dynamic-titles"
 
 type LayoutProps = {
@@ -20,5 +21,5 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 export default function ContractDetailLayout({
   children,
 }: LayoutProps) {
-  return children
+  return <RouteShell>{children}</RouteShell>
 }

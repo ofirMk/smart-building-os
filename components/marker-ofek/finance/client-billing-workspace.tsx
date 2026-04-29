@@ -220,9 +220,8 @@ export function ClientBillingWorkspace() {
 
   const onSaveDraft = React.useCallback(() => {
     if (locked) return
-    const data = getValues()
-    console.log("[Client Billing] שמור טיוטה:", data)
-    notifySuccess("שמירת טיוטה הושלמה", "הנתונים נשמרו באופן מקומי.")
+    const lineCount = getValues().lines.length
+    notifySuccess("שמירת טיוטה הושלמה", `נשמרו ${lineCount} שורות חיוב.`)
   }, [locked, getValues])
 
   const onPrint = React.useCallback(() => {
@@ -239,12 +238,6 @@ export function ClientBillingWorkspace() {
       const serial = generateMockClientFormalSerialNumber()
       setValue("documentStatus", "final", { shouldValidate: true })
       setValue("formalSerial", serial, { shouldValidate: true })
-      const data = getValues()
-      console.log("[Client Billing] הפק חשבון סופי — payload:", {
-        ...data,
-        documentStatus: "final" as const,
-        formalSerial: serial,
-      })
       notifySuccess("הפקת חשבון סופי הושלמה", `הוקצה מספר רשמי ${serial}.`)
     },
     [locked, setValue, getValues, fields.length]

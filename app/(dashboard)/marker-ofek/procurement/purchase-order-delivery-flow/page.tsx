@@ -8,11 +8,11 @@ import { toast } from "sonner"
 
 import {
   DenseDetailPanel,
-  DenseMasterDetailTemplate,
   DenseMasterPanel,
   ERP_DENSE_INPUT_CLASS,
   ERP_DENSE_LABEL_CLASS,
 } from "@/components/layout/DenseMasterDetailTemplate"
+import { EntityWorkspace } from "@/components/layout/EntityWorkspace"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -766,16 +766,21 @@ export default function PurchaseOrderDeliveryFlowPage() {
   )
 
   return (
-    <DenseMasterDetailTemplate
-      dir="rtl"
+    <EntityWorkspace
       title="הזמנת רכש ותעודת משלוח"
-      eyebrow="רכש · זרימה מלאה"
       description="טיוטת PO עם שורות מקט״י, הנפקה, ורישום קבלה במחסן — צפיפות Priority / מסך מלא."
-      leading={<Truck className="size-5 text-primary" aria-hidden />}
-      backLink={{ href: "/marker-ofek/procurement", label: "חזרה לרכש" }}
       className="w-full min-w-0 max-w-none gap-2 bg-card pb-6 pt-0"
-      master={master}
-      detail={detail}
+      headerActions={
+        <Link
+          href="/marker-ofek/procurement"
+          className="inline-flex h-8 items-center rounded-md border border-slate-300 px-3 text-xs font-medium transition-colors hover:bg-slate-100"
+        >
+          <Truck className="ms-1 size-3.5 text-primary" aria-hidden />
+          חזרה לרכש
+        </Link>
+      }
+      sidebar={master}
+      main={detail}
     />
   )
 }

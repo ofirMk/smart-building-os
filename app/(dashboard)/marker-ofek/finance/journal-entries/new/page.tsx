@@ -14,7 +14,7 @@ export default async function NewJournalEntryPage() {
   const accounts = accRes.data ?? []
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background text-foreground" dir="rtl">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-background text-foreground" dir="rtl">
       <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-8">
         <header className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">

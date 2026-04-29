@@ -6,7 +6,6 @@ import {
   type OrganizationBrandingSnapshot,
   DEFAULT_SAAS_SLOGAN,
   DEFAULT_ORGANIZATION_DISPLAY_NAME,
-  ERP_EXECUTION_SUBTITLE,
 } from "@/lib/marker-ofek/organization-branding-public"
 
 const DEFAULT_CTX: OrganizationBrandingSnapshot = {

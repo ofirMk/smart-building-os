@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 import type { ErpDirectActivation } from "@/types/erp"
 
@@ -119,12 +120,15 @@ export function InventorySheetWorkspaceClient() {
     setLoadingDetail(true)
     try {
       const supabase = createSupabaseBrowserClient()
-      const itemsRes = await supabase
-        .from("items_catalog")
-        .select("id,sku,description,unit,is_inventory")
-        .eq("is_inventory", true)
-        .limit(4000)
-      if (itemsRes.error) throw itemsRes.error
+      const itemsRes = await masterDataFetch<
+        Array<{
+          id: string
+          sku: string
+          description: string
+          uom: string | null
+          isInventoryManaged: boolean
+        }>
+      >("/api/erp/master-data/items")
       let txQuery = supabase
         .from("inventory_transactions")
         .select("id,project_id,item_catalog_id,transaction_type,quantity,created_at,notes")
@@ -136,15 +140,15 @@ export function InventorySheetWorkspaceClient() {
       const txRes = await txQuery
       if (txRes.error) throw txRes.error
 
-      const items = (itemsRes.data ?? []) as Array<Record<string, unknown>>
+      const items = (itemsRes ?? []).filter((row) => row.isInventoryManaged)
       const txRows = (txRes.data ?? []) as Array<Record<string, unknown>>
       const itemMap = new Map(
         items.map((item) => [
-          String(item.id),
+          item.id,
           {
-            sku: String(item.sku ?? ""),
-            description: String(item.description ?? ""),
-            uom: item.unit ? String(item.unit) : null,
+            sku: item.sku,
+            description: item.description,
+            uom: item.uom,
           },
         ])
       )
@@ -231,7 +235,7 @@ export function InventorySheetWorkspaceClient() {
   )
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <DenseMasterDetailTemplate
         dir="rtl"
         eyebrow="Inventory Control"

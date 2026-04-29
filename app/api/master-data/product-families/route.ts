@@ -53,17 +53,40 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // הערה: שתי עמודות קוד דרות בדו-קיום בעקבות מיגרציה 20260626133000:
+  //   • family_code (legacy, NOT NULL, varchar(32))
+  //   • code        (modern,  NOT NULL, text)
+  // שתיהן מסומנות UNIQUE לפי company_id. אנו מציבים אותו ערך בשתיהן.
   const { data, error } = await supabase
     .from("erp_md_product_families")
     .insert({
       company_id: activeCompanyId,
       family_code: familyCode,
+      code: familyCode,
       name: familyName,
     })
     .select("id,company_id,family_code,name")
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    console.error("[product-families.POST] insert failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    })
+    // PostgREST מחזיר 23505 ל-unique violation, 23502 ל-NOT NULL, 23514 ל-CHECK.
+    const status = error.code === "23505" ? 409 : 400
+    return NextResponse.json(
+      {
+        error: error.message,
+        code: error.code,
+        details: error.details ?? undefined,
+        hint: error.hint ?? undefined,
+      },
+      { status }
+    )
+  }
   return NextResponse.json(
     {
       data: {

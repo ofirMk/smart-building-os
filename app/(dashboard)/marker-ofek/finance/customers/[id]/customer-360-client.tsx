@@ -56,7 +56,7 @@ export function Customer360Client({
 
   return (
     <motion.div
-      className="flex h-[min(100dvh,100vh)] min-h-0 flex-col bg-background/50"
+      className="flex flex-1 min-h-0 flex-col overflow-hidden bg-background/50"
       dir="rtl"
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -90,8 +90,8 @@ export function Customer360Client({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 px-2 py-4 md:px-6">
-        <PanelGroup direction="horizontal" className="mx-auto h-full max-w-[1400px] min-h-[520px]">
+      <div className="min-h-0 flex-1 overflow-hidden px-2 py-4 md:px-6">
+        <PanelGroup direction="horizontal" className="mx-auto h-full min-h-0 max-w-[1400px]">
           <Panel defaultSize={32} minSize={22} className="min-w-0">
             <div className="h-full overflow-auto rounded-2xl border border-slate-100 bg-card p-6 shadow-sm">
               <h2 className="text-xs font-semibold tracking-wide text-slate-400">
@@ -150,7 +150,7 @@ export function Customer360Client({
                     חשבוניות מס וקבלות
                   </p>
                 </div>
-                <div className="max-h-[240px] overflow-auto px-2 py-2">
+                <div className="min-h-0 flex-1 overflow-auto px-2 py-2">
                   <p className="px-2 py-1 text-[11px] font-semibold text-slate-400">
                     חשבוניות
                   </p>
@@ -198,7 +198,7 @@ export function Customer360Client({
                     </TableBody>
                   </Table>
                 </div>
-                <div className="max-h-[200px] overflow-auto border-t border-slate-50 px-2 py-2">
+                <div className="min-h-0 flex-1 overflow-auto border-t border-slate-50 px-2 py-2">
                   <p className="px-2 py-1 text-[11px] font-semibold text-slate-400">
                     קבלות
                   </p>

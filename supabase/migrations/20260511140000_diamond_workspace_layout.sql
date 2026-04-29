@@ -6,7 +6,9 @@ alter table public.user_workspace_settings
 comment on column public.user_workspace_settings.diamond_workspace_layout is
   'מצב פריסת שולחן יהלום: אחוזי פאנלים ומצב קונסול (JSON)';
 
-create or replace view public.user_workspace_state as
+drop view if exists public.user_workspace_state;
+
+create view public.user_workspace_state as
 select
   user_id,
   active_tabs,

@@ -297,8 +297,8 @@ export function SubcontractorBillingWorkspace() {
 
   const onSaveDraft = React.useCallback(() => {
     if (locked) return
-    console.log("[Subcontractor Billing] שמור טיוטה:", getValues())
-    toast.success("טיוטה נשמרה (מקומית)")
+    const values = getValues()
+    toast.success(`טיוטה נשמרה (${values.lines.length} שורות חיוב)`)
   }, [locked, getValues])
 
   const onApproveFinal: SubmitHandler<SubcontractorBillingFormOutput> =
@@ -360,7 +360,6 @@ export function SubcontractorBillingWorkspace() {
         const serial = generateMockFormalSerialNumber()
         setDocumentStatus("final")
         setFormalSerial(serial)
-        console.log("[Subcontractor Billing] אשר לתשלום — payload:", getValues())
         toast.success(`המסמך סופי — מספר רשמי: ${serial}`)
       } catch (error) {
         const message = error instanceof Error ? error.message : "Offset Guard נכשל"

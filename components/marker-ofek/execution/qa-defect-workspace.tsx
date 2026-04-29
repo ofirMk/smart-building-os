@@ -80,13 +80,12 @@ export function QaDefectWorkspace() {
   }
 
   const onOpenTicket: SubmitHandler<QaDefectFormOutput> = (data) => {
-    console.log("[QA Defect] פתח קריאה ושלח לקבלן — payload:", data)
+    toast.success(`קריאת ליקוי נפתחה (${data.defectType})`)
   }
 
   function onSaveDraft() {
-    const data = getValues()
-    console.log("[QA Defect] שמור טיוטה:", data)
-    toast.success("טיוטה נשמרה (מקומית)")
+    const project = getValues().projectId
+    toast.success(project ? "טיוטה נשמרה (מקומית)" : "טיוטה נשמרה ללא שיוך פרויקט")
   }
 
   return (

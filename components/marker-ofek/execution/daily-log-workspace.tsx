@@ -86,13 +86,14 @@ export function DailyLogWorkspace() {
   }
 
   const onSubmitOffice: SubmitHandler<DailyLogFormOutput> = (data) => {
-    console.log("[Daily Log] שדר יומן למשרד — payload:", data)
+    toast.success(
+      `היומן שודר (כח אדם: ${data.manpower.length}, משימות: ${data.tasks.length})`
+    )
   }
 
   function onSaveDraft() {
-    const data = getValues()
-    console.log("[Daily Log] שמור טיוטה:", data)
-    toast.success("טיוטה נשמרה (מקומית)")
+    const hasProject = Boolean(getValues().projectId)
+    toast.success(hasProject ? "טיוטה נשמרה (מקומית)" : "טיוטה נשמרה ללא פרויקט")
   }
 
   return (

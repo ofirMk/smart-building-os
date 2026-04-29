@@ -19,7 +19,7 @@ export default function GlobalError({
   return (
     <html lang="he" dir="rtl">
       <body className="m-0 bg-card text-foreground [color-scheme:light]">
-        <div className="flex min-h-[100dvh] items-center justify-center p-4">
+        <div className="flex flex-1 min-h-0 items-center justify-center overflow-y-auto p-4">
           <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-card p-6 shadow-sm md:p-8">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex size-11 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600">

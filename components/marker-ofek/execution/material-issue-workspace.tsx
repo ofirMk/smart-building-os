@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2, Truck } from "lucide-react"
+import { toast } from "sonner"
 import {
   Controller,
   useFieldArray,
@@ -66,7 +67,7 @@ export function MaterialIssueWorkspace() {
   const { fields, append, remove } = useFieldArray({ control, name: "lines" })
 
   const onConfirm: SubmitHandler<MaterialIssueFormOutput> = (data) => {
-    console.log("[Material Issue] אשר ניפוק — payload:", data)
+    toast.success(`ניפוק אושר (${data.lines.length} שורות)`)
   }
 
   return (

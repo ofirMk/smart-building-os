@@ -28,7 +28,7 @@ export function EntityWorkspaceLayout({
     <div
       dir="rtl"
       className={cn(
-        "flex h-[calc(100dvh-4rem)] min-h-0 w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden bg-background p-2 text-foreground lg:p-3",
+        "flex flex-1 min-h-0 w-full max-w-full min-w-0 flex-col gap-2 overflow-hidden bg-background p-2 text-foreground lg:p-3",
         className
       )}
     >
@@ -47,18 +47,18 @@ export function EntityWorkspaceLayout({
       </Card>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-10">
-        <aside className="min-h-0 space-y-2 lg:col-span-3 lg:sticky lg:top-16 lg:self-start lg:overflow-y-auto">
-          <Card className="border-border bg-card shadow-sm">
+        <aside className="flex flex-1 min-h-0 flex-col overflow-y-auto lg:col-span-3">
+          <Card className="flex min-h-0 flex-1 flex-col border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Contextual Intelligence</CardTitle>
               <CardDescription className="text-[11px]">
                 Health · Profit · Forecast
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-2">{sidebar}</CardContent>
+            <CardContent className="flex-1 overflow-y-auto p-2">{sidebar}</CardContent>
           </Card>
         </aside>
-        <main className="min-h-0 overflow-y-auto lg:col-span-7">{main}</main>
+        <main className="flex flex-1 min-h-0 overflow-y-auto lg:col-span-7">{main}</main>
       </div>
 
       {footerActions ? (

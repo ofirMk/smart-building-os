@@ -51,11 +51,47 @@ export type ErpItem = {
   id: string
   companyId: string
   sku: string
+  itemNumber?: string
   description: string
   uom: string
+  unitOfMeasure?: string
+  uomNormalized?: string | null
+  uomSourceText?: string | null
   isInventoryManaged: boolean
+  status?: string
+  minOrderQuantity?: number
+  itemType?: string
+  budgetSubChapter?: string | null
+  resourceId?: string | null
+  budgetSubChapterManualOverride?: boolean
+  resourceIdManualOverride?: boolean
+  internalSku?: string | null
+  skuAliases?: string[]
+  ocrMatchTokens?: string[]
+  aiMetadata?: Record<string, unknown>
+  legacyDefaultPrice?: number | null
+  legacyLastPrice?: number | null
   productFamilyId: string
   productFamily: ErpProductFamily | null
+}
+
+export type ErpSupplierItem = {
+  id: string
+  companyId: string
+  itemId: string
+  supplierId: string
+  supplierSku: string | null
+  basePrice: number
+  discountPercentage: number
+  currency: string
+  uom: string | null
+  validFrom: string | null
+  validTo: string | null
+  isPreferred: boolean
+  aiLastParsedAt: string | null
+  aiParseStatus: string | null
+  aiParseHistory: unknown[]
+  aiMetadata: Record<string, unknown>
 }
 
 export type CreateSupplierInput = {
@@ -91,9 +127,35 @@ export type CreateItemInput = {
   uom: string
   productFamilyId: string
   isInventoryManaged?: boolean
+  internalSku?: string | null
+  skuAliases?: string[]
+  uomNormalized?: string | null
+  uomSourceText?: string | null
+  aiMetadata?: Record<string, unknown>
+  legacyDefaultPrice?: number | null
+  legacyLastPrice?: number | null
 }
 
 export type UpdateItemInput = Partial<CreateItemInput>
+
+export type CreateSupplierItemInput = {
+  itemId: string
+  supplierId: string
+  supplierSku?: string | null
+  basePrice?: number
+  discountPercentage?: number
+  currency?: string
+  uom?: string | null
+  validFrom?: string | null
+  validTo?: string | null
+  isPreferred?: boolean
+  aiLastParsedAt?: string | null
+  aiParseStatus?: string | null
+  aiParseHistory?: unknown[]
+  aiMetadata?: Record<string, unknown>
+}
+
+export type UpdateSupplierItemInput = Partial<CreateSupplierItemInput>
 
 export const ERP_PROJECT_STATUSES = ["ACTIVE", "COMPLETED", "DRAFT"] as const
 export type ErpProjectStatus = (typeof ERP_PROJECT_STATUSES)[number]

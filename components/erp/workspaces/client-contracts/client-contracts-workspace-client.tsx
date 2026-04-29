@@ -591,7 +591,7 @@ export function ClientContractsWorkspaceClient({
         requestJson("/api/erp/client-contracts", { signal }, contractsSchema).then(
           (rows) => rows as unknown as ErpClientContract[]
         ),
-        requestJson<SupplierLookup[]>("/api/suppliers", { signal }, suppliersSchema),
+        requestJson<SupplierLookup[]>("/api/erp/master-data/suppliers", { signal }, suppliersSchema),
         requestJson<ItemLookup[]>("/api/erp/master-data/items", { signal }, itemsSchema),
       ])
       const rows = contractsRes ?? []
@@ -850,7 +850,7 @@ export function ClientContractsWorkspaceClient({
   async function createContractDraft() {
     setSaving(true)
     try {
-      const projects = await requestJson<ApiResponse<{ id: string }[]>>("/api/projects")
+      const projects = await requestJson<ApiResponse<{ id: string }[]>>("/api/erp/projects")
       const projectId = projects.data?.[0]?.id
       if (!projectId) throw new Error("Create a project first")
       await requestJson("/api/erp/client-contracts", {
@@ -1619,7 +1619,7 @@ export function ClientContractsWorkspaceClient({
   }
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]" dir="rtl">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]" dir="rtl">
       <MasterDetailWorkspace
         title="Client Contracts Workspace"
         description="ניהול חוזי לקוח, פקודות שינוי וחשבונות התקדמות (Submitted מול Approved)."

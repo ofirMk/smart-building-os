@@ -23,7 +23,7 @@ export default async function DashboardHomePage() {
     redirect("/facility")
   }
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background text-foreground">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-background text-foreground">
       <DiamondStandardDashboardV1 />
     </div>
   )

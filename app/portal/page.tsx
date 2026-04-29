@@ -79,12 +79,12 @@ function statusMeta(level: (typeof cards)[number]["level"]) {
 
 export default function HoldenPortalPage() {
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-slate-950 text-zinc-100">
+    <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-950 text-zinc-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-25%,rgba(139,92,246,0.24),transparent)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_45%_at_100%_40%,rgba(99,102,241,0.14),transparent)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(2,6,23,0.7))]" />
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-4 pb-20 pt-14 md:px-10 md:pt-20">
+      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-5xl flex-col px-4 pb-20 pt-14 md:px-10 md:pt-20">
         <motion.header
           initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}

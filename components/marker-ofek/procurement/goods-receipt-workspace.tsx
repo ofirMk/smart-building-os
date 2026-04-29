@@ -20,10 +20,7 @@ import {
   type SubmitHandler,
 } from "react-hook-form"
 
-import {
-  DenseDetailPanel,
-  DenseMasterDetailTemplate,
-} from "@/components/layout/DenseMasterDetailTemplate"
+import { EntityWorkspace } from "@/components/layout/EntityWorkspace"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -138,9 +135,10 @@ export default function GoodsReceiptWorkspace() {
   const watchedLines = watch("lines")
 
   const onSaveDraft = React.useCallback(() => {
-    const data = getValues()
-    console.log("[Goods Receipt] שמור טיוטה:", data)
-    toast.success("טיוטה נשמרה (מקומית)")
+    const poNumber = getValues().poNumber
+    toast.success(
+      poNumber ? "טיוטה נשמרה (מקומית)" : "טיוטה נשמרה לפני בחירת הזמנת רכש"
+    )
   }, [getValues])
 
   const onAttachDeliveryNote = React.useCallback(() => {
@@ -148,8 +146,8 @@ export default function GoodsReceiptWorkspace() {
   }, [])
 
   const onPostReceipt: SubmitHandler<GoodsReceiptFormOutput> = (data) => {
-    console.log("[Goods Receipt] אשר קליטה — payload:", data)
-    toast.success("קליטת סחורה נרשמה (דמה)")
+    const linesWithQty = data.lines.filter((line) => line.receivedQty > 0).length
+    toast.success(`קליטת סחורה נרשמה (${linesWithQty} שורות)`)
   }
 
   const handlePoChange = React.useCallback(
@@ -274,24 +272,26 @@ export default function GoodsReceiptWorkspace() {
       className="flex min-h-0 min-w-0 flex-1 flex-col bg-card [color-scheme:light]"
       onSubmit={handleSubmit(onPostReceipt)}
     >
-      <DenseMasterDetailTemplate
-        dir="rtl"
-        className="min-h-0 flex-1 text-foreground"
-        eyebrow="Marker Ofek · רכש"
+      <EntityWorkspace
         title="קליטת סחורה (GR)"
         description="קליטה מול הזמנת רכש מאושרת — תעודת משלוח וכמויות שהתקבלו (דמה)."
-        leading={<Package className="size-5 text-slate-700" aria-hidden />}
-        backLink={{
-          href: "/marker-ofek/procurement",
-          label: "חזרה לרכש",
-        }}
         headerActions={
           <>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-card text-sm text-slate-800"
+              className="h-8 gap-1"
+              onClick={() => window.history.back()}
+            >
+              <Package className="size-3.5 opacity-90" aria-hidden />
+              חזרה לרכש
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 text-sm"
               onClick={onSaveDraft}
             >
               <Save className="size-3.5 opacity-90" aria-hidden />
@@ -301,7 +301,7 @@ export default function GoodsReceiptWorkspace() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1 border-slate-200 bg-card text-sm text-slate-800"
+              className="h-8 gap-1 text-sm"
               onClick={onAttachDeliveryNote}
             >
               <Paperclip className="size-3.5 opacity-90" aria-hidden />
@@ -317,7 +317,7 @@ export default function GoodsReceiptWorkspace() {
             </Button>
           </>
         }
-        master={
+        sidebar={
           <div className="flex flex-col gap-2">
             <div
               className={cn(
@@ -506,8 +506,8 @@ export default function GoodsReceiptWorkspace() {
             </div>
           </div>
         }
-        detail={
-          <DenseDetailPanel className="min-h-0 flex-1 overflow-auto border-slate-200 bg-card p-1.5 shadow-sm">
+        main={
+          <section className="min-h-0 flex-1 overflow-auto rounded-md border border-border bg-card p-1.5 shadow-sm">
             <div className="px-1 pb-2 pt-1 md:px-2">
               <p className="mb-2 text-xs font-bold text-slate-800">
                 שורות קליטה
@@ -610,7 +610,7 @@ export default function GoodsReceiptWorkspace() {
                 </p>
               ) : null}
             </div>
-          </DenseDetailPanel>
+          </section>
         }
       />
     </form>

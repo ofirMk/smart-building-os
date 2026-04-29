@@ -18,12 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  isMissingSuppliersLegalIdColumnError,
-  SUPPLIERS_TABLE_SELECT_MINIMAL,
-  SUPPLIERS_TABLE_SELECT_WITH_LEGAL_ID,
-} from "@/lib/marker-ofek/supabase-fields"
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { buttonVariants } from "@/components/ui/button-variants"
 import { formatError } from "@/lib/format-error"
 import { cn } from "@/lib/utils"
@@ -39,12 +34,9 @@ type SupplierItemRow = {
   id: string
   supplier_sku: string | null
   unit_price: number
-  last_updated: string
+  last_updated: string | null
   master_item_id: string
-  items_catalog:
-    | { sku: string; description: string; unit: string | null }
-    | { sku: string; description: string; unit: string | null }[]
-    | null
+  item_details: { sku: string; description: string; unit: string | null } | null
 }
 
 export function SuppliersMasterClient() {
@@ -66,50 +58,19 @@ export function SuppliersMasterClient() {
       setLoading(true)
       setError(null)
       try {
-        const supabase = createSupabaseBrowserClient()
-        let data: SupplierRow[] | null = null
-        let { data: fetched, error } = await supabase
-          .schema("public")
-          .from("suppliers")
-          .select(SUPPLIERS_TABLE_SELECT_WITH_LEGAL_ID)
-          .eq("is_deleted", false)
-          .order("name", { ascending: true })
-        data = (fetched ?? null) as SupplierRow[] | null
-        // Backward-compatible fallback when the dedicated suppliers table
-        // does not expose is_deleted yet in some environments.
-        if (error?.message?.toLowerCase().includes("is_deleted")) {
-          const retry = await supabase
-            .schema("public")
-            .from("suppliers")
-            .select(SUPPLIERS_TABLE_SELECT_WITH_LEGAL_ID)
-            .order("name", { ascending: true })
-          data = (retry.data ?? null) as SupplierRow[] | null
-          error = retry.error
-        }
-        if (error && isMissingSuppliersLegalIdColumnError(error)) {
-          const retry = await supabase
-            .schema("public")
-            .from("suppliers")
-            .select(SUPPLIERS_TABLE_SELECT_MINIMAL)
-            .eq("is_deleted", false)
-            .order("name", { ascending: true })
-          data = (retry.data ?? null) as SupplierRow[] | null
-          error = retry.error
-        }
-        if (error?.message?.toLowerCase().includes("is_deleted")) {
-          const retry = await supabase
-            .schema("public")
-            .from("suppliers")
-            .select(SUPPLIERS_TABLE_SELECT_MINIMAL)
-            .order("name", { ascending: true })
-          data = (retry.data ?? null) as SupplierRow[] | null
-          error = retry.error
-        }
-        if (error) throw error
+        const data = await masterDataFetch<
+          Array<{
+            id: string
+            name: string
+            taxId: string | null
+          }>
+        >("/api/erp/master-data/suppliers")
         if (cancelled) return
         const rows = (data ?? []).map((r) => ({
-          ...r,
-          legal_id: r.legal_id ?? null,
+          id: r.id,
+          name: r.name,
+          legal_id: r.taxId ?? null,
+          contact_info: null,
         }))
         setSuppliers(rows)
         if (rows.length > 0) setSelectedSupplierId((prev) => prev || rows[0]!.id)
@@ -138,18 +99,37 @@ export function SuppliersMasterClient() {
     void (async () => {
       setLoadingItems(true)
       try {
-        const supabase = createSupabaseBrowserClient()
-        const { data, error } = await supabase
-          .schema("public")
-          .from("supplier_items")
-          .select(
-            "id, master_item_id, supplier_sku, unit_price, last_updated, items_catalog ( sku, description, unit )"
-          )
-          .eq("supplier_id", selectedSupplierId)
-          .order("last_updated", { ascending: false })
-        if (error) throw error
+        const [data, allItems] = await Promise.all([
+          masterDataFetch<
+            Array<{
+              id: string
+              itemId: string
+              supplierSku: string | null
+              basePrice: number
+              aiLastParsedAt: string | null
+              validFrom: string | null
+            }>
+          >(`/api/erp/master-data/supplier-items?supplierId=${selectedSupplierId}`),
+          masterDataFetch<Array<{ id: string; sku: string; description: string; uom: string | null }>>(
+            "/api/erp/master-data/items"
+          ),
+        ])
+        const itemMap = new Map(allItems.map((item) => [item.id, item]))
         if (!cancelled) {
-          const rows = (data ?? []) as SupplierItemRow[]
+          const rows = (data ?? []).map((row) => ({
+            id: row.id,
+            master_item_id: row.itemId,
+            supplier_sku: row.supplierSku,
+            unit_price: Number(row.basePrice ?? 0),
+            last_updated: row.aiLastParsedAt ?? row.validFrom,
+            item_details: itemMap.get(row.itemId)
+              ? {
+                  sku: itemMap.get(row.itemId)?.sku ?? "—",
+                  description: itemMap.get(row.itemId)?.description ?? "—",
+                  unit: itemMap.get(row.itemId)?.uom ?? null,
+                }
+              : null,
+          })) as SupplierItemRow[]
           setSupplierItems(rows)
           setSelectedItemId((prev) => prev || rows[0]?.id || "")
         }
@@ -169,9 +149,7 @@ export function SuppliersMasterClient() {
 
   const selectedSupplier = suppliers.find((s) => s.id === selectedSupplierId) ?? null
   const selectedItem = supplierItems.find((it) => it.id === selectedItemId) ?? null
-  const selectedCatalogItem = Array.isArray(selectedItem?.items_catalog)
-    ? (selectedItem?.items_catalog[0] ?? null)
-    : (selectedItem?.items_catalog ?? null)
+  const selectedCatalogItem = selectedItem?.item_details ?? null
   const contact = (selectedSupplier?.contact_info ?? {}) as Record<string, unknown>
   const phone = String(contact.phone ?? "").trim()
   const email = String(contact.email ?? "").trim()
@@ -184,28 +162,22 @@ export function SuppliersMasterClient() {
     }
     setRelinkingItemId(supplierItemId)
     try {
-      const supabase = createSupabaseBrowserClient()
-      const { data: options, error: optionsErr } = await supabase
-        .schema("public")
-        .from("items_catalog")
-        .select("id, sku, description")
-        .or(`sku.ilike.%${q}%,description.ilike.%${q}%`)
-        .limit(1)
-
-      if (optionsErr || !options || options.length === 0) {
+      const options = await masterDataFetch<
+        Array<{ id: string; sku: string; description: string }>
+      >(`/api/erp/master-data/items?q=${encodeURIComponent(q)}`)
+      if (!options || options.length === 0) {
         toast.error("לא נמצא פריט מתאים בקטלוג")
         return
       }
       const target = options[0] as { id: string }
-      const { error: updateErr } = await supabase
-        .schema("public")
-        .from("supplier_items")
-        .update({ master_item_id: target.id })
-        .eq("id", supplierItemId)
-      if (updateErr) {
-        toast.error(updateErr.message)
-        return
-      }
+      await masterDataFetch<{ id: string }>(
+        `/api/erp/master-data/supplier-items/${supplierItemId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ itemId: target.id }),
+        }
+      )
       toast.success("השיוך עודכן בהצלחה")
       setRelinkQuery("")
       setSupplierItems((prev) =>
@@ -363,9 +335,7 @@ export function SuppliersMasterClient() {
                       </TableHeader>
                       <TableBody>
                         {supplierItems.map((it) => {
-                          const item = Array.isArray(it.items_catalog)
-                            ? (it.items_catalog[0] ?? null)
-                            : it.items_catalog
+                          const item = it.item_details
                           return (
                           <TableRow
                             key={it.id}

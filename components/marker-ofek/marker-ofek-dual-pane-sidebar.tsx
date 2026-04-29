@@ -15,6 +15,7 @@ import {
 import { SidebarProjectContextSwitcher } from "@/components/marker-ofek/sidebar-project-context-switcher"
 import { sidebarMenuButtonVariants } from "@/components/ui/sidebar"
 import { isSidebarNavItemActive } from "@/lib/infrastructure/navigation/sidebar-routes"
+import { isFocusModeAllowedHref } from "@/lib/marker-ofek/focus-mode"
 import { MARKER_OFEK_SIDEBAR_SECTIONS } from "@/lib/marker-ofek/marker-ofek-sidebar-nav-config"
 import {
   filterNavItemsByModules,
@@ -36,9 +37,12 @@ function filterDrawerItems(
   applyEmptyPortfolioNav: boolean
 ): DrawerNavItem[] {
   const modFiltered = filterNavItemsByModules(items, modules)
-  if (!applyEmptyPortfolioNav) return modFiltered
-  if (scopedProjectCount === null || scopedProjectCount > 0) return modFiltered
-  return modFiltered.filter(
+  const focusFiltered = modFiltered.filter((item) =>
+    isFocusModeAllowedHref(item.href)
+  )
+  if (!applyEmptyPortfolioNav) return focusFiltered
+  if (scopedProjectCount === null || scopedProjectCount > 0) return focusFiltered
+  return focusFiltered.filter(
     (item) => !navItemHiddenWhenNoManagedProjects(item.href)
   )
 }

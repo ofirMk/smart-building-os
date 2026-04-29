@@ -16,13 +16,21 @@ comment on column public.project_progress_reports.previous_billed_amount is 'ס�
 comment on column public.project_progress_reports.cumulative_works_total is 'סה״כ ערך עבודות בחוזה (מצטבר) לפני מדד';
 comment on column public.project_progress_reports.total_payable is 'סה״כ לתשלום בחשבון זה';
 
-alter table public.project_progress_items
-  add column if not exists quantity_contract numeric(18, 4),
-  add column if not exists quantity_previous_cumulative numeric(18, 4) not null default 0,
-  add column if not exists quantity_current_cumulative numeric(18, 4) not null default 0,
-  add column if not exists quantity_executed_month numeric(18, 4) not null default 0,
-  add column if not exists line_cumulative_value numeric(18, 2) not null default 0;
+do $$
+begin
+  if to_regclass('public.project_progress_items') is not null then
+    alter table public.project_progress_items
+      add column if not exists quantity_contract numeric(18, 4),
+      add column if not exists quantity_previous_cumulative numeric(18, 4) not null default 0,
+      add column if not exists quantity_current_cumulative numeric(18, 4) not null default 0,
+      add column if not exists quantity_executed_month numeric(18, 4) not null default 0,
+      add column if not exists line_cumulative_value numeric(18, 2) not null default 0;
 
-comment on column public.project_progress_items.quantity_executed is 'כמות בוצעה בחודש (שמירה תואמת שדה legacy)';
-comment on column public.project_progress_items.line_total is 'ערך שורה לחודש (בוצע החודש × מחיר יחידה)';
-comment on column public.project_progress_items.line_cumulative_value is 'ערך מצטבר (כמות מצטברת נוכחית × מחיר יחידה)';
+    comment on column public.project_progress_items.quantity_executed is 'כמות בוצעה בחודש (שמירה תואמת שדה legacy)';
+    comment on column public.project_progress_items.line_total is 'ערך שורה לחודש (בוצע החודש × מחיר יחידה)';
+    comment on column public.project_progress_items.line_cumulative_value is 'ערך מצטבר (כמות מצטברת נוכחית × מחיר יחידה)';
+  else
+    raise notice 'Skipping project_progress_items financial columns: table public.project_progress_items does not exist';
+  end if;
+end
+$$;

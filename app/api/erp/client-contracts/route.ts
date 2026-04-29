@@ -55,6 +55,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid payload" }, { status: 400 })
   }
 
+  const project = await supabase
+    .from("erp_proj_projects")
+    .select("id")
+    .eq("company_id", activeCompanyId)
+    .eq("id", parsed.data.projectId)
+    .maybeSingle()
+  if (project.error) return NextResponse.json({ error: project.error.message }, { status: 500 })
+  if (!project.data) return NextResponse.json({ error: "Project not found for active company" }, { status: 400 })
+
   if (parsed.data.supplierId) {
     const supplier = await supabase
       .from("erp_md_suppliers")

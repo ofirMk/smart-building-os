@@ -202,7 +202,7 @@ export function CommandPaletteProvider({
       setVoiceParsing(true)
       const loadingToastId = toast.loading("Processing AI Intent…")
       try {
-        const res = await fetch("/api/holden-erp/intent", {
+        const res = await fetch("/api/erp/holden/intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
@@ -264,7 +264,6 @@ export function CommandPaletteProvider({
               return
             }
             if (wsAct === "close_all_tabs") {
-              console.log("Executing closeAllTabs from context...")
               queueMicrotask(() => {
                 smartWs.closeAllTabs()
               })
@@ -353,7 +352,6 @@ export function CommandPaletteProvider({
 
       rec.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0]?.[0]?.transcript ?? ""
-        console.log("Heard:", transcript)
         stopVoiceRecognition()
         void submitHoldenIntent(transcript, { syncSearchQuery: true })
       }

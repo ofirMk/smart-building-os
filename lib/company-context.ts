@@ -1,7 +1,4 @@
-export type CompanyContextId =
-  | "marker_ofek"
-  | "holden_group"
-  | "building_management_co"
+export type CompanyContextId = string
 
 export type CompanyContextOption = {
   id: CompanyContextId
@@ -37,7 +34,7 @@ export const COMPANY_CONTEXT_OPTIONS: readonly CompanyContextOption[] = [
 const COMPANY_IDS = new Set(COMPANY_CONTEXT_OPTIONS.map((option) => option.id))
 
 export function isCompanyContextId(value: unknown): value is CompanyContextId {
-  return typeof value === "string" && COMPANY_IDS.has(value as CompanyContextId)
+  return typeof value === "string" && COMPANY_IDS.has(value)
 }
 
 export function resolveCompanyContext(

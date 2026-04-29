@@ -123,7 +123,7 @@ export default async function MarkerOfekContractBillingCenterPage({
     .order("account_number", { ascending: true })
 
   const partialIds = (paRows ?? []).map((p) => (p as { id: string }).id)
-  let lineByPartial = new Map<
+  const lineByPartial = new Map<
     string,
     Array<{
       id: string

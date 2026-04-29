@@ -9,6 +9,7 @@ import type { ViewAsToken } from "@/lib/marker-ofek/mirror-mode-types"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -54,22 +55,26 @@ export function MirrorModeSelector({ currentViewAs }: { currentViewAs: ViewAsTok
         <ChevronDown className="size-3 opacity-70" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[14rem]">
-        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          צפייה כ…
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            צפייה כ…
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        {OPTIONS.map((o) => (
-          <DropdownMenuItem
-            key={o.value}
-            onClick={() => void select(o.value)}
-            className={cn(
-              "text-sm",
-              o.value === currentViewAs && "bg-indigo-50 font-medium text-indigo-900"
-            )}
-          >
-            {o.label}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          {OPTIONS.map((o) => (
+            <DropdownMenuItem
+              key={o.value}
+              onClick={() => void select(o.value)}
+              className={cn(
+                "text-sm",
+                o.value === currentViewAs && "bg-indigo-50 font-medium text-indigo-900"
+              )}
+            >
+              {o.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )

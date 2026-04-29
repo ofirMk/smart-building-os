@@ -27,7 +27,7 @@ function SplitIframePane({ href }: { href: string | null }) {
 
   if (!href || !src) {
     return (
-      <div className="flex min-h-[320px] flex-1 items-center justify-center border-s border-slate-100 bg-background text-[12px] text-slate-500">
+      <div className="flex min-h-0 flex-1 items-center justify-center border-s border-slate-100 bg-background text-[12px] text-slate-500">
         בחרו לשונית נוספת מהסרגל כדי להציג מסך במקביל (תצוגה משנית).
       </div>
     )
@@ -43,7 +43,7 @@ function SplitIframePane({ href }: { href: string | null }) {
       <iframe
         title="מסך משני"
         src={src}
-        className="size-full min-h-[50vh] bg-card"
+        className="size-full min-h-0 bg-card"
         sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       />
     </motion.div>
@@ -65,17 +65,29 @@ function WorkspaceChromeInner({ children }: { children: React.ReactNode }) {
     split && pinned ? pinned : split ? secondaryHref : null
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col overflow-hidden bg-card">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-slate-200/90 lg:flex-row">
-        <motion.div
-          layout
+    <div
+      className="flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col overflow-hidden bg-card"
+      data-layout-region="workspace-chrome-outer"
+    >
+      <div
+        className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-slate-200/90 lg:flex-row"
+        data-layout-region="workspace-chrome-row"
+      >
+        {/*
+          השתמשנו ב-motion.div עם prop `layout` לפני, אבל זה גרם ל-framer-motion
+          לעקוב אחרי שינויי DOM size בכל הצאצאים — מה שמתנגש עם
+          flex-1 + min-h-0 + overflow-hidden ויוצר micro-jitters בעת גלילה.
+          div רגיל מספיק כי המעבר בין split↔single כבר מטופל ע"י layout נטיבי.
+        */}
+        <div
           className={cn(
-            "min-h-0 min-w-0 flex-1 bg-card",
+            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card transition-[max-width,flex-basis] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             split && "lg:basis-[70%] lg:max-w-[70%] lg:border-e lg:border-slate-200/90"
           )}
+          data-layout-region="workspace-chrome-primary"
         >
           {children}
-        </motion.div>
+        </div>
         {split ? <SplitIframePane href={iframeHref} /> : null}
       </div>
     </div>

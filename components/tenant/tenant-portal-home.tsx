@@ -1,14 +1,24 @@
 import Link from "next/link"
 import { Bell, ChevronLeft, CreditCard, FileDown, Receipt, Ticket } from "lucide-react"
 
-import { TENANT_PORTAL_MOCK } from "@/components/tenant/tenant-portal-mock-data"
 import { Button } from "@/components/ui/button"
 import { buttonVariants } from "@/components/ui/button-variants"
 import { formatNisHe } from "@/lib/format-nis"
 import { cn } from "@/lib/utils"
 
+const EMPTY_PORTAL = {
+  welcomeTitle: "ברוך הבא",
+  unitSubtitle: "",
+  openBalanceNis: 0,
+  activeTicketsCount: 0,
+  activeTicketsSummary: "",
+  paymentHistory: [] as { id: string; dateLabel: string; documentNumber: string; description: string; amountNis: number }[],
+  recentTickets: [] as { id: string; title: string; statusLabel: string }[],
+  recentAnnouncements: [] as { id: string; title: string; dateLabel: string }[],
+}
+
 export function TenantPortalHome() {
-  const m = TENANT_PORTAL_MOCK
+  const m = EMPTY_PORTAL
 
   return (
     <div className="flex flex-col gap-6 pb-4 text-gray-100">

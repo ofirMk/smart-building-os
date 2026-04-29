@@ -124,7 +124,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
     setMatchMessage(null)
     const newSelectedJournal = new Set(selectedJournalIds)
     const newSelectedBank = new Set(selectedBankIds)
-    let availableJournal = journalLines.filter(
+    const availableJournal = journalLines.filter(
       (l) => !newSelectedJournal.has(l.id)
     )
     let matchesFound = 0
@@ -210,7 +210,7 @@ export function ReconciliationClient({ accounts }: ReconciliationClientProps) {
     )
 
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] flex-col gap-6" dir="rtl">
+    <div className="flex flex-1 min-h-0 flex-col gap-6 overflow-y-auto" dir="rtl">
       <div
         className={cn(
           "flex shrink-0 flex-wrap items-end gap-4 p-5",

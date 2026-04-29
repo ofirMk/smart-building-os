@@ -25,7 +25,7 @@ export function HoldenSplitDocumentShell({
       dir="rtl"
       lang="he"
       className={cn(
-        "min-h-[calc(100vh-6rem)] bg-slate-950 text-slate-100",
+        "flex-1 min-h-0 bg-slate-950 text-slate-100",
         className
       )}
     >

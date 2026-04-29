@@ -3,6 +3,8 @@
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { decodeMilestoneStoredName } from "@/lib/marker-ofek/milestone-name-codec"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 
 export type ProjectDiscrepancyRow = {
   contractItemId: string | null
@@ -31,6 +33,15 @@ export type UnassignedInventoryRow = {
 function toNum(value: unknown): number {
   const n = Number(value)
   return Number.isFinite(n) ? n : 0
+}
+
+async function resolveActiveCompanyId(): Promise<string> {
+  const cookieStore = await cookies()
+  const companyId = resolveCompanyContext(cookieStore.get(COMPANY_COOKIE_KEY)?.value)
+  if (!companyId) {
+    throw new Error("Missing active company context")
+  }
+  return companyId
 }
 
 export type RecordOutgoingTransactionInput = {
@@ -65,14 +76,16 @@ export async function recordOutgoingTransaction(
   }
 
   const supabase = await createSupabaseServerAuthClient()
+  const companyId = await resolveActiveCompanyId()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   const itemRes = await supabase
     .schema("public")
-    .from("items_catalog")
-    .select("id, unit")
+    .from("erp_md_items")
+    .select("id, unit_of_measure")
+    .eq("company_id", companyId)
     .eq("id", itemId)
     .single()
   if (itemRes.error || !itemRes.data?.id) {
@@ -98,7 +111,7 @@ export async function recordOutgoingTransaction(
       contract_item_id: contractItemId || null,
       transaction_type: "outgoing",
       quantity,
-      unit: String(itemRes.data.unit ?? "").trim() || null,
+      unit: String(itemRes.data.unit_of_measure ?? "").trim() || null,
       notes: normalizedNotes || null,
     })
     .select("id")
@@ -129,18 +142,20 @@ export async function recordIncomingTransaction(
   }
 
   const supabase = await createSupabaseServerAuthClient()
+  const companyId = await resolveActiveCompanyId()
 
   const itemRes = await supabase
     .schema("public")
-    .from("items_catalog")
-    .select("id, unit")
+    .from("erp_md_items")
+    .select("id, unit_of_measure")
+    .eq("company_id", companyId)
     .eq("id", itemCatalogId)
     .single()
   if (itemRes.error || !itemRes.data?.id) {
     throw new Error("פריט מלאי לא נמצא")
   }
 
-  const unit = unitInput || String(itemRes.data.unit ?? "").trim() || null
+  const unit = unitInput || String(itemRes.data.unit_of_measure ?? "").trim() || null
   const { data, error } = await supabase
     .schema("public")
     .from("inventory_transactions")
@@ -376,40 +391,59 @@ export async function getUnassignedInventory(projectId: string): Promise<{
   if (!pid) return { items: [], totalLoss: 0 }
 
   const supabase = await createSupabaseServerAuthClient()
+  const companyId = await resolveActiveCompanyId()
   const { data, error } = await supabase
     .schema("public")
     .from("inventory_transactions")
-    .select(
-      "id, item_catalog_id, quantity, items_catalog ( description, last_price, default_price )"
-    )
+    .select("id, item_catalog_id, quantity")
     .eq("project_id", pid)
     .eq("transaction_type", "outgoing")
     .is("contract_item_id", null)
 
   if (error) throw new Error(error.message)
 
+  const itemIds = Array.from(
+    new Set(
+      (data ?? [])
+        .map((row) => String((row as { item_catalog_id?: string | null }).item_catalog_id ?? "").trim())
+        .filter(Boolean)
+    )
+  )
+  const itemsLookup = new Map<
+    string,
+    { description: string | null; legacyLastPrice: number | null; legacyDefaultPrice: number | null }
+  >()
+  if (itemIds.length > 0) {
+    const catalogRes = await supabase
+      .schema("public")
+      .from("erp_md_items")
+      .select("id, description, legacy_last_price, legacy_default_price")
+      .eq("company_id", companyId)
+      .in("id", itemIds)
+    if (catalogRes.error) throw new Error(catalogRes.error.message)
+    for (const row of catalogRes.data ?? []) {
+      const typed = row as {
+        id: string
+        description: string | null
+        legacy_last_price: number | null
+        legacy_default_price: number | null
+      }
+      itemsLookup.set(typed.id, {
+        description: typed.description,
+        legacyLastPrice: typed.legacy_last_price,
+        legacyDefaultPrice: typed.legacy_default_price,
+      })
+    }
+  }
+
   const normalized: UnassignedInventoryRow[] = (data ?? []).map((row) => {
     const r = row as {
       id: string | null
       item_catalog_id: string | null
       quantity: unknown
-      items_catalog:
-        | {
-            description?: unknown
-            last_price?: unknown
-            default_price?: unknown
-          }
-        | Array<{
-            description?: unknown
-            last_price?: unknown
-            default_price?: unknown
-          }>
-        | null
     }
-    const item = Array.isArray(r.items_catalog)
-      ? (r.items_catalog[0] ?? null)
-      : r.items_catalog
-    const unitCost = toNum(item?.last_price ?? item?.default_price)
+    const item = itemsLookup.get(String(r.item_catalog_id ?? ""))
+    const unitCost = toNum(item?.legacyLastPrice ?? item?.legacyDefaultPrice)
     return {
       id: String(r.id ?? "").trim(),
       item_id: String(r.item_catalog_id ?? "").trim(),

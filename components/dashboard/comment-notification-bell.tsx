@@ -6,6 +6,7 @@ import { Bell } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -133,9 +134,11 @@ export function CommentNotificationBell({ className }: { className?: string }) {
         className="w-[min(100vw-2rem,22rem)] p-0"
         dir="rtl"
       >
-        <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold">
-          הערות אחרונות (מחברי צוות)
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold">
+            הערות אחרונות (מחברי צוות)
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {loading ? (
           <p className="px-3 py-6 text-center text-xs text-muted-foreground">

@@ -46,9 +46,35 @@ const SmartWorkspaceContext = React.createContext<SmartWorkspaceContextValue | n
 
 /** מרווח ארוך יותר — מפחית סערת כתיבות (טאבים / מפוצל) מול Supabase */
 const WORKSPACE_PERSIST_DEBOUNCE_MS = 2000
+const ROUTER_PUSH_DEBOUNCE_MS = 40
+
+function toSavePayload(next: WorkspaceSettingsSnapshot): SaveWorkspacePayload {
+  return {
+    pinnedWidgets: next.pinnedWidgets,
+    sidePanelOpen: next.sidePanelOpen,
+    defaultBrowserHomepage: next.defaultBrowserHomepage,
+    workspacePersona: next.workspacePersona,
+    openTabs: next.openTabs,
+    splitView: next.splitView,
+    secondaryTabHref: next.secondaryTabHref,
+    splitPrimaryPinnedHref: next.splitPrimaryPinnedHref,
+    assistantSplitDocked: next.assistantSplitDocked,
+    browserPanelEnabled: next.browserPanelEnabled,
+    defaultProjectId: next.defaultProjectId,
+    emailBridgeSso: next.emailBridgeSso,
+    browserBookmarks: next.browserBookmarks,
+    diamondWorkspaceLayout: next.diamondWorkspaceLayout,
+    ...(next.commandCenterLayout != null ? { commandCenterLayout: next.commandCenterLayout } : {}),
+  }
+}
 
 function useDebouncedSave() {
   const t = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  React.useEffect(() => {
+    return () => {
+      if (t.current) clearTimeout(t.current)
+    }
+  }, [])
   return React.useCallback((patch: SaveWorkspacePayload) => {
     if (t.current) clearTimeout(t.current)
     t.current = setTimeout(() => {
@@ -84,10 +110,28 @@ export function SmartWorkspaceProvider({
   const debouncedSave = useDebouncedSave()
 
   const [state, setState] = React.useState<WorkspaceSettingsSnapshot>(initial)
+  const pendingPersistRef = React.useRef<SaveWorkspacePayload | null>(null)
+  const pushTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const openTabsRef = React.useRef(state.openTabs)
   React.useEffect(() => {
     openTabsRef.current = state.openTabs
   }, [state.openTabs])
+
+  const scheduleRoutePush = React.useCallback(
+    (href: string) => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+      pushTimerRef.current = setTimeout(() => {
+        router.push(href)
+      }, ROUTER_PUSH_DEBOUNCE_MS)
+    },
+    [router]
+  )
+
+  React.useEffect(() => {
+    return () => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+    }
+  }, [])
 
   const workspaceSyncKey = React.useMemo(
     () =>
@@ -117,41 +161,22 @@ export function SmartWorkspaceProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- סנכרון מ־SSR כשמתעדכן workspaceSyncKey
   }, [workspaceSyncKey])
 
-  const persist = React.useCallback(
-    (next: WorkspaceSettingsSnapshot) => {
-      debouncedSave({
-        pinnedWidgets: next.pinnedWidgets,
-        sidePanelOpen: next.sidePanelOpen,
-        defaultBrowserHomepage: next.defaultBrowserHomepage,
-        workspacePersona: next.workspacePersona,
-        openTabs: next.openTabs,
-        splitView: next.splitView,
-        secondaryTabHref: next.secondaryTabHref,
-        splitPrimaryPinnedHref: next.splitPrimaryPinnedHref,
-        assistantSplitDocked: next.assistantSplitDocked,
-        browserPanelEnabled: next.browserPanelEnabled,
-        defaultProjectId: next.defaultProjectId,
-        emailBridgeSso: next.emailBridgeSso,
-        browserBookmarks: next.browserBookmarks,
-        diamondWorkspaceLayout: next.diamondWorkspaceLayout,
-        ...(next.commandCenterLayout != null
-          ? { commandCenterLayout: next.commandCenterLayout }
-          : {}),
-      })
-    },
-    [debouncedSave]
-  )
-
   const patch = React.useCallback(
     (updater: (s: WorkspaceSettingsSnapshot) => WorkspaceSettingsSnapshot) => {
       setState((prev) => {
         const next = updater(prev)
-        persist(next)
+        pendingPersistRef.current = toSavePayload(next)
         return next
       })
     },
-    [persist]
+    []
   )
+
+  React.useEffect(() => {
+    if (!pendingPersistRef.current) return
+    debouncedSave(pendingPersistRef.current)
+    pendingPersistRef.current = null
+  }, [state, debouncedSave])
 
   const setCommandCenterLayout = React.useCallback(
     (layout: CommandCenterWorkspaceLayout | null) => {
@@ -241,6 +266,7 @@ export function SmartWorkspaceProvider({
 
   const closeTab = React.useCallback(
     (id: string) => {
+      let nextHref: string | null = null
       patch((s) => {
         const tab = s.openTabs.find((t) => t.id === id)
         if (tab?.pinned) return s
@@ -254,11 +280,10 @@ export function SmartWorkspaceProvider({
           splitPrimaryPinnedHref = null
         }
         if (tab && normPath(pathname ?? "") === normPath(tab.href)) {
-          if (rest.length > 0) {
-            router.push(rest[rest.length - 1]!.href)
-          } else {
-            router.push("/marker-ofek/command-center")
-          }
+          nextHref =
+            rest.length > 0
+              ? rest[rest.length - 1]!.href
+              : "/marker-ofek/command-center"
         }
         return {
           ...s,
@@ -273,8 +298,11 @@ export function SmartWorkspaceProvider({
             : {}),
         }
       })
+      if (nextHref) {
+        scheduleRoutePush(nextHref)
+      }
     },
-    [patch, pathname, router]
+    [patch, pathname, scheduleRoutePush]
   )
 
   const closeAllTabs = React.useCallback(() => {
@@ -286,14 +314,14 @@ export function SmartWorkspaceProvider({
       splitPrimaryPinnedHref: null,
       assistantSplitDocked: false,
     }))
-    router.push("/marker-ofek/command-center")
-  }, [patch, router])
+    scheduleRoutePush("/marker-ofek/command-center")
+  }, [patch, scheduleRoutePush])
 
   const activateTab = React.useCallback(
     (tab: WorkspaceOpenTab) => {
-      router.push(tab.href)
+      scheduleRoutePush(tab.href)
     },
-    [router]
+    [scheduleRoutePush]
   )
 
   const ensureTabForPath = React.useCallback(
@@ -325,21 +353,22 @@ export function SmartWorkspaceProvider({
       if (idx < 0) idx = 0
       const nextIdx = (idx + delta + tabs.length) % tabs.length
       const tab = tabs[nextIdx]
-      if (tab) router.push(tab.href)
+      if (tab) scheduleRoutePush(tab.href)
     },
-    [pathname, router]
+    [pathname, scheduleRoutePush]
   )
 
   const activateWorkspaceTabIndex = React.useCallback(
     (index: number) => {
       const tab = openTabsRef.current[index]
-      if (tab) router.push(tab.href)
+      if (tab) scheduleRoutePush(tab.href)
     },
-    [router]
+    [scheduleRoutePush]
   )
 
   const closeCurrentWorkspaceTab = React.useCallback(() => {
     const cur = normPath(pathname ?? "")
+    let nextHref: string | null = null
     patch((s) => {
       const tab = s.openTabs.find((t) => normPath(t.href) === cur)
       if (!tab || tab.pinned) return s
@@ -351,11 +380,10 @@ export function SmartWorkspaceProvider({
       ) {
         splitPrimaryPinnedHref = null
       }
-      if (rest.length > 0) {
-        router.push(rest[rest.length - 1]!.href)
-      } else {
-        router.push("/marker-ofek/command-center")
-      }
+      nextHref =
+        rest.length > 0
+          ? rest[rest.length - 1]!.href
+          : "/marker-ofek/command-center"
       return {
         ...s,
         openTabs: rest,
@@ -369,7 +397,10 @@ export function SmartWorkspaceProvider({
           : {}),
       }
     })
-  }, [patch, pathname, router])
+    if (nextHref) {
+      scheduleRoutePush(nextHref)
+    }
+  }, [patch, pathname, scheduleRoutePush])
 
   const toggleSplitViewHotkey = React.useCallback(() => {
     patch((s) => {

@@ -102,7 +102,7 @@ export function MasterDataDashboard({
   return (
     <div
       dir="rtl"
-      className="min-h-[calc(100vh-3rem)] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
+      className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
     >
       <div className="mx-auto max-w-[1600px] space-y-6 p-4 pb-16 md:p-8">
         <header className="space-y-2">

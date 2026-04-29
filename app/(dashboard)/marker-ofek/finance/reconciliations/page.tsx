@@ -6,7 +6,7 @@ export default async function ReconciliationPage() {
 
   return (
     <div
-      className="min-h-[calc(100vh-3rem)] bg-gradient-to-br from-slate-100/95 via-white to-violet-50/30"
+      className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-br from-slate-100/95 via-white to-violet-50/30"
       dir="rtl"
     >
       <div className="mx-auto flex max-w-[1800px] flex-col gap-6 overflow-hidden p-4 pb-10 md:p-8">

@@ -1,9 +1,11 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { LayoutDashboard } from "lucide-react"
 
 import { MasterPlanTracker } from "@/components/dashboard/master-plan-tracker"
 import { Button } from "@/components/ui/button"
+import { getFocusModeHomeHref } from "@/lib/marker-ofek/focus-mode"
 
 export const metadata: Metadata = {
   title: "דף הבית",
@@ -11,8 +13,14 @@ export const metadata: Metadata = {
 
 /**
  * דף הבית של מרקר אופק — מפת דרכים לשדרוג Holden ERP וקישור למרכז הפיקוד.
+ *
+ * ב-Focus Mode פעיל (NEXT_PUBLIC_FOCUS_MODE=items): מפנה ישירות ל-`/marker-ofek/items`.
  */
 export default function MarkerOfekHomePage() {
+  const focusHome = getFocusModeHomeHref()
+  if (focusHome) {
+    redirect(focusHome)
+  }
   return (
     <div
       dir="rtl"

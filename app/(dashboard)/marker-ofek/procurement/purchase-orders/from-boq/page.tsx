@@ -23,6 +23,7 @@ import {
 } from "../new/actions"
 import { evaluateSupplierTaxCompliance } from "@/lib/marker-ofek/entity-supplier-compliance"
 import {
+  quickCreateCatalogItem,
   listErpPaymentTermsForEntityForm,
   quickCreateEntity,
   quickCreateProject,
@@ -71,6 +72,7 @@ import {
 } from "@/hooks/use-diamond-navigation"
 import { useProcurementEngine } from "@/hooks/use-procurement-engine"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn, formatError } from "@/lib/utils"
 
 type TenderOption = {
@@ -108,7 +110,7 @@ type CatalogItem = {
   sku: string
   description: string
   supplierSku: string
-  unit: string | null
+  uom: string | null
   defaultPrice: number | null
 }
 
@@ -116,8 +118,8 @@ type CatalogQueryRow = {
   id: string
   sku: string
   description: string
-  unit: string | null
-  default_price: number | null
+  uom: string | null
+  legacyDefaultPrice: number | null
 }
 
 type SupplierPriceRow = {
@@ -486,13 +488,7 @@ export default function NewPurchaseOrderFromBoqPage() {
     void (async () => {
       setLoadingCatalog(true)
       try {
-        const supabase = createSupabaseBrowserClient()
-        const { data, error } = await supabase
-          .from("items_catalog")
-          .select("id, sku, description, unit, default_price")
-          .order("description", { ascending: true })
-          .limit(700)
-        if (error) throw error
+        const data = await masterDataFetch<CatalogQueryRow[]>("/api/erp/master-data/items")
         if (cancelled) return
         const rows = (data ?? []) as CatalogQueryRow[]
         setCatalogItems(
@@ -501,8 +497,9 @@ export default function NewPurchaseOrderFromBoqPage() {
             sku: String(r.sku ?? ""),
             description: String(r.description ?? ""),
             supplierSku: "",
-            unit: r.unit ?? null,
-            defaultPrice: r.default_price == null ? null : Number(r.default_price),
+            uom: r.uom ?? null,
+            defaultPrice:
+              r.legacyDefaultPrice == null ? null : Number(r.legacyDefaultPrice),
           }))
         )
       } catch (e) {
@@ -624,7 +621,7 @@ export default function NewPurchaseOrderFromBoqPage() {
           ? {
               ...r,
               description: item.description,
-              unit: item.unit ?? r.unit,
+              unit: item.uom ?? r.unit,
             }
           : r
       )
@@ -682,37 +679,36 @@ export default function NewPurchaseOrderFromBoqPage() {
     }
     const sku = newItemSku.trim() || generateInternalSkuFromName(name)
     try {
-      const supabase = createSupabaseBrowserClient()
-      const { data, error } = await supabase
-        .from("items_catalog")
-        .insert({
-          sku,
-          description: name,
-          unit: newItemUnit.trim() || "יחידה",
-          default_price: 0,
-          is_inventory: true,
-        })
-        .select("id, sku, description, unit, default_price")
-        .single()
-      if (error || !data?.id) {
-        toast.error(error?.message ?? "שמירת פריט נכשלה")
+      const createRes = await quickCreateCatalogItem({
+        sku,
+        description: name,
+        category: "GENERAL",
+        unit: newItemUnit.trim() || "יחידה",
+        defaultPrice: 0,
+      })
+      if (!createRes.ok) {
+        toast.error(createRes.error)
         return
       }
-      const row = data as {
+      const data = await masterDataFetch<{
         id: string
         sku: string
         description: string
-        unit: string | null
-        default_price: number | null
+        uom: string | null
+        legacyDefaultPrice: number | null
+      }>(`/api/erp/master-data/items/${createRes.id}`)
+      if (!data?.id) {
+        toast.error("שמירת פריט נכשלה")
+        return
       }
       const created: CatalogItem = {
-        id: row.id,
-        sku: row.sku,
-        description: row.description,
+        id: data.id,
+        sku: data.sku,
+        description: data.description,
         supplierSku: "",
-        unit: row.unit ?? null,
+        uom: data.uom ?? null,
         defaultPrice:
-          row.default_price == null ? null : Number(row.default_price),
+          data.legacyDefaultPrice == null ? null : Number(data.legacyDefaultPrice),
       }
       setCatalogItems((prev) => [created, ...prev])
       if (itemCreateTargetRowId) {
@@ -734,69 +730,37 @@ export default function NewPurchaseOrderFromBoqPage() {
     if (comparisonCacheRef.current[itemId]) {
       return comparisonCacheRef.current[itemId]!
     }
-    const supabase = createSupabaseBrowserClient()
-
-    const mapRows = (
-      rows: Array<Record<string, unknown>>,
-      priceKey: "last_price" | "unit_price",
-      dateKey: "last_price_date" | "last_updated"
-    ): SupplierPriceRow[] =>
-      rows
-        .map((row) => {
-          const supplierId = String(row.supplier_id ?? "")
-          const supplierSku = String(row.supplier_sku ?? "")
-          const rawEnt = row.entities as { name?: string } | { name?: string }[] | null
-          const ent = embedOne(rawEnt)
-          const supplierName = String(ent?.name ?? "ספק")
-          const lastPrice = Number(row[priceKey] ?? 0)
-          const dateRaw = row[dateKey]
-          const dateLabel =
-            typeof dateRaw === "string" && dateRaw
-              ? new Date(dateRaw).toLocaleDateString("he-IL")
-              : "—"
-          if (!supplierId || !Number.isFinite(lastPrice)) return null
-          return {
-            supplierId,
-            supplierName,
-            supplierSku,
-            lastPrice,
-            dateLabel,
-          }
-        })
-        .filter((x): x is SupplierPriceRow => x != null)
-        .sort((a, b) => a.lastPrice - b.lastPrice)
-
-    const pricesRes = await supabase
-      .from("supplier_item_prices")
-      .select(
-        "supplier_id, supplier_sku, last_price, last_price_date, entities ( name )"
-      )
-      .eq("master_item_id", itemId)
-      .limit(60)
-
-    let out: SupplierPriceRow[] = []
-    if (!pricesRes.error && pricesRes.data && pricesRes.data.length > 0) {
-      out = mapRows(
-        pricesRes.data as Array<Record<string, unknown>>,
-        "last_price",
-        "last_price_date"
-      )
-    } else {
-      const fallback = await supabase
-        .from("supplier_items")
-        .select(
-          "supplier_id, supplier_sku, unit_price, last_updated, entities ( name )"
-        )
-        .eq("master_item_id", itemId)
-        .limit(60)
-      if (!fallback.error && fallback.data) {
-        out = mapRows(
-          fallback.data as Array<Record<string, unknown>>,
-          "unit_price",
-          "last_updated"
-        )
-      }
-    }
+    const [supplierItems, suppliers] = await Promise.all([
+      masterDataFetch<
+        Array<{
+          supplierId: string
+          supplierSku: string | null
+          basePrice: number
+          aiLastParsedAt: string | null
+          validFrom: string | null
+        }>
+      >(`/api/erp/master-data/supplier-items?itemId=${itemId}`),
+      masterDataFetch<Array<{ id: string; name: string }>>(
+        "/api/erp/master-data/suppliers"
+      ),
+    ])
+    const supplierNameById = new Map(suppliers.map((row) => [row.id, row.name]))
+    const out: SupplierPriceRow[] = supplierItems
+      .map((row) => {
+        const supplierId = String(row.supplierId ?? "")
+        const lastPrice = Number(row.basePrice ?? 0)
+        if (!supplierId || !Number.isFinite(lastPrice)) return null
+        const dateRaw = row.aiLastParsedAt ?? row.validFrom
+        return {
+          supplierId,
+          supplierName: supplierNameById.get(supplierId) ?? "ספק",
+          supplierSku: String(row.supplierSku ?? ""),
+          lastPrice,
+          dateLabel: dateRaw ? new Date(dateRaw).toLocaleDateString("he-IL") : "—",
+        }
+      })
+      .filter((entry): entry is SupplierPriceRow => entry != null)
+      .sort((a, b) => a.lastPrice - b.lastPrice)
 
     comparisonCacheRef.current[itemId] = out
     return out
@@ -2030,7 +1994,7 @@ export default function NewPurchaseOrderFromBoqPage() {
           id: item.id,
           sku: item.sku,
           name: item.description,
-          unit: item.unit,
+          unit: item.uom,
           lastPrice:
             comparisonCacheRef.current[item.id]?.[0]?.lastPrice ??
             item.defaultPrice ??
@@ -2230,7 +2194,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                     />
                   </div>
                   <div className="space-y-2 text-start">
-                    <Label htmlFor="quick-supplier-erps">מספר ספק פריוריטי</Label>
+                    <Label htmlFor="quick-supplier-erps">מספר ספק ב-ERP</Label>
                     <Input
                       id="quick-supplier-erps"
                       value={newSupplierErpSup}
@@ -2240,7 +2204,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                     />
                   </div>
                   <div className="space-y-2 text-start">
-                    <Label htmlFor="quick-supplier-erpc">מספר לקוח פריוריטי</Label>
+                    <Label htmlFor="quick-supplier-erpc">מספר לקוח ב-ERP</Label>
                     <Input
                       id="quick-supplier-erpc"
                       value={newSupplierErpCust}

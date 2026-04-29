@@ -36,7 +36,7 @@ const modules = [
 
 export default function DataSpacePortal() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-card p-8 md:p-12">
+    <div className="relative flex flex-1 min-h-0 items-center justify-center overflow-y-auto bg-card p-8 md:p-12">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{

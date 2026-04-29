@@ -28,17 +28,25 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { netUnitPrice } from "@/components/marker-ofek/supplier-compare-sheet"
-import { ITEMS_CATALOG_COLUMNS } from "@/lib/marker-ofek/supabase-fields"
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn, formatError } from "@/lib/utils"
-import type { MarkerOfekItemsCatalogRow } from "@/types/marker-ofek"
+
+type ItemDetails = {
+  id: string
+  sku: string
+  description: string
+  uom: string | null
+  legacyDefaultPrice: number | null
+  isInventoryManaged: boolean
+  category?: string | null
+}
 
 type SupplierJoinRow = {
   id: string
   supplier_sku: string | null
   unit_price: number
   discount_pct: number
-  last_updated: string
+  last_updated: string | null
   entities: unknown
 }
 
@@ -74,7 +82,7 @@ export default function MarkerOfekItemMasterPage() {
   const params = useParams()
   const id = typeof params.id === "string" ? params.id : ""
 
-  const [item, setItem] = React.useState<MarkerOfekItemsCatalogRow | null>(null)
+  const [item, setItem] = React.useState<ItemDetails | null>(null)
   const [suppliers, setSuppliers] = React.useState<SupplierJoinRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -91,26 +99,37 @@ export default function MarkerOfekItemMasterPage() {
       setLoading(true)
       setError(null)
       try {
-        const supabase = createSupabaseBrowserClient()
-        const [itemRes, supRes] = await Promise.all([
-          supabase
-            .from("items_catalog")
-            .select(ITEMS_CATALOG_COLUMNS)
-            .eq("id", id)
-            .maybeSingle(),
-          supabase
-            .from("supplier_items")
-            .select(
-              "id, supplier_sku, unit_price, discount_pct, last_updated, entities ( name )"
-            )
-            .eq("master_item_id", id)
-            .order("unit_price", { ascending: true }),
+        const [itemData, supplierItems, supplierRows] = await Promise.all([
+          masterDataFetch<ItemDetails>(`/api/erp/master-data/items/${id}`),
+          masterDataFetch<
+            Array<{
+              id: string
+              supplierId: string
+              supplierSku: string | null
+              basePrice: number
+              discountPercentage: number
+              aiLastParsedAt: string | null
+              validFrom: string | null
+            }>
+          >(`/api/erp/master-data/supplier-items?itemId=${id}`),
+          masterDataFetch<Array<{ id: string; name: string }>>(
+            "/api/erp/master-data/suppliers"
+          ),
         ])
-        if (itemRes.error) throw itemRes.error
-        if (supRes.error) throw supRes.error
+        const supplierNameMap = new Map(
+          supplierRows.map((row) => [row.id, row.name])
+        )
+        const mappedSuppliers: SupplierJoinRow[] = supplierItems.map((row) => ({
+          id: row.id,
+          supplier_sku: row.supplierSku,
+          unit_price: Number(row.basePrice ?? 0),
+          discount_pct: Number(row.discountPercentage ?? 0),
+          last_updated: row.aiLastParsedAt ?? row.validFrom,
+          entities: { name: supplierNameMap.get(row.supplierId) ?? "—" },
+        }))
         if (!cancelled) {
-          setItem((itemRes.data as MarkerOfekItemsCatalogRow) ?? null)
-          setSuppliers((supRes.data as SupplierJoinRow[]) ?? [])
+          setItem(itemData ?? null)
+          setSuppliers(mappedSuppliers)
         }
       } catch (e) {
         if (!cancelled) {
@@ -213,7 +232,7 @@ export default function MarkerOfekItemMasterPage() {
           <CardHeader className="pb-2">
             <CardDescription>יחידת מידה</CardDescription>
             <CardTitle className="text-lg">
-              {item.unit?.trim() || "—"}
+              {item.uom?.trim() || "—"}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -221,8 +240,8 @@ export default function MarkerOfekItemMasterPage() {
           <CardHeader className="pb-2">
             <CardDescription>מחיר ברירת מחדל</CardDescription>
             <CardTitle className="text-lg tabular-nums">
-              {item.default_price != null
-                ? currencyFormatter.format(Number(item.default_price))
+              {item.legacyDefaultPrice != null
+                ? currencyFormatter.format(Number(item.legacyDefaultPrice))
                 : "—"}
             </CardTitle>
           </CardHeader>
@@ -231,7 +250,7 @@ export default function MarkerOfekItemMasterPage() {
           <CardHeader className="pb-2">
             <CardDescription>מלאי</CardDescription>
             <CardTitle className="text-lg">
-              {item.is_inventory ? "כן" : "לא"}
+              {item.isInventoryManaged ? "כן" : "לא"}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -263,7 +282,7 @@ export default function MarkerOfekItemMasterPage() {
         <CardContent className="pt-6">
           {suppliers.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              אין רשומות ב־supplier_items לפריט זה. הוסיפו הצעות ספק ב-Supabase או
+              אין רשומות ספק מקושרות לפריט זה. הוסיפו הצעות ספק במסך מאסטר דאטה או
               דרך תהליך הרכש.
             </p>
           ) : (

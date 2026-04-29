@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 import type { ErpDirectActivation } from "@/types/erp"
 
@@ -220,16 +221,17 @@ export function VendorPriceListsWorkspaceClient() {
               .eq("supplier_id", supplierId)
               .eq("price_list_code", priceListCode)
               .order("item_sku", { ascending: true }),
-            supabase.from("items_catalog").select("sku,description,unit"),
+            masterDataFetch<Array<{ sku: string; description: string; uom: string | null }>>(
+              "/api/erp/master-data/items"
+            ),
           ])
           if (linesRes.error) throw linesRes.error
-          if (catalogRes.error) throw catalogRes.error
           const catalogMap = new Map(
-            ((catalogRes.data ?? []) as Array<Record<string, unknown>>).map((row) => [
+            (catalogRes ?? []).map((row) => [
               String(row.sku),
               {
                 description: String(row.description ?? ""),
-                uom: row.unit ? String(row.unit) : null,
+                uom: row.uom ? String(row.uom) : null,
               },
             ])
           )
@@ -301,7 +303,7 @@ export function VendorPriceListsWorkspaceClient() {
   )
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
       <DenseMasterDetailTemplate
         dir="rtl"
         eyebrow="Procurement"
