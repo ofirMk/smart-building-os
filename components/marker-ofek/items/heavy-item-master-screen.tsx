@@ -3,7 +3,7 @@
 import Link from "next/link"
 import * as React from "react"
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
-import { ArrowRight, FileSignature, FileUp, PackageSearch, Plus, Save, Search, Trash2 } from "lucide-react"
+import { ArrowRight, FileSignature, FileUp, PackageSearch, Pencil, Plus, Save, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
@@ -38,7 +38,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 
-import { AddSupplierPriceModal } from "./add-supplier-price-modal"
+import {
+  AddSupplierPriceModal,
+  type SupplierPriceEditDto,
+} from "./add-supplier-price-modal"
 
 type ProductFamily = {
   id: string
@@ -159,6 +162,9 @@ export function HeavyItemMasterScreen({
   const [supplierItems, setSupplierItems] = React.useState<SupplierItemRecord[]>([])
   const [supplierItemsLoading, setSupplierItemsLoading] = React.useState(false)
   const [addPriceModalOpen, setAddPriceModalOpen] = React.useState(false)
+  // עריכת מחיר קיים: כשה-state מלא המודל נפתח במצב עריכה עם הנתונים. איפוס בסגירה.
+  const [editingPrice, setEditingPrice] = React.useState<SupplierPriceEditDto | null>(null)
+  const [deletingPriceId, setDeletingPriceId] = React.useState<string | null>(null)
   const [selectedId, setSelectedId] = React.useState<string | null>(
     initialSelectedId ?? null
   )
@@ -222,6 +228,8 @@ export function HeavyItemMasterScreen({
           : row.basePrice
       return {
         id: row.id,
+        // מזהה הספק הגולמי דרוש למודל העריכה (לא מוצג בטבלה אבל מועבר ב-onClick).
+        supplierId: row.supplierId,
         supplierLabel,
         supplierSku: row.supplierSku,
         currency: row.currency,
@@ -311,6 +319,34 @@ export function HeavyItemMasterScreen({
   React.useEffect(() => {
     void reloadSupplierItems()
   }, [reloadSupplierItems])
+
+  // מחיקת מחיר ספק. משתמש ב-window.confirm לפי הנחיה (אין רכיב AlertDialog מוכן בפרוייקט).
+  const handleDeletePrice = React.useCallback(
+    async (priceId: string, supplierLabel: string) => {
+      if (
+        !window.confirm(
+          `למחוק מחיר ספק של ׳${supplierLabel}״? פעולה זו אינה הפיכה.`
+        )
+      ) {
+        return
+      }
+      setDeletingPriceId(priceId)
+      try {
+        await masterDataFetch(`/api/master-data/supplier-items/${priceId}`, {
+          method: "DELETE",
+        })
+        toast.success("מחיר הספק נמחק בהצלחה")
+        await reloadSupplierItems()
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "מחיקת מחיר הספק נכשלה"
+        )
+      } finally {
+        setDeletingPriceId(null)
+      }
+    },
+    [reloadSupplierItems]
+  )
 
   React.useEffect(() => {
     if (!selectedItem) {
@@ -938,12 +974,13 @@ export function HeavyItemMasterScreen({
                                 <TableHead className="text-start">מחיר נטו</TableHead>
                                 <TableHead className="text-start">מועדף</TableHead>
                                 <TableHead className="text-start">תוקף עד</TableHead>
+                                <TableHead className="text-start w-24">פעולות</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {purchasingRows.length === 0 ? (
                                 <TableRow>
-                                  <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
+                                  <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
                                     {supplierItemsLoading
                                       ? "טוען..."
                                       : "אין נתוני ספקים להצגה."}
@@ -977,6 +1014,47 @@ export function HeavyItemMasterScreen({
                                       {row.isPreferred ? "★ מועדף" : "—"}
                                     </TableCell>
                                     <TableCell>{row.validTo ?? "—"}</TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="size-7"
+                                          aria-label={`עריכת מחיר ספק של ${row.supplierLabel}`}
+                                          title="עריכה"
+                                          onClick={() => {
+                                            setEditingPrice({
+                                              id: row.id,
+                                              supplierId: row.supplierId,
+                                              supplierSku: row.supplierSku,
+                                              currency: row.currency,
+                                              basePrice: row.basePrice,
+                                              discountPercentage: row.discountPercentage,
+                                              isPreferred: row.isPreferred,
+                                              validTo: row.validTo,
+                                            })
+                                            setAddPriceModalOpen(true)
+                                          }}
+                                        >
+                                          <Pencil className="size-3.5" aria-hidden />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          className="size-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          aria-label={`מחיקת מחיר ספק של ${row.supplierLabel}`}
+                                          title="מחיקה"
+                                          disabled={deletingPriceId === row.id}
+                                          onClick={() =>
+                                            void handleDeletePrice(row.id, row.supplierLabel)
+                                          }
+                                        >
+                                          <Trash2 className="size-3.5" aria-hidden />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
                                   </TableRow>
                                 ))
                               )}
@@ -1172,7 +1250,12 @@ export function HeavyItemMasterScreen({
         itemId={selectedItem?.id ?? null}
         itemSku={selectedItem?.sku ?? null}
         isOpen={addPriceModalOpen}
-        onClose={() => setAddPriceModalOpen(false)}
+        editingItem={editingPrice}
+        onClose={() => {
+          setAddPriceModalOpen(false)
+          // מתאפס editingPrice בסגירה כדי שהפתיחה הבאה תהיה במצב יצירה לפי ברירת מחדל.
+          setEditingPrice(null)
+        }}
         onSuccess={() => {
           // ריענון מיידי של הטבלה אחרי שמירה מוצלחת כדי שהשורה החדשה תופיע מיד.
           void reloadSupplierItems()

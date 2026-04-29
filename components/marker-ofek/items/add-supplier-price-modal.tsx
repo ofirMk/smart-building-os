@@ -1,10 +1,13 @@
 "use client"
 
 /**
- * AddSupplierPriceModal — Phase 5.2
+ * AddSupplierPriceModal — Phase 5.2 (יצירה) + Phase 6.2 (עריכה)
  *
- * מודל הוספת מחיר ספק חדש לפריט קיים. נטען עם רשימת הספקים של החברה הפעילה
- * (`/api/master-data/suppliers`) ושולח POST ל-`/api/master-data/supplier-items`.
+ * מודל דו-תכליתי להוספה ועריכה של מחיר ספק. מצב נבחר ע"י נוכחות `editingItem`:
+ *   • create → שולח POST ל-`/api/master-data/supplier-items`.
+ *   • edit  → שולח PUT ל-`/api/master-data/supplier-items/[id]`,
+ *             עם `supplierId` ו-`supplierSku` מוקפאים (Disabled) למניעת תקלות
+ *             סכמה (uniqueness של `(item, supplier, supplier_sku)`).
  *
  * הערות אדריכלות:
  * - השימוש ב-Base UI Select מחייב render-prop ב-`<SelectValue>` כדי להציג שם
@@ -108,12 +111,32 @@ const DEFAULT_VALUES: FormInput = {
   validTo: "",
 }
 
+/**
+ * נתוני שורת מחיר קיימת המועברים למודל במצב עריכה.
+ * תת-קבוצה של `SupplierItemRecord` — רק השדות שהמודל מציג/עורך.
+ */
+export type SupplierPriceEditDto = {
+  id: string
+  supplierId: string
+  supplierSku: string | null
+  currency: string
+  basePrice: number
+  discountPercentage: number
+  isPreferred: boolean
+  validTo: string | null
+}
+
 type AddSupplierPriceModalProps = {
   itemId: string | null
   itemSku?: string | null
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  /**
+   * אם מועבר — המודל פותח במצב עריכה (PUT) ושדות הספק/מק"ט-ספק מוקפאים.
+   * אם null/undefined — המודל פותח במצב יצירה (POST).
+   */
+  editingItem?: SupplierPriceEditDto | null
 }
 
 export function AddSupplierPriceModal({
@@ -122,7 +145,9 @@ export function AddSupplierPriceModal({
   isOpen,
   onClose,
   onSuccess,
+  editingItem,
 }: AddSupplierPriceModalProps) {
+  const isEditMode = Boolean(editingItem)
   const [suppliers, setSuppliers] = React.useState<SupplierOption[]>([])
   const [suppliersLoading, setSuppliersLoading] = React.useState(false)
   const [submitError, setSubmitError] = React.useState<string | null>(null)
@@ -157,13 +182,33 @@ export function AddSupplierPriceModal({
     }
   }, [isOpen])
 
-  // איפוס הטופס בכל פתיחה כדי שלא יישארו ערכים מהפעם הקודמת.
+  // איפוס/אכלוס הטופס בכל פתיחה.
+  // - יצירה: ערכי ברירת מחדל ריקים.
+  // - עריכה: אכלוס מתוך `editingItem` (כל שדות הטופס פרט ל-`netPrice` שמחושב).
   React.useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return
+    setSubmitError(null)
+    if (editingItem) {
+      // ערכים מספריים נשמרים כ-strings ב-FormInput כדי להתאים ל-`<input type="number">`.
+      const currency = SUPPORTED_CURRENCIES.includes(
+        editingItem.currency as SupportedCurrency
+      )
+        ? (editingItem.currency as SupportedCurrency)
+        : "ILS"
+      form.reset({
+        supplierId: editingItem.supplierId,
+        supplierSku: editingItem.supplierSku ?? "",
+        currency,
+        basePrice: String(editingItem.basePrice ?? ""),
+        discountPercentage: String(editingItem.discountPercentage ?? ""),
+        isPreferred: Boolean(editingItem.isPreferred),
+        // `<input type="date">` מצפה ל-YYYY-MM-DD; מקצרים את ה-ISO אם הגיע מלא.
+        validTo: editingItem.validTo ? editingItem.validTo.slice(0, 10) : "",
+      })
+    } else {
       form.reset(DEFAULT_VALUES)
-      setSubmitError(null)
     }
-  }, [isOpen, form])
+  }, [isOpen, editingItem, form])
 
   const watchedBase = form.watch("basePrice")
   const watchedDiscount = form.watch("discountPercentage")
@@ -178,27 +223,46 @@ export function AddSupplierPriceModal({
   }, [watchedBase, watchedDiscount])
 
   async function onSubmit(values: FormOutput) {
-    if (!itemId) {
+    if (!itemId && !isEditMode) {
       setSubmitError("לא נבחר פריט מקור — נסה לסגור ולפתוח שוב")
       return
     }
     setSubmitError(null)
     try {
-      await masterDataFetch("/api/master-data/supplier-items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          itemId,
-          supplierId: values.supplierId,
-          supplierSku: values.supplierSku,
-          currency: values.currency,
-          basePrice: values.basePrice,
-          discountPercentage: values.discountPercentage,
-          isPreferred: values.isPreferred,
-          validTo: values.validTo ? values.validTo : null,
-        }),
-      })
-      toast.success("מחיר הספק נוסף בהצלחה")
+      if (isEditMode && editingItem) {
+        // עריכה: שולח רק שדות שניתנים לעריכה (לא supplierId/supplierSku — הם מוקפאים).
+        await masterDataFetch(
+          `/api/master-data/supplier-items/${editingItem.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              currency: values.currency,
+              basePrice: values.basePrice,
+              discountPercentage: values.discountPercentage,
+              isPreferred: values.isPreferred,
+              validTo: values.validTo ? values.validTo : null,
+            }),
+          }
+        )
+        toast.success("מחיר הספק עודכן בהצלחה")
+      } else {
+        await masterDataFetch("/api/master-data/supplier-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            itemId,
+            supplierId: values.supplierId,
+            supplierSku: values.supplierSku,
+            currency: values.currency,
+            basePrice: values.basePrice,
+            discountPercentage: values.discountPercentage,
+            isPreferred: values.isPreferred,
+            validTo: values.validTo ? values.validTo : null,
+          }),
+        })
+        toast.success("מחיר הספק נוסף בהצלחה")
+      }
       onSuccess()
       onClose()
     } catch (error) {
@@ -220,9 +284,15 @@ export function AddSupplierPriceModal({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>הוספת מחיר ספק</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "עריכת מחיר ספק" : "הוספת מחיר ספק"}
+          </DialogTitle>
           <DialogDescription>
-            {itemSku ? `קישור ספק לפריט ${itemSku}` : "קישור ספק לפריט הפעיל"}
+            {isEditMode
+              ? "ניתן לעדכן מחיר, הנחה, מטבע, תוקף וסטטוס מועדף. שדות הספק והמק\"ט מוקפאים."
+              : itemSku
+                ? `קישור ספק לפריט ${itemSku}`
+                : "קישור ספק לפריט הפעיל"}
           </DialogDescription>
         </DialogHeader>
 
@@ -241,9 +311,10 @@ export function AddSupplierPriceModal({
                   <Select
                     value={field.value}
                     onValueChange={(value) => field.onChange(value ?? "")}
+                    disabled={isEditMode}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger disabled={isEditMode}>
                         {/*
                           render-prop על SelectValue: Base UI לא קורא את ItemText
                           אוטומטית; בלי זה היינו רואים UUID במקום קוד+שם.
@@ -289,6 +360,7 @@ export function AddSupplierPriceModal({
                     <Input
                       autoComplete="off"
                       placeholder="לדוגמה: PLS-VLV-15"
+                      disabled={isEditMode}
                       {...field}
                     />
                   </FormControl>
@@ -472,12 +544,16 @@ export function AddSupplierPriceModal({
                 type="submit"
                 disabled={
                   form.formState.isSubmitting ||
-                  suppliersLoading ||
-                  !itemId ||
-                  suppliers.length === 0
+                  // במצב יצירה דורשים itemId + ספקים נטענים. במצב עריכה — תמיד מותר.
+                  (!isEditMode &&
+                    (suppliersLoading || !itemId || suppliers.length === 0))
                 }
               >
-                {form.formState.isSubmitting ? "שומר..." : "שמור"}
+                {form.formState.isSubmitting
+                  ? "שומר..."
+                  : isEditMode
+                    ? "עדכן"
+                    : "שמור"}
               </Button>
             </DialogFooter>
           </form>
