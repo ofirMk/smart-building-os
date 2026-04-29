@@ -3,7 +3,7 @@
 import Link from "next/link"
 import * as React from "react"
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
-import { FileSignature, FileUp, PackageSearch, Plus, Save, Search, Trash2 } from "lucide-react"
+import { ArrowRight, FileSignature, FileUp, PackageSearch, Plus, Save, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { useSmartWorkspace } from "@/components/marker-ofek/workspace/smart-workspace-context"
@@ -132,7 +132,20 @@ const itemsApiDelete = async (id: string): Promise<void> => {
   })
 }
 
-export function HeavyItemMasterScreen() {
+type HeavyItemMasterScreenProps = {
+  /** מזהה פריט לבחירה מיידית לאחר הטעינה (drill-down מה-data grid). */
+  initialSelectedId?: string | null
+  /** אם `true`, מודל יצירת הפריט ייפתח מייד עם טעינת המסך. */
+  initialOpenCreate?: boolean
+  /** מקרה שמסתפקים ב- onBack — מתווסף כפתור "חזור לטבלה" בראש ה-toolbar. */
+  onBack?: () => void
+}
+
+export function HeavyItemMasterScreen({
+  initialSelectedId,
+  initialOpenCreate,
+  onBack,
+}: HeavyItemMasterScreenProps = {}) {
   const workspace = useSmartWorkspace()
 
   const [loading, setLoading] = React.useState(true)
@@ -146,9 +159,13 @@ export function HeavyItemMasterScreen() {
   const [supplierItems, setSupplierItems] = React.useState<SupplierItemRecord[]>([])
   const [supplierItemsLoading, setSupplierItemsLoading] = React.useState(false)
   const [addPriceModalOpen, setAddPriceModalOpen] = React.useState(false)
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+  const [selectedId, setSelectedId] = React.useState<string | null>(
+    initialSelectedId ?? null
+  )
   const [searchTerm, setSearchTerm] = React.useState("")
-  const [createOpen, setCreateOpen] = React.useState(false)
+  const [createOpen, setCreateOpen] = React.useState<boolean>(
+    Boolean(initialOpenCreate)
+  )
   const [createDraft, setCreateDraft] = React.useState<ItemCreateDraft>(EMPTY_CREATE_DRAFT)
   const [draft, setDraft] = React.useState<ItemRecord | null>(null)
   const [notesTab, setNotesTab] = React.useState<1 | 2 | 3 | 4 | 5>(1)
@@ -247,7 +264,10 @@ export function HeavyItemMasterScreen() {
       setFamilies(familyRows)
       setUoms(uomRows)
       setSuppliers(supplierRows)
-      setSelectedId((prev) => prev ?? itemRows[0]?.id ?? null)
+      // אם המאכלסל סיפק `initialSelectedId` — מכבדים אותו; אחרת בוחרים ראשון ברשימה.
+      setSelectedId(
+        (prev) => prev ?? initialSelectedId ?? itemRows[0]?.id ?? null
+      )
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "טעינת נתונים נכשלה")
       setItems([])
@@ -509,6 +529,18 @@ export function HeavyItemMasterScreen() {
 
         <section dir="rtl" className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
           <div className="flex flex-none items-center gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur">
+            {onBack ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="gap-2"
+                onClick={onBack}
+              >
+                <ArrowRight className="size-4" aria-hidden />
+                חזור לטבלת הפריטים
+              </Button>
+            ) : null}
             <Button type="button" size="sm" className="gap-2" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" aria-hidden />
               הוסף

@@ -99,16 +99,30 @@ export async function GET(req: NextRequest) {
     .order("item_number", { ascending: true })
   if (q) query = query.or(`item_number.ilike.%${q}%,description.ilike.%${q}%`)
 
-  const [itemsResult, familiesResult] = await Promise.all([
+  // טעינה מקבילה: פריטים, משפחות מוצר ויחידות מידה. ל-UOM יש מודל היברידי
+  // (גלובלי `company_id IS NULL` + ספציפי לחברה) — כאן אני קורא את שניהם ולאחר
+  // מכן מחבר ל-Map לפי `code` עם דה-דופ (פרטי-לחברה גובר על גלובלי), כדי שהטבלה
+  // תציג תיאור עברית קריא במקום קוד יבש.
+  const [itemsResult, familiesResult, uomsResult] = await Promise.all([
     query,
     supabase
       .from("erp_md_product_families")
       .select("id,family_code,name,default_budget_sub_chapter,default_resource_id")
       .eq("company_id", activeCompanyId),
+    supabase
+      .from("units_of_measure")
+      .select("code,description_he,name_en,company_id")
+      .or(`company_id.is.null,company_id.eq.${activeCompanyId}`),
   ])
-  if (itemsResult.error || familiesResult.error) {
+  if (itemsResult.error || familiesResult.error || uomsResult.error) {
     return NextResponse.json(
-      { error: itemsResult.error?.message ?? familiesResult.error?.message ?? "Query failed" },
+      {
+        error:
+          itemsResult.error?.message ??
+          familiesResult.error?.message ??
+          uomsResult.error?.message ??
+          "Query failed",
+      },
       { status: 500 }
     )
   }
@@ -125,6 +139,18 @@ export async function GET(req: NextRequest) {
       },
     ])
   )
+
+  // דה-דופ UOM לפי code: אם יש גם רשומה גלובלית וגם ספציפית-לחברה — האחרונה גוברת.
+  const uomMap = new Map<string, { descriptionHe: string; nameEn: string }>()
+  for (const row of uomsResult.data ?? []) {
+    const existing = uomMap.get(row.code)
+    if (!existing || row.company_id !== null) {
+      uomMap.set(row.code, {
+        descriptionHe: row.description_he,
+        nameEn: row.name_en,
+      })
+    }
+  }
   return NextResponse.json({
     data: (itemsResult.data ?? []).map((row) => ({
       id: row.id,
@@ -159,6 +185,13 @@ export async function GET(req: NextRequest) {
       preferredSupplierId: row.preferred_supplier_id,
       defaultPrice: row.default_price === null ? null : Number(row.default_price),
       productFamily: familyMap.get(row.product_family_id) ?? null,
+      // תיאור עברי + שם אנגלי של יחידת המידה — fallback לקוד עצמו אם אין רשומה במאפר.
+      uomDescription:
+        (row.unit_of_measure && uomMap.get(row.unit_of_measure)?.descriptionHe) ??
+        row.unit_of_measure ??
+        null,
+      uomNameEn:
+        (row.unit_of_measure && uomMap.get(row.unit_of_measure)?.nameEn) ?? null,
     })),
   })
 }
