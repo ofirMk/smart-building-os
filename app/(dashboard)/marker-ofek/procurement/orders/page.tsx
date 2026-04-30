@@ -20,6 +20,7 @@
  */
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { FileText, Loader2, Plus, Search, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
 
@@ -88,6 +89,7 @@ const numberFormatter = new Intl.NumberFormat("he-IL", {
 })
 
 export default function ProcurementOrdersPage() {
+  const router = useRouter()
   const [rows, setRows] = React.useState<ProcurementOrderRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
@@ -129,11 +131,9 @@ export default function ProcurementOrdersPage() {
     )
   }, [rows, searchTerm])
 
-  // Stub: ב-Phase 7.2 יוחלף בפתיחת מודל יצירת הזמנת רכש.
   const handleCreatePO = React.useCallback(() => {
-    console.log("Open PO Modal/Page")
-    toast.info("יצירת הזמנת רכש — בקרוב (Phase 7.2)")
-  }, [])
+    router.push("/marker-ofek/procurement/orders/new")
+  }, [router])
 
   return (
     <div dir="rtl" className="flex h-full min-h-0 flex-col gap-3 p-4">
