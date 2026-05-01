@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as React from "react"
-import { Loader2, Save, ArrowRight } from "lucide-react"
+import { Loader2, Save, ArrowRight, Hash, ScanLine } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { DrilldownSheet } from "@/components/marker-ofek/forms/drilldown-sheet"
 import { F2LookupField } from "@/components/marker-ofek/forms/f2-lookup-field"
 import {
@@ -72,6 +73,12 @@ type SubmitItem = {
   preferredSupplierId?: string
   defaultPrice?: number
   isInventoryManaged: boolean
+  // ── Phase 7.13.4 Logistics Enrichment ──
+  barcode?: string
+  purchasingUom?: string
+  isSerialTracked?: boolean
+  standardCost?: number
+  imageUrl?: string
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -92,7 +99,7 @@ const ITEM_TYPE_OPTIONS: Array<{ value: SubmitItem["itemType"]; label: string; h
 export function PriorityItemFormClient() {
   const router = useRouter()
 
-  // form state — 10 fields per ERP SOP Stage A
+  // form state — 10 fields per ERP SOP Stage A + 5 שדות Phase 7.13.4 Logistics Enrichment
   const [itemNumber, setItemNumber] = React.useState("")
   const [description, setDescription] = React.useState("")
   const [foreignDescription, setForeignDescription] = React.useState("")
@@ -106,6 +113,12 @@ export function PriorityItemFormClient() {
   const [preferredSupplierId, setPreferredSupplierId] = React.useState("")
   const [defaultPrice, setDefaultPrice] = React.useState("")
   const [isInventoryManaged, setIsInventoryManaged] = React.useState(true)
+  // ── Phase 7.13.4 Logistics Enrichment ──
+  const [barcode, setBarcode] = React.useState("")
+  const [purchasingUom, setPurchasingUom] = React.useState("")
+  const [isSerialTracked, setIsSerialTracked] = React.useState(false)
+  const [standardCost, setStandardCost] = React.useState("")
+  const [imageUrl, setImageUrl] = React.useState("")
 
   // ── F2 Drill-Down state ──
   // Sheet שולט במצב פתוח/סגור. State של הטופס האב נשמר אוטומטית כי הוא לא מתפרק.
@@ -272,6 +285,16 @@ export function PriorityItemFormClient() {
         errors.push("מחיר: לא שלילי, עד 4 ספרות אחרי הנקודה")
       }
     }
+    // ── Phase 7.13.4 validation ──
+    if (standardCost.trim()) {
+      const cStr = standardCost.trim().replace(",", ".")
+      if (!DECIMAL_4_RE.test(cStr)) {
+        errors.push("עלות תקן: לא שלילי, עד 4 ספרות אחרי הנקודה")
+      }
+    }
+    if (barcode.trim() && barcode.trim().length > 64) {
+      errors.push("ברקוד מוגבל ל-64 תווים")
+    }
     return { errors, ok: errors.length === 0 }
   }, [
     itemNumber,
@@ -280,6 +303,8 @@ export function PriorityItemFormClient() {
     unitOfMeasure,
     conversionFactor,
     defaultPrice,
+    standardCost,
+    barcode,
   ])
 
   async function handleSave(e: React.FormEvent) {
@@ -294,6 +319,10 @@ export function PriorityItemFormClient() {
       const cfStr = conversionFactor.trim().replace(",", ".")
       const priceStr = defaultPrice.trim()
         ? defaultPrice.trim().replace(",", ".")
+        : undefined
+      // Phase 7.13.4: שדות standardCost ו-conversionFactor נשלחים כ-string FP-safe. ריק→undefined.
+      const stdCostStr = standardCost.trim()
+        ? standardCost.trim().replace(",", ".")
         : undefined
       const created = await masterDataFetch<{ id: string }>(
         "/api/master-data/items",
@@ -313,6 +342,12 @@ export function PriorityItemFormClient() {
             defaultPrice: priceStr,
             isInventoryManaged,
             status: "ACTIVE",
+            // ── Phase 7.13.4 Logistics Enrichment ──
+            barcode: barcode.trim() || undefined,
+            purchasingUom: purchasingUom.trim() || undefined,
+            isSerialTracked,
+            standardCost: stdCostStr,
+            imageUrl: imageUrl.trim() || undefined,
           }),
         }
       )
@@ -411,6 +446,24 @@ export function PriorityItemFormClient() {
                 dir="ltr"
                 placeholder="Black plastic pipe 20mm"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="it-barcode" className="flex items-center gap-1.5">
+                <ScanLine className="size-3.5" aria-hidden />
+                ברקוד
+              </Label>
+              <Input
+                id="it-barcode"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                dir="ltr"
+                className="font-mono"
+                placeholder="7290000000000"
+                maxLength={64}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                EAN-13 / UPC / Code-128 — לסריקה בקבלת סחורה וספירת מלאי.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -602,6 +655,36 @@ export function PriorityItemFormClient() {
                   : 'כמה יחידות מפעל מהוות יחידת קניה אחת. דוגמה: ק"ג ל-טון = 1000.'}
               </p>
             </div>
+            {/* ── Phase 7.13.4: purchasing_uom (אופציונלי, code-based סימטרי ל-factory_uom) ── */}
+            <div className="space-y-2">
+              <Label htmlFor="it-puom">יחידת קנייה (אופציונלי)</Label>
+              <select
+                id="it-puom"
+                value={purchasingUom}
+                onChange={(e) => setPurchasingUom(e.target.value)}
+                disabled={lookupsLoading}
+                dir="rtl"
+                className={cn(
+                  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "disabled:cursor-not-allowed disabled:opacity-50"
+                )}
+              >
+                <option value="">
+                  {lookupsLoading
+                    ? "טוען…"
+                    : `ברירת מחדל: ${unitOfMeasure || "(זהה ליח' בסיס)"}`}
+                </option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.code}>
+                    {u.code} — {u.descriptionHe}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                יחידת הקנייה מהספק (לדוגמה ארגז של 12) — אם נשאר ריק תונח ה-DB על יחידת הבסיס.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -644,17 +727,50 @@ export function PriorityItemFormClient() {
                 ))}
               </select>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="it-price">מחיר מחירון בסיס (₪)</Label>
+                <Input
+                  id="it-price"
+                  value={defaultPrice}
+                  onChange={(e) => setDefaultPrice(e.target.value)}
+                  dir="ltr"
+                  inputMode="decimal"
+                  className="font-mono"
+                  placeholder="0.00"
+                />
+              </div>
+              {/* ── Phase 7.13.4: standard_cost ── */}
+              <div className="space-y-2">
+                <Label htmlFor="it-stdcost">עלות תקן (₪)</Label>
+                <Input
+                  id="it-stdcost"
+                  value={standardCost}
+                  onChange={(e) => setStandardCost(e.target.value)}
+                  dir="ltr"
+                  inputMode="decimal"
+                  className="font-mono"
+                  placeholder="0.00"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  לחישוב שווי מלאי תיאורטי ולמדדי רווחיות.
+                </p>
+              </div>
+            </div>
+            {/* ── Phase 7.13.4: image_url ── */}
             <div className="space-y-2">
-              <Label htmlFor="it-price">מחיר מחירון בסיס (₪)</Label>
+              <Label htmlFor="it-image">כתובת תמונת פריט (אופציונלי)</Label>
               <Input
-                id="it-price"
-                value={defaultPrice}
-                onChange={(e) => setDefaultPrice(e.target.value)}
+                id="it-image"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
                 dir="ltr"
-                inputMode="decimal"
-                className="font-mono"
-                placeholder="0.00"
+                className="font-mono text-xs"
+                placeholder="https://…/product.jpg"
               />
+              <p className="text-[11px] text-muted-foreground">
+                URL חיצוני או נתיב ב-Storage. ניתן לערוך גם מכרטיס הפריט אחרי היצירה.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -664,7 +780,7 @@ export function PriorityItemFormClient() {
           <CardHeader>
             <CardTitle>ניהול מלאי</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <label className="flex cursor-pointer items-center gap-3">
               <Checkbox
                 checked={isInventoryManaged}
@@ -677,6 +793,25 @@ export function PriorityItemFormClient() {
                 </span>
               </span>
             </label>
+            {/* ── Phase 7.13.4: is_serial_tracked ── */}
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/20 p-3">
+              <div className="flex items-start gap-2">
+                <Hash className="mt-0.5 size-4 text-muted-foreground" aria-hidden />
+                <div className="space-y-0.5">
+                  <Label htmlFor="it-serial" className="cursor-pointer text-sm font-medium">
+                    ניהול מספרים סידוריים
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    נדרש עבור פריטי ציוד עם מזהה ייחודי (אחריות, הפרדה ב-GR).
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="it-serial"
+                checked={isSerialTracked}
+                onCheckedChange={setIsSerialTracked}
+              />
+            </div>
           </CardContent>
         </Card>
 

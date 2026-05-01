@@ -15,6 +15,9 @@ type ItemCreateBody = {
   productFamilyId?: unknown
   isInventoryManaged?: unknown
   foreignDescription?: unknown
+  // alias מודרני של foreignDescription (Phase 7.13.4) — התווית ב-UI "תאור לועזי / English".
+  // כל אחד מהשניים מתקבל; אם שניהם נשלחו — `descriptionEn` מנצח.
+  descriptionEn?: unknown
   status?: unknown
   minOrderQuantity?: unknown
   itemType?: unknown
@@ -34,6 +37,12 @@ type ItemCreateBody = {
   conversionFactor?: unknown
   preferredSupplierId?: unknown
   defaultPrice?: unknown
+  // ── Phase 7.13.4 Logistics Enrichment ──
+  barcode?: unknown
+  isSerialTracked?: unknown
+  standardCost?: unknown
+  purchasingUom?: unknown
+  imageUrl?: unknown
 }
 
 export const runtime = "nodejs"
@@ -94,7 +103,7 @@ export async function GET(req: NextRequest) {
   const q = sanitizeOptionalString(req.nextUrl.searchParams.get("q"))
   let query = supabase
     .from("erp_md_items")
-    .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price,factory_uom,conversion_factor,preferred_supplier_id,default_price")
+    .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price,factory_uom,conversion_factor,preferred_supplier_id,default_price,barcode,is_serial_tracked,standard_cost,purchasing_uom,image_url")
     .eq("company_id", activeCompanyId)
     .order("item_number", { ascending: true })
   if (q) query = query.or(`item_number.ilike.%${q}%,description.ilike.%${q}%`)
@@ -192,6 +201,20 @@ export async function GET(req: NextRequest) {
         null,
       uomNameEn:
         (row.unit_of_measure && uomMap.get(row.unit_of_measure)?.nameEn) ?? null,
+      // ── Phase 7.13.4 Logistics Enrichment ──
+      barcode: row.barcode,
+      isSerialTracked: row.is_serial_tracked,
+      standardCost:
+        row.standard_cost === null ? null : Number(row.standard_cost),
+      purchasingUom: row.purchasing_uom,
+      // Lookup תיאור עברי של יחידת הקניה, באותו pattern של uomDescription.
+      purchasingUomDescription:
+        (row.purchasing_uom && uomMap.get(row.purchasing_uom)?.descriptionHe) ??
+        row.purchasing_uom ??
+        null,
+      imageUrl: row.image_url,
+      // alias מודרני ל-foreign_description — חשיפה תחת שם DTO חדש בלי שבירת צרכנים קיימים.
+      descriptionEn: row.foreign_description,
     })),
   })
 }
@@ -206,8 +229,17 @@ export async function POST(req: NextRequest) {
   const description = sanitizeOptionalString(body?.description)
   const uom = sanitizeOptionalString(body?.uom) ?? sanitizeOptionalString(body?.unitOfMeasure)
   const productFamilyId = sanitizeOptionalString(body?.productFamilyId)
-  const isInventoryManaged = body?.isInventoryManaged === true
-  const foreignDescription = sanitizeOptionalString(body?.foreignDescription)
+  // Phase 7.13.4: default מאחורי הקלעים עלה ל-true. בלקוח, אם isInventoryManaged לא נשלח
+  // (undefined), נכבד את ה-default של ה-DB (true). אם נשלח במפורש — נכבד את הערך המפורש.
+  const isInventoryManagedProvided = body?.isInventoryManaged !== undefined
+  const isInventoryManaged = isInventoryManagedProvided
+    ? body?.isInventoryManaged === true
+    : true
+  // foreign_description מתקבל גם תחת השם הישן (foreignDescription) וגם תחת alias חדש
+  // (descriptionEn). `descriptionEn` גובר אם סופקו שניהם.
+  const foreignDescription =
+    sanitizeOptionalString(body?.descriptionEn) ??
+    sanitizeOptionalString(body?.foreignDescription)
   const status = normalizeItemStatus(body?.status)
   const minOrderQuantity = normalizeMinOrderQuantity(body?.minOrderQuantity)
   const itemType = sanitizeOptionalString(body?.itemType)?.toUpperCase() || "R"
@@ -237,6 +269,18 @@ export async function POST(req: NextRequest) {
     maxDecimals: 4,
     minValueInclusive: 0,
   })
+  // ── Phase 7.13.4 Logistics Enrichment ──
+  const barcode = sanitizeOptionalString(body?.barcode)
+  // purchasing_uom code-based, אותו validation כמו factory_uom (varchar(16)).
+  const purchasingUom = sanitizeOptionalString(body?.purchasingUom)
+  const imageUrl = sanitizeOptionalString(body?.imageUrl)
+  const isSerialTracked = body?.isSerialTracked === true
+  // standard_cost FP-safe: string numeric. ריק/פסול → "0" (ברירת מחדל DB).
+  const standardCost: string =
+    sanitizeDecimalString(body?.standardCost, {
+      maxDecimals: 4,
+      minValueInclusive: 0,
+    }) ?? "0"
   if (!sku || !description || !uom || !productFamilyId) {
     return NextResponse.json(
       { error: "sku, description, uom and productFamilyId are required" },
@@ -295,8 +339,14 @@ export async function POST(req: NextRequest) {
       conversion_factor: conversionFactor,
       preferred_supplier_id: preferredSupplierId,
       default_price: defaultPrice ?? (legacyDefaultPrice === null ? null : String(legacyDefaultPrice)),
+      // ── Phase 7.13.4 Logistics Enrichment ──
+      barcode,
+      is_serial_tracked: isSerialTracked,
+      standard_cost: standardCost,
+      purchasing_uom: purchasingUom,
+      image_url: imageUrl,
     })
-    .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price,factory_uom,conversion_factor,preferred_supplier_id,default_price")
+    .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price,factory_uom,conversion_factor,preferred_supplier_id,default_price,barcode,is_serial_tracked,standard_cost,purchasing_uom,image_url")
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
@@ -335,6 +385,14 @@ export async function POST(req: NextRequest) {
         preferredSupplierId: data.preferred_supplier_id,
         defaultPrice:
           data.default_price === null ? null : Number(data.default_price),
+        // ── Phase 7.13.4 Logistics Enrichment ──
+        barcode: data.barcode,
+        isSerialTracked: data.is_serial_tracked,
+        standardCost:
+          data.standard_cost === null ? null : Number(data.standard_cost),
+        purchasingUom: data.purchasing_uom,
+        imageUrl: data.image_url,
+        descriptionEn: data.foreign_description,
         productFamily: {
           id: familyLookup.data.id,
           familyCode: familyLookup.data.family_code,

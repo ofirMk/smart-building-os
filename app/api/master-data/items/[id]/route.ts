@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 import {
   requireMasterDataApiContext,
+  sanitizeDecimalString,
   sanitizeOptionalString,
 } from "@/lib/erp/master-data-api"
 
@@ -14,6 +15,8 @@ type ItemUpdateBody = {
   productFamilyId?: unknown
   isInventoryManaged?: unknown
   foreignDescription?: unknown
+  // alias מודרני של foreignDescription (Phase 7.13.4).
+  descriptionEn?: unknown
   status?: unknown
   minOrderQuantity?: unknown
   itemType?: unknown
@@ -29,6 +32,17 @@ type ItemUpdateBody = {
   ocrMatchTokens?: unknown
   legacyDefaultPrice?: unknown
   legacyLastPrice?: unknown
+  // ── Phase 7.13.4 Logistics Enrichment ──
+  barcode?: unknown
+  isSerialTracked?: unknown
+  standardCost?: unknown
+  purchasingUom?: unknown
+  imageUrl?: unknown
+  // שדות יחידת-מידה/מחיר/המרה הקיימים מאפשרים עדכון גם דרך ניהול מלא.
+  factoryUom?: unknown
+  conversionFactor?: unknown
+  preferredSupplierId?: unknown
+  defaultPrice?: unknown
 }
 
 function normalizeParams(
@@ -77,12 +91,21 @@ async function loadItem(req: NextRequest, id: string) {
   if (!gate.ok) return gate
   const { supabase, activeCompanyId } = gate.ctx
 
-  const { data, error } = await supabase
-    .from("erp_md_items")
-    .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price")
-    .eq("id", id)
-    .eq("company_id", activeCompanyId)
-    .maybeSingle()
+  // קוראים במקביל: הפריט + רשימת יחידות מידה (גלובלי + פרטי לחברה) — כדי להשניק תיאורי עברי של
+  // יחידת הבסיס ויחידת הקנייה דרך קוד (uomDescription / purchasingUomDescription).
+  const [itemResult, uomsResult] = await Promise.all([
+    supabase
+      .from("erp_md_items")
+      .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price,factory_uom,conversion_factor,preferred_supplier_id,default_price,barcode,is_serial_tracked,standard_cost,purchasing_uom,image_url")
+      .eq("id", id)
+      .eq("company_id", activeCompanyId)
+      .maybeSingle(),
+    supabase
+      .from("units_of_measure")
+      .select("code,description_he,name_en,company_id")
+      .or(`company_id.is.null,company_id.eq.${activeCompanyId}`),
+  ])
+  const { data, error } = itemResult
   if (error) {
     return {
       ok: false as const,
@@ -96,6 +119,18 @@ async function loadItem(req: NextRequest, id: string) {
     }
   }
 
+  // דה-דופ UOM לפי code: פרטי-חברה גובר על גלובלי (אותה תבנית כמו ב-list route).
+  const uomMap = new Map<string, { descriptionHe: string; nameEn: string }>()
+  for (const row of uomsResult.data ?? []) {
+    const existing = uomMap.get(row.code)
+    if (!existing || row.company_id !== null) {
+      uomMap.set(row.code, {
+        descriptionHe: row.description_he,
+        nameEn: row.name_en,
+      })
+    }
+  }
+
   return {
     ok: true as const,
     data: {
@@ -105,8 +140,16 @@ async function loadItem(req: NextRequest, id: string) {
       itemNumber: data.item_number,
       description: data.description,
       foreignDescription: data.foreign_description,
+      // alias מודרני של foreign_description (Phase 7.13.4).
+      descriptionEn: data.foreign_description,
       uom: data.unit_of_measure,
       unitOfMeasure: data.unit_of_measure,
+      uomDescription:
+        (data.unit_of_measure && uomMap.get(data.unit_of_measure)?.descriptionHe) ??
+        data.unit_of_measure ??
+        null,
+      uomNameEn:
+        (data.unit_of_measure && uomMap.get(data.unit_of_measure)?.nameEn) ?? null,
       productFamilyId: data.product_family_id,
       isInventoryManaged: data.is_inventory_managed,
       status: data.status,
@@ -125,6 +168,22 @@ async function loadItem(req: NextRequest, id: string) {
       legacyDefaultPrice:
         data.legacy_default_price === null ? null : Number(data.legacy_default_price),
       legacyLastPrice: data.legacy_last_price === null ? null : Number(data.legacy_last_price),
+      factoryUom: data.factory_uom,
+      conversionFactor:
+        data.conversion_factor === null ? null : Number(data.conversion_factor),
+      preferredSupplierId: data.preferred_supplier_id,
+      defaultPrice: data.default_price === null ? null : Number(data.default_price),
+      // ── Phase 7.13.4 Logistics Enrichment ──
+      barcode: data.barcode,
+      isSerialTracked: data.is_serial_tracked,
+      standardCost:
+        data.standard_cost === null ? null : Number(data.standard_cost),
+      purchasingUom: data.purchasing_uom,
+      purchasingUomDescription:
+        (data.purchasing_uom && uomMap.get(data.purchasing_uom)?.descriptionHe) ??
+        data.purchasing_uom ??
+        null,
+      imageUrl: data.image_url,
     },
   }
 }
@@ -167,8 +226,17 @@ export async function PUT(
     patch.unit_of_measure = uom
     patch.uom = uom
   }
-  const foreignDescription = sanitizeOptionalString(body?.foreignDescription)
-  if (body?.foreignDescription !== undefined) patch.foreign_description = foreignDescription ?? null
+  // foreign_description מתקבל תחת שני שמות: foreignDescription (legacy) ו-descriptionEn (חדש, Phase 7.13.4).
+  // אם נשלחו שניהם — `descriptionEn` גובר. שימוש explicit undefined-check כדי להשאיר את ה-UPDATE
+  // partial: שדה שלא נשלח לא יעודכן ל-null בטעות.
+  const descriptionEnProvided = body?.descriptionEn !== undefined
+  const foreignDescriptionProvided = body?.foreignDescription !== undefined
+  if (descriptionEnProvided || foreignDescriptionProvided) {
+    const foreignDescription = descriptionEnProvided
+      ? sanitizeOptionalString(body?.descriptionEn)
+      : sanitizeOptionalString(body?.foreignDescription)
+    patch.foreign_description = foreignDescription ?? null
+  }
   if (body?.isInventoryManaged !== undefined) {
     patch.is_inventory_managed = body.isInventoryManaged === true
   }
@@ -215,6 +283,48 @@ export async function PUT(
   }
   if (body?.legacyLastPrice !== undefined) {
     patch.legacy_last_price = normalizeOptionalNumber(body.legacyLastPrice)
+  }
+  // ── Phase 7.13.4 Logistics Enrichment ──
+  if (body?.barcode !== undefined) {
+    patch.barcode = sanitizeOptionalString(body.barcode) ?? null
+  }
+  if (body?.isSerialTracked !== undefined) {
+    patch.is_serial_tracked = body.isSerialTracked === true
+  }
+  if (body?.standardCost !== undefined) {
+    // FP-safe: string numeric, עד 4 ספרות עשרוניות, לא שלילי. פסול → לא מעדכן (שומר ערך קיים).
+    const parsed = sanitizeDecimalString(body.standardCost, {
+      maxDecimals: 4,
+      minValueInclusive: 0,
+    })
+    if (parsed !== null) patch.standard_cost = parsed
+  }
+  if (body?.purchasingUom !== undefined) {
+    patch.purchasing_uom = sanitizeOptionalString(body.purchasingUom) ?? null
+  }
+  if (body?.imageUrl !== undefined) {
+    patch.image_url = sanitizeOptionalString(body.imageUrl) ?? null
+  }
+  // ── שדות יחידת-מידה/מחיר/המרה קיימים — תמיכה מלאה ל-PUT (צריך לעריכת פריט קיים) ──
+  if (body?.factoryUom !== undefined) {
+    patch.factory_uom = sanitizeOptionalString(body.factoryUom) ?? null
+  }
+  if (body?.conversionFactor !== undefined) {
+    const parsed = sanitizeDecimalString(body.conversionFactor, {
+      maxDecimals: 4,
+      minValueExclusive: 0,
+    })
+    if (parsed !== null) patch.conversion_factor = parsed
+  }
+  if (body?.preferredSupplierId !== undefined) {
+    patch.preferred_supplier_id = sanitizeOptionalString(body.preferredSupplierId) ?? null
+  }
+  if (body?.defaultPrice !== undefined) {
+    const parsed = sanitizeDecimalString(body.defaultPrice, {
+      maxDecimals: 4,
+      minValueInclusive: 0,
+    })
+    patch.default_price = parsed
   }
   if (productFamilyId) {
     patch.product_family_id = productFamilyId

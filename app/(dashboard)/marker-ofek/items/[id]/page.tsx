@@ -1,114 +1,135 @@
 "use client"
 
 /**
- * Master SKU Card — Phase 7.13.3 (refactored)
+ * Master SKU Card — Phase 7.13.4 (Logistics Enrichment)
  *
- * רקע
- *   המסך ההיסטורי הציג כרטיס שטוח: הדר עם SKU + תיאור, 4 stat-cards, וטבלת
- *   "ניהול ספקים ומחירים" שעבדה על ה-API הישן `/api/erp/master-data/...`.
+ * רקע קצר
+ *   עד 7.13.3 המסך היה רק read-only ב-4 טאבים. Phase 7.13.4 מוסיף
+ *   editable form מלא ב-3 מתוך הטאבים (כללי / לוגיסטיקה / מחירים) + תמונת
+ *   מוצר ב-header + כפתור שמירה גלובלי ב-header.
  *
- * מה השתנה ב-7.13.3
- *   המסך עודכן ל-4 טאבים שחושפים את כל ה-master-data layer של ה-ERP:
+ * ארכיטקטורה
+ *   • מקור נתונים החליף מ-`/api/erp/master-data/items/:id` (legacy) ל-
+ *     `/api/master-data/items/:id` (מודרני, Phase 7.13.4) שמחזיר את כל
+ *     השדות החדשים + purchasingUomDescription + descriptionEn alias.
+ *   • טבלת supplier-items ההיסטורית ממשיכה להיטען מ-`/api/erp/master-data/supplier-items`
+ *     ומוצגת בטאב "מחירים" (הייתה ב"כללי" לפני).
+ *   • RHF `useForm` ברמת הדף + `FormProvider` — 3 הטאבים קוראים דרך
+ *     `useFormContext`. ה-onSubmit פשוט שולח PUT ומרענן את ה-state מהתגובה.
+ *   • הטאבים "נכסים"/"מיפויי ספקים"/"היסטוריית רכש" נשארים ללא שינוי (lazy).
  *
- *     1. כללי (default)         — Stats + טבלת supplier-items הישנה כפי שהיתה.
- *     2. נכסים וקבצים            — `erp_md_item_assets` (Phase 7.13.3.A).
- *     3. מיפויי ספקים             — `erp_md_supplier_item_mapping` (7.13.3.B).
- *     4. היסטוריית רכש             — drill מתוך `erp_purchase_order_lines` (7.13.3.C).
- *
- * תאימות לאחור
- *   ה-API הישן `/api/erp/master-data/items/[id]` ממשיך לעבוד; הוא נטען רק
- *   בטאב "כללי" (כמו לפני). 3 ה-API החדשים לטאבים האחרים נטענים lazy על-ידי
- *   הטאב עצמו (kein בקשות מבוזבזות אם המשתמש לא נכנס לטאב).
+ * תאימות
+ *   • טפוס `ItemDetails` הישן הוחלף ב-`ItemDto` מלא — כל ה-consumers הפנימיים
+ *     במסך אותרו והועברו. אין צריכה חיצונית של הטפוס הישן.
  */
 
 import * as React from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { FormProvider, useForm } from "react-hook-form"
 import {
   ArrowRight,
+  Banknote,
   FileStack,
   History,
   Loader2,
   Package,
+  Save,
   ShoppingBag,
   Tags,
   Warehouse,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { ItemAssetsTab } from "@/components/marker-ofek/items/item-assets-tab"
+import {
+  type ItemEditFormValues,
+  type UomLookupOption,
+} from "@/components/marker-ofek/items/item-edit-form-types"
+import { ItemGeneralTab } from "@/components/marker-ofek/items/item-general-tab"
+import { ItemImageHeader } from "@/components/marker-ofek/items/item-image-header"
+import { ItemLogisticsTab } from "@/components/marker-ofek/items/item-logistics-tab"
+import {
+  ItemPricingTab,
+  type LegacySupplierPriceRow,
+} from "@/components/marker-ofek/items/item-pricing-tab"
 import { ItemPurchaseHistoryTab } from "@/components/marker-ofek/items/item-purchase-history-tab"
 import { ItemSupplierMappingsTab } from "@/components/marker-ofek/items/item-supplier-mappings-tab"
-import { netUnitPrice } from "@/components/marker-ofek/supplier-compare-sheet"
 import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
-import { cn, formatError } from "@/lib/utils"
+import { formatError } from "@/lib/utils"
 
 // ============================================================================
-// Types — שמורים מהמסך ההיסטורי כדי לצמצם diff בטאב "כללי".
+// DTO types — matches /api/master-data/items/[id] GET response (Phase 7.13.4).
 // ============================================================================
 
-type ItemDetails = {
+interface ItemDto {
   id: string
   sku: string
+  itemNumber: string
   description: string
+  foreignDescription: string | null
+  descriptionEn: string | null
   uom: string | null
-  legacyDefaultPrice: number | null
+  unitOfMeasure: string | null
+  uomDescription: string | null
+  productFamilyId: string | null
   isInventoryManaged: boolean
-  category?: string | null
+  status: string
+  minOrderQuantity: number
+  itemType: string | null
+  // ── Phase 7.13.4 ──
+  barcode: string | null
+  isSerialTracked: boolean
+  standardCost: number | null
+  purchasingUom: string | null
+  purchasingUomDescription: string | null
+  imageUrl: string | null
+  // Legacy / pricing
+  legacyDefaultPrice: number | null
+  defaultPrice: number | null
+  factoryUom: string | null
+  conversionFactor: number | null
+  preferredSupplierId: string | null
 }
 
-type SupplierJoinRow = {
+interface SupplierItemDtoRaw {
   id: string
-  supplier_sku: string | null
-  unit_price: number
-  discount_pct: number
-  last_updated: string | null
-  entities: unknown
+  supplierId: string
+  supplierSku: string | null
+  basePrice: number
+  discountPercentage: number
+  aiLastParsedAt: string | null
+  validFrom: string | null
 }
 
-function supplierNameFromJoin(x: unknown): string {
-  if (x == null) return "—"
-  if (
-    typeof x === "object" &&
-    x !== null &&
-    "name" in x &&
-    typeof (x as { name: unknown }).name === "string"
-  ) {
-    return (x as { name: string }).name
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function toFormDefaults(item: ItemDto): ItemEditFormValues {
+  return {
+    description: item.description ?? "",
+    descriptionEn: item.descriptionEn ?? "",
+    barcode: item.barcode ?? "",
+    status:
+      (item.status as ItemEditFormValues["status"] | undefined) ?? "ACTIVE",
+    minOrderQuantity:
+      item.minOrderQuantity != null ? String(item.minOrderQuantity) : "1",
+    isInventoryManaged: Boolean(item.isInventoryManaged),
+    isSerialTracked: Boolean(item.isSerialTracked),
+    purchasingUom: item.purchasingUom ?? "",
+    conversionFactor:
+      item.conversionFactor != null ? String(item.conversionFactor) : "1",
+    standardCost:
+      item.standardCost != null ? String(item.standardCost) : "",
+    defaultPrice:
+      item.defaultPrice != null ? String(item.defaultPrice) : "",
+    imageUrl: item.imageUrl ?? "",
   }
-  if (Array.isArray(x) && x[0] && typeof (x[0] as { name?: unknown }).name === "string") {
-    return (x[0] as { name: string }).name
-  }
-  return "—"
 }
-
-const currencyFormatter = new Intl.NumberFormat("he-IL", {
-  style: "currency",
-  currency: "ILS",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
-const dateTimeFormatter = new Intl.DateTimeFormat("he-IL", {
-  dateStyle: "short",
-  timeStyle: "short",
-})
 
 // ============================================================================
 // Page
@@ -118,70 +139,138 @@ export default function MarkerOfekItemMasterPage() {
   const params = useParams()
   const id = typeof params.id === "string" ? params.id : ""
 
-  const [item, setItem] = React.useState<ItemDetails | null>(null)
-  const [suppliers, setSuppliers] = React.useState<SupplierJoinRow[]>([])
+  const [item, setItem] = React.useState<ItemDto | null>(null)
+  const [uoms, setUoms] = React.useState<UomLookupOption[]>([])
+  const [legacySuppliers, setLegacySuppliers] = React.useState<
+    LegacySupplierPriceRow[]
+  >([])
   const [loading, setLoading] = React.useState(true)
+  const [uomsLoading, setUomsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [saving, setSaving] = React.useState(false)
 
+  const form = useForm<ItemEditFormValues>({
+    defaultValues: {
+      description: "",
+      descriptionEn: "",
+      barcode: "",
+      status: "ACTIVE",
+      minOrderQuantity: "1",
+      isInventoryManaged: true,
+      isSerialTracked: false,
+      purchasingUom: "",
+      conversionFactor: "1",
+      standardCost: "",
+      defaultPrice: "",
+      imageUrl: "",
+    },
+  })
+  const { reset, handleSubmit, watch, setValue, formState } = form
+
+  // טעינה ראשית
   React.useEffect(() => {
     if (!id) {
       setLoading(false)
       setError("מזהה פריט חסר")
       return
     }
-
     let cancelled = false
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        const [itemData, supplierItems, supplierRows] = await Promise.all([
-          masterDataFetch<ItemDetails>(`/api/erp/master-data/items/${id}`),
-          masterDataFetch<
-            Array<{
-              id: string
-              supplierId: string
-              supplierSku: string | null
-              basePrice: number
-              discountPercentage: number
-              aiLastParsedAt: string | null
-              validFrom: string | null
-            }>
-          >(`/api/erp/master-data/supplier-items?itemId=${id}`),
-          masterDataFetch<Array<{ id: string; name: string }>>(
-            "/api/erp/master-data/suppliers"
-          ),
-        ])
-        const supplierNameMap = new Map(
-          supplierRows.map((row) => [row.id, row.name])
+        const [itemData, uomData, supplierItemsRaw, supplierRows] =
+          await Promise.all([
+            masterDataFetch<ItemDto>(`/api/master-data/items/${id}`),
+            masterDataFetch<UomLookupOption[]>("/api/master-data/uoms").catch(
+              () => [] as UomLookupOption[]
+            ),
+            // Legacy supplier-items — לטאב "מחירים".
+            masterDataFetch<SupplierItemDtoRaw[]>(
+              `/api/erp/master-data/supplier-items?itemId=${id}`
+            ).catch(() => [] as SupplierItemDtoRaw[]),
+            masterDataFetch<Array<{ id: string; name: string }>>(
+              "/api/erp/master-data/suppliers"
+            ).catch(() => [] as Array<{ id: string; name: string }>),
+          ])
+        if (cancelled) return
+        const supplierMap = new Map(supplierRows.map((s) => [s.id, s.name]))
+        const mappedSuppliers: LegacySupplierPriceRow[] = supplierItemsRaw.map(
+          (row) => ({
+            id: row.id,
+            supplierName: supplierMap.get(row.supplierId) ?? "—",
+            supplierSku: row.supplierSku,
+            unitPrice: Number(row.basePrice ?? 0),
+            discountPct: Number(row.discountPercentage ?? 0),
+            lastUpdated: row.aiLastParsedAt ?? row.validFrom,
+          })
         )
-        const mappedSuppliers: SupplierJoinRow[] = supplierItems.map((row) => ({
-          id: row.id,
-          supplier_sku: row.supplierSku,
-          unit_price: Number(row.basePrice ?? 0),
-          discount_pct: Number(row.discountPercentage ?? 0),
-          last_updated: row.aiLastParsedAt ?? row.validFrom,
-          entities: { name: supplierNameMap.get(row.supplierId) ?? "—" },
-        }))
-        if (!cancelled) {
-          setItem(itemData ?? null)
-          setSuppliers(mappedSuppliers)
-        }
+        setItem(itemData)
+        setUoms(Array.isArray(uomData) ? uomData : [])
+        setLegacySuppliers(mappedSuppliers)
+        reset(toFormDefaults(itemData))
       } catch (e) {
         if (!cancelled) {
           setItem(null)
-          setSuppliers([])
           setError(formatError(e) || "טעינת הפריט נכשלה")
         }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+          setUomsLoading(false)
+        }
       }
     }
     void load()
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, reset])
+
+  const imageUrl = watch("imageUrl")
+
+  // Submit — PUT payload
+  const onSubmit = handleSubmit(async (values) => {
+    if (!id) return
+    setSaving(true)
+    try {
+      const payload: Record<string, unknown> = {
+        description: values.description.trim() || undefined,
+        descriptionEn: values.descriptionEn.trim(),
+        barcode: values.barcode.trim(),
+        status: values.status,
+        isInventoryManaged: values.isInventoryManaged,
+        isSerialTracked: values.isSerialTracked,
+        purchasingUom: values.purchasingUom.trim(),
+        conversionFactor: values.conversionFactor.trim().replace(",", "."),
+        standardCost: values.standardCost.trim()
+          ? values.standardCost.trim().replace(",", ".")
+          : undefined,
+        defaultPrice: values.defaultPrice.trim()
+          ? values.defaultPrice.trim().replace(",", ".")
+          : null,
+        imageUrl: values.imageUrl.trim(),
+        minOrderQuantity: values.minOrderQuantity.trim()
+          ? Number(values.minOrderQuantity.trim().replace(",", "."))
+          : undefined,
+      }
+      const updated = await masterDataFetch<ItemDto>(
+        `/api/master-data/items/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      )
+      setItem(updated)
+      reset(toFormDefaults(updated))
+      toast.success("הפריט נשמר")
+    } catch (e) {
+      toast.error(formatError(e) || "שמירה נכשלה")
+    } finally {
+      setSaving(false)
+    }
+  })
 
   if (!id) {
     return (
@@ -217,231 +306,171 @@ export default function MarkerOfekItemMasterPage() {
     )
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12">
-      <Link
-        href="/marker-ofek/items"
-        className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowRight className="size-4 rotate-180" aria-hidden />
-        חזרה לקטלוג פריטים
-      </Link>
+  const isDirty = formState.isDirty
 
-      {/* Header */}
-      <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-700">
-              <Tags className="size-6" aria-hidden />
+  return (
+    <FormProvider {...form}>
+      <form
+        onSubmit={onSubmit}
+        className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12"
+      >
+        <Link
+          href="/marker-ofek/items"
+          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowRight className="size-4 rotate-180" aria-hidden />
+          חזרה לקטלוג פריטים
+        </Link>
+
+        {/* Header */}
+        <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-start gap-4">
+              <ItemImageHeader
+                value={imageUrl}
+                onChange={(next) =>
+                  setValue("imageUrl", next, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  })
+                }
+                sku={item.sku}
+              />
+              <div className="min-w-0 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  מאסטר SKU
+                </p>
+                <h1 className="font-mono text-2xl font-bold tracking-tight md:text-3xl">
+                  {item.sku}
+                </h1>
+                <p className="text-base leading-relaxed text-foreground">
+                  {item.description}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {item.status ? (
+                    <Badge variant="secondary">{labelForStatus(item.status)}</Badge>
+                  ) : null}
+                  {item.uomDescription ? (
+                    <Badge variant="outline" className="gap-1">
+                      <Warehouse className="size-3" aria-hidden />
+                      {item.uomDescription}
+                    </Badge>
+                  ) : null}
+                  {item.barcode ? (
+                    <Badge variant="outline" className="font-mono">
+                      {item.barcode}
+                    </Badge>
+                  ) : null}
+                </div>
+              </div>
             </div>
-            <div className="min-w-0 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                מאסטר SKU
-              </p>
-              <h1 className="font-mono text-2xl font-bold tracking-tight md:text-3xl">
-                {item.sku}
-              </h1>
-              <p className="text-base leading-relaxed text-foreground">
-                {item.description}
-              </p>
+            <div className="flex items-center gap-2 self-start">
+              <Button
+                type="submit"
+                disabled={!isDirty || saving}
+                className="gap-2"
+              >
+                {saving ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <Save className="size-4" aria-hidden />
+                )}
+                שמור שינויים
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={!isDirty || saving}
+                onClick={() => reset(toFormDefaults(item))}
+              >
+                איפוס
+              </Button>
             </div>
           </div>
-          {item.category?.trim() ? (
-            <Badge variant="secondary" className="shrink-0 self-start">
-              {item.category.trim()}
-            </Badge>
-          ) : null}
-        </div>
-      </header>
+        </header>
 
-      {/* Tabs */}
-      <Tabs defaultValue="general" className="flex flex-col gap-4">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="general" className="gap-2">
-            <Package className="size-4" aria-hidden />
-            כללי
-          </TabsTrigger>
-          <TabsTrigger value="assets" className="gap-2">
-            <FileStack className="size-4" aria-hidden />
-            נכסים וקבצים
-          </TabsTrigger>
-          <TabsTrigger value="mappings" className="gap-2">
-            <ShoppingBag className="size-4" aria-hidden />
-            מיפויי ספקים
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-2">
-            <History className="size-4" aria-hidden />
-            היסטוריית רכש
-          </TabsTrigger>
-        </TabsList>
+        {/* Tabs */}
+        <Tabs defaultValue="general" className="flex flex-col gap-4">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="general" className="gap-2">
+              <Package className="size-4" aria-hidden />
+              כללי
+            </TabsTrigger>
+            <TabsTrigger value="logistics" className="gap-2">
+              <Warehouse className="size-4" aria-hidden />
+              לוגיסטיקה ומלאי
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="gap-2">
+              <Banknote className="size-4" aria-hidden />
+              מחירים
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="gap-2">
+              <FileStack className="size-4" aria-hidden />
+              נכסים וקבצים
+            </TabsTrigger>
+            <TabsTrigger value="mappings" className="gap-2">
+              <ShoppingBag className="size-4" aria-hidden />
+              מיפויי ספקים
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <History className="size-4" aria-hidden />
+              היסטוריית רכש
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="general" className="space-y-4">
-          <GeneralTab item={item} suppliers={suppliers} />
-        </TabsContent>
+          <TabsContent value="general">
+            <ItemGeneralTab />
+          </TabsContent>
 
-        <TabsContent value="assets">
-          <ItemAssetsTab itemId={id} />
-        </TabsContent>
+          <TabsContent value="logistics">
+            <ItemLogisticsTab
+              uoms={uoms}
+              baseUom={item.unitOfMeasure}
+              uomsLoading={uomsLoading}
+            />
+          </TabsContent>
 
-        <TabsContent value="mappings">
-          <ItemSupplierMappingsTab itemId={id} />
-        </TabsContent>
+          <TabsContent value="pricing">
+            <ItemPricingTab legacySuppliers={legacySuppliers} />
+          </TabsContent>
 
-        <TabsContent value="history">
-          <ItemPurchaseHistoryTab itemId={id} />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="assets">
+            <ItemAssetsTab itemId={id} />
+          </TabsContent>
+
+          <TabsContent value="mappings">
+            <ItemSupplierMappingsTab itemId={id} />
+          </TabsContent>
+
+          <TabsContent value="history">
+            <ItemPurchaseHistoryTab itemId={id} />
+          </TabsContent>
+        </Tabs>
+
+        {/* Tags icon spare — used only for a11y ring when header is compact */}
+        <Tags className="hidden" aria-hidden />
+      </form>
+    </FormProvider>
   )
 }
 
-// ============================================================================
-// GeneralTab — שומר את התצוגה ההיסטורית (4 stats + supplier prices table).
-// מבודד מהפיצ'רים החדשים של 7.13.3 כדי להישאר reverse-compatible.
-// ============================================================================
+// ----------------------------------------------------------------------------
+// Helpers
+// ----------------------------------------------------------------------------
 
-function GeneralTab({
-  item,
-  suppliers,
-}: {
-  item: ItemDetails
-  suppliers: SupplierJoinRow[]
-}) {
-  const cheapestNet = React.useMemo(() => {
-    if (suppliers.length === 0) return null
-    let min = Infinity
-    for (const s of suppliers) {
-      const n = netUnitPrice(s.unit_price, s.discount_pct)
-      if (n < min) min = n
-    }
-    return Number.isFinite(min) ? min : null
-  }, [suppliers])
-
-  return (
-    <>
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardDescription>יחידת מידה</CardDescription>
-            <CardTitle className="text-lg">
-              {item.uom?.trim() || "—"}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardDescription>מחיר ברירת מחדל</CardDescription>
-            <CardTitle className="text-lg tabular-nums">
-              {item.legacyDefaultPrice != null
-                ? currencyFormatter.format(Number(item.legacyDefaultPrice))
-                : "—"}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardDescription>מלאי</CardDescription>
-            <CardTitle className="text-lg">
-              {item.isInventoryManaged ? "כן" : "לא"}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardDescription>ספקים מקושרים (legacy)</CardDescription>
-            <CardTitle className="text-lg tabular-nums">
-              {suppliers.length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </section>
-
-      <Card className="border-border/70 shadow-sm">
-        <CardHeader className="border-b border-border/60 pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700">
-              <Warehouse className="size-5" aria-hidden />
-            </div>
-            <div className="space-y-1">
-              <CardTitle>ניהול ספקים ומחירים (legacy)</CardTitle>
-              <CardDescription>
-                מקור: `erp_md_supplier_items` הישן. ה-Master ↔ Supplier mappings
-                החדשים מ-7.4.5 חיים ב-tab &quot;מיפויי ספקים&quot;.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {suppliers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              אין רשומות ספק מקושרות לפריט זה. הוסיפו הצעות ספק במסך מאסטר דאטה
-              או דרך תהליך הרכש.
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-start">שם ספק</TableHead>
-                    <TableHead className="text-start">מק״ט ספק</TableHead>
-                    <TableHead className="text-start">מחיר מחירון</TableHead>
-                    <TableHead className="text-start">הנחה</TableHead>
-                    <TableHead className="text-start">מחיר נטו</TableHead>
-                    <TableHead className="text-start">עדכון אחרון</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {suppliers.map((s) => {
-                    const net = netUnitPrice(s.unit_price, s.discount_pct)
-                    const isCheapest =
-                      cheapestNet != null && Math.abs(net - cheapestNet) < 0.005
-                    return (
-                      <TableRow
-                        key={s.id}
-                        className={cn(
-                          isCheapest &&
-                            "bg-emerald-500/12 hover:bg-emerald-500/18"
-                        )}
-                      >
-                        <TableCell className="font-medium">
-                          {supplierNameFromJoin(s.entities)}
-                          {isCheapest ? (
-                            <Badge className="ms-2 bg-emerald-600 text-white hover:bg-emerald-600">
-                              הזול ביותר
-                            </Badge>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {s.supplier_sku?.trim() || "—"}
-                        </TableCell>
-                        <TableCell className="tabular-nums">
-                          {currencyFormatter.format(Number(s.unit_price) || 0)}
-                        </TableCell>
-                        <TableCell className="tabular-nums">
-                          {Number(s.discount_pct) || 0}%
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "font-semibold tabular-nums",
-                            isCheapest && "text-emerald-700"
-                          )}
-                        >
-                          {currencyFormatter.format(net)}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {s.last_updated
-                            ? dateTimeFormatter.format(new Date(s.last_updated))
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </>
-  )
+function labelForStatus(status: string): string {
+  switch (status.toUpperCase()) {
+    case "ACTIVE":
+      return "פעיל"
+    case "INACTIVE":
+      return "לא פעיל"
+    case "PURCHASE_ONLY":
+      return "רכש בלבד"
+    case "INTERNAL_ONLY":
+      return "פנימי בלבד"
+    case "OBSOLETE":
+      return "יצא משימוש"
+    default:
+      return status
+  }
 }
