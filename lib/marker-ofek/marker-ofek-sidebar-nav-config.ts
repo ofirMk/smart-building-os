@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   AlertTriangle,
+  Archive,
   ArrowLeftRight,
   Building2,
   ClipboardList,
@@ -58,14 +59,17 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Database,
       },
       {
-        title: "קטלוג פריטים טכני (מאסטר)",
-        href: "/marker-ofek/catalog",
+        // Phase 7.14.0 — נתוני אב חיים, EntityWorkspace + supabase live.
+        title: "קטלוג פריטים (נתוני אב)",
+        href: "/marker-ofek/items",
         icon: Package,
       },
       {
-        title: "קטלוג פריטים",
-        href: "/marker-ofek/items",
-        icon: Package,
+        // Phase 7.14.0 — workspace ישן עם mock data; משאירים זמין כארכיון לסקירה,
+        // אבל ה-banner על העמוד עצמה מפנה ל-/items.
+        title: "קטלוג טכני (legacy)",
+        href: "/marker-ofek/catalog",
+        icon: Archive,
       },
       {
         title: "הגדרות חברה",
@@ -154,8 +158,9 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Building2,
       },
       {
+        // Phase 7.14.0 — שרשרת הרכש מצביעה על ה-master החי.
         title: "קטלוג פריטים",
-        href: "/marker-ofek/catalog",
+        href: "/marker-ofek/items",
         icon: Package,
       },
       {

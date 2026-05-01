@@ -40,9 +40,12 @@ Tables and grids are **not** decorative summaries. Every **data row** must be ac
 - **Default create PO (Phase 2.1 engine):** `components/marker-ofek/procurement/purchase-order-engine-form.tsx` — ribbon, dual header cards (supplier/project + mock budget insights), line grid with notes and row actions, footer with subtotal / מע״מ / grand total.
 - **Legacy BoQ flow:** `app/(dashboard)/marker-ofek/procurement/purchase-orders/from-boq/page.tsx` — full tender/BoQ integration; server actions remain under `purchase-orders/new/actions.ts`.
 
-## 📇 Marker Ofek — קטלוג פריטים טכני (Master-Detail)
+## 📇 Marker Ofek — קטלוג טכני (legacy · archived) · Phase 7.14.0
+- **Status:** **ארכיון** — נשמר לסקירה היסטורית בלבד. ה-master החי = `/marker-ofek/items`.
 - **Workspace:** `components/marker-ofek/catalog/technical-catalog-workspace.tsx` — פיצול 40%/60% (רשת מאסטר / כרטיס פרטים), בחירת שורה, טאבים: זיהוי, ספקים מקושרים, MRP, תמחיר.
 - **Mock data:** `lib/marker-ofek/technical-catalog-workspace-data.ts` — רשימת מאסטר + `getCatalogWorkspaceDetail(sku)` לפרטי ERP דמה.
+- **Banner:** `app/(dashboard)/marker-ofek/catalog/page.tsx` — `LegacyBanner` (כתום-amber) מפנה משתמשים ל-`/marker-ofek/items`.
+- **Sidebar:** סעיף `master-data-core` ב-`lib/marker-ofek/marker-ofek-sidebar-nav-config.ts` מציג את המסך תחת "קטלוג טכני (legacy)" עם אייקון `Archive`. סעיף `procurement-chain` כבר מצביע ישירות על `/marker-ofek/items` בלבד.
 
 ## 🧰 Marker Ofek — קטלוג פריטים (נתוני אב) · Phase 7.13
 - **Entry route:** `app/(dashboard)/marker-ofek/items/page.tsx` — wrapper דק שמרנדר את ה-scaffold.
