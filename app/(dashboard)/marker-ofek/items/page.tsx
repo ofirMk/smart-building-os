@@ -1,33 +1,22 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-
-import { ItemsDataGrid } from "@/components/marker-ofek/items/items-data-grid"
-
 /**
- * עמוד הנחיתה של מודול הפריטים.
+ * /marker-ofek/items — דף הנחיתה של מודול הפריטים.
  *
- * Phase 7.13.4: עברנו מ-Master-Detail מבוסס-state (HeavyItemMasterScreen
- * מוטבע) ל-URL-based navigation. לחיצה על שורה ב-grid → ניווט מלא ל-
- * `/marker-ofek/items/<id>` (ה-page העשיר עם 6 הטאבים החדשים, FormProvider,
- * ImageHeader, וכפתור Save גלובלי). "פריט חדש" → ניווט ל-`/marker-ofek/items/new`
- * (PriorityItemFormClient).
+ * Phase 7.13.5 (Hybrid Hierarchy):
+ *   הדף מבוסס על הדפוס הקנוני של מרקר אופק:
+ *     EntityWorkspace (sidebar+main) + BentoSmartList + slide-over FocusPane
  *
- * רציונל:
- *   המסך החדש בנוי כ-URL route מלא כי זה מאפשר deep-linking (שיתוף קישורים),
- *   bookmark, ו-back-button תקין. ה-grid הוא placeholder לטבלה הראשית; המצב
- *   שלו (חיפוש/גלילה) ייאפס בזמן navigation, וזה מקובל ל-list page קלאסי.
+ *   קליק על שורה פותח תצוגה מקדימה ב-Sheet (`ItemPreviewFocusPane`); ה-CTA
+ *   "פתח כרטיס מלא" ב-Sheet מנווט ל-`/marker-ofek/items/[id]` — ה-V3
+ *   single-page-scroll עם sticky-side-nav.
  *
- *   `HeavyItemMasterScreen` נשאר בקוד כ-fallback היסטורי — אין צריכים אקטיביים
- *   ולא שובר ייבוא, אבל הוא לא נטען יותר מדף הנחיתה הראשי.
+ *   הזרימה הזו מאפשרת גם דפדוף מהיר (preview בלי לעזוב את הליסט) וגם עבודה
+ *   עמוקה (כרטיס מלא ב-route ייעודי, deep-link, mobile-friendly).
  */
-export default function MarkerOfekItemsCatalogPage() {
-  const router = useRouter()
 
-  return (
-    <ItemsDataGrid
-      onSelectItem={(itemId) => router.push(`/marker-ofek/items/${itemId}`)}
-      onCreateNew={() => router.push("/marker-ofek/items/new")}
-    />
-  )
+import { ItemsCatalogScaffold } from "@/components/marker-ofek/items/items-catalog-scaffold"
+
+export default function MarkerOfekItemsCatalogPage() {
+  return <ItemsCatalogScaffold />
 }

@@ -16,10 +16,8 @@
  */
 
 import * as React from "react"
-import Link from "next/link"
 import { FormProvider, useForm } from "react-hook-form"
 import {
-  ArrowRight,
   Banknote,
   FileStack,
   History,
@@ -31,6 +29,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { ErpMasterDetailBreadcrumbs } from "@/components/marker-ofek/data-grid/erp-master-detail-layout"
 import { ItemAssetsTab } from "@/components/marker-ofek/items/item-assets-tab"
 import {
   type ItemEditFormValues,
@@ -333,14 +332,15 @@ export function MasterItemCardOnePage({ itemId }: MasterItemCardOnePageProps) {
 
   if (error || !item) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 py-10">
-        <Link
-          href="/marker-ofek/items"
-          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowRight className="size-4 rotate-180" aria-hidden />
-          חזרה לקטלוג
-        </Link>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 py-6">
+        <ErpMasterDetailBreadcrumbs
+          items={[
+            { label: "מרקר אופק", href: "/marker-ofek" },
+            { label: "נתוני אב", href: "/marker-ofek/master-data" },
+            { label: "קטלוג פריטים", href: "/marker-ofek/items" },
+            { label: "שגיאה" },
+          ]}
+        />
         <p className="text-sm text-destructive">
           {error ?? "הפריט לא נמצא או שאין הרשאה."}
         </p>
@@ -356,13 +356,14 @@ export function MasterItemCardOnePage({ itemId }: MasterItemCardOnePageProps) {
         onSubmit={onSubmit}
         className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12"
       >
-        <Link
-          href="/marker-ofek/items"
-          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowRight className="size-4 rotate-180" aria-hidden />
-          חזרה לקטלוג פריטים
-        </Link>
+        <ErpMasterDetailBreadcrumbs
+          items={[
+            { label: "מרקר אופק", href: "/marker-ofek" },
+            { label: "נתוני אב", href: "/marker-ofek/master-data" },
+            { label: "קטלוג פריטים", href: "/marker-ofek/items" },
+            { label: item.sku },
+          ]}
+        />
 
         {/* Header */}
         <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
