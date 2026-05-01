@@ -1,44 +1,33 @@
 "use client"
 
-import * as React from "react"
+import { useRouter } from "next/navigation"
 
-import { HeavyItemMasterScreen } from "@/components/marker-ofek/items/heavy-item-master-screen"
 import { ItemsDataGrid } from "@/components/marker-ofek/items/items-data-grid"
 
 /**
- * עמוד הנחיתה של מודול הפריטים (Phase 6).
+ * עמוד הנחיתה של מודול הפריטים.
  *
- * חוויה Master-Detail מבוססת-state:
- *   • ברירת מחדל — ItemsDataGrid (טבלה ראשית עם חיפוש + יצירה).
- *   • לחיצה על שורה → drill-down ל-HeavyItemMasterScreen עם הפריט הנבחר.
- *   • לחיצה על "פריט חדש" → drill-down ל-HeavyItemMasterScreen עם פתיחה אוטומטית
- *     של מודל ה-Quick Create (initialOpenCreate=true).
- *   • כפתור "חזור לטבלת הפריטים" ב-toolbar של המסך העשיר מחזיר ל-grid.
+ * Phase 7.13.4: עברנו מ-Master-Detail מבוסס-state (HeavyItemMasterScreen
+ * מוטבע) ל-URL-based navigation. לחיצה על שורה ב-grid → ניווט מלא ל-
+ * `/marker-ofek/items/<id>` (ה-page העשיר עם 6 הטאבים החדשים, FormProvider,
+ * ImageHeader, וכפתור Save גלובלי). "פריט חדש" → ניווט ל-`/marker-ofek/items/new`
+ * (PriorityItemFormClient).
  *
- * הסטייט מקומי ל-page (ולא ב-URL) — תיתן UX מהיר ושומר על מצב ה-grid (חיפוש/גלילה)
- * כשמתחזרים מ-drill-down. אם בעתיד נדרש deep-linking, נעבור ל-`?item=<id>`.
+ * רציונל:
+ *   המסך החדש בנוי כ-URL route מלא כי זה מאפשר deep-linking (שיתוף קישורים),
+ *   bookmark, ו-back-button תקין. ה-grid הוא placeholder לטבלה הראשית; המצב
+ *   שלו (חיפוש/גלילה) ייאפס בזמן navigation, וזה מקובל ל-list page קלאסי.
+ *
+ *   `HeavyItemMasterScreen` נשאר בקוד כ-fallback היסטורי — אין צריכים אקטיביים
+ *   ולא שובר ייבוא, אבל הוא לא נטען יותר מדף הנחיתה הראשי.
  */
-type ViewState = { mode: "grid" } | { mode: "detail"; itemId: string | null; openCreate?: boolean }
-
 export default function MarkerOfekItemsCatalogPage() {
-  const [view, setView] = React.useState<ViewState>({ mode: "grid" })
-
-  if (view.mode === "detail") {
-    return (
-      <HeavyItemMasterScreen
-        initialSelectedId={view.itemId}
-        initialOpenCreate={view.openCreate}
-        onBack={() => setView({ mode: "grid" })}
-      />
-    )
-  }
+  const router = useRouter()
 
   return (
     <ItemsDataGrid
-      onSelectItem={(itemId) => setView({ mode: "detail", itemId })}
-      onCreateNew={() =>
-        setView({ mode: "detail", itemId: null, openCreate: true })
-      }
+      onSelectItem={(itemId) => router.push(`/marker-ofek/items/${itemId}`)}
+      onCreateNew={() => router.push("/marker-ofek/items/new")}
     />
   )
 }
