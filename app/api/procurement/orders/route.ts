@@ -26,6 +26,10 @@ import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { requireProcurementApiContext } from "@/lib/erp/procurement-api"
+import {
+  computeLineDeviation,
+  getCompanyPricingSettings,
+} from "@/lib/procurement/pricing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -152,6 +156,14 @@ export async function GET(req: NextRequest) {
 //     וה-unit_price מעליו, יקפיץ את הכותרת ל-PENDING_PRICE_APPROVAL. אצלנו
 //     ב-DRAFT-flow זה תקין; השרת מחזיר את הסטטוס הסופי.
 
+const ESCALATION_CATEGORIES = [
+  "BUSINESS_RELATIONSHIP",
+  "QUALITY",
+  "AVAILABILITY",
+  "LEAD_TIME",
+  "OTHER",
+] as const
+
 const lineSchema = z.object({
   itemId: z.string().uuid("itemId חייב להיות uuid"),
   quantity: z.number().positive("quantity חייב להיות חיובי"),
@@ -160,7 +172,19 @@ const lineSchema = z.object({
   budgetSubChapter: z.string().trim().min(1, "budgetSubChapter חובה"),
   resourceId: z.string().trim().min(1, "resourceId חובה"),
   description: z.string().trim().min(1).optional(),
+  // Phase 7.4 — Line enrichment (all optional for backward compat)
+  supplyDate: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+  discountPct: z.number().min(0).max(100).optional(),
+  lineCurrency: z.string().regex(/^[A-Z]{3}$/).optional(),
+  exchangeRate: z.number().positive().optional(),
+  manufacturerName: z.string().trim().min(1).optional(),
+  lineNotes: z.string().trim().optional(),
+  // Phase 7.5 — 3% Rule governance (optional; required only when requires_escalation computed=true)
+  escalationJustification: z.string().trim().min(10).optional(),
+  escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
 })
+
+const URGENCY_LEVELS = ["NORMAL", "HIGH", "CRITICAL"] as const
 
 const createOrderSchema = z.object({
   supplierId: z.string().uuid("supplierId חייב להיות uuid"),
@@ -174,8 +198,23 @@ const createOrderSchema = z.object({
   // אופציונליים — נוצרים בשרת אם לא סופקו.
   poNumber: z.string().trim().min(1).optional(),
   title: z.string().trim().min(1).optional(),
+  // Phase 7.4 — Urgency governance
+  urgencyLevel: z.enum(URGENCY_LEVELS).optional(),
+  urgencyJustification: z.string().trim().min(10).optional(),
   lines: z.array(lineSchema).min(1, "חובה לפחות שורה אחת"),
-})
+}).refine(
+  (data) => {
+    // HIGH/CRITICAL urgency requires justification (audit trail + abuse prevention)
+    if (data.urgencyLevel && data.urgencyLevel !== "NORMAL") {
+      return (data.urgencyJustification?.length ?? 0) >= 10
+    }
+    return true
+  },
+  {
+    message: "urgencyLevel=HIGH/CRITICAL חייב להיות מלווה ב-urgencyJustification (לפחות 10 תווים)",
+    path: ["urgencyJustification"],
+  }
+)
 
 const VAT_RATE = 0.17
 
@@ -292,11 +331,119 @@ export async function POST(req: NextRequest) {
   const vatAmount = round2(totalAmountNet * VAT_RATE)
   const totalAmountGross = round2(totalAmountNet + vatAmount)
 
+  // ─────────────────────────────────────────────────────────────────────
+  // Phase 7.5 — 3% Rule: חישוב deviation פר-שורה + אכיפת justification
+  // ─────────────────────────────────────────────────────────────────────
+  //  קריאה ל-RPC `erp_compute_line_deviation` פר שורה (stateless, AI-ready).
+  //  אם שורה דורשת escalation ולא מלווה ב-justification + category → 400.
+  //  הלוגיקה רצה גם כש-Cross-Supplier mapping ריק (RPC יחזיר
+  //  requires_escalation=false כברירת מחדל שמרנית).
+  let settings
+  try {
+    settings = await getCompanyPricingSettings(supabase, activeCompanyId)
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "company-settings failed" },
+      { status: 500 }
+    )
+  }
+
+  const lineEnrichment: Array<{
+    deviationPct: number | null
+    requiresEscalation: boolean
+    alternativeSupplierId: string | null
+    alternativeUnitPrice: number | null
+    alternativeLeadTimeDays: number | null
+  }> = []
+  const escalationErrors: string[] = []
+
+  for (const [idx, line] of input.lines.entries()) {
+    let deviation
+    try {
+      deviation = await computeLineDeviation(supabase, {
+        companyId: activeCompanyId,
+        masterItemId: line.itemId,
+        supplierId: input.supplierId,
+        unitPrice: line.unitPrice,
+        quantity: line.quantity,
+        projectId: input.projectId,
+      })
+    } catch (err) {
+      // במידה וה-RPC נכשל — לא חוסמים את ה-PO; לוגים וברירת מחדל שמרנית.
+      console.error("[procurement POST] line-deviation RPC failed:", err)
+      deviation = {
+        lowestAltPrice: null,
+        lowestAltSupplierId: null,
+        lowestAltLeadTime: null,
+        deviationPct: null,
+        requiresEscalation: false,
+        exceptionApplied: false,
+        thresholdPct: settings.maxAllowedLineDeviationPct,
+      }
+    }
+
+    if (deviation.requiresEscalation) {
+      const hasJustification =
+        (line.escalationJustification?.trim().length ?? 0) >= 10
+      const hasCategory = Boolean(line.escalationCategory)
+      if (!hasJustification || !hasCategory) {
+        escalationErrors.push(
+          `שורה ${idx + 1}: חריגת מחיר של ${deviation.deviationPct}% מעבר לסף ${deviation.thresholdPct}% של החברה. חובה לספק escalationJustification (>=10 תווים) ו-escalationCategory.`
+        )
+      }
+    }
+
+    lineEnrichment.push({
+      deviationPct: deviation.deviationPct,
+      requiresEscalation: deviation.requiresEscalation,
+      alternativeSupplierId: deviation.lowestAltSupplierId,
+      alternativeUnitPrice: deviation.lowestAltPrice,
+      alternativeLeadTimeDays: deviation.lowestAltLeadTime,
+    })
+  }
+
+  if (escalationErrors.length > 0) {
+    return NextResponse.json(
+      {
+        error: "escalation_required",
+        details: escalationErrors,
+      },
+      { status: 400 }
+    )
+  }
+
+  // חישוב PO-total deviation על בסיס סכום ההיפרשי של כל השורות
+  //   deviation משוקלל לפי שווי שורה (qty * unit_price).
+  let weightedSum = 0
+  let totalWeight = 0
+  for (const [idx, line] of input.lines.entries()) {
+    const weight = line.quantity * line.unitPrice
+    const d = lineEnrichment[idx]?.deviationPct
+    if (d != null) {
+      weightedSum += d * weight
+      totalWeight += weight
+    }
+  }
+  const poTotalDeviationPct =
+    totalWeight > 0 ? round2(weightedSum / totalWeight) : null
+  const requiresPoEscalation =
+    poTotalDeviationPct != null &&
+    poTotalDeviationPct > settings.maxAllowedPoTotalDeviationPct
+
+  // ─────────────────────────────────────────────────────────────────────
   // 6) יצירת מספר הזמנה וכותרת אם לא סופקו.
+  // ─────────────────────────────────────────────────────────────────────
   const poNumber = input.poNumber ?? generatePoNumber()
   const todayIso = new Date().toISOString().slice(0, 10)
   const title =
     input.title ?? `הזמנה ל-${supplierName} (${todayIso})`
+
+  // Urgency bypass: אם החברה מאפשרת + urgency=HIGH/CRITICAL → ai_negotiation_status=BYPASSED_URGENCY
+  const urgencyLevel = input.urgencyLevel ?? "NORMAL"
+  const aiNegotiationStatus =
+    urgencyLevel !== "NORMAL" && settings.urgencyBypassEnabled
+      ? "BYPASSED_URGENCY"
+      : "NOT_ATTEMPTED"
 
   // 7) INSERT לכותרת. status נשאר ברירת-מחדל DRAFT (enum `erp_purchase_order_status`).
   //    total_amount נשאר 0 — הטריגר `erp_po_lines_recalculate_total` יעדכן לאחר
@@ -315,8 +462,13 @@ export async function POST(req: NextRequest) {
       vat_amount: vatAmount,
       total_amount_gross: totalAmountGross,
       notes: input.notes ?? null,
+      urgency_level: urgencyLevel,
+      urgency_justification: input.urgencyJustification ?? null,
+      ai_negotiation_status: aiNegotiationStatus,
+      po_total_deviation_pct: poTotalDeviationPct,
+      requires_po_escalation: requiresPoEscalation,
     })
-    .select("id,po_number,title,status,currency,total_amount_net,vat_amount,total_amount_gross,notes,created_at")
+    .select("id,po_number,title,status,currency,total_amount_net,vat_amount,total_amount_gross,notes,created_at,urgency_level,requires_po_escalation,po_total_deviation_pct,ai_negotiation_status")
     .single()
 
   if (headerInsert.error || !headerInsert.data) {
@@ -342,6 +494,11 @@ export async function POST(req: NextRequest) {
     const item = itemsById.get(line.itemId)!
     const description =
       line.description?.trim() || item.description.trim() || `פריט ${item.itemNumber}`
+    const enrichment = lineEnrichment[idx]
+    // supplyDate מתקבל כ-"YYYY-MM-DD" או ISO datetime; המרה ל-DATE בלבד ל-DB
+    const supplyDate = line.supplyDate
+      ? line.supplyDate.slice(0, 10)
+      : null
     return {
       company_id: activeCompanyId,
       purchase_order_id: purchaseOrderId,
@@ -353,6 +510,24 @@ export async function POST(req: NextRequest) {
       description,
       quantity: line.quantity,
       unit_price: line.unitPrice,
+      // Phase 7.4 — Line enrichment
+      supply_date: supplyDate,
+      discount_pct: line.discountPct ?? 0,
+      line_currency: line.lineCurrency ?? input.currency,
+      exchange_rate: line.exchangeRate ?? 1,
+      manufacturer_name: line.manufacturerName ?? null,
+      line_notes: line.lineNotes ?? null,
+      // Phase 7.5 — Governance (enrichment from RPC)
+      price_deviation_pct: enrichment?.deviationPct ?? null,
+      requires_escalation: enrichment?.requiresEscalation ?? false,
+      escalation_justification:
+        enrichment?.requiresEscalation ? (line.escalationJustification ?? null) : null,
+      escalation_category:
+        enrichment?.requiresEscalation ? (line.escalationCategory ?? null) : null,
+      alternative_supplier_id: enrichment?.alternativeSupplierId ?? null,
+      alternative_unit_price: enrichment?.alternativeUnitPrice ?? null,
+      alternative_lead_time_days: enrichment?.alternativeLeadTimeDays ?? null,
+      price_source: "MANUAL" as const, // ברירת מחדל; ב-7.5 UI המשתמש יבחר מקור
       // ניתן לעקוב אחר סדר השורות לפי created_at; אם נצטרך עמודת line_number
       // מפורשת — נוסיף אותה ב-Phase 7.3 כ-ALTER additive.
       _lineIndex: idx, // נמחק לפני INSERT (לא קיים בסכמה).

@@ -128,9 +128,73 @@ export type ContractorEvaluationResult = z.infer<typeof ContractorEvaluationResu
 // Union — כל סוגי ה-Jobs המוכרים
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// Phase 7.10 — Procurement Agent Job Types (scaffolds)
+// ─────────────────────────────────────────────
+//
+// הסכמות כאן מוגדרות כחלק מהתשתית (AI Platform Foundations, 7.4.0) אך
+// implementation של ה-agents עצמם יתבצע ב-7.10.x. אנחנו שומרים את החוזים
+// כאן כדי ש-Next.js API ו-Python workers יוכלו להסכים על צורת payload.
+
+export const SemanticMatcherPayloadSchema = z.object({
+  company_id: z.string(),
+  supplier_id: z.string().uuid(),
+  supplier_sku: z.string().min(1),
+  supplier_description: z.string().optional(),
+  candidate_master_item_ids: z.array(z.string().uuid()).optional(),
+  top_k: z.number().int().min(1).max(50).default(5),
+})
+export type SemanticMatcherPayload = z.infer<typeof SemanticMatcherPayloadSchema>
+
+export const SemanticMatcherResultSchema = z.object({
+  matches: z.array(
+    z.object({
+      master_item_id: z.string().uuid(),
+      confidence: z.number().min(0).max(1),
+      reasoning: z.string().optional(),
+    })
+  ),
+  tier: z.enum(["A_AUTO", "B_REVIEW", "C_REJECT"]),
+  best_confidence: z.number().min(0).max(1),
+})
+export type SemanticMatcherResult = z.infer<typeof SemanticMatcherResultSchema>
+
+export const DataEnrichmentPayloadSchema = z.object({
+  company_id: z.string(),
+  master_item_id: z.string().uuid(),
+  force_refresh: z.boolean().default(false),
+})
+export type DataEnrichmentPayload = z.infer<typeof DataEnrichmentPayloadSchema>
+
+export const DataEnrichmentResultSchema = z.object({
+  master_item_id: z.string().uuid(),
+  assets_found: z.number().int().min(0),
+  assets_added: z.number().int().min(0),
+  sources_checked: z.array(z.string()),
+})
+export type DataEnrichmentResult = z.infer<typeof DataEnrichmentResultSchema>
+
+export const RfqAgentPayloadSchema = z.object({
+  company_id: z.string(),
+  rfq_id: z.string().uuid(),
+  action: z.enum(["SEND", "PARSE_REPLY"]),
+})
+export type RfqAgentPayload = z.infer<typeof RfqAgentPayloadSchema>
+
+export const RfqAgentResultSchema = z.object({
+  rfq_id: z.string().uuid(),
+  supplier_responses: z.number().int().min(0),
+  savings_identified_usd: z.number().optional(),
+})
+export type RfqAgentResult = z.infer<typeof RfqAgentResultSchema>
+
 export const AI_JOB_TYPE = {
   GANTT_RISK: "gantt_risk_analysis",
   CONTRACTOR_EVAL: "contractor_evaluation",
+  // Phase 7.10 — Procurement agents
+  SEMANTIC_MATCHER: "semantic_matcher",
+  DATA_ENRICHMENT: "data_enrichment",
+  RFQ_AGENT: "rfq_agent",
 } as const
 
 export type AiJobType = (typeof AI_JOB_TYPE)[keyof typeof AI_JOB_TYPE]
@@ -139,20 +203,33 @@ export type AiJobType = (typeof AI_JOB_TYPE)[keyof typeof AI_JOB_TYPE]
 export const AI_JOB_PAYLOAD_SCHEMAS = {
   [AI_JOB_TYPE.GANTT_RISK]: GanttRiskAnalysisPayloadSchema,
   [AI_JOB_TYPE.CONTRACTOR_EVAL]: ContractorEvaluationPayloadSchema,
+  [AI_JOB_TYPE.SEMANTIC_MATCHER]: SemanticMatcherPayloadSchema,
+  [AI_JOB_TYPE.DATA_ENRICHMENT]: DataEnrichmentPayloadSchema,
+  [AI_JOB_TYPE.RFQ_AGENT]: RfqAgentPayloadSchema,
 } as const
 
 /** מפת result schemas לפי type */
 export const AI_JOB_RESULT_SCHEMAS = {
   [AI_JOB_TYPE.GANTT_RISK]: GanttRiskAnalysisResultSchema,
   [AI_JOB_TYPE.CONTRACTOR_EVAL]: ContractorEvaluationResultSchema,
+  [AI_JOB_TYPE.SEMANTIC_MATCHER]: SemanticMatcherResultSchema,
+  [AI_JOB_TYPE.DATA_ENRICHMENT]: DataEnrichmentResultSchema,
+  [AI_JOB_TYPE.RFQ_AGENT]: RfqAgentResultSchema,
 } as const
+
+export type AnyAiJobPayload =
+  | GanttRiskAnalysisPayload
+  | ContractorEvaluationPayload
+  | SemanticMatcherPayload
+  | DataEnrichmentPayload
+  | RfqAgentPayload
 
 /** בדיקת payload לפי type */
 export function validateAiJobPayload(
   type: string,
   payload: unknown
 ):
-  | { ok: true; data: GanttRiskAnalysisPayload | ContractorEvaluationPayload }
+  | { ok: true; data: AnyAiJobPayload }
   | { ok: false; errors: z.ZodIssue[] } {
   const schema = AI_JOB_PAYLOAD_SCHEMAS[type as AiJobType]
   if (!schema) {
@@ -169,5 +246,5 @@ export function validateAiJobPayload(
   }
   const result = schema.safeParse(payload)
   if (!result.success) return { ok: false, errors: result.error.issues }
-  return { ok: true, data: result.data as GanttRiskAnalysisPayload | ContractorEvaluationPayload }
+  return { ok: true, data: result.data as AnyAiJobPayload }
 }

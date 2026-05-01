@@ -402,22 +402,50 @@ CREATE TABLE erp_goods_receipt_lines (id, gr_id, po_line_id, quantity_received, 
 
 ---
 
-## 7. סטטוס (עודכן אחרון: 2026-04-30)
+## 7. סטטוס (עודכן אחרון: 2026-08-01)
 
 | Phase | תיאור קצר | סטטוס | תאריך סיום |
 |---|---|---|---|
 | 7.1 | Landing + Grid | ✅ | 2026-04-29 |
 | 7.2 | Create Form + POST API + Governance | ✅ | 2026-04-30 |
-| **7.3** | **Header Enrichment + Multi-tenant UI + Approval Skeleton** | 🚧 PLANNED | — |
-| 7.4 | Line Enrichment | ⏳ PLANNED | — |
-| 7.5 | Smart Pricing (AI-ready API) | ⏳ PLANNED | — |
-| 7.6 | Attachments + Rich Text | ⏳ PLANNED | — |
-| 7.7 | Approval Workflow (Full) | ⏳ PLANNED | — |
-| 7.8 | Revisions + Change Log | ⏳ PLANNED | — |
+| 7.3 | Header Enrichment + Multi-tenant UI + Approval Skeleton | ✅ | 2026-07-xx |
+| **7.4.0** | **AI Platform Foundations (pgvector, company_settings, ai_jobs ext, audit_log)** | ✅ | 2026-08-01 |
+| **7.4** | **Line Enrichment + AI Governance columns (urgency, escalation, supply_date, discount, currency, manufacturer)** | ✅ | 2026-08-01 |
+| **7.4.5** | **Supplier↔Master SKU Mapping (`erp_md_supplier_item_mapping`)** | ✅ | 2026-08-01 |
+| **7.5** | **Smart Pricing Engine + 3% Rule (RPCs + `/api/procurement/pricing/suggestions` + POST integration)** | ✅ | 2026-08-01 |
+| **7.6** | **Attachments + Rich Text skeleton (`erp_po_attachments` + `body_html` + `erp_md_item_assets`)** | ✅ (schema only; UI pending) | 2026-08-01 |
+| **7.7** | **Approval Engine (RPCs: resolve_chain, submit_for_approval, decide_approval + DSL evaluator)** | ✅ (backend only; UI pending) | 2026-08-01 |
+| **7.8** | **Revisions + Audit Trail (`erp_po_revisions` + `erp_po_change_log` + generic header trigger)** | ✅ | 2026-08-01 |
 | 7.9 | Goods Receipt + 3-Way | ⏳ PLANNED | — |
-| 7.10 | AI Smart Features | ⏳ PLANNED | — |
+| **7.10** | **AI Agent scaffolds (Zod schemas + Python README; agents deferred)** | ✅ SCAFFOLD | 2026-08-01 |
+| 7.10.1 | Semantic Matcher Agent (pgvector + CrewAI) | ⏳ PLANNED | — |
+| 7.10.2 | Data Enrichment Agent (SII + manufacturer scraping) | ⏳ PLANNED | — |
+| 7.10.3 | RFQ Agent (cross-supplier outreach) | ⏳ PLANNED | — |
 | 7.11 | Supplier Portal + E-Invoice | ⏳ PLANNED | — |
 | 7.12 | Mobile + Collaboration | ⏳ PLANNED | — |
+
+### 7.1 Phase 7.4–7.10 Delivery Summary (2026-08-01)
+
+**Migrations added**:
+- `20260801130000_ai_platform_foundations.sql` — pgvector + `erp_md_company_settings` + `ai_jobs` extension (priority/attempts/idempotency/scheduled_at) + `erp_ai_audit_log`.
+- `20260801140000_po_line_enrichment_and_governance.sql` — header: `urgency_level`/`ai_negotiation_*`/`po_total_deviation_pct`/`requires_po_escalation`; lines: `supply_date`/`discount_pct`/`line_currency`/`exchange_rate`/`price_source`/`manufacturer_name`/`requires_escalation`/`escalation_justification`/`escalation_category`/`price_deviation_pct`/`alternative_*`.
+- `20260801150000_supplier_item_mapping.sql` — `erp_md_supplier_item_mapping` + active view.
+- `20260801160000_smart_pricing_engine.sql` — `erp_po_approved_exceptions` + RPCs `erp_compute_price_suggestions` + `erp_compute_line_deviation` + approval_chain_json schema lock.
+- `20260801170000_po_attachments_and_body.sql` — `erp_po_attachments` + `body_html*` + `erp_md_item_assets`.
+- `20260801180000_po_approval_engine.sql` — enum `PENDING_APPROVAL` + RPCs `erp_evaluate_trigger_expr` + `erp_resolve_approval_chain` + `erp_submit_po_for_approval` + `erp_decide_approval`.
+- `20260801190000_po_revisions_and_audit.sql` — `erp_po_revisions` + `erp_po_change_log` + header trigger + `erp_create_po_revision_snapshot` RPC.
+
+**Next.js changes**:
+- `lib/procurement/pricing.ts` — helpers `getPriceSuggestions`, `computeLineDeviation`, `getCompanyPricingSettings`.
+- `app/api/procurement/pricing/suggestions/route.ts` — new endpoint (GET).
+- `app/api/procurement/orders/route.ts` — POST extended: computes deviation per line, enforces justification, enriches lines, computes PO-total deviation, supports urgency governance.
+- `lib/ai/jobs/schemas.ts` — added `SEMANTIC_MATCHER`, `DATA_ENRICHMENT`, `RFQ_AGENT` payload/result schemas.
+
+**Governance policies installed**:
+- כלל ה-3% פר-שורה: RPC `erp_compute_line_deviation` בודק מול `max_allowed_line_deviation_pct` (ברירת מחדל 3.00) + `erp_po_approved_exceptions` כזיכרון חריגות.
+- כלל ה-5% ברמת PO: חישוב משוקלל ב-POST; `requires_po_escalation=true` → activates `requires_po_escalation` trigger ב-approval chain.
+- Urgency bypass: `urgency_level` ב-{HIGH,CRITICAL} עם `urgency_bypass_enabled=true` → `ai_negotiation_status=BYPASSED_URGENCY`. justification ≥10 תווים חובה.
+- Line-level escalation: אם `requires_escalation=true` → טריגר DB דורש `escalation_justification` + `escalation_category` (non-adversarial: BUSINESS_RELATIONSHIP/QUALITY/AVAILABILITY/LEAD_TIME/OTHER).
 
 ---
 

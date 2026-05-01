@@ -37,16 +37,24 @@
 | 24 | הצעת מחיר | `quote_id` | uuid | FK→erp_price_quotes | `quoteId` | Select + F2 | 7.3 | ⏳ |
 | 25 | הזמנת מסגרת | `framework_order_id` | uuid | FK→erp_framework_orders | `frameworkOrderId` | Select + F2 | 7.3 | ⏳ |
 | 26 | הזמנת לקוח | `customer_order_id` | uuid | FK→erp_customer_orders | `customerOrderId` | Select + F2 | 7.3 | ⏳ |
-| 27 | הנחה כללית % | `general_discount_pct` | numeric(5,2) | default 0, CHECK 0..100 | `generalDiscountPct` | Input number | 7.3 | ⏳ |
+| 27 | הנחה כללית % | `general_discount_pct` | numeric(5,2) | NOT NULL, default 0, CHECK 0..100 | `generalDiscountPct` | Input number | 7.4 | ✅ |
 | **Phase 7.3 — Approval skeleton columns** ||||||||
 | 28 | לטיפול | `assignee_user_id` | uuid | FK→auth.users, nullable | `assigneeUserId` | Select (fills in 7.7) | 7.3 skel | 🚧 |
-| 29 | רמת אישור נוכחית | `current_approval_level` | integer | default 0 | `currentApprovalLevel` | readonly (logic in 7.7) | 7.3 skel | 🚧 |
+| 29 | רמת אישור נוכחית | `current_approval_level` | integer | default 0 | `currentApprovalLevel` | readonly (set by 7.7 RPCs) | 7.3 skel | ✅ logic in 7.7 |
 | 30 | דחיית הרשאה לספק | `approval_deferred_to_supplier` | boolean | default false | `approvalDeferredToSupplier` | checkbox (logic in 7.7) | 7.3 skel | 🚧 |
-| **Phase 7.4 additions — not in header** ||||||||
-| **Phase 7.5 additions (no new columns — API/view layer)** ||||||||
-| **Phase 7.6 additions (PO body)** ||||||||
-| 31 | טקסט לספק (עברית) | `body_html` | text | nullable | `bodyHtml` | Tiptap editor | 7.6 | ⏳ |
-| 32 | טקסט לספק (אנגלית) | `body_html_english` | text | nullable | `bodyHtmlEnglish` | Tiptap editor | 7.6 | ⏳ |
+| **Phase 7.4 — Urgency + AI negotiation** ||||||||
+| 31 | רמת דחיפות | `urgency_level` | text | NOT NULL, default 'NORMAL', CHECK IN (NORMAL/HIGH/CRITICAL) | `urgencyLevel` | RadioGroup | 7.4 | ✅ |
+| 32 | הצדקת דחיפות | `urgency_justification` | text | nullable (≥10 chars if urgency≠NORMAL) | `urgencyJustification` | Textarea | 7.4 | ✅ |
+| 33 | סטטוס AI negotiation | `ai_negotiation_status` | text | NOT NULL, default 'NOT_ATTEMPTED', CHECK IN (…) | `aiNegotiationStatus` | badge | 7.4 | ✅ |
+| 34 | חיסכון AI (₪) | `ai_negotiated_savings` | numeric(14,2) | nullable | `aiNegotiatedSavings` | readonly | 7.4 | ✅ |
+| 35 | לוג משאומ | `ai_negotiation_log` | jsonb | default '[]' | `aiNegotiationLog` | collapsed | 7.4 | ✅ |
+| 36 | קישור RFQ | `rfq_id` | uuid | nullable (FK in 7.10.3) | `rfqId` | readonly link | 7.4 | ✅ (FK pending) |
+| **Phase 7.5 — PO-level deviation governance** ||||||||
+| 37 | סטיית ברמת PO (%) | `po_total_deviation_pct` | numeric(6,2) | nullable (computed by API) | `poTotalDeviationPct` | readonly % | 7.5 | ✅ |
+| 38 | דורש escalation PO | `requires_po_escalation` | boolean | NOT NULL, default false | `requiresPoEscalation` | badge | 7.5 | ✅ |
+| **Phase 7.6 — PO body (rich-text)** ||||||||
+| 39 | טקסט לספק (עברית) | `body_html` | text | nullable | `bodyHtml` | Tiptap editor (UI ⏳) | 7.6 | ✅ schema |
+| 40 | טקסט לספק (אנגלית) | `body_html_english` | text | nullable | `bodyHtmlEnglish` | Tiptap editor (UI ⏳) | 7.6 | ✅ schema |
 
 ---
 
@@ -67,13 +75,21 @@
 | 11 | סעיף תקציבי | `budget_sub_chapter` | text | **NOT NULL** | `budgetSubChapter` | auto from item | 7.2 | ✅ |
 | 12 | קוד משאב | `resource_id` | uuid | **NOT NULL**, FK | `resourceId` | auto from item | 7.2 | ✅ |
 | **Phase 7.4 additions (Line Enrichment)** ||||||||
-| 13 | ת. אספקה | `supply_date` | date | NOT NULL, default +14d | `supplyDate` | Date picker | 7.4 | ⏳ |
-| 14 | הנחה % | `discount_pct` | numeric(5,2) | default 0, CHECK 0..100 | `discountPct` | Input number | 7.4 | ⏳ |
-| 15 | מטבע שורה | `line_currency` | varchar(3) | default 'ILS' | `lineCurrency` | Select | 7.4 | ⏳ |
-| 16 | שער חליפין | `exchange_rate` | numeric(12,6) | default 1 | `exchangeRate` | Input number | 7.4 | ⏳ |
-| 17 | מקור מחיר | `price_source` | text | CHECK IN (5 values) | `priceSource` | badge + select | 7.4 | ⏳ |
-| 18 | שם יצרן | `manufacturer_name` | text | nullable | `manufacturerName` | Input | 7.4 | ⏳ |
-| 19 | הערות שורה | `line_notes` | text | nullable | `lineNotes` | Textarea (collapsed) | 7.4 | ⏳ |
+| 13 | ת. אספקה | `supply_date` | date | nullable | `supplyDate` | Date picker | 7.4 | ✅ |
+| 14 | הנחה % | `discount_pct` | numeric(5,2) | NOT NULL, default 0, CHECK 0..100 | `discountPct` | Input number | 7.4 | ✅ |
+| 15 | מטבע שורה | `line_currency` | varchar(3) | NOT NULL, default 'ILS' | `lineCurrency` | Select | 7.4 | ✅ |
+| 16 | שער חליפין | `exchange_rate` | numeric(12,6) | NOT NULL, default 1, CHECK >0 | `exchangeRate` | Input number | 7.4 | ✅ |
+| 17 | מקור מחיר | `price_source` | text | CHECK IN (SUPPLIER_PRICELIST/LAST_PURCHASE/MANUAL/QUOTE/FRAMEWORK/AI_CROSS_SUPPLIER) | `priceSource` | badge + select | 7.4 | ✅ |
+| 18 | שם יצרן | `manufacturer_name` | text | nullable | `manufacturerName` | Input | 7.4 | ✅ |
+| 19 | הערות שורה | `line_notes` | text | nullable | `lineNotes` | Textarea (collapsed) | 7.4 | ✅ |
+| **Phase 7.5 additions (3% Rule governance — populated by POST via RPC)** ||||||||
+| 20 | דורש escalation | `requires_escalation` | boolean | NOT NULL, default false; trigger enforces justification | `requiresEscalation` | badge | 7.5 | ✅ |
+| 21 | הצדקת escalation | `escalation_justification` | text | required ≥10 chars if requires_escalation=true | `escalationJustification` | Textarea | 7.5 | ✅ |
+| 22 | קטגוריית escalation | `escalation_category` | text | CHECK IN (BUSINESS_RELATIONSHIP/QUALITY/AVAILABILITY/LEAD_TIME/OTHER) | `escalationCategory` | Select | 7.5 | ✅ |
+| 23 | סטיית מחיר (%) | `price_deviation_pct` | numeric(6,2) | nullable (computed) | `priceDeviationPct` | readonly % | 7.5 | ✅ |
+| 24 | ספק חליפי | `alternative_supplier_id` | uuid | FK→erp_md_suppliers, nullable | `alternativeSupplierId` | readonly link | 7.5 | ✅ |
+| 25 | מחיר חליפי | `alternative_unit_price` | numeric(14,4) | nullable | `alternativeUnitPrice` | readonly | 7.5 | ✅ |
+| 26 | זמן אספקה חליפי | `alternative_lead_time_days` | integer | nullable | `alternativeLeadTimeDays` | readonly | 7.5 | ✅ |
 | **Phase 7.9 additions (Receiving)** ||||||||
 | 20 | כמות שהתקבלה | `quantity_received` | numeric(14,3) | default 0 | `quantityReceived` | readonly (from GR) | 7.9 | ⏳ |
 | 21 | יתרה לאספקה | `quantity_open` | numeric(14,3) | **GENERATED** (qty - received) | `quantityOpen` | readonly | 7.9 | ⏳ |
@@ -113,17 +129,34 @@
 
 ---
 
-## 5. Tables Planned (Phases 7.6+)
+## 5. Tables Planned & Delivered
 
-| Table | Phase | Purpose |
+| Table | Phase | Status | Purpose |
+|---|---|---|---|
+| `erp_md_company_settings` | 7.4.0 | ✅ | הגדרות AI + thresholds פר-חברה (3% Rule, feature flags, RFQ limits) |
+| `erp_ai_audit_log` | 7.4.0 | ✅ | לוג מלא של קריאות LLM (model, tokens, cost, reasoning, decision-tier) |
+| `erp_md_supplier_item_mapping` | 7.4.5 | ✅ | גשר Supplier-SKU ↔ Master-SKU (AI-matched, versioned) |
+| `erp_po_approved_exceptions` | 7.5 | ✅ | זיכרון חריגות מאושרות (משתיק escalation חוזר) |
+| `erp_po_attachments` | 7.6 | ✅ | קבצים מצורפים פר-PO (metadata; bucket po-attachments) |
+| `erp_md_item_assets` | 7.6 | ✅ | נכסי Master SKU גלובליים (datasheets, תמונות, תווי תקן SII) |
+| `erp_po_revisions` | 7.8 | ✅ | גרסאות מלאות (snapshot jsonb: header + lines + approvals) |
+| `erp_po_change_log` | 7.8 | ✅ | Audit field-level + trigger גנרי על כותרת ה-PO |
+| `erp_goods_receipts` | 7.9 | ⏳ PLANNED | קבלת טובין — כותרת |
+| `erp_goods_receipt_lines` | 7.9 | ⏳ PLANNED | קבלת טובין — שורות |
+| `ai_jobs` (extended) | 7.4.0 | ✅ | תור משימות AI async — נוספו priority/attempts/idempotency_key/scheduled_at |
+| `erp_po_comments` | 7.12 | ⏳ PLANNED | Comments thread פר-PO |
+
+## 5.1 RPC Functions
+
+| Function | Phase | Purpose |
 |---|---|---|
-| `erp_po_attachments` | 7.6 | קבצים מצורפים (metadata; הקובץ עצמו ב-Supabase Storage) |
-| `erp_po_revisions` | 7.8 | גרסאות מלאות (snapshot jsonb) |
-| `erp_po_change_log` | 7.8 | audit per-field |
-| `erp_goods_receipts` | 7.9 | קבלת טובין — כותרת |
-| `erp_goods_receipt_lines` | 7.9 | קבלת טובין — שורות |
-| `erp_ai_cache` | 7.10 | מטמון תוצאות AI (query-hash → response) |
-| `erp_po_comments` | 7.12 | Comments thread פר-PO |
+| `erp_compute_price_suggestions(company_id, master_item_id, supplier_id, quantity, window_days)` | 7.5 | מנוע הצעות מחיר רב-מקורי (SUPPLIER_PRICELIST/LAST_PURCHASE/BEST_OFFER_CROSS) |
+| `erp_compute_line_deviation(company_id, master_item_id, supplier_id, unit_price, quantity, project_id)` | 7.5 | 3% Rule: מחזיר deviation + requires_escalation + exception_applied |
+| `erp_evaluate_trigger_expr(expr, amount, threshold, requires_po_esc, has_line_esc, urgency)` | 7.7 | DSL evaluator ל-approval_chain_json |
+| `erp_resolve_approval_chain(po_id)` | 7.7 | מחזיר שרשרת אישורים עם activated=true/false פר level |
+| `erp_submit_po_for_approval(po_id)` | 7.7 | DRAFT → PENDING_APPROVAL + יצירת approvals |
+| `erp_decide_approval(approval_id, decision, comment)` | 7.7 | APPROVE/REJECT + propagation (next level / cancellation of peers) |
+| `erp_create_po_revision_snapshot(po_id, reason)` | 7.8 | יוצר revision עם snapshot מלא (header + lines + approvals) |
 
 ---
 
@@ -138,7 +171,7 @@
 | `/api/procurement/orders/[id]` | DELETE | 7.3 | Soft-delete (only DRAFT) |
 | `/api/procurement/orders/[id]/lines` | POST | 7.4 | Add line to existing PO |
 | `/api/procurement/orders/[id]/lines/[lineId]` | PATCH/DELETE | 7.4 | Line-level CRUD |
-| `/api/procurement/orders/price-suggestions` | GET | 7.5 | Multi-source price engine (AI-ready) |
+| `/api/procurement/pricing/suggestions` | GET | 7.5 | ✅ Multi-source price engine (AI-ready): מחזיר suggestions עם bestAlternative |
 | `/api/procurement/orders/[id]/attachments` | POST/GET/DELETE | 7.6 | Attachments |
 | `/api/procurement/orders/[id]/submit-for-approval` | POST | 7.7 | Move DRAFT → PENDING_APPROVAL |
 | `/api/procurement/orders/[id]/approve` | POST | 7.7 | Approve current level |
