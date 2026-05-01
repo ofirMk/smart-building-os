@@ -1,30 +1,25 @@
 "use client"
 
 /**
- * /marker-ofek/items/[id] — כרטיס פריט (Phase 7.13.6 → Parent/Child Split).
+ * /marker-ofek/items/[id] — כרטיס פריט (גרסה B — Modern / Tabbed).
  *
- * המשתמש ביקש ב-1 במאי 2026 (אחרי שראה את ה-Single-Page Scroll) לעבור
- * לדפוס Parent/Child 60/40: נתוני אב בחלק העליון, navigable child/grandchild
- * tabs בתחתית, split resizable, scroll פנימי בכל פאנל.
+ * היסטוריה קצרה:
+ *   • Phase 7.13.4 (c2217ce6) — 3 גרסאות להשוואה (V1 Priority / V2 Modern / V3 OnePage).
+ *   • 96e00eed — המשתמש בחר ב-V3 (OnePage).
+ *   • a4379b6f → 5873f836 — ניסיון חלוקת מסך Parent/Child 60-40 + Right Rail.
+ *   • ‎**1/5/2026** — המשתמש ביקש לחזור לגרסה B (Modern). העבודה על ה-split
+ *     נשמרת ב-git; אפשר להחיות עתידית.
  *
- * הדף מצהיר על עצמו `flex flex-1 min-h-0 overflow-hidden` כדי שה-`main`
- * של `DashboardShell` לא יגלגל אותו — ה-split pane גולל פנימית.
+ * דף רגיל (לא fixed-split) — ה-`<main>` של `DashboardShell` גולל טבעית.
  */
 
 import * as React from "react"
 import { useParams } from "next/navigation"
 
-import { MasterItemCardSplit } from "@/components/marker-ofek/items/master-item-card-split"
+import { MasterItemCardModern } from "@/components/marker-ofek/items/master-item-card-modern"
 
 export default function MarkerOfekItemMasterPage() {
   const params = useParams()
   const id = typeof params.id === "string" ? params.id : ""
-  return (
-    <div
-      className="flex min-h-0 w-full flex-1 flex-col overflow-hidden"
-      data-layout-mode="fixed-split"
-    >
-      <MasterItemCardSplit itemId={id} />
-    </div>
-  )
+  return <MasterItemCardModern itemId={id} />
 }
