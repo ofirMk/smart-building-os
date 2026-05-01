@@ -93,7 +93,7 @@ async function loadItem(req: NextRequest, id: string) {
 
   // קוראים במקביל: הפריט + רשימת יחידות מידה (גלובלי + פרטי לחברה) — כדי להשניק תיאורי עברי של
   // יחידת הבסיס ויחידת הקנייה דרך קוד (uomDescription / purchasingUomDescription).
-  const [itemResult, uomsResult] = await Promise.all([
+  const [itemResult, uomsResult, pricingResult] = await Promise.all([
     supabase
       .from("erp_md_items")
       .select("id,company_id,item_number,description,foreign_description,unit_of_measure,product_family_id,is_inventory_managed,status,min_order_quantity,item_type,budget_sub_chapter,resource_id,budget_sub_chapter_manual_override,resource_id_manual_override,internal_sku,sku_aliases,uom_normalized,uom_source_text,ai_metadata,ocr_match_tokens,legacy_default_price,legacy_last_price,factory_uom,conversion_factor,preferred_supplier_id,default_price,barcode,is_serial_tracked,standard_cost,purchasing_uom,image_url")
@@ -104,6 +104,13 @@ async function loadItem(req: NextRequest, id: string) {
       .from("units_of_measure")
       .select("code,description_he,name_en,company_id")
       .or(`company_id.is.null,company_id.eq.${activeCompanyId}`),
+    // Phase 7.14.2 — Resolved pricing (single-row lookup על ה-VIEW).
+    supabase
+      .from("erp_md_items_resolved_pricing")
+      .select("preferred_unit_price,preferred_currency,cheapest_supplier_id,cheapest_unit_price,cheapest_currency,resolved_unit_price,resolved_price_source,resolved_supplier_id,resolved_currency,preferred_is_optimal,preferred_premium,active_supplier_count")
+      .eq("item_id", id)
+      .eq("company_id", activeCompanyId)
+      .maybeSingle(),
   ])
   const { data, error } = itemResult
   if (error) {
@@ -173,6 +180,35 @@ async function loadItem(req: NextRequest, id: string) {
         data.conversion_factor === null ? null : Number(data.conversion_factor),
       preferredSupplierId: data.preferred_supplier_id,
       defaultPrice: data.default_price === null ? null : Number(data.default_price),
+      // ── Phase 7.14.2 — Resolved Pricing ──
+      preferredUnitPrice:
+        pricingResult.data?.preferred_unit_price == null
+          ? null
+          : Number(pricingResult.data.preferred_unit_price),
+      preferredCurrency: pricingResult.data?.preferred_currency ?? null,
+      cheapestSupplierId: pricingResult.data?.cheapest_supplier_id ?? null,
+      cheapestUnitPrice:
+        pricingResult.data?.cheapest_unit_price == null
+          ? null
+          : Number(pricingResult.data.cheapest_unit_price),
+      cheapestCurrency: pricingResult.data?.cheapest_currency ?? null,
+      resolvedUnitPrice:
+        pricingResult.data?.resolved_unit_price == null
+          ? null
+          : Number(pricingResult.data.resolved_unit_price),
+      resolvedPriceSource:
+        (pricingResult.data?.resolved_price_source as
+          | "preferred"
+          | "cheapest"
+          | "none") ?? "none",
+      resolvedSupplierId: pricingResult.data?.resolved_supplier_id ?? null,
+      resolvedCurrency: pricingResult.data?.resolved_currency ?? null,
+      preferredIsOptimal: pricingResult.data?.preferred_is_optimal ?? null,
+      preferredPremium:
+        pricingResult.data?.preferred_premium == null
+          ? null
+          : Number(pricingResult.data.preferred_premium),
+      activeSupplierCount: Number(pricingResult.data?.active_supplier_count ?? 0),
       // ── Phase 7.13.4 Logistics Enrichment ──
       barcode: data.barcode,
       isSerialTracked: data.is_serial_tracked,

@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
   // (גלובלי `company_id IS NULL` + ספציפי לחברה) — כאן אני קורא את שניהם ולאחר
   // מכן מחבר ל-Map לפי `code` עם דה-דופ (פרטי-לחברה גובר על גלובלי), כדי שהטבלה
   // תציג תיאור עברית קריא במקום קוד יבש.
-  const [itemsResult, familiesResult, uomsResult] = await Promise.all([
+  const [itemsResult, familiesResult, uomsResult, pricingResult] = await Promise.all([
     query,
     supabase
       .from("erp_md_product_families")
@@ -122,6 +122,12 @@ export async function GET(req: NextRequest) {
       .from("units_of_measure")
       .select("code,description_he,name_en,company_id")
       .or(`company_id.is.null,company_id.eq.${activeCompanyId}`),
+    // Phase 7.14.2 — Resolved pricing view (מחיר ספק מועדף עם fallback לזול ביותר).
+    // ה-VIEW עם security_invoker=true → RLS של הטבלאות הבסיסיות חל אוטומטית.
+    supabase
+      .from("erp_md_items_resolved_pricing")
+      .select("item_id,preferred_unit_price,preferred_currency,cheapest_supplier_id,cheapest_unit_price,cheapest_currency,resolved_unit_price,resolved_price_source,resolved_supplier_id,resolved_currency,preferred_is_optimal,preferred_premium,active_supplier_count")
+      .eq("company_id", activeCompanyId),
   ])
   if (itemsResult.error || familiesResult.error || uomsResult.error) {
     return NextResponse.json(
@@ -134,6 +140,45 @@ export async function GET(req: NextRequest) {
       },
       { status: 500 }
     )
+  }
+  // pricingResult.error לא חוסם — אם ה-VIEW לא קיים (לפני הרצת המיגרציה) נחזיר את הקטלוג ללא שדות פתורים.
+  const pricingMap = new Map<
+    string,
+    {
+      preferredUnitPrice: number | null
+      preferredCurrency: string | null
+      cheapestSupplierId: string | null
+      cheapestUnitPrice: number | null
+      cheapestCurrency: string | null
+      resolvedUnitPrice: number | null
+      resolvedPriceSource: "preferred" | "cheapest" | "none"
+      resolvedSupplierId: string | null
+      resolvedCurrency: string | null
+      preferredIsOptimal: boolean | null
+      preferredPremium: number | null
+      activeSupplierCount: number
+    }
+  >()
+  for (const row of pricingResult.data ?? []) {
+    pricingMap.set(row.item_id, {
+      preferredUnitPrice:
+        row.preferred_unit_price === null ? null : Number(row.preferred_unit_price),
+      preferredCurrency: row.preferred_currency,
+      cheapestSupplierId: row.cheapest_supplier_id,
+      cheapestUnitPrice:
+        row.cheapest_unit_price === null ? null : Number(row.cheapest_unit_price),
+      cheapestCurrency: row.cheapest_currency,
+      resolvedUnitPrice:
+        row.resolved_unit_price === null ? null : Number(row.resolved_unit_price),
+      resolvedPriceSource:
+        (row.resolved_price_source as "preferred" | "cheapest" | "none") ?? "none",
+      resolvedSupplierId: row.resolved_supplier_id,
+      resolvedCurrency: row.resolved_currency,
+      preferredIsOptimal: row.preferred_is_optimal,
+      preferredPremium:
+        row.preferred_premium === null ? null : Number(row.preferred_premium),
+      activeSupplierCount: Number(row.active_supplier_count ?? 0),
+    })
   }
 
   const familyMap = new Map(
@@ -160,8 +205,11 @@ export async function GET(req: NextRequest) {
       })
     }
   }
+
   return NextResponse.json({
-    data: (itemsResult.data ?? []).map((row) => ({
+    data: (itemsResult.data ?? []).map((row) => {
+      const pricing = pricingMap.get(row.id) ?? null
+      return {
       id: row.id,
       companyId: row.company_id,
       sku: row.item_number,
@@ -215,7 +263,22 @@ export async function GET(req: NextRequest) {
       imageUrl: row.image_url,
       // alias מודרני ל-foreign_description — חשיפה תחת שם DTO חדש בלי שבירת צרכנים קיימים.
       descriptionEn: row.foreign_description,
-    })),
+      // ── Phase 7.14.2 — Resolved Pricing (מחיר נגזר מספק מועדף / זול ביותר) ──
+      // null אם ה-VIEW לא קיים עדיין (לפני הרצת המיגרציה) או אם אין מיפויים פעילים.
+      preferredUnitPrice: pricing?.preferredUnitPrice ?? null,
+      preferredCurrency: pricing?.preferredCurrency ?? null,
+      cheapestSupplierId: pricing?.cheapestSupplierId ?? null,
+      cheapestUnitPrice: pricing?.cheapestUnitPrice ?? null,
+      cheapestCurrency: pricing?.cheapestCurrency ?? null,
+      resolvedUnitPrice: pricing?.resolvedUnitPrice ?? null,
+      resolvedPriceSource: pricing?.resolvedPriceSource ?? "none",
+      resolvedSupplierId: pricing?.resolvedSupplierId ?? null,
+      resolvedCurrency: pricing?.resolvedCurrency ?? null,
+      preferredIsOptimal: pricing?.preferredIsOptimal ?? null,
+      preferredPremium: pricing?.preferredPremium ?? null,
+      activeSupplierCount: pricing?.activeSupplierCount ?? 0,
+      }
+    }),
   })
 }
 
