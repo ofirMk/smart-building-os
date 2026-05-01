@@ -1,16 +1,44 @@
 "use client"
 
+/**
+ * Master SKU Card — Phase 7.13.3 (refactored)
+ *
+ * רקע
+ *   המסך ההיסטורי הציג כרטיס שטוח: הדר עם SKU + תיאור, 4 stat-cards, וטבלת
+ *   "ניהול ספקים ומחירים" שעבדה על ה-API הישן `/api/erp/master-data/...`.
+ *
+ * מה השתנה ב-7.13.3
+ *   המסך עודכן ל-4 טאבים שחושפים את כל ה-master-data layer של ה-ERP:
+ *
+ *     1. כללי (default)         — Stats + טבלת supplier-items הישנה כפי שהיתה.
+ *     2. נכסים וקבצים            — `erp_md_item_assets` (Phase 7.13.3.A).
+ *     3. מיפויי ספקים             — `erp_md_supplier_item_mapping` (7.13.3.B).
+ *     4. היסטוריית רכש             — drill מתוך `erp_purchase_order_lines` (7.13.3.C).
+ *
+ * תאימות לאחור
+ *   ה-API הישן `/api/erp/master-data/items/[id]` ממשיך לעבוד; הוא נטען רק
+ *   בטאב "כללי" (כמו לפני). 3 ה-API החדשים לטאבים האחרים נטענים lazy על-ידי
+ *   הטאב עצמו (kein בקשות מבוזבזות אם המשתמש לא נכנס לטאב).
+ */
+
+import * as React from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import * as React from "react"
 import {
   ArrowRight,
+  FileStack,
+  History,
   Loader2,
   Package,
+  ShoppingBag,
   Tags,
   Warehouse,
 } from "lucide-react"
 
+import { ItemAssetsTab } from "@/components/marker-ofek/items/item-assets-tab"
+import { ItemPurchaseHistoryTab } from "@/components/marker-ofek/items/item-purchase-history-tab"
+import { ItemSupplierMappingsTab } from "@/components/marker-ofek/items/item-supplier-mappings-tab"
+import { netUnitPrice } from "@/components/marker-ofek/supplier-compare-sheet"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -27,9 +55,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { netUnitPrice } from "@/components/marker-ofek/supplier-compare-sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn, formatError } from "@/lib/utils"
+
+// ============================================================================
+// Types — שמורים מהמסך ההיסטורי כדי לצמצם diff בטאב "כללי".
+// ============================================================================
 
 type ItemDetails = {
   id: string
@@ -77,6 +109,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat("he-IL", {
   dateStyle: "short",
   timeStyle: "short",
 })
+
+// ============================================================================
+// Page
+// ============================================================================
 
 export default function MarkerOfekItemMasterPage() {
   const params = useParams()
@@ -147,16 +183,6 @@ export default function MarkerOfekItemMasterPage() {
     }
   }, [id])
 
-  const cheapestNet = React.useMemo(() => {
-    if (suppliers.length === 0) return null
-    let min = Infinity
-    for (const s of suppliers) {
-      const n = netUnitPrice(s.unit_price, s.discount_pct)
-      if (n < min) min = n
-    }
-    return Number.isFinite(min) ? min : null
-  }, [suppliers])
-
   if (!id) {
     return (
       <div className="mx-auto max-w-3xl py-10 text-center text-sm text-muted-foreground">
@@ -192,7 +218,7 @@ export default function MarkerOfekItemMasterPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 pb-12">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12">
       <Link
         href="/marker-ofek/items"
         className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -201,6 +227,7 @@ export default function MarkerOfekItemMasterPage() {
         חזרה לקטלוג פריטים
       </Link>
 
+      {/* Header */}
       <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-4">
@@ -227,6 +254,71 @@ export default function MarkerOfekItemMasterPage() {
         </div>
       </header>
 
+      {/* Tabs */}
+      <Tabs defaultValue="general" className="flex flex-col gap-4">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="general" className="gap-2">
+            <Package className="size-4" aria-hidden />
+            כללי
+          </TabsTrigger>
+          <TabsTrigger value="assets" className="gap-2">
+            <FileStack className="size-4" aria-hidden />
+            נכסים וקבצים
+          </TabsTrigger>
+          <TabsTrigger value="mappings" className="gap-2">
+            <ShoppingBag className="size-4" aria-hidden />
+            מיפויי ספקים
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-2">
+            <History className="size-4" aria-hidden />
+            היסטוריית רכש
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-4">
+          <GeneralTab item={item} suppliers={suppliers} />
+        </TabsContent>
+
+        <TabsContent value="assets">
+          <ItemAssetsTab itemId={id} />
+        </TabsContent>
+
+        <TabsContent value="mappings">
+          <ItemSupplierMappingsTab itemId={id} />
+        </TabsContent>
+
+        <TabsContent value="history">
+          <ItemPurchaseHistoryTab itemId={id} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+// ============================================================================
+// GeneralTab — שומר את התצוגה ההיסטורית (4 stats + supplier prices table).
+// מבודד מהפיצ'רים החדשים של 7.13.3 כדי להישאר reverse-compatible.
+// ============================================================================
+
+function GeneralTab({
+  item,
+  suppliers,
+}: {
+  item: ItemDetails
+  suppliers: SupplierJoinRow[]
+}) {
+  const cheapestNet = React.useMemo(() => {
+    if (suppliers.length === 0) return null
+    let min = Infinity
+    for (const s of suppliers) {
+      const n = netUnitPrice(s.unit_price, s.discount_pct)
+      if (n < min) min = n
+    }
+    return Number.isFinite(min) ? min : null
+  }, [suppliers])
+
+  return (
+    <>
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="pb-2">
@@ -256,7 +348,7 @@ export default function MarkerOfekItemMasterPage() {
         </Card>
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription>ספקים מקושרים</CardDescription>
+            <CardDescription>ספקים מקושרים (legacy)</CardDescription>
             <CardTitle className="text-lg tabular-nums">
               {suppliers.length}
             </CardTitle>
@@ -271,10 +363,10 @@ export default function MarkerOfekItemMasterPage() {
               <Warehouse className="size-5" aria-hidden />
             </div>
             <div className="space-y-1">
-              <CardTitle>ניהול ספקים ומחירים</CardTitle>
+              <CardTitle>ניהול ספקים ומחירים (legacy)</CardTitle>
               <CardDescription>
-                כל ההצעות הרשומות לפריט מאסטר זה. השורה עם המחיר הנטו הנמוך ביותר
-                מודגשת.
+                מקור: `erp_md_supplier_items` הישן. ה-Master ↔ Supplier mappings
+                החדשים מ-7.4.5 חיים ב-tab &quot;מיפויי ספקים&quot;.
               </CardDescription>
             </div>
           </div>
@@ -282,8 +374,8 @@ export default function MarkerOfekItemMasterPage() {
         <CardContent className="pt-6">
           {suppliers.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              אין רשומות ספק מקושרות לפריט זה. הוסיפו הצעות ספק במסך מאסטר דאטה או
-              דרך תהליך הרכש.
+              אין רשומות ספק מקושרות לפריט זה. הוסיפו הצעות ספק במסך מאסטר דאטה
+              או דרך תהליך הרכש.
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border/60">
@@ -350,27 +442,6 @@ export default function MarkerOfekItemMasterPage() {
           )}
         </CardContent>
       </Card>
-
-      <Card className="border-dashed border-border/80 bg-muted/20">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Package className="size-5 text-muted-foreground" aria-hidden />
-            <CardTitle className="text-base">שימוש ברכש</CardTitle>
-          </div>
-          <CardDescription>
-            ביצירת הזמנת רכש חדשה ניתן לבחור פריט מאסטר זה ולהשוות מחירי ספקים
-            לפני שמירת השורה.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link
-            href="/marker-ofek/procurement/new"
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            מעבר להזמנת רכש חדשה
-          </Link>
-        </CardContent>
-      </Card>
-    </div>
+    </>
   )
 }
