@@ -26,6 +26,9 @@ export interface ItemEditFormValues {
   // ── מחירים ──
   standardCost: string
   defaultPrice: string
+  // ── Sourcing (Phase 7.14.1) ──
+  // ספק מועדף — UUID או ריק (מציין "אין מועדף", המערכת תיגזר מהזול ביותר).
+  preferredSupplierId: string
   // ── Header ──
   imageUrl: string
 }
@@ -48,4 +51,16 @@ export interface UomLookupOption {
   nameEn: string
   /** null = גלובלי, string = פרטי לחברה */
   companyId: string | null
+}
+
+/**
+ * SupplierLookupOption — Phase 7.14.1.
+ *
+ * הצורה שה-`SupplierComboBox` צורך: id + name + מספר ספק אופציונלי
+ * להצגה משנית כדי להבדיל בין ספקים בעלי שם דומה.
+ */
+export interface SupplierLookupOption {
+  id: string
+  name: string
+  supplierNumber?: string | null
 }

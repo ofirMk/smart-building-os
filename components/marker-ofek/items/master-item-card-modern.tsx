@@ -32,6 +32,7 @@ import { toast } from "sonner"
 import { ItemAssetsTab } from "@/components/marker-ofek/items/item-assets-tab"
 import {
   type ItemEditFormValues,
+  type SupplierLookupOption,
   type UomLookupOption,
 } from "@/components/marker-ofek/items/item-edit-form-types"
 import { ItemGeneralTab } from "@/components/marker-ofek/items/item-general-tab"
@@ -115,6 +116,8 @@ function toFormDefaults(item: ItemDto): ItemEditFormValues {
       item.standardCost != null ? String(item.standardCost) : "",
     defaultPrice:
       item.defaultPrice != null ? String(item.defaultPrice) : "",
+    // Phase 7.14.1: ספק מועדף — UUID או "".
+    preferredSupplierId: item.preferredSupplierId ?? "",
     imageUrl: item.imageUrl ?? "",
   }
 }
@@ -160,6 +163,9 @@ export function MasterItemCardModern({
   const [legacySuppliers, setLegacySuppliers] = React.useState<
     LegacySupplierPriceRow[]
   >([])
+  // Phase 7.14.1: רשימת ספקים מלאה לבחירת ספק מועדף.
+  const [suppliers, setSuppliers] = React.useState<SupplierLookupOption[]>([])
+  const [suppliersLoading, setSuppliersLoading] = React.useState(true)
   const [loading, setLoading] = React.useState(true)
   const [uomsLoading, setUomsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -178,6 +184,7 @@ export function MasterItemCardModern({
       conversionFactor: "1",
       standardCost: "",
       defaultPrice: "",
+      preferredSupplierId: "",
       imageUrl: "",
     },
   })
@@ -203,12 +210,16 @@ export function MasterItemCardModern({
             masterDataFetch<SupplierItemDtoRaw[]>(
               `/api/erp/master-data/supplier-items?itemId=${id}`
             ).catch(() => [] as SupplierItemDtoRaw[]),
-            masterDataFetch<Array<{ id: string; name: string }>>(
-              "/api/erp/master-data/suppliers"
-            ).catch(() => [] as Array<{ id: string; name: string }>),
+            // Phase 7.14.1: API מודרני שמחזיר גם supplierNumber, לבחירת combobox עשיר יותר.
+            masterDataFetch<SupplierLookupOption[]>(
+              "/api/master-data/suppliers"
+            ).catch(() => [] as SupplierLookupOption[]),
           ])
         if (cancelled) return
-        const supplierMap = new Map(supplierRows.map((s) => [s.id, s.name]))
+        const supplierList: SupplierLookupOption[] = Array.isArray(supplierRows)
+          ? supplierRows
+          : []
+        const supplierMap = new Map(supplierList.map((s) => [s.id, s.name]))
         const mappedSuppliers: LegacySupplierPriceRow[] = supplierItemsRaw.map(
           (row) => ({
             id: row.id,
@@ -222,6 +233,7 @@ export function MasterItemCardModern({
         setItem(itemData)
         setUoms(Array.isArray(uomData) ? uomData : [])
         setLegacySuppliers(mappedSuppliers)
+        setSuppliers(supplierList)
         reset(toFormDefaults(itemData))
       } catch (e) {
         if (!cancelled) {
@@ -232,6 +244,7 @@ export function MasterItemCardModern({
         if (!cancelled) {
           setLoading(false)
           setUomsLoading(false)
+          setSuppliersLoading(false)
         }
       }
     }
@@ -262,6 +275,8 @@ export function MasterItemCardModern({
         defaultPrice: values.defaultPrice.trim()
           ? values.defaultPrice.trim().replace(",", ".")
           : null,
+        // Phase 7.14.1: ספק מועדף — "" → null (שיחזור ל"אין מועדף").
+        preferredSupplierId: values.preferredSupplierId.trim() || null,
         imageUrl: values.imageUrl.trim(),
         minOrderQuantity: values.minOrderQuantity.trim()
           ? Number(values.minOrderQuantity.trim().replace(",", "."))
@@ -460,7 +475,11 @@ export function MasterItemCardModern({
           </TabsContent>
 
           <TabsContent value="mappings">
-            <ItemSupplierMappingsTab itemId={id} />
+            <ItemSupplierMappingsTab
+              itemId={id}
+              suppliers={suppliers}
+              suppliersLoading={suppliersLoading}
+            />
           </TabsContent>
 
           <TabsContent value="history">

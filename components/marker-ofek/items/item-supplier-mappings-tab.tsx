@@ -16,16 +16,24 @@
  */
 
 import * as React from "react"
+import { useFormContext } from "react-hook-form"
 import {
   AlertTriangle,
   Bot,
   ExternalLink,
   History,
+  Info,
   Loader2,
   ShieldCheck,
   ShieldQuestion,
+  Star,
 } from "lucide-react"
 
+import { SupplierComboBox } from "@/components/marker-ofek/items/supplier-combobox"
+import type {
+  ItemEditFormValues,
+  SupplierLookupOption,
+} from "@/components/marker-ofek/items/item-edit-form-types"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -116,11 +124,38 @@ const TIER_LABEL: Record<"A" | "B" | "C", string> = {
 // Main
 // ============================================================================
 
-export function ItemSupplierMappingsTab({ itemId }: { itemId: string }) {
+/**
+ * ItemSupplierMappingsTab
+ *
+ * Phase 7.13.3.B — התחילה כתצוגת מיפויים לבד.
+ * Phase 7.14.1 — הורחב לסקציית "ספק מועדף" בראש הטאב.
+ *   • משתמש ב-`useFormContext` מה-RHF הגלובלי של כרטיס הפריט.
+ *   • Save מתבצע דרך כפתור השמירה הגלובלי ב-Header (PUT ל-`/api/master-data/items/[id]`).
+ *   • Warning אם הספק המועדף אינו תחת מיפוי פעיל לפריט — זה לא חוסם, המשתמש יכול
+ *     להגדיר מראש ולהוסיף מיפוי אח"כ, אבל זה signal שהטיפול במחיר יהיה מגבלה ללא supplier-item.
+ */
+export interface ItemSupplierMappingsTabProps {
+  itemId: string
+  /** Phase 7.14.1: רשימת כל הספקים בחברה (ללא תלות במיפויי הפריט). */
+  suppliers?: SupplierLookupOption[]
+  /** Phase 7.14.1: סטטוס טעינת רשימת הספקים — אם loading, ה-combobox משבת ומציג spinner. */
+  suppliersLoading?: boolean
+}
+
+export function ItemSupplierMappingsTab({
+  itemId,
+  suppliers = [],
+  suppliersLoading = false,
+}: ItemSupplierMappingsTabProps) {
   const [mappings, setMappings] = React.useState<SupplierMapping[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [includeHistory, setIncludeHistory] = React.useState(false)
+
+  // Phase 7.14.1: אינטגרציה ל-RHF מה ה-Header של הכרטיס.
+  // ה-Provider לעולם חי ב-MasterItemCardModern, אז useFormContext תמיד מחזיר גישה אמיתית.
+  const formCtx = useFormContext<ItemEditFormValues>()
+  const preferredSupplierId = formCtx.watch("preferredSupplierId") ?? ""
 
   React.useEffect(() => {
     let cancelled = false
@@ -146,8 +181,75 @@ export function ItemSupplierMappingsTab({ itemId }: { itemId: string }) {
     }
   }, [itemId, includeHistory])
 
+  // Phase 7.14.1: האם הספק המועדף מופיע גם במיפויי הפריט?
+  // זה לא blocking — משמש להצגת אזהרה למשתמש שמומלץ להוסיף מיפוי (ספק-פריט מלא).
+  const preferredHasMapping = React.useMemo(() => {
+    if (!preferredSupplierId) return true
+    return mappings.some((m) => m.supplierId === preferredSupplierId)
+  }, [mappings, preferredSupplierId])
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* ├─ Phase 7.14.1: סקציית ספק מועדף ──────────────────────────────────*/}
+      <section className="rounded-lg border border-border/70 bg-card/50 p-4 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <Star
+                className="size-4 fill-amber-400 text-amber-500"
+                aria-hidden
+              />
+              <h3 className="text-sm font-semibold">ספק מועדף</h3>
+              {preferredSupplierId ? (
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400"
+                >
+                  מוגדר
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px]">
+                  לא מוגדר — מחיר נגזר מהזול ביותר
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              הספק המועדף שלט בגזירת המחיר להזמנות רכש חדשות. אם לא
+              מוגדר — המערכת תיגזור אוטומטית מהספק הזול ביותר במיפויים הפעילים.
+            </p>
+          </div>
+          <div className="w-full md:w-80">
+            <SupplierComboBox
+              value={preferredSupplierId}
+              onChange={(next) =>
+                formCtx.setValue("preferredSupplierId", next, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
+              options={suppliers}
+              loading={suppliersLoading}
+              placeholder="בחר ספק מועדף…"
+            />
+          </div>
+        </div>
+        {preferredSupplierId && !preferredHasMapping ? (
+          <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-50/60 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            <div className="space-y-0.5">
+              <p className="font-medium">
+                לספק הנבחר אין מיפוי פעיל לפריט הזה.
+              </p>
+              <p>
+                גזירת מחיר אוטומטית תהיה זמינה רק לאחר שיותוסף מיפוי
+                Master ↔ Supplier (מתוך OCR או הזנה ידנית מטבלת `erp_md_supplier_items`).
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      {/* ├─ טבלת מיפויים ─────────────────────────────────────────────────*/}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5">
           <h3 className="text-sm font-semibold">מיפויי ספקים</h3>
@@ -204,7 +306,11 @@ export function ItemSupplierMappingsTab({ itemId }: { itemId: string }) {
             </TableHeader>
             <TableBody>
               {mappings.map((m) => (
-                <MappingRow key={m.id} mapping={m} />
+                <MappingRow
+                  key={m.id}
+                  mapping={m}
+                  isPreferred={m.supplierId === preferredSupplierId}
+                />
               ))}
             </TableBody>
           </Table>
@@ -218,16 +324,35 @@ export function ItemSupplierMappingsTab({ itemId }: { itemId: string }) {
 // Single row
 // ============================================================================
 
-function MappingRow({ mapping }: { mapping: SupplierMapping }) {
+function MappingRow({
+  mapping,
+  isPreferred = false,
+}: {
+  mapping: SupplierMapping
+  /** Phase 7.14.1: מסמן את השורה במידה וזו השורה של הספק המועדף. */
+  isPreferred?: boolean
+}) {
   const tier = confidenceTier(mapping.confidence)
   const isExpired = mapping.validTo != null
   const validFromText = formatDate(mapping.validFrom)
   const validToText = formatDate(mapping.validTo)
 
   return (
-    <TableRow className={cn(isExpired && "opacity-60")}>
+    <TableRow
+      className={cn(
+        isExpired && "opacity-60",
+        isPreferred && "bg-amber-500/10 hover:bg-amber-500/15"
+      )}
+    >
       <TableCell>
         <div className="flex items-center gap-2">
+          {isPreferred ? (
+            <Star
+              className="size-3.5 fill-amber-400 text-amber-500"
+              aria-hidden
+              aria-label="ספק מועדף"
+            />
+          ) : null}
           <span className="truncate font-medium">
             {mapping.supplierName ?? `#${mapping.supplierId.slice(0, 8)}`}
           </span>
@@ -235,13 +360,13 @@ function MappingRow({ mapping }: { mapping: SupplierMapping }) {
             <ShieldCheck
               className="size-3.5 text-emerald-600"
               aria-hidden
-              aria-label="מאומת ע&quot;י משתמש"
+              aria-label="מאומת עב&quot;י משתמש"
             />
           ) : mapping.matchedByAi ? (
             <Bot
               className="size-3.5 text-violet-600"
               aria-hidden
-              aria-label="מופק ע&quot;י AI"
+              aria-label="מופק עב&quot;י AI"
             />
           ) : null}
         </div>
