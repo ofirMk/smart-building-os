@@ -224,9 +224,24 @@ export default function ProcurementOrdersPage() {
                       <TableRow
                         key={row.id}
                         className={cn(
-                          "transition-colors",
+                          "cursor-pointer transition-colors",
                           "hover:bg-primary/5"
                         )}
+                        onClick={() =>
+                          router.push(
+                            `/marker-ofek/procurement/orders/${encodeURIComponent(row.id)}`
+                          )
+                        }
+                        role="link"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault()
+                            router.push(
+                              `/marker-ofek/procurement/orders/${encodeURIComponent(row.id)}`
+                            )
+                          }
+                        }}
                       >
                         <TableCell className="font-mono text-sm font-medium">
                           {row.poNumber}
