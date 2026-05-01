@@ -1,42 +1,46 @@
 "use client"
 
 /**
- * MasterItemCardSplit — Phase 7.13.6 (Parent/Child 60/40 Split View).
+ * MasterItemCardSplit — Phase 7.13.6 (Parent/Child Split + Right Icon Rail).
  *
- * החלפה ל-`MasterItemCardOnePage` (V3). המשתמש ביקש ב-1 במאי 2026:
- *   "נרחיב את שטח תצוגת הנתונים בנתוני אב ונאפשר חלוקה מסך 60/40.
- *    בלחיצה על שדה במסך נתוני אב שלו קיימים נתוני בן או נכד,
- *    חלונות הניווט של מסכי בן ונכד התווספו למטה. אפשרות הגלילה
- *    תהיה בתוך המסך אב או בן."
+ * מבנה שלושה אזורים (לפי הבקשה המדויקת של המשתמש ב-1 במאי 2026):
+ *   ┌──────────────────────────────────────────────┐
+ *   │ Breadcrumbs                                  │  shrink-0
+ *   │ [img] SKU · desc · badges  [Reset][Save]     │  shrink-0 (header)
+ *   ├────────────────────────────────────┬─────────┤
+ *   │                                    │         │
+ *   │  Parent panel (scroll internal)    │ Right   │
+ *   │   general / logistics / pricing    │ nav     │
+ *   │                                    │ rail    │  נבעוטח פנימי
+ *   ├───────── drag handle ──────────────┤ (icons) │
+ *   │                                    │         │
+ *   │  Tabs + Child panel (scroll int.)  │         │
+ *   │   mappings / assets / history      │         │
+ *   │                                    │         │
+ *   └────────────────────────────────────┴─────────┘
  *
- * הפטטרן:
- *   ┌─────────────────────────────────────┐
- *   │ Breadcrumbs                         │  (shrink-0)
- *   │ Compact sticky header + Save        │  (shrink-0)
- *   ├─────────────────────────────────────┤
- *   │ Parent panel (scroll internal)      │  60% (resizable 20-80)
- *   │   image + general + logistics +     │
- *   │   pricing sections                  │
- *   ├───── drag handle (row-resize) ──────┤
- *   │ Child tabs (scroll internal)        │  40%
- *   │  [mappings] [assets] [history]      │
- *   └─────────────────────────────────────┘
+ * ה-**right rail** מכיל:
+ *   • 3 איקונים של סקציות האב (כללי, לוגיסטיקה, מחירים) → scroll-to
+ *   • קו מפריד
+ *   • 3 איקונים של טאבי הבן (ספקים, נכסים, היסטוריה) → switch activeTab
  *
- * שיפורים שנוספו מהניסיון שלנו:
- *   • Resizable split — drag handle לשינוי יחס. נשמר ב-localStorage.
- *   • Collapse bottom — מצב "פוקוס עריכה" לעבודה על האב לבד. מוצמד
- *     בזיכרון user-session.
- *   • Sticky compact header — שורה אחת (לא ענן של 6rem). SKU + Save + Reset
- *     תמיד נוכחים, לא משנה כמה גוללת באב.
- *   • Ctrl/Cmd+S — שמירה מקלדתית (disabled כש-!isDirty או saving).
- *   • Dirty indicator — תיוג ויזואלי על כפתור Save כשיש שינויים לא שמורים.
- *   • Responsive — ב-<md (mobile) אין split; הכל גולל רציף באב, ואז
- *     הטאבים. לא הגיוני לחצות לגובה על מסך נמוך.
+ * State הפעיל במ Rail:
+ *   • לסקציות: IntersectionObserver על ה-scroll-container של האב
+ *   • לטאבים: משווה ל-`activeTab`
  *
- * חוזה מול ה-DashboardShell (`@c:\Users\user\Desktop\smart-building-os\components\dashboard-shell.tsx:148`):
- *   ה-`<main>` הוא `flex-1 min-h-0 overflow-y-auto`. הדף הזה מצהיר על
- *   עצמו כ-`flex flex-1 min-h-0 overflow-hidden` (מצב 2 בהערת ה-invariant),
- *   כך שה-main לא גוללת אותו — ה-split-pane גולל פנימית.
+ * השיפורים המצטברים (מה-iteration הקודם + החדשים):
+ *   • Resizable split (drag handle, לוקאל-סטורג׳, keyboard arrows)
+ *   • Collapse bottom (מצב פוקוס עריכה)
+ *   • Ctrl/Cmd+S שמירה
+ *   • Dirty indicator בכותרת
+ *   • Persistent tab selection
+ *   • Scrollbar gutter stable
+ *   • Active-section highlighting ב-rail (Scroll-spy)
+ *   • Scroll-to-section בקליק על rail
+ *   • כפתורים ב-rail עם focus-visible + aria-current + role=tablist semantics
+ *
+ * חוזה מול ה-DashboardShell: הדף חייב להיות `flex-1 min-h-0 overflow-hidden`
+ * כי ה-main שומר על invariant של "גלילה פנימית".
  */
 
 import * as React from "react"
@@ -123,8 +127,42 @@ export interface MasterItemCardSplitProps {
   itemId: string
 }
 
+type ParentSectionId = "general" | "logistics" | "pricing"
+type ChildTabId = "mappings" | "assets" | "history"
+
+interface RailItem {
+  kind: "section" | "tab"
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+const PARENT_SECTIONS: RailItem[] = [
+  { kind: "section", id: "general", label: "כללי", icon: Package },
+  {
+    kind: "section",
+    id: "logistics",
+    label: "לוגיסטיקה",
+    icon: Warehouse,
+  },
+  { kind: "section", id: "pricing", label: "מחירים", icon: Banknote },
+]
+
+const CHILD_TABS: RailItem[] = [
+  { kind: "tab", id: "mappings", label: "ספקים", icon: ShoppingBag },
+  { kind: "tab", id: "assets", label: "נכסים", icon: FileStack },
+  { kind: "tab", id: "history", label: "היסטוריה", icon: History },
+]
+
+// תיוגים ארוכים עבור TabsTrigger בלבד (רכיב ה-rail משתמש ב-label הקצר).
+const CHILD_TAB_FULL_LABEL: Record<ChildTabId, string> = {
+  mappings: "מיפויי ספקים",
+  assets: "נכסים וקבצים",
+  history: "היסטוריית רכש",
+}
+
 // ============================================================================
-// localStorage keys — נשמר בין sessions של המשתמש
+// localStorage keys
 // ============================================================================
 
 const LS_TOP_PCT = "marker-ofek.items.split.top-pct"
@@ -198,20 +236,25 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
   // ── Split state (persisted) ────────────────────────────────────────────
   const [topSizePct, setTopSizePct] = React.useState<number>(60)
   const [bottomCollapsed, setBottomCollapsed] = React.useState<boolean>(false)
-  const [activeTab, setActiveTab] = React.useState<string>("mappings")
+  const [activeTab, setActiveTab] = React.useState<ChildTabId>("mappings")
+  const [activeSection, setActiveSection] =
+    React.useState<ParentSectionId>("general")
   const [hydrated, setHydrated] = React.useState(false)
 
-  // Hydrate preferences once on mount — avoids SSR/CSR mismatch.
   React.useEffect(() => {
     try {
       const rawPct = window.localStorage.getItem(LS_TOP_PCT)
       if (rawPct) setTopSizePct(clampPct(Number(rawPct)))
       const rawCol = window.localStorage.getItem(LS_BOTTOM_COLLAPSED)
       if (rawCol === "1") setBottomCollapsed(true)
-      const rawTab = window.localStorage.getItem(LS_ACTIVE_TAB)
-      if (rawTab) setActiveTab(rawTab)
+      const rawTab = window.localStorage.getItem(LS_ACTIVE_TAB) as
+        | ChildTabId
+        | null
+      if (rawTab && ["mappings", "assets", "history"].includes(rawTab)) {
+        setActiveTab(rawTab)
+      }
     } catch {
-      /* localStorage may be unavailable in sandboxed iframes */
+      /* localStorage unavailable */
     }
     setHydrated(true)
   }, [])
@@ -266,7 +309,7 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
   const { reset, handleSubmit, watch, setValue, formState } = form
   const imageUrl = watch("imageUrl")
 
-  // ── Fetch item + uoms + suppliers ──────────────────────────────────────
+  // ── Fetch ──────────────────────────────────────────────────────────────
   React.useEffect(() => {
     if (!id) {
       setLoading(false)
@@ -418,6 +461,46 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
     []
   )
 
+  // ── Scroll-spy: IntersectionObserver על scroll-container של האב ───────
+  const parentScrollRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (loading || !item) return
+    const root = parentScrollRef.current
+    if (!root) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // בוחרים את הסקציה עם ה-intersectionRatio הגבוה ביותר
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (visible && visible.target.id) {
+          setActiveSection(visible.target.id as ParentSectionId)
+        }
+      },
+      {
+        root,
+        rootMargin: "-10% 0px -60% 0px",
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      }
+    )
+
+    PARENT_SECTIONS.forEach((s) => {
+      const el = document.getElementById(`parent-section-${s.id}`)
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
+  }, [loading, item])
+
+  function scrollToParentSection(sectionId: ParentSectionId) {
+    const el = document.getElementById(`parent-section-${sectionId}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: "smooth", block: "start" })
+    // Optimistic highlight — observer ייעדכן בעצמו אחרי גלילה
+    setActiveSection(sectionId)
+  }
+
   // ── Early returns ──────────────────────────────────────────────────────
   if (!id) {
     return (
@@ -470,17 +553,39 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
           ]}
         />
 
-        {/* Compact sticky header — שורה אחת */}
-        <header className="flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/70 px-3 py-2 shadow-sm">
-          <div className="min-w-0 flex-1">
+        {/* Top header — image + identity + actions. רוחב מלא, מתיישר
+            לקצה הימני של rail+content (שניהם יחד = כל הרוחב). */}
+        <header className="flex shrink-0 items-start gap-3 rounded-xl border border-border/70 bg-card/70 p-3 shadow-sm">
+          <ItemImageHeader
+            value={imageUrl}
+            onChange={(next) =>
+              setValue("imageUrl", next, {
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
+            sku={item.sku}
+          />
+          <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="font-mono text-base font-bold tracking-tight text-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                מאסטר SKU
+              </span>
+              <span className="font-mono text-lg font-bold tracking-tight text-foreground">
                 {item.sku}
               </span>
-              <span className="truncate text-sm text-foreground/90">
-                {item.description}
-              </span>
             </div>
+            <p className="line-clamp-2 text-sm leading-snug text-foreground">
+              {item.description}
+            </p>
+            {item.descriptionEn ? (
+              <p
+                className="line-clamp-1 text-[12px] text-muted-foreground"
+                dir="ltr"
+              >
+                {item.descriptionEn}
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
               <Badge variant="secondary" className="text-[11px]">
                 {statusLabel}
@@ -510,8 +615,29 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
               ) : null}
             </div>
           </div>
-
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 flex-col items-stretch gap-1.5">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!isDirty || saving}
+              className="gap-1.5"
+            >
+              {saving ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Save className="size-3.5" aria-hidden />
+              )}
+              שמור
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!isDirty || saving}
+              onClick={() => reset(toFormDefaults(item))}
+            >
+              איפוס
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -529,186 +655,185 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
               )}
               {bottomCollapsed ? "הצג ילדים" : "פוקוס"}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={!isDirty || saving}
-              onClick={() => reset(toFormDefaults(item))}
-            >
-              איפוס
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!isDirty || saving}
-              className="gap-1.5"
-            >
-              {saving ? (
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              ) : (
-                <Save className="size-3.5" aria-hidden />
-              )}
-              שמור (Ctrl+S)
-            </Button>
           </div>
         </header>
 
-        {/* Split container (מבנה אב/ילדים) — flex-1 min-h-0 */}
-        <div
-          ref={splitRef}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          {/* ── Parent panel ───────────────────────────────────────────── */}
+        {/* Body: 2 columns — main-split (flex-1) | right-rail (shrink-0).
+            ב-RTL מיקום ויזואלי: ה-rail בצד הימני (פיקסלי), ה-main בצד שמאל. */}
+        <div className="flex min-h-0 flex-1 gap-2">
+          {/* Main split container (parent + child) */}
           <div
-            className={cn(
-              "flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/40",
-              // ב-<md: אל תחיל את ה-flex-basis של ה-split — תן לפאנל לגלוש טבעי.
-              // ב-md+: שלוט על הגובה דרך inline style flex-basis.
-              dragging && "select-none"
-            )}
-            style={
-              bottomCollapsed
-                ? { flex: "1 1 0%", minHeight: 0 }
-                : {
-                    flex: `0 0 ${topSizePct}%`,
-                    minHeight: 0,
-                  }
-            }
-            aria-label="נתוני אב — פריט"
+            ref={splitRef}
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
-            <div className="flex-1 overflow-y-auto px-4 py-4 [scrollbar-gutter:stable]">
-              <div className="mx-auto flex max-w-5xl flex-col gap-6">
-                {/* Image + General together */}
-                <section className="space-y-3">
-                  <SectionHeading icon={Package} label="כללי" />
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                    <ItemImageHeader
-                      value={imageUrl}
-                      onChange={(next) =>
-                        setValue("imageUrl", next, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        })
-                      }
-                      sku={item.sku}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <ItemGeneralTab />
-                    </div>
-                  </div>
-                </section>
-
-                <div className="border-t border-dashed border-border/40" />
-
-                <section className="space-y-3">
-                  <SectionHeading icon={Warehouse} label="לוגיסטיקה ומלאי" />
-                  <ItemLogisticsTab
-                    uoms={uoms}
-                    baseUom={item.unitOfMeasure}
-                    uomsLoading={uomsLoading}
-                  />
-                </section>
-
-                <div className="border-t border-dashed border-border/40" />
-
-                <section className="space-y-3">
-                  <SectionHeading icon={Banknote} label="מחירים" />
-                  <ItemPricingTab legacySuppliers={legacySuppliers} />
-                </section>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Drag handle (md+ only) ────────────────────────────────── */}
-          {!bottomCollapsed ? (
+            {/* Parent panel */}
             <div
-              role="separator"
-              aria-orientation="horizontal"
-              aria-label="גרור לשינוי יחס אב / ילדים"
-              aria-valuemin={20}
-              aria-valuemax={80}
-              aria-valuenow={Math.round(topSizePct)}
-              tabIndex={0}
-              onPointerDown={onHandlePointerDown}
-              onKeyDown={(e) => {
-                // Keyboard accessibility: arrows adjust split by 5%.
-                if (e.key === "ArrowUp") {
-                  e.preventDefault()
-                  setTopSizePct((v) => clampPct(v - 5))
-                } else if (e.key === "ArrowDown") {
-                  e.preventDefault()
-                  setTopSizePct((v) => clampPct(v + 5))
-                }
-              }}
               className={cn(
-                "group mx-1 my-0.5 flex h-2 shrink-0 cursor-row-resize items-center justify-center rounded-full transition-colors",
-                "hover:bg-primary/5 focus-visible:bg-primary/10 focus-visible:outline-none",
-                dragging && "bg-primary/10"
+                "flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/40",
+                dragging && "select-none"
               )}
+              style={
+                bottomCollapsed
+                  ? { flex: "1 1 0%", minHeight: 0 }
+                  : { flex: `0 0 ${topSizePct}%`, minHeight: 0 }
+              }
+              aria-label="נתוני אב — פריט"
             >
               <div
-                className={cn(
-                  "h-1 w-20 rounded-full bg-border transition-colors",
-                  "group-hover:bg-primary/50 group-focus-visible:bg-primary",
-                  dragging && "bg-primary"
-                )}
-              />
-            </div>
-          ) : null}
-
-          {/* ── Child/Grandchild panel (tabs) ─────────────────────────── */}
-          {!bottomCollapsed ? (
-            <div
-              className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/40"
-              style={{
-                flex: `0 0 ${100 - topSizePct}%`,
-                minHeight: 0,
-              }}
-              aria-label="נתוני ילדים ונכדים — פריט"
-            >
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="flex h-full min-h-0 flex-col gap-0"
+                ref={parentScrollRef}
+                className="flex-1 overflow-y-auto px-4 py-4 [scrollbar-gutter:stable]"
               >
-                <div className="shrink-0 border-b border-border/70 px-3 py-1.5">
-                  <TabsList variant="line" className="h-auto gap-1">
-                    <TabsTrigger value="mappings" className="gap-1.5">
-                      <ShoppingBag className="size-3.5" aria-hidden />
-                      מיפויי ספקים
-                    </TabsTrigger>
-                    <TabsTrigger value="assets" className="gap-1.5">
-                      <FileStack className="size-3.5" aria-hidden />
-                      נכסים וקבצים
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className="gap-1.5">
-                      <History className="size-3.5" aria-hidden />
-                      היסטוריית רכש
-                    </TabsTrigger>
-                  </TabsList>
+                <div className="flex flex-col gap-6">
+                  <ParentSection id="general" label="כללי" icon={Package}>
+                    <ItemGeneralTab />
+                  </ParentSection>
+
+                  <ParentSection
+                    id="logistics"
+                    label="לוגיסטיקה ומלאי"
+                    icon={Warehouse}
+                  >
+                    <ItemLogisticsTab
+                      uoms={uoms}
+                      baseUom={item.unitOfMeasure}
+                      uomsLoading={uomsLoading}
+                    />
+                  </ParentSection>
+
+                  <ParentSection id="pricing" label="מחירים" icon={Banknote}>
+                    <ItemPricingTab legacySuppliers={legacySuppliers} />
+                  </ParentSection>
                 </div>
-                <TabsContent
-                  value="mappings"
-                  className="min-h-0 overflow-y-auto p-4 [scrollbar-gutter:stable]"
-                >
-                  <ItemSupplierMappingsTab itemId={id} />
-                </TabsContent>
-                <TabsContent
-                  value="assets"
-                  className="min-h-0 overflow-y-auto p-4 [scrollbar-gutter:stable]"
-                >
-                  <ItemAssetsTab itemId={id} />
-                </TabsContent>
-                <TabsContent
-                  value="history"
-                  className="min-h-0 overflow-y-auto p-4 [scrollbar-gutter:stable]"
-                >
-                  <ItemPurchaseHistoryTab itemId={id} />
-                </TabsContent>
-              </Tabs>
+              </div>
             </div>
-          ) : null}
+
+            {/* Drag handle */}
+            {!bottomCollapsed ? (
+              <div
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="גרור לשינוי יחס אב / ילדים"
+                aria-valuemin={20}
+                aria-valuemax={80}
+                aria-valuenow={Math.round(topSizePct)}
+                tabIndex={0}
+                onPointerDown={onHandlePointerDown}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault()
+                    setTopSizePct((v) => clampPct(v - 5))
+                  } else if (e.key === "ArrowDown") {
+                    e.preventDefault()
+                    setTopSizePct((v) => clampPct(v + 5))
+                  }
+                }}
+                className={cn(
+                  "group my-0.5 flex h-2 shrink-0 cursor-row-resize items-center justify-center rounded-full transition-colors",
+                  "hover:bg-primary/5 focus-visible:bg-primary/10 focus-visible:outline-none",
+                  dragging && "bg-primary/10"
+                )}
+              >
+                <div
+                  className={cn(
+                    "h-1 w-20 rounded-full bg-border transition-colors",
+                    "group-hover:bg-primary/50 group-focus-visible:bg-primary",
+                    dragging && "bg-primary"
+                  )}
+                />
+              </div>
+            ) : null}
+
+            {/* Child panel (tabs) */}
+            {!bottomCollapsed ? (
+              <div
+                className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-card/40"
+                style={{
+                  flex: `0 0 ${100 - topSizePct}%`,
+                  minHeight: 0,
+                }}
+                aria-label="נתוני ילדים ונכדים — פריט"
+              >
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => setActiveTab(v as ChildTabId)}
+                  className="flex h-full min-h-0 flex-col gap-0"
+                >
+                  <div className="shrink-0 border-b border-border/70 px-3 py-1.5">
+                    <TabsList variant="line" className="h-auto gap-1">
+                      {CHILD_TABS.map((t) => (
+                        <TabsTrigger
+                          key={t.id}
+                          value={t.id}
+                          className="gap-1.5"
+                        >
+                          <t.icon className="size-3.5" aria-hidden />
+                          {CHILD_TAB_FULL_LABEL[t.id as ChildTabId]}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+                  <TabsContent
+                    value="mappings"
+                    className="min-h-0 overflow-y-auto p-4 [scrollbar-gutter:stable]"
+                  >
+                    <ItemSupplierMappingsTab itemId={id} />
+                  </TabsContent>
+                  <TabsContent
+                    value="assets"
+                    className="min-h-0 overflow-y-auto p-4 [scrollbar-gutter:stable]"
+                  >
+                    <ItemAssetsTab itemId={id} />
+                  </TabsContent>
+                  <TabsContent
+                    value="history"
+                    className="min-h-0 overflow-y-auto p-4 [scrollbar-gutter:stable]"
+                  >
+                    <ItemPurchaseHistoryTab itemId={id} />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Right icon rail — ניווט אנכי לסקציות האב וטאבי הבן */}
+          <aside
+            className="flex w-16 shrink-0 flex-col items-stretch gap-1 rounded-xl border border-border/70 bg-card/60 p-1.5 shadow-sm"
+            aria-label="ניווט סקציות וילדים"
+          >
+            {PARENT_SECTIONS.map((s) => {
+              const isActive = activeSection === s.id
+              return (
+                <RailButton
+                  key={s.id}
+                  icon={s.icon}
+                  label={s.label}
+                  active={isActive}
+                  onClick={() =>
+                    scrollToParentSection(s.id as ParentSectionId)
+                  }
+                  tone="parent"
+                />
+              )
+            })}
+            <div className="my-1 h-px bg-border/70" role="separator" />
+            {CHILD_TABS.map((t) => {
+              const isActive = activeTab === t.id
+              return (
+                <RailButton
+                  key={t.id}
+                  icon={t.icon}
+                  label={t.label}
+                  active={isActive}
+                  onClick={() => {
+                    setActiveTab(t.id as ChildTabId)
+                    // אם ה-bottom מכווץ — נפתח כדי שהטאב באמת יוצג
+                    if (bottomCollapsed) setBottomCollapsed(false)
+                  }}
+                  tone="child"
+                />
+              )
+            })}
+          </aside>
         </div>
       </form>
     </FormProvider>
@@ -716,20 +841,80 @@ export function MasterItemCardSplit({ itemId }: MasterItemCardSplitProps) {
 }
 
 // ============================================================================
-// SectionHeading — תצוגה עקבית של ראשי-סקציה בפאנל האב
+// ParentSection — wrapper קומפקטי לסקציה בודדת בתוך פאנל האב.
+// ה-id משתמש בתחילית `parent-section-` כדי למנוע collision עם שאר IDs
+// בדף (לדוגמה IDs של inputs).
 // ============================================================================
 
-function SectionHeading({
+function ParentSection({
+  id,
+  label,
+  icon: Icon,
+  children,
+}: {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      id={`parent-section-${id}`}
+      style={{ scrollMarginTop: "1rem" }}
+      className="space-y-3 border-t border-dashed border-border/40 pt-5 first:border-t-0 first:pt-0"
+    >
+      <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+        <Icon className="size-4 text-muted-foreground" aria-hidden />
+        {label}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+// ============================================================================
+// RailButton — כפתור icon+label אנכי ב-rail.
+// Tone מבדיל בין קבוצת האב (primary tone) לבין קבוצת הבן (secondary tone).
+// ============================================================================
+
+function RailButton({
   icon: Icon,
   label,
+  active,
+  onClick,
+  tone,
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
+  active: boolean
+  onClick: () => void
+  tone: "parent" | "child"
 }) {
   return (
-    <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
-      <Icon className="size-4 text-muted-foreground" aria-hidden />
-      {label}
-    </h2>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "true" : undefined}
+      className={cn(
+        "group flex flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+        active
+          ? tone === "parent"
+            ? "bg-primary/10 text-primary"
+            : "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+      title={label}
+    >
+      <Icon
+        className={cn(
+          "size-4 transition-transform",
+          active && "scale-110",
+          !active && "group-hover:scale-105"
+        )}
+        aria-hidden
+      />
+      <span className="truncate leading-tight">{label}</span>
+    </button>
   )
 }
