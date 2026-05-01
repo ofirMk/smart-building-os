@@ -80,6 +80,22 @@ function formatPrice(value: number | null, currency: string | null): string {
   }
 }
 
+// Phase 7.14.4 — פורמטור קומפקטי ל-KPIs סכומיים: 1.2M / 350K / 12.5K.
+// מונע מהתפטתות מספרים גדולים בכרטיסיה קטנה של ה-sidebar.
+function formatPriceCompact(value: number, currency: string | null): string {
+  const cur = currency ?? "ILS"
+  try {
+    return new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: cur,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value)
+  } catch {
+    return `${value.toLocaleString("he-IL", { maximumFractionDigits: 0 })} ${cur}`
+  }
+}
+
 type ItemStatus =
   | "ACTIVE"
   | "INACTIVE"
@@ -171,6 +187,60 @@ export function ItemsCatalogScaffold() {
     const withoutPrice = rows.filter((r) => r.resolvedPriceSource === "none").length
     // “premium” = עדיף מוגדר אבל לא הזול ביותר.
     const withPremium = rows.filter((r) => r.preferredIsOptimal === false).length
+
+    // ── Phase 7.14.4 — KPIs כספיים על פריטים פעילים בלבד ──
+    // נמנע mixed-currency: מסכמים רק את המטבע הנפוץ ביותר (גולה מה-resolved
+    // על פריטים פעילים). זה גישה מספיק לרוב החברות הישראליות (ILS).
+    const currencyCounts = new Map<string, number>()
+    for (const r of rows) {
+      if (r.resolvedUnitPrice != null && r.resolvedCurrency) {
+        currencyCounts.set(r.resolvedCurrency, (currencyCounts.get(r.resolvedCurrency) ?? 0) + 1)
+      }
+    }
+    let dominantCurrency: string | null = null
+    let dominantCount = 0
+    for (const [cur, cnt] of currencyCounts) {
+      if (cnt > dominantCount) {
+        dominantCurrency = cur
+        dominantCount = cnt
+      }
+    }
+    const otherCurrencyItems = Array.from(currencyCounts.values()).reduce(
+      (s, c) => s + c,
+      0
+    ) - dominantCount
+
+    // סך ערך קטלוג: סכום resolvedUnitPrice על כל הפריטים הפעילים במטבע הדומיננטי.
+    // מלבד: לא מללה כמותיות (זו מדידת "ערך/יחידה" להשוואה מהירה — ערך סלים ידרוש
+    // לקחת בחשבון מלאי של לא זמין במטה).
+    let catalogValue = 0
+    let catalogValueItemCount = 0
+    let savingsOpportunity = 0
+    let savingsItemCount = 0
+    let supplierCountSum = 0
+    let supplierCountActive = 0
+    for (const r of rows) {
+      if (r.status !== "ACTIVE") continue
+      if (r.resolvedUnitPrice != null && r.resolvedCurrency === dominantCurrency) {
+        catalogValue += r.resolvedUnitPrice
+        catalogValueItemCount += 1
+      }
+      if (
+        r.preferredIsOptimal === false &&
+        r.preferredPremium != null &&
+        r.preferredPremium > 0 &&
+        // מסכמים רק premium באותה מטבע דומיננטי.
+        r.resolvedCurrency === dominantCurrency
+      ) {
+        savingsOpportunity += r.preferredPremium
+        savingsItemCount += 1
+      }
+      supplierCountSum += r.activeSupplierCount
+      supplierCountActive += 1
+    }
+    const supplierCoverageAvg =
+      supplierCountActive > 0 ? supplierCountSum / supplierCountActive : 0
+
     return {
       total,
       active,
@@ -179,6 +249,14 @@ export function ItemsCatalogScaffold() {
       familyCount: familySet.size,
       withoutPrice,
       withPremium,
+      // Phase 7.14.4
+      catalogValue,
+      catalogValueItemCount,
+      savingsOpportunity,
+      savingsItemCount,
+      supplierCoverageAvg,
+      dominantCurrency,
+      otherCurrencyItems,
     }
   }, [rows])
 
@@ -394,6 +472,67 @@ export function ItemsCatalogScaffold() {
                   : "כל ספק מועדף = זול ביותר"
               }
               tone={kpis.withPremium > 0 ? "warning" : "success"}
+            />
+            {/* ├─ Phase 7.14.4 — KPIs כספיים על פריטים פעילים ──────────*/}
+            <KpiCard
+              title="ערך קטלוג"
+              value={
+                kpis.catalogValueItemCount > 0
+                  ? formatPriceCompact(kpis.catalogValue, kpis.dominantCurrency)
+                  : "—"
+              }
+              hint={
+                kpis.catalogValueItemCount > 0
+                  ? `סכום של ${kpis.catalogValueItemCount} פריטים פעילים${
+                      kpis.otherCurrencyItems > 0
+                        ? ` (ועוד ${kpis.otherCurrencyItems} במטבע אחר)`
+                        : ""
+                    }`
+                  : "אין פריטים פעילים עם מחיר"
+              }
+              tone="neutral"
+            />
+            <KpiCard
+              title="פוטנציאל חיסכון"
+              value={
+                kpis.savingsItemCount > 0
+                  ? formatPriceCompact(kpis.savingsOpportunity, kpis.dominantCurrency)
+                  : "—"
+              }
+              hint={
+                kpis.savingsItemCount > 0
+                  ? `מעבר למהזול ביותר ב-${kpis.savingsItemCount} פריטים${
+                      kpis.catalogValue > 0
+                        ? ` (≈${Math.round((kpis.savingsOpportunity / kpis.catalogValue) * 100)}% מערך הקטלוג)`
+                        : ""
+                    }`
+                  : "אין premium — המועדפים הם הזול ביותר"
+              }
+              tone={kpis.savingsItemCount > 0 ? "warning" : "success"}
+            />
+            <KpiCard
+              title="כיסוי ספקים ממוצע"
+              value={
+                kpis.active > 0 ? kpis.supplierCoverageAvg.toFixed(1) : "—"
+              }
+              hint={
+                kpis.active === 0
+                  ? "אין פריטים פעילים"
+                  : kpis.supplierCoverageAvg < 1.5
+                    ? "כיסוי דל — מומלץ להוסיף ספקים אלטרנטיביים"
+                    : kpis.supplierCoverageAvg < 3
+                      ? "כיסוי סביר — יש מרחב למשא ומתן"
+                      : "כיסוי טוב — תחרות בריאה"
+              }
+              tone={
+                kpis.active === 0
+                  ? "neutral"
+                  : kpis.supplierCoverageAvg < 1.5
+                    ? "warning"
+                    : kpis.supplierCoverageAvg >= 3
+                      ? "success"
+                      : "neutral"
+              }
             />
             <Card className="border-dashed border-border/60 bg-muted/30">
               <CardHeader className="pb-2">
