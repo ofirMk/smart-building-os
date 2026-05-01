@@ -21,10 +21,13 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
+  AlertTriangle,
   Boxes,
   Loader2,
   Plus,
   Search,
+  Star,
+  TrendingDown,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -53,6 +56,28 @@ type ItemRow = {
   uom: string | null
   uomDescription: string | null
   productFamily: { familyCode: string; familyName: string } | null
+  // ── Phase 7.14.2 — Resolved Pricing ──
+  resolvedUnitPrice: number | null
+  resolvedPriceSource: "preferred" | "cheapest" | "none"
+  resolvedCurrency: string | null
+  preferredIsOptimal: boolean | null
+  preferredPremium: number | null
+  activeSupplierCount: number
+}
+
+// פורמטור מטבע מטבע: ILS עם סמל ת, אחרת לפי קוד המטבע.
+function formatPrice(value: number | null, currency: string | null): string {
+  if (value == null) return "—"
+  const cur = currency ?? "ILS"
+  try {
+    return new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: cur,
+      maximumFractionDigits: 2,
+    }).format(value)
+  } catch {
+    return `${value.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${cur}`
+  }
 }
 
 type ItemStatus =
@@ -132,7 +157,7 @@ export function ItemsCatalogScaffold() {
     )
   }, [rows, searchTerm])
 
-  // ── KPIs נגזרים מהליסט ─────────────────────────────────────────────────
+  // ── KPIs נגזרים מהליסט ────────────────────────────────────────────────
   const kpis = React.useMemo(() => {
     const total = rows.length
     const active = rows.filter((r) => r.status === "ACTIVE").length
@@ -141,12 +166,19 @@ export function ItemsCatalogScaffold() {
     for (const r of rows) {
       if (r.productFamily?.familyCode) familySet.add(r.productFamily.familyCode)
     }
+    // ── Phase 7.14.2 — KPI טיה מחיר ──
+    // פריטים ללא מחיר רכש פתור = resolvedPriceSource = 'none'.
+    const withoutPrice = rows.filter((r) => r.resolvedPriceSource === "none").length
+    // “premium” = עדיף מוגדר אבל לא הזול ביותר.
+    const withPremium = rows.filter((r) => r.preferredIsOptimal === false).length
     return {
       total,
       active,
       obsolete,
       withoutFamily: rows.filter((r) => !r.productFamily).length,
       familyCount: familySet.size,
+      withoutPrice,
+      withPremium,
     }
   }, [rows])
 
@@ -196,6 +228,73 @@ export function ItemsCatalogScaffold() {
             return `${item.uom} · ${item.uomDescription}`
           }
           return item.uom
+        },
+      },
+      // ── Phase 7.14.2 — מחיר רכש פתור ──
+      {
+        key: "resolvedPrice",
+        title: "מחיר רכש",
+        className: "w-[11rem] text-xs",
+        render: (item) => {
+          if (item.resolvedPriceSource === "none") {
+            return (
+              <span
+                className="text-muted-foreground"
+                title={
+                  item.activeSupplierCount === 0
+                    ? "אין מיפויי ספקים פעילים"
+                    : "אין מחיר תקף"
+                }
+              >
+                —
+              </span>
+            )
+          }
+          return (
+            <div className="flex items-center gap-1.5">
+              <span className="font-currency-mono font-semibold tabular-nums">
+                {formatPrice(item.resolvedUnitPrice, item.resolvedCurrency)}
+              </span>
+              {item.resolvedPriceSource === "preferred" ? (
+                item.preferredIsOptimal === false ? (
+                  <span
+                    title={
+                      item.preferredPremium != null
+                        ? `המועדף יקר ב-${formatPrice(item.preferredPremium, item.resolvedCurrency)} מהזול ביותר`
+                        : "המועדף לא הזול ביותר"
+                    }
+                  >
+                    <AlertTriangle
+                      className="size-3 text-amber-600 dark:text-amber-400"
+                      aria-label="המחיר המועדף גבוה מהזול ביותר"
+                    />
+                  </span>
+                ) : (
+                  <span title="מהספק המועדף (גם הזול ביותר)">
+                    <Star
+                      className="size-3 fill-amber-400 text-amber-500"
+                      aria-label="מהספק המועדף"
+                    />
+                  </span>
+                )
+              ) : (
+                <span title="מהספק הזול ביותר (אין ספק מועדף מוגדר)">
+                  <TrendingDown
+                    className="size-3 text-emerald-600 dark:text-emerald-400"
+                    aria-label="מהספק הזול ביותר"
+                  />
+                </span>
+              )}
+              {item.activeSupplierCount > 1 ? (
+                <span
+                  className="text-[10px] text-muted-foreground"
+                  title={`${item.activeSupplierCount} ספקים פעילים`}
+                >
+                  ×{item.activeSupplierCount}
+                </span>
+              ) : null}
+            </div>
+          )
         },
       },
       {
@@ -275,6 +374,26 @@ export function ItemsCatalogScaffold() {
                   : "כל הפריטים משויכים"
               }
               tone={kpis.withoutFamily > 0 ? "warning" : "neutral"}
+            />
+            <KpiCard
+              title="ללא מחיר תקף"
+              value={`${kpis.withoutPrice}`}
+              hint={
+                kpis.withoutPrice > 0
+                  ? "דרוש מיפוי ספק פעיל"
+                  : "לכל פריט יש מחיר"
+              }
+              tone={kpis.withoutPrice > 0 ? "warning" : "success"}
+            />
+            <KpiCard
+              title="מועדף לא זול"
+              value={`${kpis.withPremium}`}
+              hint={
+                kpis.withPremium > 0
+                  ? "מועדף > זול ביותר (הזדמנות לאופטימיזציה)"
+                  : "כל ספק מועדף = זול ביותר"
+              }
+              tone={kpis.withPremium > 0 ? "warning" : "success"}
             />
             <Card className="border-dashed border-border/60 bg-muted/30">
               <CardHeader className="pb-2">

@@ -19,6 +19,7 @@ import * as React from "react"
 import { useFormContext } from "react-hook-form"
 import {
   AlertTriangle,
+  Banknote,
   Bot,
   ExternalLink,
   History,
@@ -27,6 +28,7 @@ import {
   ShieldCheck,
   ShieldQuestion,
   Star,
+  TrendingDown,
 } from "lucide-react"
 
 import { SupplierComboBox } from "@/components/marker-ofek/items/supplier-combobox"
@@ -34,6 +36,7 @@ import type {
   ItemEditFormValues,
   SupplierLookupOption,
 } from "@/components/marker-ofek/items/item-edit-form-types"
+import type { ItemResolvedPricing } from "@/components/marker-ofek/items/master-item-card-modern"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -121,6 +124,125 @@ const TIER_LABEL: Record<"A" | "B" | "C", string> = {
 }
 
 // ============================================================================
+// ResolvedPricingSummary — סקציית תמחור פתור (Phase 7.14.2.4)
+// ============================================================================
+
+function ResolvedPricingSummary({
+  pricing,
+}: {
+  pricing: ItemResolvedPricing | null
+}) {
+  if (!pricing) return null
+  const noPrice = pricing.resolvedPriceSource === "none"
+  const isPreferred = pricing.resolvedPriceSource === "preferred"
+  const isPremium = isPreferred && pricing.preferredIsOptimal === false
+
+  return (
+    <section
+      className={cn(
+        "rounded-lg border bg-card/50 p-4 shadow-sm",
+        isPremium
+          ? "border-amber-500/40 bg-amber-500/5"
+          : noPrice
+            ? "border-dashed border-border/70"
+            : "border-border/70"
+      )}
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <Banknote className="size-4 text-muted-foreground" aria-hidden />
+            <h3 className="text-sm font-semibold">תמחור פתור</h3>
+            {!noPrice ? (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "gap-1 text-[10px]",
+                  isPreferred
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                )}
+              >
+                {isPreferred ? (
+                  <>
+                    <Star className="size-2.5 fill-current" aria-hidden />
+                    מהמועדף
+                  </>
+                ) : (
+                  <>
+                    <TrendingDown className="size-2.5" aria-hidden />
+                    מהזול ביותר
+                  </>
+                )}
+              </Badge>
+            ) : null}
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            מחיר הרכש הנגזר אוטומטית לפי הכלל: עדיפות לספק המועדף אם יש לו מיפוי פעיל, אחרת —
+            הספק הזול ביותר מתוך המיפויים הפעילים.
+          </p>
+        </div>
+        {!noPrice ? (
+          <div className="text-end md:min-w-[10rem]">
+            <p className="font-currency-mono text-2xl font-bold tabular-nums leading-none">
+              {formatPrice(pricing.resolvedUnitPrice, pricing.resolvedCurrency)}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              {pricing.activeSupplierCount} ספקים פעילים
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      {noPrice ? (
+        <div className="mt-3 flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <div className="space-y-0.5">
+            <p className="font-medium text-foreground">אין מחיר פתור</p>
+            <p>
+              {pricing.activeSupplierCount === 0
+                ? "לא הוגדרו מיפויי ספק פעילים לפריט הזה. הוסף מיפוי (טבלת המיפויים למטה) כדי לקבל מחיר פתור."
+                : "המיפויים הקיימים הם ללא מחיר תקף (הסתיימו/טרם התחילו)."}
+            </p>
+          </div>
+        </div>
+      ) : isPremium ? (
+        <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-50/60 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-medium">הספק המועדף אינו הזול ביותר</p>
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide opacity-70">מועדף</p>
+                <p className="font-currency-mono font-semibold tabular-nums">
+                  {formatPrice(pricing.preferredUnitPrice, pricing.preferredCurrency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide opacity-70">זול ביותר</p>
+                <p className="font-currency-mono font-semibold tabular-nums">
+                  {formatPrice(pricing.cheapestUnitPrice, pricing.cheapestCurrency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide opacity-70">הפרש</p>
+                <p className="font-currency-mono font-semibold tabular-nums">
+                  +{formatPrice(pricing.preferredPremium, pricing.resolvedCurrency)}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] opacity-80">
+              המחיר ממשיך להיגזר מהמועדף (מדיניות עסקית). למעבר למחיר הזול — הסר את
+              הספק המועדף או הגדר מחדש את המועדף.
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+// ============================================================================
 // Main
 // ============================================================================
 
@@ -140,12 +262,30 @@ export interface ItemSupplierMappingsTabProps {
   suppliers?: SupplierLookupOption[]
   /** Phase 7.14.1: סטטוס טעינת רשימת הספקים — אם loading, ה-combobox משבת ומציג spinner. */
   suppliersLoading?: boolean
+  /** Phase 7.14.2: נתוני תמחור פתור (מועדף או זול ביותר). null — לא נטען. */
+  pricing?: ItemResolvedPricing | null
+}
+
+// Phase 7.14.2: פורמטור מטבע דינמי לסקציית התמחור.
+function formatPrice(value: number | null, currency: string | null): string {
+  if (value == null) return "—"
+  const cur = currency ?? "ILS"
+  try {
+    return new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: cur,
+      maximumFractionDigits: 2,
+    }).format(value)
+  } catch {
+    return `${value.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${cur}`
+  }
 }
 
 export function ItemSupplierMappingsTab({
   itemId,
   suppliers = [],
   suppliersLoading = false,
+  pricing = null,
 }: ItemSupplierMappingsTabProps) {
   const [mappings, setMappings] = React.useState<SupplierMapping[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -248,6 +388,9 @@ export function ItemSupplierMappingsTab({
           </div>
         ) : null}
       </section>
+
+      {/* ├─ Phase 7.14.2: תמחור פתור ───────────────────────────────────────────────────*/}
+      <ResolvedPricingSummary pricing={pricing} />
 
       {/* ├─ טבלת מיפויים ─────────────────────────────────────────────────*/}
       <div className="flex flex-wrap items-center justify-between gap-3">

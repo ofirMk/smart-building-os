@@ -24,6 +24,7 @@ import * as React from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
+  AlertTriangle,
   ArrowLeft,
   Banknote,
   Barcode,
@@ -31,7 +32,9 @@ import {
   ImageOff,
   Loader2,
   Package,
+  Star,
   Tag,
+  TrendingDown,
   Warehouse,
   X,
 } from "lucide-react"
@@ -66,6 +69,17 @@ interface ItemPreviewDto {
   defaultPrice: number | null
   imageUrl: string | null
   productFamilyId: string | null
+  // ── Phase 7.14.2 — Resolved Pricing ──
+  preferredUnitPrice: number | null
+  preferredCurrency: string | null
+  cheapestUnitPrice: number | null
+  cheapestCurrency: string | null
+  resolvedUnitPrice: number | null
+  resolvedPriceSource: "preferred" | "cheapest" | "none"
+  resolvedCurrency: string | null
+  preferredIsOptimal: boolean | null
+  preferredPremium: number | null
+  activeSupplierCount: number
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -91,6 +105,21 @@ function formatNis(value: number | null): string {
     currency: "ILS",
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+// מטבע דינמי: ILS עם סמל ת, אחרת לפי קוד המטבע.
+function formatPrice(value: number | null, currency: string | null): string {
+  if (value == null) return "—"
+  const cur = currency ?? "ILS"
+  try {
+    return new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: cur,
+      maximumFractionDigits: 2,
+    }).format(value)
+  } catch {
+    return `${value.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${cur}`
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -291,6 +320,9 @@ export function ItemPreviewPane({
               ) : null}
             </div>
 
+            {/* ── Phase 7.14.2 — סקציית מחיר רכש פתור ── */}
+            <ResolvedPriceSection item={item} />
+
             {/* Inventory flags */}
             <div className="flex flex-wrap gap-2">
               {item.isInventoryManaged ? (
@@ -331,6 +363,107 @@ export function ItemPreviewPane({
           <ArrowLeft className="size-3.5" aria-hidden />
         </Button>
       </div>
+    </Card>
+  )
+}
+
+// ----------------------------------------------------------------------------
+// ResolvedPriceSection — סקציית מחיר רכש פתור (Phase 7.14.2.3)
+// ----------------------------------------------------------------------------
+
+function ResolvedPriceSection({ item }: { item: ItemPreviewDto }) {
+  const noPrice = item.resolvedPriceSource === "none"
+  const isPreferred = item.resolvedPriceSource === "preferred"
+  const isPremium = isPreferred && item.preferredIsOptimal === false
+
+  return (
+    <Card
+      className={cn(
+        "border-border/60 shadow-none",
+        isPremium
+          ? "border-amber-500/40 bg-amber-500/5"
+          : noPrice
+            ? "border-dashed bg-muted/20"
+            : ""
+      )}
+    >
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 p-3 pb-1">
+        <CardTitle className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+          <Banknote className="size-3.5" aria-hidden />
+          מחיר רכש פתור
+        </CardTitle>
+        {noPrice ? null : (
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1 text-[10px]",
+              isPreferred
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+            )}
+          >
+            {isPreferred ? (
+              <>
+                <Star className="size-2.5 fill-current" aria-hidden />
+                מהמועדף
+              </>
+            ) : (
+              <>
+                <TrendingDown className="size-2.5" aria-hidden />
+                מהזול ביותר
+              </>
+            )}
+          </Badge>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-2 p-3 pt-1">
+        {noPrice ? (
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">אין מחיר פתור</p>
+            <p>
+              {item.activeSupplierCount === 0
+                ? "לא הוגדרו מיפויי ספק פעילים לפריט זה."
+                : "המיפויים הקיימים הם ללא מחיר."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="font-currency-mono text-2xl font-bold tabular-nums leading-none">
+              {formatPrice(item.resolvedUnitPrice, item.resolvedCurrency)}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {item.activeSupplierCount} ספקים פעילים
+            </p>
+            {isPremium ? (
+              <div className="flex items-start gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+                <div className="min-w-0 space-y-0.5">
+                  <p className="font-medium">המועדף לא הזול ביותר</p>
+                  <p className="text-[10px]">
+                    מועדף:{" "}
+                    <span className="font-currency-mono font-semibold tabular-nums">
+                      {formatPrice(item.preferredUnitPrice, item.preferredCurrency)}
+                    </span>
+                    {" · "}
+                    זול:{" "}
+                    <span className="font-currency-mono font-semibold tabular-nums">
+                      {formatPrice(item.cheapestUnitPrice, item.cheapestCurrency)}
+                    </span>
+                  </p>
+                  {item.preferredPremium != null ? (
+                    <p className="text-[10px]">
+                      הפרש:{" "}
+                      <span className="font-currency-mono font-semibold tabular-nums">
+                        +{formatPrice(item.preferredPremium, item.resolvedCurrency)}
+                      </span>
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
+      </CardContent>
     </Card>
   )
 }

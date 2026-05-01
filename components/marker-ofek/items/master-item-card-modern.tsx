@@ -82,7 +82,37 @@ export interface ItemDto {
   factoryUom: string | null
   conversionFactor: number | null
   preferredSupplierId: string | null
+  // ── Phase 7.14.2 — Resolved Pricing ──
+  preferredUnitPrice: number | null
+  preferredCurrency: string | null
+  cheapestSupplierId: string | null
+  cheapestUnitPrice: number | null
+  cheapestCurrency: string | null
+  resolvedUnitPrice: number | null
+  resolvedPriceSource: "preferred" | "cheapest" | "none"
+  resolvedSupplierId: string | null
+  resolvedCurrency: string | null
+  preferredIsOptimal: boolean | null
+  preferredPremium: number | null
+  activeSupplierCount: number
 }
+
+/** Phase 7.14.2 — תת-קבוצה "pricing-only" של ItemDto, לעבירה לטאב המיפויים. */
+export type ItemResolvedPricing = Pick<
+  ItemDto,
+  | "preferredUnitPrice"
+  | "preferredCurrency"
+  | "cheapestSupplierId"
+  | "cheapestUnitPrice"
+  | "cheapestCurrency"
+  | "resolvedUnitPrice"
+  | "resolvedPriceSource"
+  | "resolvedSupplierId"
+  | "resolvedCurrency"
+  | "preferredIsOptimal"
+  | "preferredPremium"
+  | "activeSupplierCount"
+>;
 
 interface SupplierItemDtoRaw {
   id: string
@@ -479,6 +509,24 @@ export function MasterItemCardModern({
               itemId={id}
               suppliers={suppliers}
               suppliersLoading={suppliersLoading}
+              pricing={
+                item
+                  ? {
+                      preferredUnitPrice: item.preferredUnitPrice,
+                      preferredCurrency: item.preferredCurrency,
+                      cheapestSupplierId: item.cheapestSupplierId,
+                      cheapestUnitPrice: item.cheapestUnitPrice,
+                      cheapestCurrency: item.cheapestCurrency,
+                      resolvedUnitPrice: item.resolvedUnitPrice,
+                      resolvedPriceSource: item.resolvedPriceSource,
+                      resolvedSupplierId: item.resolvedSupplierId,
+                      resolvedCurrency: item.resolvedCurrency,
+                      preferredIsOptimal: item.preferredIsOptimal,
+                      preferredPremium: item.preferredPremium,
+                      activeSupplierCount: item.activeSupplierCount,
+                    }
+                  : null
+              }
             />
           </TabsContent>
 
