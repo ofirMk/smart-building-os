@@ -44,6 +44,15 @@ Tables and grids are **not** decorative summaries. Every **data row** must be ac
 - **Workspace:** `components/marker-ofek/catalog/technical-catalog-workspace.tsx` — פיצול 40%/60% (רשת מאסטר / כרטיס פרטים), בחירת שורה, טאבים: זיהוי, ספקים מקושרים, MRP, תמחיר.
 - **Mock data:** `lib/marker-ofek/technical-catalog-workspace-data.ts` — רשימת מאסטר + `getCatalogWorkspaceDetail(sku)` לפרטי ERP דמה.
 
+## 🧰 Marker Ofek — קטלוג פריטים (נתוני אב) · Phase 7.13
+- **Entry route:** `app/(dashboard)/marker-ofek/items/page.tsx` — wrapper דק שמרנדר את ה-scaffold.
+- **Catalog scaffold (Phase 7.13.5 — Master-Detail inline):** `components/marker-ofek/items/items-catalog-scaffold.tsx` — משתמש ב-`EntityWorkspace`; `main` מחולק ל-60%/40% כשיש שורה נבחרת (טבלה/preview), ללא overlay. חיפוש + "פריט חדש" ב-`headerActions`; KPI cards + טיפ ניווט ב-`sidebar`.
+- **Inline preview:** `components/marker-ofek/items/item-preview-pane.tsx` — `Card` דביק (md:sticky top-4), scroll פנימי; body = תמונה, SKU, description, 2×2 key fields (UOM, MOQ, cost, price), status/barcode badges; footer CTA "פתח כרטיס מלא" → V3 detail.
+- **List renderer:** `components/ui/bento-smart-list.tsx` — `BentoSmartList<ItemRow>`; toggle-selection (קליק שני על אותה שורה מסיר את ה-preview).
+- **Item master card (Phase 7.13.6 — Version B Modern, restored):** `components/marker-ofek/items/master-item-card-modern.tsx` — Header + 6 טאבים (3 editable: כללי/לוגיסטיקה/מחירים; 3 read-only: נכסים/מיפויי ספקים/היסטוריית רכש); RHF `FormProvider` משותף → Save גלובלי. **ניסויי Split (60-40 + right rail) זמינים ב-git תחת commits `a4379b6f`/`5873f836`** אם נחזור לדפוס parent/child drill.
+- **Route:** `/marker-ofek/items/[id]` — `app/(dashboard)/marker-ofek/items/[id]/page.tsx` מרנדר `MasterItemCardModern`.
+- **API:** `app/api/master-data/items/route.ts` · `app/api/master-data/items/[id]/route.ts` (GET/PUT) — טעינה מלאה + עדכון.
+
 ## 📦 Marker Ofek — קליטת סחורה (GR) · Phase 2.2
 - **Workspace:** `components/marker-ofek/procurement/goods-receipt-workspace.tsx` — סרט פעולות (טיוטה / אשר קליטה / צירוף תעודה), כרטיס הקשר (PO + תעודת משלוח + תאריך), רשת קליטה עם `useFieldArray` וולידציה חיה לשורה (תגיות סטטוס).
 - **Route:** `app/(dashboard)/marker-ofek/procurement/goods-receipt/new/page.tsx`
