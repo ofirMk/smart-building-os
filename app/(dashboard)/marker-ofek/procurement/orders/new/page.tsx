@@ -41,6 +41,7 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form"
 import {
   AlertTriangle,
   ArrowRight,
+  Layers,
   Loader2,
   Plus,
   ShoppingCart,
@@ -50,6 +51,14 @@ import {
 import { toast } from "sonner"
 import { z } from "zod"
 
+import {
+  EMPTY_LINE_ENRICHMENT,
+  LINE_PRICE_SOURCES,
+  LineEnrichmentDialog,
+  countFilledEnrichmentFields,
+  type LineEnrichmentValues,
+} from "@/components/marker-ofek/procurement/line-enrichment-dialog"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -184,6 +193,25 @@ const lineFormSchema = z.object({
   budgetSubChapter: z.string().trim().min(1, { message: "סעיף תקציבי חסר בפריט" }),
   resourceId: z.string().trim().min(1, { message: "קוד משאב חסר בפריט" }),
   description: z.string().trim().optional(),
+  // Phase 7.13.2 — Line enrichment (כולם אופציונליים; ניתנים לעריכה דרך
+  // LineEnrichmentDialog). ה-API ב-route.ts אוכף את הקונטרקט המלא של
+  // ה-`erp_purchase_order_lines` ועובר ולידציה זהה.
+  supplyDate: z.string().trim().nullable().optional(),
+  discountPct: z.coerce
+    .number({ message: "אחוז הנחה חייב להיות מספר" })
+    .min(0)
+    .max(100)
+    .nullable()
+    .optional(),
+  lineCurrency: z.string().trim().nullable().optional(),
+  exchangeRate: z.coerce
+    .number({ message: "שער המרה חייב להיות מספר" })
+    .positive()
+    .nullable()
+    .optional(),
+  manufacturerName: z.string().trim().nullable().optional(),
+  lineNotes: z.string().trim().nullable().optional(),
+  priceSource: z.enum(LINE_PRICE_SOURCES).nullable().optional(),
   // Phase 7.5 — 3% Rule governance. אופציונליים בסכמה (השרת אוכף תנאית);
   // ה-UI חושף אותם כשהשרת מסמן `escalation_required`.
   escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
@@ -271,6 +299,11 @@ export default function NewProcurementOrderPage() {
     Record<number, PriceSuggestion | null>
   >({})
 
+  // -- Phase 7.13.2 — פותח את LineEnrichmentDialog. null = סגור.
+  const [enrichmentLineIndex, setEnrichmentLineIndex] = React.useState<
+    number | null
+  >(null)
+
   // Index פריטים לפי ID לחיפוש מהיר ב-Auto-fill.
   const itemsById = React.useMemo(() => {
     const map = new Map<string, ItemOption>()
@@ -298,6 +331,14 @@ export default function NewProcurementOrderPage() {
           budgetSubChapter: "",
           resourceId: "",
           description: "",
+          // Phase 7.13.2 — enrichment defaults (all null / unset).
+          supplyDate: null,
+          discountPct: null,
+          lineCurrency: null,
+          exchangeRate: null,
+          manufacturerName: null,
+          lineNotes: null,
+          priceSource: null,
           escalationCategory: undefined,
           escalationJustification: "",
         },
@@ -493,6 +534,20 @@ export default function NewProcurementOrderPage() {
             budgetSubChapter: line.budgetSubChapter,
             resourceId: line.resourceId,
             description: line.description?.trim() || undefined,
+            // Phase 7.13.2 — Line enrichment (מועברים רק אם המשתמש מילא).
+            supplyDate: line.supplyDate?.trim() || undefined,
+            discountPct:
+              line.discountPct != null && Number.isFinite(line.discountPct)
+                ? line.discountPct
+                : undefined,
+            lineCurrency: line.lineCurrency?.trim() || undefined,
+            exchangeRate:
+              line.exchangeRate != null && Number.isFinite(line.exchangeRate)
+                ? line.exchangeRate
+                : undefined,
+            manufacturerName: line.manufacturerName?.trim() || undefined,
+            lineNotes: line.lineNotes?.trim() || undefined,
+            priceSource: line.priceSource ?? undefined,
             // השדות מועברים תמיד; השרת אוכף אותם רק אם נדרש escalation.
             escalationCategory: line.escalationCategory ?? undefined,
             escalationJustification:
@@ -835,6 +890,13 @@ export default function NewProcurementOrderPage() {
                     budgetSubChapter: "",
                     resourceId: "",
                     description: "",
+                    supplyDate: null,
+                    discountPct: null,
+                    lineCurrency: null,
+                    exchangeRate: null,
+                    manufacturerName: null,
+                    lineNotes: null,
+                    priceSource: null,
                     escalationCategory: undefined,
                     escalationJustification: "",
                   })
@@ -887,6 +949,7 @@ export default function NewProcurementOrderPage() {
                       canRemove={fields.length > 1}
                       bestAlternative={lineBestAlts[index] ?? null}
                       escalationMessage={lineErrors[index] ?? null}
+                      onOpenEnrichment={() => setEnrichmentLineIndex(index)}
                     />
                   ))}
                 </TableBody>
@@ -930,7 +993,136 @@ export default function NewProcurementOrderPage() {
           </div>
         </form>
       </Form>
+
+      {/* Phase 7.13.2 — Line enrichment dialog (controlled at page level). */}
+      <LineEnrichmentDialogConnector
+        lineIndex={enrichmentLineIndex}
+        form={form}
+        onClose={() => setEnrichmentLineIndex(null)}
+      />
     </div>
+  )
+}
+
+// ============================================================================
+// LineEnrichmentDialogConnector — מחבר את ה-Dialog למצב הטופס: קורא את
+// הערכים הנוכחיים של השורה הפתוחה דרך form.getValues, ובסיום ה-save מעדכן
+// את 7 השדות בבת אחת. מבודד כקומפוננטה כדי שלא יגרום ל-re-render של ה-page
+// כשמטיפים בשדה אחר.
+// ============================================================================
+
+function LineEnrichmentDialogConnector({
+  lineIndex,
+  form,
+  onClose,
+}: {
+  lineIndex: number | null
+  form: ReturnType<typeof useForm<FormInput, undefined, FormOutput>>
+  onClose: () => void
+}) {
+  const watchedCurrency = useWatch({
+    control: form.control,
+    name: "currency",
+  })
+
+  const open = lineIndex != null
+
+  // Snapshot של ערכי השורה הפתוחה בכל פתיחה. הדיאלוג מחזיק draft מקומי
+  // ולא מסתנכרן עם ה-form עד ה-save, אז זו צילום-מצב בלבד.
+  const initialValues = React.useMemo<LineEnrichmentValues>(() => {
+    if (lineIndex == null) return EMPTY_LINE_ENRICHMENT
+    const line = form.getValues(`lines.${lineIndex}`)
+    return {
+      supplyDate: line?.supplyDate ?? null,
+      discountPct: line?.discountPct != null ? Number(line.discountPct) : null,
+      lineCurrency: line?.lineCurrency ?? null,
+      exchangeRate:
+        line?.exchangeRate != null ? Number(line.exchangeRate) : null,
+      manufacturerName: line?.manufacturerName ?? null,
+      lineNotes: line?.lineNotes ?? null,
+      priceSource: line?.priceSource ?? null,
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineIndex, open])
+
+  if (lineIndex == null) return null
+
+  return (
+    <LineEnrichmentDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+      lineIndex={lineIndex}
+      headerCurrency={watchedCurrency ?? "ILS"}
+      values={initialValues}
+      onSave={(next) => {
+        // setValue פר שדה כדי לשמור על dirty/touched בבסיס שדה.
+        form.setValue(`lines.${lineIndex}.supplyDate`, next.supplyDate, {
+          shouldDirty: true,
+        })
+        form.setValue(
+          `lines.${lineIndex}.discountPct`,
+          next.discountPct ?? undefined,
+          { shouldDirty: true }
+        )
+        form.setValue(`lines.${lineIndex}.lineCurrency`, next.lineCurrency, {
+          shouldDirty: true,
+        })
+        form.setValue(
+          `lines.${lineIndex}.exchangeRate`,
+          next.exchangeRate ?? undefined,
+          { shouldDirty: true }
+        )
+        form.setValue(
+          `lines.${lineIndex}.manufacturerName`,
+          next.manufacturerName,
+          { shouldDirty: true }
+        )
+        form.setValue(`lines.${lineIndex}.lineNotes`, next.lineNotes, {
+          shouldDirty: true,
+        })
+        form.setValue(`lines.${lineIndex}.priceSource`, next.priceSource, {
+          shouldDirty: true,
+        })
+      }}
+    />
+  )
+}
+
+// ============================================================================
+// EnrichmentButton — כפתור אייקון עם badge המראה כמה שדות enrichment מולאו.
+// מנותק מ-LineRow כדי לא לבלגן את ה-render-tree שלו.
+// ============================================================================
+
+function EnrichmentButton({
+  filledCount,
+  onClick,
+  ariaLabel,
+}: {
+  filledCount: number
+  onClick: () => void
+  ariaLabel: string
+}) {
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="relative text-muted-foreground hover:text-foreground"
+    >
+      <Layers className="size-4" aria-hidden />
+      {filledCount > 0 ? (
+        <Badge
+          variant="default"
+          className="absolute -end-1 -top-1 h-4 min-w-4 rounded-full px-1 font-mono text-[9px] font-bold leading-none tabular-nums"
+        >
+          {filledCount}
+        </Badge>
+      ) : null}
+    </Button>
   )
 }
 
@@ -949,6 +1141,8 @@ type LineRowProps = {
   bestAlternative: PriceSuggestion | null
   /** מחרוזת escalation מהשרת — אם קיימת, ה-panel נחשף אוטומטית. */
   escalationMessage: string | null
+  /** Phase 7.13.2 — פותח את LineEnrichmentDialog לשורה זו. */
+  onOpenEnrichment: () => void
 }
 
 function LineRow({
@@ -960,6 +1154,7 @@ function LineRow({
   canRemove,
   bestAlternative,
   escalationMessage,
+  onOpenEnrichment,
 }: LineRowProps) {
   // useWatch ברמת השורה בלבד — חישוב סה"כ-שורה ללא טריגר re-render גלובלי.
   const watched = useWatch({ control, name: `lines.${index}` })
@@ -975,6 +1170,31 @@ function LineRow({
     escalationMessage != null ||
     Boolean(watched?.escalationCategory) ||
     (watched?.escalationJustification?.trim().length ?? 0) > 0
+
+  // Phase 7.13.2 — סופר שדות enrichment שמולאו, להצגת badge על הכפתור.
+  const enrichmentFilledCount = React.useMemo(() => {
+    if (!watched) return 0
+    return countFilledEnrichmentFields({
+      supplyDate: watched.supplyDate ?? null,
+      discountPct:
+        watched.discountPct != null ? Number(watched.discountPct) : null,
+      lineCurrency: watched.lineCurrency ?? null,
+      exchangeRate:
+        watched.exchangeRate != null ? Number(watched.exchangeRate) : null,
+      manufacturerName: watched.manufacturerName ?? null,
+      lineNotes: watched.lineNotes ?? null,
+      priceSource: watched.priceSource ?? null,
+    })
+  }, [
+    watched?.supplyDate,
+    watched?.discountPct,
+    watched?.lineCurrency,
+    watched?.exchangeRate,
+    watched?.manufacturerName,
+    watched?.lineNotes,
+    watched?.priceSource,
+    watched,
+  ])
 
   return (
     <>
@@ -1099,17 +1319,24 @@ function LineRow({
         </TableCell>
 
         <TableCell className="text-center">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={onRemove}
-            disabled={!canRemove}
-            aria-label={`מחק שורה ${index + 1}`}
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
+          <div className="flex items-center justify-center gap-0.5">
+            <EnrichmentButton
+              filledCount={enrichmentFilledCount}
+              onClick={onOpenEnrichment}
+              ariaLabel={`פרטים מורחבים לשורה ${index + 1}`}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={onRemove}
+              disabled={!canRemove}
+              aria-label={`מחק שורה ${index + 1}`}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+            >
+              <Trash2 className="size-4" aria-hidden />
+            </Button>
+          </div>
         </TableCell>
       </TableRow>
 

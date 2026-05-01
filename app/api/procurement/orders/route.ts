@@ -164,6 +164,17 @@ const ESCALATION_CATEGORIES = [
   "OTHER",
 ] as const
 
+// Phase 7.4 — חייב להיות מסונכרן עם ה-CHECK constraint
+// `erp_purchase_order_lines_price_source_chk`.
+const PRICE_SOURCES = [
+  "SUPPLIER_PRICELIST",
+  "LAST_PURCHASE",
+  "MANUAL",
+  "QUOTE",
+  "FRAMEWORK",
+  "AI_CROSS_SUPPLIER",
+] as const
+
 const lineSchema = z.object({
   itemId: z.string().uuid("itemId חייב להיות uuid"),
   quantity: z.number().positive("quantity חייב להיות חיובי"),
@@ -179,6 +190,12 @@ const lineSchema = z.object({
   exchangeRate: z.number().positive().optional(),
   manufacturerName: z.string().trim().min(1).optional(),
   lineNotes: z.string().trim().optional(),
+  /**
+   * Phase 7.13.2 — מקור המחיר. ברירת מחדל בשרת = MANUAL כל עוד הקליינט לא
+   * מציין במפורש. ה-Smart-Pricing engine ב-Phase 7.5 משתמש בערך זה כקלט
+   * לחישוב deviation: לדוגמה, "QUOTE" עוקף חלק מבדיקות ה-3% Rule.
+   */
+  priceSource: z.enum(PRICE_SOURCES).optional(),
   // Phase 7.5 — 3% Rule governance (optional; required only when requires_escalation computed=true)
   escalationJustification: z.string().trim().min(10).optional(),
   escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
@@ -527,7 +544,7 @@ export async function POST(req: NextRequest) {
       alternative_supplier_id: enrichment?.alternativeSupplierId ?? null,
       alternative_unit_price: enrichment?.alternativeUnitPrice ?? null,
       alternative_lead_time_days: enrichment?.alternativeLeadTimeDays ?? null,
-      price_source: "MANUAL" as const, // ברירת מחדל; ב-7.5 UI המשתמש יבחר מקור
+      price_source: line.priceSource ?? ("MANUAL" as const),
       // ניתן לעקוב אחר סדר השורות לפי created_at; אם נצטרך עמודת line_number
       // מפורשת — נוסיף אותה ב-Phase 7.3 כ-ALTER additive.
       _lineIndex: idx, // נמחק לפני INSERT (לא קיים בסכמה).
