@@ -8,17 +8,17 @@
  *
  *   1. כללי — header, status badges, summary, notes, body_html (read).
  *   2. שורות — טבלה מורחבת עם כל שדות ה-7.4 enrichment (read-only).
- *   3. מחירים חכמים — Phase 7.13.1.B (placeholder).
- *   4. קבצים — Phase 7.13.1.B (placeholder).
- *   5. תהליך אישור — Phase 7.13.1.C (placeholder).
- *   6. היסטוריה — Phase 7.13.1.D (placeholder).
+ *   3. מחירים חכמים — multi-source price comparison (PoSmartPricingTab).
+ *   4. קבצים — upload + list של PO attachments (PoAttachmentsTab).
+ *   5. תהליך אישור — chain timeline + submit/decide actions (PoApprovalsTab).
+ *   6. היסטוריה — change log + revisions + snapshot dialog (PoHistoryTab).
  *
  * הנתון מובא דרך `/api/procurement/orders/[id]` — נקודת קצה אחת ל-header
- * + lines + supplier + project. Sub-resources יבואו בנקודות-קצה אחיות.
+ * + lines + supplier + project. Sub-resources (attachments / approvals /
+ * history) חיים בנקודות-קצה אחיות, נטענים ע"י הטאבים בעצמם.
  */
 
 import * as React from "react"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import {
   AlertTriangle,
@@ -52,6 +52,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PoApprovalsTab } from "@/components/marker-ofek/procurement/po-approvals-tab"
 import { PoAttachmentsTab } from "@/components/marker-ofek/procurement/po-attachments-tab"
+import { PoHistoryTab } from "@/components/marker-ofek/procurement/po-history-tab"
 import {
   PoSmartPricingTab,
   type SmartPricingLineInput,
@@ -377,11 +378,7 @@ export default function ProcurementOrderDetailPage() {
           value="history"
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
-          <PlaceholderTab
-            title="היסטוריה ושינויים"
-            description="ציר זמן של revisions + change-log diff פר שדה (Phase 7.8)."
-            phase="7.13.1.D"
-          />
+          <PoHistoryTab poId={data.id} />
         </TabsContent>
       </Tabs>
     </div>
@@ -939,36 +936,3 @@ function AttachmentsTabLoader({ poId }: { poId: string }) {
   return <PoAttachmentsTab poId={poId} companyId={companyId} />
 }
 
-// ============================================================================
-// PlaceholderTab — for Phase 7.13.1.B/C/D tabs that aren't built yet
-// ============================================================================
-
-function PlaceholderTab({
-  title,
-  description,
-  phase,
-}: {
-  title: string
-  description: string
-  phase: string
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/10 p-12 text-center">
-      <Loader2 className="size-8 text-muted-foreground" aria-hidden />
-      <h3 className="text-base font-semibold">{title}</h3>
-      <p className="max-w-md text-sm text-muted-foreground">{description}</p>
-      <Badge
-        variant="outline"
-        className="border-primary/40 bg-primary/5 font-mono text-xs text-primary"
-      >
-        Phase {phase}
-      </Badge>
-      <p className="text-xs text-muted-foreground">
-        ה-API והסכמה כבר חיים ב-Supabase; ה-UI יתחבר בבאת השלב הקרוב.
-      </p>
-    </div>
-  )
-}
-
-// silence unused-import lint for components we'll need in 7.13.1.B-D
-void Link
