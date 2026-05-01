@@ -31,10 +31,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import {
-  type ItemDto,
-  type MasterItemCardModernProps,
-} from "@/components/marker-ofek/items/master-item-card-modern"
 import { ItemAssetsTab } from "@/components/marker-ofek/items/item-assets-tab"
 import {
   type ItemEditFormValues,
@@ -55,8 +51,38 @@ import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn, formatError } from "@/lib/utils"
 
 // ============================================================================
-// Types — נשענים על אותם DTOs של MasterItemCardModern.
+// Types — DTO של פריט מלא לפי /api/master-data/items/[id] (Phase 7.13.4).
 // ============================================================================
+
+interface ItemDto {
+  id: string
+  sku: string
+  itemNumber: string
+  description: string
+  foreignDescription: string | null
+  descriptionEn: string | null
+  uom: string | null
+  unitOfMeasure: string | null
+  uomDescription: string | null
+  productFamilyId: string | null
+  isInventoryManaged: boolean
+  status: string
+  minOrderQuantity: number
+  itemType: string | null
+  // ── Phase 7.13.4 ──
+  barcode: string | null
+  isSerialTracked: boolean
+  standardCost: number | null
+  purchasingUom: string | null
+  purchasingUomDescription: string | null
+  imageUrl: string | null
+  // Legacy / pricing
+  legacyDefaultPrice: number | null
+  defaultPrice: number | null
+  factoryUom: string | null
+  conversionFactor: number | null
+  preferredSupplierId: string | null
+}
 
 interface SupplierItemDtoRaw {
   id: string
@@ -66,6 +92,10 @@ interface SupplierItemDtoRaw {
   discountPercentage: number
   aiLastParsedAt: string | null
   validFrom: string | null
+}
+
+export interface MasterItemCardOnePageProps {
+  itemId: string
 }
 
 interface SectionDef {
@@ -131,11 +161,7 @@ function labelForStatus(status: string): string {
 // Component
 // ============================================================================
 
-export function MasterItemCardOnePage({
-  itemId,
-  topSlot,
-  hideBackLink = false,
-}: MasterItemCardModernProps) {
+export function MasterItemCardOnePage({ itemId }: MasterItemCardOnePageProps) {
   const id = itemId
 
   const [item, setItem] = React.useState<ItemDto | null>(null)
@@ -299,7 +325,6 @@ export function MasterItemCardOnePage({
   if (loading) {
     return (
       <div className="mx-auto flex max-w-5xl items-center gap-2 py-16 text-muted-foreground">
-        {topSlot}
         <Loader2 className="size-5 animate-spin" aria-hidden />
         טוען כרטיס פריט…
       </div>
@@ -309,16 +334,13 @@ export function MasterItemCardOnePage({
   if (error || !item) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 py-10">
-        {topSlot}
-        {!hideBackLink ? (
-          <Link
-            href="/marker-ofek/items"
-            className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowRight className="size-4 rotate-180" aria-hidden />
-            חזרה לקטלוג
-          </Link>
-        ) : null}
+        <Link
+          href="/marker-ofek/items"
+          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowRight className="size-4 rotate-180" aria-hidden />
+          חזרה לקטלוג
+        </Link>
         <p className="text-sm text-destructive">
           {error ?? "הפריט לא נמצא או שאין הרשאה."}
         </p>
@@ -334,16 +356,13 @@ export function MasterItemCardOnePage({
         onSubmit={onSubmit}
         className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12"
       >
-        {topSlot}
-        {!hideBackLink ? (
-          <Link
-            href="/marker-ofek/items"
-            className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowRight className="size-4 rotate-180" aria-hidden />
-            חזרה לקטלוג פריטים
-          </Link>
-        ) : null}
+        <Link
+          href="/marker-ofek/items"
+          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowRight className="size-4 rotate-180" aria-hidden />
+          חזרה לקטלוג פריטים
+        </Link>
 
         {/* Header */}
         <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
