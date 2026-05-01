@@ -50,6 +50,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PoApprovalsTab } from "@/components/marker-ofek/procurement/po-approvals-tab"
 import { PoAttachmentsTab } from "@/components/marker-ofek/procurement/po-attachments-tab"
 import {
   PoSmartPricingTab,
@@ -365,10 +366,10 @@ export default function ProcurementOrderDetailPage() {
           value="approvals"
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
-          <PlaceholderTab
-            title="תהליך אישור"
-            description="ציר זמן ויזואלי של approval chain + כפתורי הגשה/אישור/דחייה (קורא ל-RPCs מ-Phase 7.7)."
-            phase="7.13.1.C"
+          <PoApprovalsTab
+            poId={data.id}
+            poStatus={data.status}
+            onChanged={refetch}
           />
         </TabsContent>
 
