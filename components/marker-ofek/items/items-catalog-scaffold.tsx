@@ -29,7 +29,7 @@ import {
 import { toast } from "sonner"
 
 import { EntityWorkspace } from "@/components/layout/EntityWorkspace"
-import { ItemPreviewFocusPane } from "@/components/marker-ofek/items/item-preview-focus-pane"
+import { ItemPreviewPane } from "@/components/marker-ofek/items/item-preview-pane"
 import {
   BentoSmartList,
   type BentoSmartListColumn,
@@ -213,9 +213,8 @@ export function ItemsCatalogScaffold() {
   )
 
   return (
-    <>
-      <EntityWorkspace
-        title="קטלוג פריטים"
+    <EntityWorkspace
+      title="קטלוג פריטים"
         description={
           loading
             ? "טוען רשימת פריטים…"
@@ -287,48 +286,66 @@ export function ItemsCatalogScaffold() {
               <CardContent className="space-y-1 text-[11px] leading-relaxed text-muted-foreground">
                 <p>
                   <strong className="text-foreground">קליק על שורה</strong> —
-                  פותח תצוגת preview מהירה.
+                  פותח preview בצד שמאל בלי לסגור את הליסט.
                 </p>
                 <p>
-                  <strong className="text-foreground">
-                    &quot;פתח כרטיס מלא&quot;
-                  </strong>{" "}
-                  ב-preview — מעבר לכרטיס V3 עמוק.
+                  מה-preview: <strong className="text-foreground">&quot;פתח כרטיס מלא&quot;</strong>{" "}
+                  לכרטיס V3 העמוק.
                 </p>
               </CardContent>
             </Card>
           </div>
         }
         main={
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            {loading ? (
-              <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                טוען פריטים…
+          // Master-detail אינליין: הליסט וה-preview זה לצד זה באותו אזור, ללא overlay.
+          // ללא בחירה: הליסט תופס את כל ה-main. עם בחירה: ליסט 60% | preview 40%.
+          // ב-mobile (<md): ה-preview נערם מעל הליסט (stack).
+          <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row md:items-stretch">
+            <div
+              className={cn(
+                "flex min-h-0 flex-col gap-2",
+                selectedItemId
+                  ? "md:w-3/5 md:flex-none"
+                  : "md:flex-1"
+              )}
+            >
+              {loading ? (
+                <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  טוען פריטים…
+                </div>
+              ) : (
+                <BentoSmartList<ItemRow>
+                  items={filteredRows}
+                  columns={columns}
+                  rowKey={(item) => item.id}
+                  selectedRowKey={selectedItemId}
+                  onRowClick={(item) =>
+                    setSelectedItemId((prev) =>
+                      prev === item.id ? null : item.id
+                    )
+                  }
+                  emptyState={
+                    rows.length === 0
+                      ? "אין פריטים בקטלוג. לחץ \u201Cפריט חדש\u201D כדי ליצור את הראשון."
+                      : "לא נמצאו פריטים התואמים לחיפוש."
+                  }
+                />
+              )}
+            </div>
+
+            {selectedItemId ? (
+              <div className="min-h-0 md:w-2/5 md:flex-none">
+                <ItemPreviewPane
+                  itemId={selectedItemId}
+                  onClose={() => setSelectedItemId(null)}
+                  className="h-full max-h-[calc(100vh-11rem)] md:sticky md:top-4"
+                />
               </div>
-            ) : (
-              <BentoSmartList<ItemRow>
-                items={filteredRows}
-                columns={columns}
-                rowKey={(item) => item.id}
-                selectedRowKey={selectedItemId}
-                onRowClick={(item) => setSelectedItemId(item.id)}
-                emptyState={
-                  rows.length === 0
-                    ? "אין פריטים בקטלוג. לחץ \u201Cפריט חדש\u201D כדי ליצור את הראשון."
-                    : "לא נמצאו פריטים התואמים לחיפוש."
-                }
-              />
-            )}
+            ) : null}
           </div>
         }
-      />
-
-      <ItemPreviewFocusPane
-        itemId={selectedItemId}
-        onClose={() => setSelectedItemId(null)}
-      />
-    </>
+    />
   )
 }
 
