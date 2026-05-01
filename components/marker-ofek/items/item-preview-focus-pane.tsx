@@ -162,7 +162,9 @@ export function ItemPreviewFocusPane({
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="left"
-        className="flex w-[min(36rem,100vw)] flex-col gap-0 p-0"
+        // ‎`sm:max-w-[36rem]` מכריח override ל-default `sm:max-w-sm` שמגיע מ-shadcn
+        // (אחרת ה-Sheet חנוק ב-24rem גם אם אנחנו מבקשים 36rem).
+        className="flex w-[min(36rem,100vw)] flex-col gap-0 p-0 sm:max-w-[36rem]"
       >
         <SheetHeader className="border-b border-border/70 p-4 text-start">
           <SheetTitle className="text-sm font-semibold text-muted-foreground">

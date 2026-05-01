@@ -1,0 +1,5 @@
+# Audit screenshots are user-owned visual materials; do not track in git
+# unless explicitly promoted (rename without the underscore prefix to track).
+screenshots/_*.png
+screenshots/_*.jpg
+references/_*.md
