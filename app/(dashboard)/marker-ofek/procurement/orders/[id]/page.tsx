@@ -50,6 +50,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PoAttachmentsTab } from "@/components/marker-ofek/procurement/po-attachments-tab"
+import {
+  PoSmartPricingTab,
+  type SmartPricingLineInput,
+} from "@/components/marker-ofek/procurement/po-smart-pricing-tab"
+import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 
@@ -328,10 +334,23 @@ export default function ProcurementOrderDetailPage() {
           value="pricing"
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
-          <PlaceholderTab
-            title="מחירים חכמים"
-            description="טבלה מלאה של מקורות מחיר ל-3 מקורות (מחירון, רכישה אחרונה, חלופה זולה ביותר) + accept-alternative."
-            phase="7.13.1.B"
+          <PoSmartPricingTab
+            poSupplierId={data.supplier?.id ?? null}
+            poSupplierName={data.supplier?.name ?? null}
+            currency={data.currency}
+            poTotalDeviationPct={data.poTotalDeviationPct}
+            requiresPoEscalation={data.requiresPoEscalation}
+            lines={data.lines.map<SmartPricingLineInput>((line) => ({
+              lineId: line.id,
+              itemId: line.itemId,
+              itemNumber: line.itemNumber,
+              description: line.description,
+              quantity: line.quantity,
+              unitPrice: line.unitPrice,
+              priceDeviationPct: line.priceDeviationPct,
+              requiresEscalation: line.requiresEscalation,
+              priceSource: line.priceSource,
+            }))}
           />
         </TabsContent>
 
@@ -339,11 +358,7 @@ export default function ProcurementOrderDetailPage() {
           value="attachments"
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
-          <PlaceholderTab
-            title="קבצים מצורפים"
-            description="העלאת קבצים ל-Supabase Storage (bucket po-attachments) + רשימה + תצוגה מקדימה."
-            phase="7.13.1.B"
-          />
+          <AttachmentsTabLoader poId={data.id} />
         </TabsContent>
 
         <TabsContent
@@ -897,6 +912,30 @@ function LineDataRow({
       ) : null}
     </>
   )
+}
+
+// ============================================================================
+// AttachmentsTabLoader — resolves activeCompanyId from cookie before mounting
+// the attachments tab (cookie is only available client-side).
+// ============================================================================
+
+function AttachmentsTabLoader({ poId }: { poId: string }) {
+  const [companyId, setCompanyId] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    setCompanyId(readActiveCompanyIdFromCookie())
+  }, [])
+
+  if (!companyId) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/10 p-6 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        טוען הקשר חברה פעילה…
+      </div>
+    )
+  }
+
+  return <PoAttachmentsTab poId={poId} companyId={companyId} />
 }
 
 // ============================================================================
