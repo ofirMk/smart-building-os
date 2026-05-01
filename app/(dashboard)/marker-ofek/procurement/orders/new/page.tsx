@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Procurement Orders — New PO Form (Phase 7.2.B)
+ * Procurement Orders — Smart PO Form (Phase 7.2.B + 7.5.3)
  *
  * טופס Master-Detail עשיר ליצירת הזמנת רכש על גבי `POST /api/procurement/orders`.
  *
@@ -12,25 +12,41 @@
  *   • `useFieldArray` — לניהול שורות דינמיות.
  *   • `useWatch` נקודתי — חישוב מחדש של summary בלי re-renders של כל הטופס.
  *
- * ## Auto-pilot חכם (UX קריטי)
+ * ## Auto-pilot חכם (UX קריטי) — Phase 7.5
  *   • בבחירת פריט → ממלא אוטומטית `budget_sub_chapter` ו-`resource_id` מתוך
  *     ברירות המחדל של הפריט ב-`erp_md_items` (governance compliance ללא חיכוך).
- *   • בבחירת ספק+פריט → טוען מ-`/api/master-data/supplier-items?supplierId=X&itemId=Y`
- *     את `base_price` ו-`discount_percentage`, מחשב unit_price נטו ומאכלס. אם אין
- *     מחירון לאותו צירוף — נשאר 0 לעריכה ידנית.
- *   • cache: `Map<"${supplier}_${item}", number | null>` כדי שלא נשלח אותה
- *     בקשה פעמיים בזמן ניווט בטופס.
+ *   • בבחירת ספק+פריט → קורא ל-`/api/procurement/pricing/suggestions` (מנוע
+ *     המחירים החכם של 7.5). ההצעה הראשונה מסוג `SUPPLIER_PRICELIST` מוצבת ב-
+ *     `unit_price`. אם קיימת `bestAlternative` (ספק אחר זול יותר) — מציגים
+ *     רמז קטן מתחת לשדה.
+ *   • cache מקומי כדי שלא נשלח אותה בקשה פעמיים בזמן ניווט בטופס.
+ *
+ * ## אכיפת ה-3% Rule (Phase 7.5)
+ *   ה-API ב-POST מחזיר 400 עם `error: "escalation_required"` ו-`details`
+ *   (מערך מחרוזות בפורמט "שורה N: …") כאשר חריגת המחיר מעבר לסף החברה
+ *   ולא סופקה הצדקה מספקת. אנו תופסים את התשובה, פותחים אוטומטית פאנל
+ *   `escalationCategory` + `escalationJustification` תחת השורה הרלוונטית,
+ *   ומציגים Toast עם הדרישות. המשתמש משלים ושולח שוב.
  *
  * ## Submit Flow
- *   POST → 201 → toast ירוק → router.push חזרה לעמוד ה-grid (refresh אוטומטי
- *   דרך `useEffect` של ה-landing page).
+ *   POST → 201 → toast ירוק → router.push חזרה לעמוד ה-grid.
+ *   POST → 400 escalation_required → toast אדום + חשיפת escalation panels.
+ *   POST → 400 / 500 אחר → toast אדום עם המסר המקורי.
  */
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm, useWatch } from "react-hook-form"
-import { ArrowRight, Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react"
+import {
+  AlertTriangle,
+  ArrowRight,
+  Loader2,
+  Plus,
+  ShoppingCart,
+  Sparkles,
+  Trash2,
+} from "lucide-react"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -62,8 +78,44 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const SUPPORTED_CURRENCIES = ["ILS", "USD", "EUR"] as const
+type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number]
+
+const URGENCY_LEVELS = ["NORMAL", "HIGH", "CRITICAL"] as const
+type UrgencyLevel = (typeof URGENCY_LEVELS)[number]
+
+const URGENCY_LABELS: Record<UrgencyLevel, string> = {
+  NORMAL: "רגילה",
+  HIGH: "גבוהה",
+  CRITICAL: "קריטית",
+}
+
+const ESCALATION_CATEGORIES = [
+  "BUSINESS_RELATIONSHIP",
+  "QUALITY",
+  "AVAILABILITY",
+  "LEAD_TIME",
+  "OTHER",
+] as const
+type EscalationCategory = (typeof ESCALATION_CATEGORIES)[number]
+
+const ESCALATION_LABELS: Record<EscalationCategory, string> = {
+  BUSINESS_RELATIONSHIP: "מערכת יחסים עם הספק",
+  QUALITY: "איכות",
+  AVAILABILITY: "זמינות",
+  LEAD_TIME: "זמן אספקה",
+  OTHER: "אחר",
+}
+
+const VAT_RATE = 0.17
 
 // ============================================================================
 // Types — DTO-shaped, matches existing master-data API responses.
@@ -90,14 +142,30 @@ type ItemOption = {
   resourceId: string | null
 }
 
-type SupplierPriceRow = {
-  basePrice: number
-  discountPercentage: number
+/** מבנה תגובת `/api/procurement/pricing/suggestions` (Phase 7.5). */
+type PriceSuggestion = {
+  source: "SUPPLIER_PRICELIST" | "LAST_PURCHASE" | "BEST_OFFER_CROSS"
+  supplierId: string
+  supplierName: string
+  unitPrice: number
+  currency: string
+  effectiveFrom: string | null
+  leadTimeDays: number | null
+  poNumber: string | null
+  confidence: number
 }
 
-const SUPPORTED_CURRENCIES = ["ILS", "USD", "EUR"] as const
-type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number]
-const VAT_RATE = 0.17
+type PriceSuggestionsApiResponse = {
+  suggestions: PriceSuggestion[]
+  bestAlternative: PriceSuggestion | null
+  windowDays: number
+}
+
+/** מטמון פריצה של מחירון פר זוג ספק↔פריט. */
+type CachedPricing = {
+  unitPrice: number | null
+  bestAlternative: PriceSuggestion | null
+}
 
 // ============================================================================
 // Form schema — חופף ל-`createOrderSchema` בשרת. הקלט מהטפסים מגיע כמחרוזות,
@@ -116,15 +184,38 @@ const lineFormSchema = z.object({
   budgetSubChapter: z.string().trim().min(1, { message: "סעיף תקציבי חסר בפריט" }),
   resourceId: z.string().trim().min(1, { message: "קוד משאב חסר בפריט" }),
   description: z.string().trim().optional(),
+  // Phase 7.5 — 3% Rule governance. אופציונליים בסכמה (השרת אוכף תנאית);
+  // ה-UI חושף אותם כשהשרת מסמן `escalation_required`.
+  escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
+  escalationJustification: z
+    .string()
+    .trim()
+    .min(10, { message: "הצדקה דרושה (לפחות 10 תווים)" })
+    .optional()
+    .or(z.literal("")),
 })
 
-const formSchema = z.object({
-  supplierId: z.string().uuid({ message: "יש לבחור ספק" }),
-  projectId: z.string().uuid({ message: "יש לבחור פרויקט" }),
-  currency: z.enum(SUPPORTED_CURRENCIES),
-  notes: z.string().trim().optional(),
-  lines: z.array(lineFormSchema).min(1, { message: "חובה לפחות שורה אחת" }),
-})
+const formSchema = z
+  .object({
+    supplierId: z.string().uuid({ message: "יש לבחור ספק" }),
+    projectId: z.string().uuid({ message: "יש לבחור פרויקט" }),
+    currency: z.enum(SUPPORTED_CURRENCIES),
+    urgencyLevel: z.enum(URGENCY_LEVELS),
+    urgencyJustification: z.string().trim().optional().or(z.literal("")),
+    notes: z.string().trim().optional(),
+    lines: z.array(lineFormSchema).min(1, { message: "חובה לפחות שורה אחת" }),
+  })
+  .refine(
+    // urgency=HIGH/CRITICAL חייב הצדקה — מקביל לאילוץ ב-API.
+    (data) => {
+      if (data.urgencyLevel === "NORMAL") return true
+      return (data.urgencyJustification?.trim().length ?? 0) >= 10
+    },
+    {
+      message: "דחיפות גבוהה/קריטית מחייבת הצדקה (לפחות 10 תווים)",
+      path: ["urgencyJustification"],
+    }
+  )
 
 // `z.coerce.number()` מייצר פער בין input ל-output: הטופס מקבל מחרוזות או מספרים
 // (Input HTML), ה-API מקבל מספרים ממש. משתמשים במושג 3-הגנריקים של `useForm`:
@@ -145,6 +236,18 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+/**
+ * Helper: שולף את המספר מתוך המחרוזת "שורה N: …" שהשרת מחזיר ב-`details`.
+ * מחזיר אינדקס 0-מבוסס (השרת משתמש ב-1-מבוסס).
+ */
+function parseLineIndexFromDetail(detail: string): number | null {
+  const match = detail.match(/^שורה\s+(\d+)/)
+  if (!match) return null
+  const oneBased = Number.parseInt(match[1] ?? "", 10)
+  if (!Number.isFinite(oneBased) || oneBased < 1) return null
+  return oneBased - 1
+}
+
 // ============================================================================
 // Page
 // ============================================================================
@@ -159,6 +262,15 @@ export default function NewProcurementOrderPage() {
   const [loadingLookups, setLoadingLookups] = React.useState(true)
   const [submitting, setSubmitting] = React.useState(false)
 
+  // -- ה-state של escalation: מפה line-index → הודעה מהשרת. הצגת escalation
+  //    panel תחת שורה מותנית ב-(message != null) או ב-toggle ידני של המשתמש.
+  const [lineErrors, setLineErrors] = React.useState<Record<number, string>>({})
+
+  // -- ה-state של bestAlternative פר שורה — לרמז UX מתחת ל-unit_price.
+  const [lineBestAlts, setLineBestAlts] = React.useState<
+    Record<number, PriceSuggestion | null>
+  >({})
+
   // Index פריטים לפי ID לחיפוש מהיר ב-Auto-fill.
   const itemsById = React.useMemo(() => {
     const map = new Map<string, ItemOption>()
@@ -166,9 +278,8 @@ export default function NewProcurementOrderPage() {
     return map
   }, [items])
 
-  // Cache למחירי ספק לפי צירוף — מונע בקשות חוזרות בזמן הקלדה/ניווט.
-  // value: מחיר נטו לאחר הנחה, או null אם אין מחירון לאותו צירוף.
-  const supplierPriceCache = React.useRef<Map<string, number | null>>(new Map())
+  // Cache מחירים לפי צירוף — מונע בקשות חוזרות בזמן הקלדה/ניווט.
+  const pricingCache = React.useRef<Map<string, CachedPricing>>(new Map())
 
   const form = useForm<FormInput, undefined, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -176,6 +287,8 @@ export default function NewProcurementOrderPage() {
       supplierId: "",
       projectId: "",
       currency: "ILS",
+      urgencyLevel: "NORMAL",
+      urgencyJustification: "",
       notes: "",
       lines: [
         {
@@ -185,6 +298,8 @@ export default function NewProcurementOrderPage() {
           budgetSubChapter: "",
           resourceId: "",
           description: "",
+          escalationCategory: undefined,
+          escalationJustification: "",
         },
       ],
     },
@@ -195,6 +310,13 @@ export default function NewProcurementOrderPage() {
     control: form.control,
     name: "lines",
   })
+
+  // Watch לדחיפות — קובע אם להציג את שדה ההצדקה.
+  const watchedUrgency = useWatch({
+    control: form.control,
+    name: "urgencyLevel",
+  })
+  const showUrgencyJustification = watchedUrgency !== "NORMAL"
 
   // -- טעינת lookups במקביל.
   React.useEffect(() => {
@@ -231,30 +353,52 @@ export default function NewProcurementOrderPage() {
     }
   }, [])
 
-  // -- Auto-pricing helper (memoized fetch with cache).
-  const fetchEffectivePrice = React.useCallback(
-    async (supplierId: string, itemId: string): Promise<number | null> => {
+  // -- Auto-pricing helper (Phase 7.5 — Smart Pricing engine).
+  //    קורא ל-`/api/procurement/pricing/suggestions` ומחזיר את המחיר של הספק
+  //    הנבחר (SUPPLIER_PRICELIST) + bestAlternative אם קיים.
+  const fetchPricing = React.useCallback(
+    async (supplierId: string, itemId: string): Promise<CachedPricing> => {
       const key = `${supplierId}_${itemId}`
-      const cached = supplierPriceCache.current.get(key)
-      if (cached !== undefined) return cached
+      const cached = pricingCache.current.get(key)
+      if (cached) return cached
+
       try {
-        const rows = await masterDataFetch<SupplierPriceRow[]>(
-          `/api/master-data/supplier-items?supplierId=${encodeURIComponent(
-            supplierId
-          )}&itemId=${encodeURIComponent(itemId)}`
-        )
-        const row = rows?.[0]
-        if (!row) {
-          supplierPriceCache.current.set(key, null)
-          return null
+        const url = `/api/procurement/pricing/suggestions?itemId=${encodeURIComponent(
+          itemId
+        )}&supplierId=${encodeURIComponent(supplierId)}`
+        const res = await fetch(url, {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: buildCompanyHeaders(),
+        })
+        if (!res.ok) {
+          // Endpoint כשל — לא חוסם את המשתמש; מסמנים null וממשיכים.
+          const fallback: CachedPricing = { unitPrice: null, bestAlternative: null }
+          pricingCache.current.set(key, fallback)
+          return fallback
         }
-        const net = round2(row.basePrice * (1 - (row.discountPercentage ?? 0) / 100))
-        supplierPriceCache.current.set(key, net)
-        return net
+        const payload = (await res.json()) as PriceSuggestionsApiResponse
+        // המקור הראשון מסוג SUPPLIER_PRICELIST של אותו הספק = המחיר המדויק.
+        const supplierPriceRow = payload.suggestions.find(
+          (s) => s.source === "SUPPLIER_PRICELIST" && s.supplierId === supplierId
+        )
+        const fallbackLast = payload.suggestions.find(
+          (s) => s.source === "LAST_PURCHASE" && s.supplierId === supplierId
+        )
+        const result: CachedPricing = {
+          unitPrice: supplierPriceRow
+            ? round2(supplierPriceRow.unitPrice)
+            : fallbackLast
+              ? round2(fallbackLast.unitPrice)
+              : null,
+          bestAlternative: payload.bestAlternative,
+        }
+        pricingCache.current.set(key, result)
+        return result
       } catch {
-        // נכשל ברשת — לא חוסם את המשתמש; מסמנים null וממשיכים.
-        supplierPriceCache.current.set(key, null)
-        return null
+        const fallback: CachedPricing = { unitPrice: null, bestAlternative: null }
+        pricingCache.current.set(key, fallback)
+        return fallback
       }
     },
     []
@@ -268,29 +412,31 @@ export default function NewProcurementOrderPage() {
       // 1) שדות governance מהפריט (item.* הם string|null — מאלצים ?? '').
       const budgetSubChapter: string = item.budgetSubChapter ?? ""
       const resourceId: string = item.resourceId ?? ""
-      form.setValue(
-        `lines.${lineIndex}.budgetSubChapter`,
-        budgetSubChapter,
-        { shouldValidate: true, shouldDirty: true }
-      )
-      form.setValue(
-        `lines.${lineIndex}.resourceId`,
-        resourceId,
-        { shouldValidate: true, shouldDirty: true }
-      )
+      form.setValue(`lines.${lineIndex}.budgetSubChapter`, budgetSubChapter, {
+        shouldValidate: true,
+        shouldDirty: true,
+      })
+      form.setValue(`lines.${lineIndex}.resourceId`, resourceId, {
+        shouldValidate: true,
+        shouldDirty: true,
+      })
       // 2) auto-pricing אם כבר נבחר ספק.
       const supplierId = form.getValues("supplierId")
       if (supplierId) {
-        const price = await fetchEffectivePrice(supplierId, itemId)
-        if (price !== null) {
-          form.setValue(`lines.${lineIndex}.unitPrice`, price, {
+        const pricing = await fetchPricing(supplierId, itemId)
+        if (pricing.unitPrice !== null) {
+          form.setValue(`lines.${lineIndex}.unitPrice`, pricing.unitPrice, {
             shouldValidate: true,
             shouldDirty: true,
           })
         }
+        setLineBestAlts((prev) => ({
+          ...prev,
+          [lineIndex]: pricing.bestAlternative,
+        }))
       }
     },
-    [form, itemsById, fetchEffectivePrice]
+    [form, itemsById, fetchPricing]
   )
 
   // -- כשהמשתמש משנה ספק → רץ על כל השורות שכבר יש בהן פריט ומעדכן מחיר.
@@ -300,50 +446,106 @@ export default function NewProcurementOrderPage() {
       const updates = await Promise.all(
         lines.map(async (line, idx) => {
           if (!line.itemId) return null
-          const price = await fetchEffectivePrice(supplierId, line.itemId)
-          return price === null ? null : { idx, price }
+          const pricing = await fetchPricing(supplierId, line.itemId)
+          return { idx, pricing }
         })
       )
+      const altsUpdate: Record<number, PriceSuggestion | null> = {}
       for (const u of updates) {
-        if (u) {
-          form.setValue(`lines.${u.idx}.unitPrice`, u.price, {
+        if (!u) continue
+        if (u.pricing.unitPrice !== null) {
+          form.setValue(`lines.${u.idx}.unitPrice`, u.pricing.unitPrice, {
             shouldValidate: true,
             shouldDirty: true,
           })
         }
+        altsUpdate[u.idx] = u.pricing.bestAlternative
       }
+      setLineBestAlts((prev) => ({ ...prev, ...altsUpdate }))
     },
-    [form, fetchEffectivePrice]
+    [form, fetchPricing]
   )
 
   // -- Submit. RHF מעביר את ערכי ה-output המומרים (מספרים ממש אחרי z.coerce).
+  //    בשונה מ-`masterDataFetch`, אנחנו משתמשים ב-`fetch` גולמי כדי לחשוף את
+  //    `error: "escalation_required"` ואת `details` (מערך שורות) שהשרת מחזיר.
   const onSubmit = React.useCallback(
     async (values: FormOutput) => {
       setSubmitting(true)
+      // ניקוי שגיאות escalation קודמות לפני submit חדש.
+      setLineErrors({})
+
       try {
-        type CreatedOrder = { id: string; poNumber: string }
-        const created = await masterDataFetch<CreatedOrder>(
-          "/api/procurement/orders",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              supplierId: values.supplierId,
-              projectId: values.projectId,
-              currency: values.currency,
-              notes: values.notes?.trim() ? values.notes.trim() : null,
-              lines: values.lines.map((line) => ({
-                itemId: line.itemId,
-                quantity: line.quantity,
-                unitPrice: line.unitPrice,
-                budgetSubChapter: line.budgetSubChapter,
-                resourceId: line.resourceId,
-                description: line.description?.trim() || undefined,
-              })),
-            }),
+        const requestBody = {
+          supplierId: values.supplierId,
+          projectId: values.projectId,
+          currency: values.currency,
+          urgencyLevel: values.urgencyLevel,
+          urgencyJustification:
+            values.urgencyLevel !== "NORMAL"
+              ? values.urgencyJustification?.trim() || undefined
+              : undefined,
+          notes: values.notes?.trim() ? values.notes.trim() : null,
+          lines: values.lines.map((line) => ({
+            itemId: line.itemId,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            budgetSubChapter: line.budgetSubChapter,
+            resourceId: line.resourceId,
+            description: line.description?.trim() || undefined,
+            // השדות מועברים תמיד; השרת אוכף אותם רק אם נדרש escalation.
+            escalationCategory: line.escalationCategory ?? undefined,
+            escalationJustification:
+              line.escalationJustification?.trim().length ?? 0 >= 10
+                ? line.escalationJustification?.trim()
+                : undefined,
+          })),
+        }
+
+        const res = await fetch("/api/procurement/orders", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            ...Object.fromEntries(buildCompanyHeaders().entries()),
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        const payload = (await res.json().catch(() => ({}))) as {
+          data?: { id: string; poNumber: string }
+          error?: string
+          details?: string[]
+        }
+
+        if (!res.ok) {
+          // Phase 7.5 — escalation_required: 400 עם details = ["שורה 1: …", "שורה 3: …"]
+          if (res.status === 400 && payload.error === "escalation_required") {
+            const newErrors: Record<number, string> = {}
+            for (const detail of payload.details ?? []) {
+              const idx = parseLineIndexFromDetail(detail)
+              if (idx != null) newErrors[idx] = detail
+            }
+            setLineErrors(newErrors)
+            const count = Object.keys(newErrors).length
+            toast.error(
+              count > 0
+                ? `${count} שורות דורשות הצדקת חריגה (3% Rule). מלא את הקטגוריה והנימוק ושלח שוב.`
+                : "השרת דרש הצדקת חריגה אך לא זוהו שורות ספציפיות.",
+              { duration: 6000 }
+            )
+            return
           }
-        )
-        toast.success(`הזמנת רכש ${created.poNumber} נוצרה בהצלחה`)
+          throw new Error(payload.error ?? `שגיאת שרת (${res.status})`)
+        }
+
+        const created = payload.data
+        if (!created) throw new Error("השרת החזיר תגובה לא צפויה")
+
+        toast.success(`הזמנת רכש ${created.poNumber} נוצרה בהצלחה`, {
+          duration: 4000,
+        })
         router.push("/marker-ofek/procurement/orders")
         router.refresh()
       } catch (error: unknown) {
@@ -379,7 +581,9 @@ export default function NewProcurementOrderPage() {
           <div>
             <h1 className="text-xl font-semibold">הזמנת רכש חדשה</h1>
             <p className="text-xs text-muted-foreground">
-              מילוי כותרת ושורות פריטים. מע&quot;מ {Math.round(VAT_RATE * 100)}% מחושב אוטומטית.
+              מילוי כותרת ושורות פריטים. מע&quot;מ {Math.round(VAT_RATE * 100)}%
+              מחושב אוטומטית. מנוע המחירים החכם (Phase 7.5) מציע מחירים בזמן
+              אמת.
             </p>
           </div>
         </div>
@@ -425,7 +629,9 @@ export default function NewProcurementOrderPage() {
                         <SelectTrigger>
                           <SelectValue placeholder="בחר ספק...">
                             {(() => {
-                              const s = suppliers.find((sup) => sup.id === field.value)
+                              const s = suppliers.find(
+                                (sup) => sup.id === field.value
+                              )
                               if (!s) return null
                               return s.supplierNum
                                 ? `${s.supplierNum} · ${s.name}`
@@ -464,13 +670,20 @@ export default function NewProcurementOrderPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>פרויקט *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="בחר פרויקט...">
                             {(() => {
-                              const p = projects.find((pr) => pr.id === field.value)
-                              return p ? `${p.projectNumber} · ${p.name}` : null
+                              const p = projects.find(
+                                (pr) => pr.id === field.value
+                              )
+                              return p
+                                ? `${p.projectNumber} · ${p.name}`
+                                : null
                             })()}
                           </SelectValue>
                         </SelectTrigger>
@@ -531,6 +744,59 @@ export default function NewProcurementOrderPage() {
 
               <FormField
                 control={form.control}
+                name="urgencyLevel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>דחיפות *</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) =>
+                        field.onChange(value as UrgencyLevel)
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {URGENCY_LEVELS.map((level) => (
+                          <SelectItem key={level} value={level}>
+                            {URGENCY_LABELS[level]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      גבוהה/קריטית מחייבת הצדקה ועוקפת negotiation אוטומטית.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {showUrgencyJustification ? (
+                <FormField
+                  control={form.control}
+                  name="urgencyJustification"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2 lg:col-span-4">
+                      <FormLabel>הצדקת דחיפות *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          rows={2}
+                          placeholder="מדוע ההזמנה דורשת דחיפות גבוהה? (לפחות 10 תווים)"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
+
+              <FormField
+                control={form.control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2 lg:col-span-4">
@@ -569,6 +835,8 @@ export default function NewProcurementOrderPage() {
                     budgetSubChapter: "",
                     resourceId: "",
                     description: "",
+                    escalationCategory: undefined,
+                    escalationJustification: "",
                   })
                 }
                 className="gap-2"
@@ -585,8 +853,12 @@ export default function NewProcurementOrderPage() {
                     <TableHead className="w-12 text-center">#</TableHead>
                     <TableHead className="text-start">פריט *</TableHead>
                     <TableHead className="w-32 text-start">כמות *</TableHead>
-                    <TableHead className="w-40 text-start">מחיר יחידה *</TableHead>
-                    <TableHead className="w-40 text-end">סה&quot;כ שורה</TableHead>
+                    <TableHead className="w-44 text-start">
+                      מחיר יחידה *
+                    </TableHead>
+                    <TableHead className="w-40 text-end">
+                      סה&quot;כ שורה
+                    </TableHead>
                     <TableHead className="w-12 text-center">פעולה</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -598,8 +870,23 @@ export default function NewProcurementOrderPage() {
                       items={items}
                       control={form.control}
                       onItemChange={handleItemChange}
-                      onRemove={() => remove(index)}
+                      onRemove={() => {
+                        remove(index)
+                        // נקה גם state חיצוני שקשור לאינדקסים
+                        setLineErrors((prev) => {
+                          const next = { ...prev }
+                          delete next[index]
+                          return next
+                        })
+                        setLineBestAlts((prev) => {
+                          const next = { ...prev }
+                          delete next[index]
+                          return next
+                        })
+                      }}
                       canRemove={fields.length > 1}
+                      bestAlternative={lineBestAlts[index] ?? null}
+                      escalationMessage={lineErrors[index] ?? null}
                     />
                   ))}
                 </TableBody>
@@ -629,7 +916,12 @@ export default function NewProcurementOrderPage() {
             >
               ביטול
             </Button>
-            <Button type="submit" disabled={submitting} className="gap-2" size="lg">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="gap-2"
+              size="lg"
+            >
               {submitting ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : null}
@@ -654,6 +946,9 @@ type LineRowProps = {
   onItemChange: (lineIndex: number, itemId: string) => void | Promise<void>
   onRemove: () => void
   canRemove: boolean
+  bestAlternative: PriceSuggestion | null
+  /** מחרוזת escalation מהשרת — אם קיימת, ה-panel נחשף אוטומטית. */
+  escalationMessage: string | null
 }
 
 function LineRow({
@@ -663,6 +958,8 @@ function LineRow({
   onItemChange,
   onRemove,
   canRemove,
+  bestAlternative,
+  escalationMessage,
 }: LineRowProps) {
   // useWatch ברמת השורה בלבד — חישוב סה"כ-שורה ללא טריגר re-render גלובלי.
   const watched = useWatch({ control, name: `lines.${index}` })
@@ -673,132 +970,239 @@ function LineRow({
     return round2(qty * price)
   }, [watched?.quantity, watched?.unitPrice])
 
-  return (
-    <TableRow>
-      <TableCell className="text-center text-xs text-muted-foreground tabular-nums">
-        {index + 1}
-      </TableCell>
+  // panel חשוף אם השרת סימן או אם המשתמש כבר בחר קטגוריה ידנית.
+  const showEscalation =
+    escalationMessage != null ||
+    Boolean(watched?.escalationCategory) ||
+    (watched?.escalationJustification?.trim().length ?? 0) > 0
 
-      <TableCell>
-        <FormField
-          control={control}
-          name={`lines.${index}.itemId`}
-          render={({ field, fieldState }) => (
-            <FormItem className="m-0 space-y-1">
-              <Select
-                value={field.value}
-                onValueChange={(value) => {
-                  field.onChange(value ?? "")
-                  if (value) void onItemChange(index, value)
-                }}
-              >
+  return (
+    <>
+      <TableRow className={cn(escalationMessage && "bg-destructive/5")}>
+        <TableCell className="text-center text-xs text-muted-foreground tabular-nums">
+          {index + 1}
+        </TableCell>
+
+        <TableCell>
+          <FormField
+            control={control}
+            name={`lines.${index}.itemId`}
+            render={({ field, fieldState }) => (
+              <FormItem className="m-0 space-y-1">
+                <Select
+                  value={field.value}
+                  onValueChange={(value) => {
+                    field.onChange(value ?? "")
+                    if (value) void onItemChange(index, value)
+                  }}
+                >
+                  <FormControl>
+                    <SelectTrigger
+                      className={cn(
+                        "h-9",
+                        fieldState.error && "border-destructive"
+                      )}
+                    >
+                      <SelectValue placeholder="בחר פריט...">
+                        {(() => {
+                          const item = items.find(
+                            (it) => it.id === field.value
+                          )
+                          return item
+                            ? `${item.itemNumber} · ${item.description}`
+                            : null
+                        })()}
+                      </SelectValue>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {items.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        לא הוגדרו פריטים.
+                      </div>
+                    ) : (
+                      items.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.itemNumber} · {item.description}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </TableCell>
+
+        <TableCell>
+          <FormField
+            control={control}
+            name={`lines.${index}.quantity`}
+            render={({ field, fieldState }) => (
+              <FormItem className="m-0 space-y-1">
                 <FormControl>
-                  <SelectTrigger
+                  <Input
+                    {...field}
+                    // field.value הוא unknown (input type של z.coerce.number) — ממירים
+                    // ל-string|number כדי לרצות את HTML input attributes.
+                    value={(field.value ?? "") as string | number}
+                    type="number"
+                    step="0.001"
+                    min={0}
                     className={cn(
-                      "h-9",
+                      "h-9 tabular-nums",
                       fieldState.error && "border-destructive"
                     )}
-                  >
-                    <SelectValue placeholder="בחר פריט...">
-                      {(() => {
-                        const item = items.find((it) => it.id === field.value)
-                        return item
-                          ? `${item.itemNumber} · ${item.description}`
-                          : null
-                      })()}
-                    </SelectValue>
-                  </SelectTrigger>
+                  />
                 </FormControl>
-                <SelectContent>
-                  {items.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      לא הוגדרו פריטים.
-                    </div>
-                  ) : (
-                    items.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.itemNumber} · {item.description}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage className="text-xs" />
-            </FormItem>
-          )}
-        />
-      </TableCell>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </TableCell>
 
-      <TableCell>
-        <FormField
-          control={control}
-          name={`lines.${index}.quantity`}
-          render={({ field, fieldState }) => (
-            <FormItem className="m-0 space-y-1">
-              <FormControl>
-                <Input
-                  {...field}
-                  // field.value הוא unknown (input type של z.coerce.number) — ממירים
-                  // ל-string|number כדי לרצות את HTML input attributes.
-                  value={(field.value ?? "") as string | number}
-                  type="number"
-                  step="0.001"
-                  min={0}
-                  className={cn(
-                    "h-9 tabular-nums",
-                    fieldState.error && "border-destructive"
-                  )}
-                />
-              </FormControl>
-              <FormMessage className="text-xs" />
-            </FormItem>
-          )}
-        />
-      </TableCell>
+        <TableCell>
+          <FormField
+            control={control}
+            name={`lines.${index}.unitPrice`}
+            render={({ field, fieldState }) => (
+              <FormItem className="m-0 space-y-1">
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={(field.value ?? "") as string | number}
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    className={cn(
+                      "h-9 tabular-nums",
+                      fieldState.error && "border-destructive"
+                    )}
+                  />
+                </FormControl>
+                {bestAlternative ? (
+                  <p className="flex items-center gap-1 text-[10px] leading-tight text-amber-700 dark:text-amber-500">
+                    <Sparkles className="size-3" aria-hidden />
+                    חלופה: {numberFormatter.format(bestAlternative.unitPrice)}{" "}
+                    {bestAlternative.currency} ({bestAlternative.supplierName})
+                  </p>
+                ) : null}
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </TableCell>
 
-      <TableCell>
-        <FormField
-          control={control}
-          name={`lines.${index}.unitPrice`}
-          render={({ field, fieldState }) => (
-            <FormItem className="m-0 space-y-1">
-              <FormControl>
-                <Input
-                  {...field}
-                  value={(field.value ?? "") as string | number}
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  className={cn(
-                    "h-9 tabular-nums",
-                    fieldState.error && "border-destructive"
-                  )}
-                />
-              </FormControl>
-              <FormMessage className="text-xs" />
-            </FormItem>
-          )}
-        />
-      </TableCell>
+        <TableCell className="text-end font-medium tabular-nums">
+          {numberFormatter.format(lineTotal)}
+        </TableCell>
 
-      <TableCell className="text-end font-medium tabular-nums">
-        {numberFormatter.format(lineTotal)}
-      </TableCell>
+        <TableCell className="text-center">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={onRemove}
+            disabled={!canRemove}
+            aria-label={`מחק שורה ${index + 1}`}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+          >
+            <Trash2 className="size-4" aria-hidden />
+          </Button>
+        </TableCell>
+      </TableRow>
 
-      <TableCell className="text-center">
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          onClick={onRemove}
-          disabled={!canRemove}
-          aria-label={`מחק שורה ${index + 1}`}
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
-        >
-          <Trash2 className="size-4" aria-hidden />
-        </Button>
-      </TableCell>
-    </TableRow>
+      {/* ── Escalation panel (Phase 7.5 — 3% Rule) ────────────────────── */}
+      {showEscalation ? (
+        <TableRow className="border-t-0 hover:bg-transparent">
+          <TableCell colSpan={6} className="bg-amber-50/40 px-3 py-3 dark:bg-amber-900/10">
+            <div className="flex items-start gap-2">
+              <AlertTriangle
+                className="mt-0.5 size-4 flex-none text-amber-600"
+                aria-hidden
+              />
+              <div className="flex-1 space-y-2">
+                {escalationMessage ? (
+                  <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                    {escalationMessage}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    אם המחיר חורג מהסף — מלא קטגוריה והצדקה כדי שהשרת יקבל את
+                    השורה.
+                  </p>
+                )}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <FormField
+                    control={control}
+                    name={`lines.${index}.escalationCategory`}
+                    render={({ field, fieldState }) => (
+                      <FormItem className="m-0 space-y-1">
+                        <FormLabel className="text-xs">
+                          קטגוריית חריגה
+                        </FormLabel>
+                        <Select
+                          value={field.value ?? ""}
+                          onValueChange={(value) =>
+                            field.onChange(
+                              (value as EscalationCategory) || undefined
+                            )
+                          }
+                        >
+                          <FormControl>
+                            <SelectTrigger
+                              className={cn(
+                                "h-9",
+                                fieldState.error && "border-destructive"
+                              )}
+                            >
+                              <SelectValue placeholder="בחר קטגוריה..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {ESCALATION_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {ESCALATION_LABELS[cat]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name={`lines.${index}.escalationJustification`}
+                    render={({ field, fieldState }) => (
+                      <FormItem className="m-0 space-y-1 md:col-span-2">
+                        <FormLabel className="text-xs">
+                          הצדקה (לפחות 10 תווים)
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            value={field.value ?? ""}
+                            rows={2}
+                            placeholder="הסבר עסקי לבחירה למרות חריגת המחיר…"
+                            className={cn(
+                              "min-h-[60px] resize-y",
+                              fieldState.error && "border-destructive"
+                            )}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+          </TableCell>
+        </TableRow>
+      ) : null}
+    </>
   )
 }
 
@@ -859,4 +1263,19 @@ function SummaryFooter({
       </div>
     </section>
   )
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/** בונה Headers עם x-active-company-id מה-cookie (mirror של masterDataFetch). */
+function buildCompanyHeaders(): Headers {
+  const out = new Headers()
+  const activeCompanyId = readActiveCompanyIdFromCookie()
+  if (activeCompanyId) {
+    out.set("x-company-id", activeCompanyId)
+    out.set("x-active-company-id", activeCompanyId)
+  }
+  return out
 }
