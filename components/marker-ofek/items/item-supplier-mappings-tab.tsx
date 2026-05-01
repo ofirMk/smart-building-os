@@ -1,18 +1,23 @@
 "use client"
 
 /**
- * ItemSupplierMappingsTab — Phase 7.13.3.B
+ * ItemSupplierMappingsTab — Phase 7.13.3.B → Phase 7.14.3 (unified)
  *
- * חושף את `erp_md_supplier_item_mapping` עבור Master SKU. כל שורה מתארת
- * את "השפה הפרטית" של ספק לפריט הזה: ה-supplier_sku, התיאור, המחיר, ה-
- * confidence שה-AI ייצר וה-verified_by_user שלנו.
+ * Phase 7.14.3: מציג את ספקי הפריט כטבלה אחת מאוחדת, במקום שתי טבלאות נפרדות.
+ * מאגד שני מקורות ב-DB:
+ *   • `erp_md_supplier_items`          — מחיר (base/net/discount/preferred/valid)
+ *   • `erp_md_supplier_item_mapping`   — semantic match (confidence, verified_by_user)
+ *
+ * ה-API החדש `/api/master-data/items/[id]/suppliers` מבצע merge לפי
+ * (supplier_id + supplier_sku) ומחזיר שורות עם `sources[]` flag
+ * שמציין מאיזה מקור השורה הגיעה. המשתמש רואה סטטוס מלא לכל ספק במבט אחד.
  *
  * UX:
- *   • toggle "כולל היסטוריה" (?includeHistory=1) להצגת mappings לא-פעילים.
- *   • Confidence Tier badge (A/B/C) — חופף ל-CHECK constraint:
- *     A ≥ 0.90 (auto-applied), B 0.70–0.89 (review queue), C < 0.70.
- *   • verified_by_user badge ירוק עם shield icon כשמאומת.
- *   • Lead time + min qty כעמודות נוספות לתועלת רכש.
+ *   • Badge "מחיר + AI" / "רק מחיר" / "רק מיפוי" לפי sources[].
+ *   • Confidence Tier badge (A/B/C) — כשיש מיפוי.
+ *   • Star לספק המועדף (is_preferred=true ב-pricing).
+ *   • ShieldCheck ירוק אם verified_by_user.
+ *   • toggle "כולל היסטוריה" — חושף שורות עם valid_to בעבר.
  */
 
 import * as React from "react"
@@ -55,27 +60,37 @@ import { cn } from "@/lib/utils"
 // Types
 // ============================================================================
 
-type SupplierMapping = {
-  id: string
+// Phase 7.14.3 — DTO֧ של שורה מאוחדת מה-endpoint החדש.
+// מקביל את שני המקורות ומציין sources[] לראות מאיפה הגיעה השורה.
+type UnifiedSupplierRow = {
+  rowKey: string
+  sources: Array<"pricing" | "mapping">
   supplierId: string
   supplierName: string | null
   supplierSku: string
-  supplierDescription: string | null
+  supplierItemId: string | null
+  mappingId: string | null
   unitPrice: number | null
+  netUnitPrice: number | null
+  basePrice: number | null
+  discountPercentage: number | null
   currency: string | null
-  uom: string | null
-  minQty: number | null
-  leadTimeDays: number | null
+  isPreferred: boolean | null
+  supplierDescription: string | null
   confidence: number | null
   matchedByAi: boolean
   verifiedByUser: boolean
-  validFrom: string
-  validTo: string | null
   sourceType: string | null
   sourceReference: string | null
   modelProvider: string | null
   modelName: string | null
-  createdAt: string
+  uom: string | null
+  minQty: number | null
+  leadTimeDays: number | null
+  validFrom: string | null
+  validTo: string | null
+  isActive: boolean
+  createdAt: string | null
 }
 
 const SOURCE_TYPE_LABEL: Record<string, string> = {
@@ -287,7 +302,7 @@ export function ItemSupplierMappingsTab({
   suppliersLoading = false,
   pricing = null,
 }: ItemSupplierMappingsTabProps) {
-  const [mappings, setMappings] = React.useState<SupplierMapping[]>([])
+  const [rows, setRows] = React.useState<UnifiedSupplierRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [includeHistory, setIncludeHistory] = React.useState(false)
@@ -303,14 +318,15 @@ export function ItemSupplierMappingsTab({
       setLoading(true)
       setError(null)
       try {
-        const url = `/api/master-data/items/${encodeURIComponent(itemId)}/supplier-mappings${
+        // Phase 7.14.3: endpoint המאוחד מחליף את הישן `/supplier-mappings` (המקורי נשמר לתאימות לאחור).
+        const url = `/api/master-data/items/${encodeURIComponent(itemId)}/suppliers${
           includeHistory ? "?includeHistory=1" : ""
         }`
-        const result = await masterDataFetch<SupplierMapping[]>(url)
-        if (!cancelled) setMappings(result)
+        const result = await masterDataFetch<UnifiedSupplierRow[]>(url)
+        if (!cancelled) setRows(result)
       } catch (e: unknown) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "טעינת מיפויים נכשלה")
+          setError(e instanceof Error ? e.message : "טעינת ספקים נכשלה")
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -321,12 +337,14 @@ export function ItemSupplierMappingsTab({
     }
   }, [itemId, includeHistory])
 
-  // Phase 7.14.1: האם הספק המועדף מופיע גם במיפויי הפריט?
-  // זה לא blocking — משמש להצגת אזהרה למשתמש שמומלץ להוסיף מיפוי (ספק-פריט מלא).
+  // Phase 7.14.3: האם הספק המועדף מופיע כשורה עם pricing פעיל?
+  // משמש להצגת אזהרה למשתמש — גזירת מחיר פתור דורשת רשומת pricing פעילה (לא רק mapping).
   const preferredHasMapping = React.useMemo(() => {
     if (!preferredSupplierId) return true
-    return mappings.some((m) => m.supplierId === preferredSupplierId)
-  }, [mappings, preferredSupplierId])
+    return rows.some(
+      (r) => r.supplierId === preferredSupplierId && r.sources.includes("pricing") && r.isActive
+    )
+  }, [rows, preferredSupplierId])
 
   return (
     <div className="space-y-4">
@@ -392,13 +410,13 @@ export function ItemSupplierMappingsTab({
       {/* ├─ Phase 7.14.2: תמחור פתור ───────────────────────────────────────────────────*/}
       <ResolvedPricingSummary pricing={pricing} />
 
-      {/* ├─ טבלת מיפויים ─────────────────────────────────────────────────*/}
+      {/* ├─ טבלת ספקי הפריט (מאוחדת) ────────────────────────*/}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <h3 className="text-sm font-semibold">מיפויי ספקים</h3>
+          <h3 className="text-sm font-semibold">ספקי הפריט</h3>
           <p className="text-xs text-muted-foreground">
-            כיצד כל ספק מסמן את הפריט הזה בקטלוג שלו. בסיס ל-Cross-Supplier
-            Optimizer.
+            כל הספקים שמוכרים את הפריט הזה — עם מחיר + המיפוי הסמנטי באותה טבלה. בסיס
+            ל-Cross-Supplier Optimizer.
           </p>
         </div>
         <Label className="flex cursor-pointer items-center gap-2 text-xs">
@@ -407,7 +425,7 @@ export function ItemSupplierMappingsTab({
             onCheckedChange={(v) => setIncludeHistory(Boolean(v))}
           />
           <History className="size-3.5" aria-hidden />
-          כולל היסטוריה (mappings לא-פעילים)
+          כולל היסטוריה (לא-פעילים)
         </Label>
       </div>
 
@@ -421,10 +439,10 @@ export function ItemSupplierMappingsTab({
           <AlertTriangle className="size-4" aria-hidden />
           {error}
         </div>
-      ) : mappings.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/10 p-10 text-center">
           <ShieldQuestion className="size-6 text-muted-foreground" aria-hidden />
-          <p className="text-sm font-medium">אין מיפויי ספקים</p>
+          <p className="text-sm font-medium">אין ספקים לפריט הזה</p>
           <p className="max-w-md text-xs text-muted-foreground">
             ה-Semantic Matcher (Phase 7.10.1) ימפה ספקים אוטומטית כשתעלה
             חשבוניות / הצעות מחיר. ניתן גם להוסיף ידנית ממסך הספקים.
@@ -442,17 +460,16 @@ export function ItemSupplierMappingsTab({
                 <TableHead className="text-start">UoM</TableHead>
                 <TableHead className="text-end">מינ&apos; כמות</TableHead>
                 <TableHead className="text-end">Lead</TableHead>
-                <TableHead className="text-start">Confidence</TableHead>
-                <TableHead className="text-start">מקור</TableHead>
+                <TableHead className="text-start">מקורות</TableHead>
                 <TableHead className="text-start">תוקף</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mappings.map((m) => (
-                <MappingRow
-                  key={m.id}
-                  mapping={m}
-                  isPreferred={m.supplierId === preferredSupplierId}
+              {rows.map((r) => (
+                <UnifiedRow
+                  key={r.rowKey}
+                  row={r}
+                  isPreferredSupplier={r.supplierId === preferredSupplierId}
                 />
               ))}
             </TableBody>
@@ -464,32 +481,44 @@ export function ItemSupplierMappingsTab({
 }
 
 // ============================================================================
-// Single row
+// UnifiedRow — שורה מאוחדת פר-ספק (Phase 7.14.3)
 // ============================================================================
 
-function MappingRow({
-  mapping,
-  isPreferred = false,
+function UnifiedRow({
+  row,
+  isPreferredSupplier = false,
 }: {
-  mapping: SupplierMapping
-  /** Phase 7.14.1: מסמן את השורה במידה וזו השורה של הספק המועדף. */
-  isPreferred?: boolean
+  row: UnifiedSupplierRow
+  /** האם זה הספק המועדף על הפריט (מתוך ה-form הגלובלי). שונה מ-row.isPreferred שהוא flag סקטוריאלי על ה-pricing row. */
+  isPreferredSupplier?: boolean
 }) {
-  const tier = confidenceTier(mapping.confidence)
-  const isExpired = mapping.validTo != null
-  const validFromText = formatDate(mapping.validFrom)
-  const validToText = formatDate(mapping.validTo)
+  const tier = confidenceTier(row.confidence)
+  const hasPricing = row.sources.includes("pricing")
+  const hasMapping = row.sources.includes("mapping")
+  const isExpired = !row.isActive
+  const validFromText = formatDate(row.validFrom)
+  const validToText = formatDate(row.validTo)
+
+  // המחיר לתצוגה: net_unit_price אם יש, אחרת unitPrice (fallback מ-mapping).
+  const displayPrice = row.netUnitPrice ?? row.unitPrice
+  const priceTooltipParts: string[] = []
+  if (row.basePrice != null) {
+    priceTooltipParts.push(`בסיס: ${numberFormatter.format(row.basePrice)}`)
+  }
+  if (row.discountPercentage != null && row.discountPercentage > 0) {
+    priceTooltipParts.push(`הנחה: ${row.discountPercentage}%`)
+  }
 
   return (
     <TableRow
       className={cn(
         isExpired && "opacity-60",
-        isPreferred && "bg-amber-500/10 hover:bg-amber-500/15"
+        isPreferredSupplier && "bg-amber-500/10 hover:bg-amber-500/15"
       )}
     >
       <TableCell>
         <div className="flex items-center gap-2">
-          {isPreferred ? (
+          {isPreferredSupplier ? (
             <Star
               className="size-3.5 fill-amber-400 text-amber-500"
               aria-hidden
@@ -497,15 +526,15 @@ function MappingRow({
             />
           ) : null}
           <span className="truncate font-medium">
-            {mapping.supplierName ?? `#${mapping.supplierId.slice(0, 8)}`}
+            {row.supplierName ?? `#${row.supplierId.slice(0, 8)}`}
           </span>
-          {mapping.verifiedByUser ? (
+          {row.verifiedByUser ? (
             <ShieldCheck
               className="size-3.5 text-emerald-600"
               aria-hidden
               aria-label="מאומת עב&quot;י משתמש"
             />
-          ) : mapping.matchedByAi ? (
+          ) : row.matchedByAi ? (
             <Bot
               className="size-3.5 text-violet-600"
               aria-hidden
@@ -514,58 +543,89 @@ function MappingRow({
           ) : null}
         </div>
       </TableCell>
-      <TableCell className="font-mono text-xs">{mapping.supplierSku}</TableCell>
+      <TableCell className="font-mono text-xs">{row.supplierSku || "—"}</TableCell>
       <TableCell className="max-w-[24ch] truncate text-xs text-muted-foreground">
-        {mapping.supplierDescription ?? "—"}
+        {row.supplierDescription ?? "—"}
       </TableCell>
       <TableCell className="text-end font-mono tabular-nums">
-        {mapping.unitPrice != null ? (
-          <>
-            {numberFormatter.format(mapping.unitPrice)}{" "}
+        {displayPrice != null ? (
+          <span title={priceTooltipParts.join(" · ") || undefined}>
+            {numberFormatter.format(displayPrice)}{" "}
             <span className="text-xs text-muted-foreground">
-              {mapping.currency ?? "ILS"}
+              {row.currency ?? "ILS"}
             </span>
-          </>
+          </span>
         ) : (
-          "—"
+          <span
+            className="text-xs text-muted-foreground"
+            title="הספק ממופה סמנטית (AI) אבל ללא רשומת מחיר פעילה"
+          >
+            —
+          </span>
         )}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
-        {mapping.uom ?? "—"}
+        {row.uom ?? "—"}
       </TableCell>
       <TableCell className="text-end font-mono tabular-nums text-xs">
-        {mapping.minQty != null ? mapping.minQty : "—"}
+        {row.minQty != null ? row.minQty : "—"}
       </TableCell>
       <TableCell className="text-end font-mono tabular-nums text-xs">
-        {mapping.leadTimeDays != null ? `${mapping.leadTimeDays}d` : "—"}
+        {row.leadTimeDays != null ? `${row.leadTimeDays}d` : "—"}
       </TableCell>
       <TableCell>
-        {tier ? (
-          <Badge
-            variant="outline"
-            className={cn("gap-1 font-mono text-xs", TIER_COLOR[tier])}
-            title={TIER_LABEL[tier]}
-          >
-            {tier}
-            <span className="font-normal opacity-60">
-              {(mapping.confidence! * 100).toFixed(0)}%
-            </span>
-          </Badge>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        )}
+        {/* ג'יפ אחד משלב sources + tier: “מחיר + AI” / “רק מחיר” / “רק מיפוי” + Tier badge לצדו. */}
+        <div className="flex flex-wrap items-center gap-1">
+          {hasPricing && hasMapping ? (
+            <Badge
+              variant="outline"
+              className="gap-1 border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-300"
+              title="קיים מחיר פעיל גם מיפוי AI — המצב הבריא"
+            >
+              מחיר + AI
+            </Badge>
+          ) : hasPricing ? (
+            <Badge
+              variant="outline"
+              className="gap-1 border-sky-500/40 bg-sky-500/10 text-[10px] text-sky-700 dark:text-sky-300"
+              title="מחיר מבוסס OCR/הזנה ידנית בלי מיפוי AI"
+            >
+              רק מחיר
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="gap-1 border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400"
+              title="ה-AI מיפה את הספק לפריט אבל אין עדיין מחיר פעיל — הוסף מחיר ידנית או העלה חשבונית"
+            >
+              רק מיפוי
+            </Badge>
+          )}
+          {tier ? (
+            <Badge
+              variant="outline"
+              className={cn("gap-1 font-mono text-[10px]", TIER_COLOR[tier])}
+              title={TIER_LABEL[tier]}
+            >
+              {tier}
+              <span className="font-normal opacity-60">
+                {(row.confidence! * 100).toFixed(0)}%
+              </span>
+            </Badge>
+          ) : null}
+        </div>
       </TableCell>
       <TableCell>
-        {mapping.sourceType ? (
+        {row.sourceType ? (
           <span className="inline-flex items-center gap-1 text-xs">
-            {SOURCE_TYPE_LABEL[mapping.sourceType] ?? mapping.sourceType}
-            {mapping.sourceReference?.startsWith("http") ? (
+            {SOURCE_TYPE_LABEL[row.sourceType] ?? row.sourceType}
+            {row.sourceReference?.startsWith("http") ? (
               <a
-                href={mapping.sourceReference}
+                href={row.sourceReference}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground"
-                title={mapping.sourceReference}
+                title={row.sourceReference}
               >
                 <ExternalLink className="size-3" aria-hidden />
               </a>
@@ -576,7 +636,7 @@ function MappingRow({
         )}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
-        {validFromText}
+        {validFromText ?? "—"}
         {validToText ? (
           <>
             <span className="mx-1">→</span>
