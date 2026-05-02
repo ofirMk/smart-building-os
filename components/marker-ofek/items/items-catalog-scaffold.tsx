@@ -1,36 +1,35 @@
 "use client"
 
 /**
- * ItemsCatalogScaffold — UX Hotfix (post Phase 7.13.5).
+ * ItemsCatalogScaffold — Phase 8.3.X יישום של סטנדרט Master/Detail (דפוס Priority).
  *
- * **Why this rewrite**
- *   הלקוח פסל את ה-split pane (BentoSmartList + ItemPreviewPane אינליין). הוא
- *   דורש חוויית ERP מלאה: data grid רחב על כל המסך, KPIs בשורה עילית, וקליק
- *   על שורה מנווט ישר ל-`/marker-ofek/items/[id]` (כרטיס V3 העמוק).
+ * **Design history**
+ *   • 7.13.5: split-pane עם ItemPreviewPane (כרטיס פנימי מצומצם) — נפסל ע"י הלקוח.
+ *   • UX Hotfix (644eec38): full-width data grid עם נוויגציה ישירה לכרטיס עמוק.
+ *   • כעת (Phase 8.3.X): סטנדרט מערכת גלובלי — Master עם data grid למעלה, Detail
+ *     עם 3 tabs למטה (ספקים / היסטוריית רכש / נכסים). שתי הטבלאות באותו
+ *     UI template (BentoSmartList) — ה-detail מציג רשומות קשורות, לא שיכפול של הפריט.
  *
- * **What changed vs. Phase 7.13.5**
- *   • הוסרו `EntityWorkspace` (sidebar+main), `ItemPreviewPane`, ה-state
- *     `selectedItemId`, וה-toggle של בחירה ב-onRowClick.
- *   • ה-KPIs עברו מ-sidebar עמוד לשורה אופקית קומפקטית מעל הטבלה.
- *   • ה-onRowClick עושה `router.push(/marker-ofek/items/{id})` — ניווט ישיר.
- *   • הטבלה תופסת את כל הרוחב הזמין; ה-empty state נשאר.
- *
- * **What was preserved**
- *   • טעינת `/api/master-data/items`, חיפוש client-side, סינון, קומפוט KPIs,
- *     קומפוננטת KpiCard לוקאלית, פורמטור מטבע, פורמטור קומפקטי לסכומים.
- *   • הקומפוננטה `ItemPreviewPane` לא נמחקה — נשארת ב-codebase למקרה של
- *     שימוש עתידי (Cmd+K preview, mobile drawer וכו'); רק אינה מיובאת פה.
+ * **Interaction rules (the new system standard)**
+ *   • Single click על שורת master → בחירה (עודכן detail, אין ניווט).
+ *   • Double click על שורת master → drill-in מלא ל-`/marker-ofek/items/[id]`.
+ *   • Double click על שורת detail (ספק / PO) → drill-in לכרטיס אותה ישות.
+ *   • ה-state מתסנכרן ל-URL (`?focus=<itemId>&tab=<tabId>`) — shareable ו-back/forward עובד.
+ *   • Alt+D = קריסת/פתיחת mode detail; Alt+←/→ = מעבר בין tabs.
  */
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertTriangle,
+  FileStack,
+  History,
   Loader2,
   Plus,
   Search,
   Star,
   TrendingDown,
+  Users,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -42,6 +41,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { MasterDetailShell } from "@/components/infrastructure/master-detail/master-detail-shell"
+import { SuppliersTab } from "@/components/marker-ofek/items/detail-tabs/suppliers-tab"
+import { PurchaseHistoryTab } from "@/components/marker-ofek/items/detail-tabs/purchase-history-tab"
+import { AssetsTab } from "@/components/marker-ofek/items/detail-tabs/assets-tab"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 
@@ -130,6 +133,8 @@ export function ItemsCatalogScaffold() {
   const [rows, setRows] = React.useState<ItemRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
+  // Phase 8.3.X Master/Detail — השורה הפעילה שמזינה את מסך הבן.
+  const [activeItemId, setActiveItemId] = React.useState<string | null>(null)
 
   // טעינת רשימת הפריטים — פעם אחת בעלייה.
   React.useEffect(() => {
@@ -377,12 +382,11 @@ export function ItemsCatalogScaffold() {
     [],
   )
 
-  // ── Page layout: header → KPI strip → full-width data grid ──────────────
-  return (
-    <div
-      dir="rtl"
-      className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6"
-    >
+  // ── Master content: header + KPIs + data grid.
+  //    זה עובר כפרופ `masterContent` ל-MasterDetailShell (ה-shell מוסיף
+  //    מסביב את ה-PanelGroup + detail panel). אין `return` פה \u2014 רק משתנה.
+  const masterContent = (
+    <>
       {/* Page header — כותרת + מטא + פעולות */}
       <header className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
         <div>
@@ -528,8 +532,8 @@ export function ItemsCatalogScaffold() {
         />
       </section>
 
-      {/* Data Grid — רוחב מלא */}
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* Data Grid — רוחב מלא (Master panel) */}
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 md:px-6 md:pb-6">
         {loading ? (
           <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -540,7 +544,9 @@ export function ItemsCatalogScaffold() {
             items={filteredRows}
             columns={columns}
             rowKey={(item) => item.id}
-            onRowClick={(item) =>
+            selectedRowKey={activeItemId}
+            onRowClick={(item) => setActiveItemId(item.id)}
+            onRowDoubleClick={(item) =>
               router.push(`/marker-ofek/items/${encodeURIComponent(item.id)}`)
             }
             emptyState={
@@ -551,7 +557,47 @@ export function ItemsCatalogScaffold() {
           />
         )}
       </div>
-    </div>
+    </>
+  )
+
+  // Phase 8.3.X — עוטפים את כל המסך הקיים ב-MasterDetailShell. ה-shell
+  // מקבל את המסך כתוכן ה-master panel (יודע איך לשתר גובה/לקרוס),
+  // ומוסיף מתחתיו סטריפת tabs + פאנל תחתון לפי ה-activeItemId.
+  return (
+    <MasterDetailShell
+      activeMasterId={activeItemId}
+      onActiveMasterIdChange={setActiveItemId}
+      masterContent={
+        <div
+          dir="rtl"
+          className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6"
+        >
+          {masterContent}
+        </div>
+      }
+      detailTabs={[
+        {
+          id: "suppliers",
+          label: "ספקים",
+          icon: Users,
+          render: (id) => <SuppliersTab itemId={id} />,
+        },
+        {
+          id: "purchase-history",
+          label: "היסטוריית רכש",
+          icon: History,
+          render: (id) => <PurchaseHistoryTab itemId={id} />,
+        },
+        {
+          id: "assets",
+          label: "נכסים",
+          icon: FileStack,
+          render: (id) => <AssetsTab itemId={id} />,
+        },
+      ]}
+      initialTabId="suppliers"
+      defaultMasterSize={62}
+    />
   )
 }
 

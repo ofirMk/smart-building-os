@@ -31,6 +31,13 @@ type BentoSmartListProps<TItem> = {
   density?: Density
   emptyState?: React.ReactNode
   onRowClick?: (item: TItem) => void
+  /**
+   * Phase 8.3.X Master/Detail standard — לחיצה כפולה מבצעת drill-in
+   * לכרטיס המלא (סטנדרט חדש: לחיצה = בחירה → עודכן detail,
+   * לחיצה כפולה = נוויגציה לכרטיס העמוק). אם לא מוגדר, ה-דו-קליק
+   * יפעל את onRowClick פעמיים (ההתנהגות הישנה).
+   */
+  onRowDoubleClick?: (item: TItem) => void
   selectedRowKey?: string | null
   rowActions?: (item: TItem) => React.ReactNode
 }
@@ -42,6 +49,7 @@ export function BentoSmartList<TItem>({
   density = "compact",
   emptyState,
   onRowClick,
+  onRowDoubleClick,
   selectedRowKey,
   rowActions,
 }: BentoSmartListProps<TItem>) {
@@ -78,11 +86,17 @@ export function BentoSmartList<TItem>({
               return (
                 <TableRow
                   key={key}
+                  data-row-key={key}
                   onClick={() => onRowClick?.(item)}
+                  onDoubleClick={
+                    onRowDoubleClick ? () => onRowDoubleClick(item) : undefined
+                  }
                   className={cn(
                     "group/list-row transition-colors",
-                    onRowClick && "cursor-pointer",
-                    selected ? "bg-accent/80 hover:bg-accent" : "hover:bg-muted/70"
+                    (onRowClick || onRowDoubleClick) && "cursor-pointer",
+                    selected
+                      ? "bg-accent/80 hover:bg-accent"
+                      : "hover:bg-muted/70"
                   )}
                 >
                   {columns.map((column) => (
