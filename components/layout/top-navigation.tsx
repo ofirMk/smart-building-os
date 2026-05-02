@@ -46,7 +46,9 @@ const NAV_ITEMS: NavItem[] = [
         title: "שרשרת רכש",
         links: [
           { label: "כרטיס פריט", href: "/marker-ofek/items" },
+          { label: "קטלוג פריטים", href: "/marker-ofek/procurement/catalog" },
           { label: "הזמנות רכש", href: "/marker-ofek/procurement/orders" },
+          { label: "ספקים", href: "/marker-ofek/procurement/suppliers" },
         ],
       },
       { title: "מכרזים", links: [] },
