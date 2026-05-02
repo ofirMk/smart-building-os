@@ -180,7 +180,7 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Inbox,
       },
       {
-        title: "קבלות סחורה (GRPO)",
+        title: "קבלת סחורה",
         href: "/marker-ofek/procurement/goods-receipt/new",
         icon: PackageOpen,
       },

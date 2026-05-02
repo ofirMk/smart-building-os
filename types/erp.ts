@@ -288,15 +288,19 @@ export type ErpDirectActivation<TEntity = unknown> = {
 
 export const ERP_PURCHASE_ORDER_STATUSES = [
   "DRAFT",
+  "PENDING_APPROVAL",
   "PENDING_PRICE_APPROVAL",
   "APPROVED",
+  "SENT_TO_SUPPLIER",
   "SENT",
+  "PARTIALLY_RECEIVED",
+  "FULLY_RECEIVED",
   "CLOSED",
   "CANCELLED",
 ] as const
 export type ErpPurchaseOrderStatus = (typeof ERP_PURCHASE_ORDER_STATUSES)[number]
 
-export const ERP_GOODS_RECEIPT_STATUSES = ["DRAFT", "FINAL"] as const
+export const ERP_GOODS_RECEIPT_STATUSES = ["DRAFT", "COMPLETED", "FINAL"] as const
 export type ErpGoodsReceiptStatus = (typeof ERP_GOODS_RECEIPT_STATUSES)[number]
 
 export const ERP_VENDOR_INVOICE_STATUSES = ["DRAFT", "FINAL", "CANCELLED"] as const
@@ -339,6 +343,12 @@ export type ErpGoodsReceipt = {
   status: ErpGoodsReceiptStatus
   receiptDate: string | null
   notes: string | null
+  /** Phase 8.2 — מספר תעודת משלוח מהספק. */
+  vendorDeliveryNote?: string | null
+  /** Phase 8.2 — חותמת זמן קליטה פיזית. */
+  receivedAt?: string | null
+  /** Phase 8.2 — auth.users.id של המחסנאי. */
+  receivedBy?: string | null
 }
 
 export type ErpGoodsReceiptLine = {
@@ -353,6 +363,12 @@ export type ErpGoodsReceiptLine = {
   quantity: number
   unitPrice: number
   totalPrice: number
+  /** Phase 8.2 — מזהה פריט ל-erp_md_items. */
+  itemId?: string | null
+  /** Phase 8.2 — כמות שנדחתה (פגומה / לא מתאימה). */
+  rejectedQty?: number
+  /** Phase 8.2 — סיבת דחייה. */
+  rejectReason?: string | null
 }
 
 export type ErpVendorInvoice = {

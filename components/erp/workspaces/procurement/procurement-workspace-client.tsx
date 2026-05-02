@@ -74,7 +74,18 @@ type EffectivePriceResult = {
 
 const poFormSchema = z.object({
   title: z.string().trim().min(2),
-  status: z.enum(["DRAFT", "PENDING_PRICE_APPROVAL", "APPROVED", "SENT", "CLOSED", "CANCELLED"]),
+  status: z.enum([
+    "DRAFT",
+    "PENDING_APPROVAL",
+    "PENDING_PRICE_APPROVAL",
+    "APPROVED",
+    "SENT_TO_SUPPLIER",
+    "SENT",
+    "PARTIALLY_RECEIVED",
+    "FULLY_RECEIVED",
+    "CLOSED",
+    "CANCELLED",
+  ]),
   issuedAt: z.string().optional(),
   notes: z.string().optional(),
 })
@@ -94,7 +105,7 @@ const poLineFormSchema = z.object({
   unitPrice: z.number().min(0),
 })
 const grFormSchema = z.object({
-  status: z.enum(["DRAFT", "FINAL"]),
+  status: z.enum(["DRAFT", "COMPLETED", "FINAL"]),
   receiptDate: z.string().optional(),
   notes: z.string().optional(),
 })

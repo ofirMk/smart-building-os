@@ -1,27 +1,57 @@
 "use client"
 
+/**
+ * Phase 8.2 — Native Goods Receipt Workspace
+ *
+ * זה הממשק של המחסנאי. זרימה של שני שלבים:
+ *
+ *   שלב א' — **איתור**: בחירת PO פתוחה לקליטה מתוך רשימה שמסוננת ב-API
+ *   ל-`SENT_TO_SUPPLIER` ו-`PARTIALLY_RECEIVED` בלבד. רואים את מספר
+ *   ההזמנה הרשמי, הספק, הפרויקט וכמה שורות עוד פתוחות.
+ *
+ *   שלב ב' — **קליטה**: טבלת שורות דינמית שמחשבת לכל שורה
+ *   `remaining = ordered - alreadyReceived`. המחסנאי יכול:
+ *     • להשאיר את ברירת המחדל (קליטה מלאה) וללחוץ אחד "אשר".
+ *     • להוריד כמות ידנית (קליטה חלקית).
+ *     • לסמן כמות כנדחית (פגומה) + סיבה.
+ *     • ללחוץ "אפס שורה" אם לא קיבל כלום.
+ *
+ *   שליחה: POST ל-`/api/procurement/goods-receipt` עם רק שורות שיש בהן
+ *   פעילות (received > 0 || rejected > 0).
+ *
+ *   אחרי הצלחה: toast, איפוס לשלב א', רענון רשימת ה-POs.
+ *
+ * ## מחליף
+ *   את ה-workspace הישן של Phase 2.2 שעבד על MOCK
+ *   (`GOODS_RECEIPT_MOCK_PURCHASE_ORDERS`). מחזיק את אותן פיצ'רי UI אבל
+ *   על התשתית הקנונית של Phase 8 (RLS, erp_purchase_orders/lines,
+ *   erp_goods_receipts, RPC erp_complete_goods_receipt).
+ */
+
 import * as React from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
 import {
-  Bot,
+  CheckCircle2,
   ClipboardCheck,
-  FileUp,
+  Inbox,
+  Loader2,
   Package,
-  Paperclip,
-  Save,
-  Scan,
-  Sparkles,
+  PackageCheck,
+  PackageOpen,
+  RefreshCw,
+  RotateCcw,
+  Truck,
 } from "lucide-react"
 import { toast } from "sonner"
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  type SubmitHandler,
-} from "react-hook-form"
 
-import { EntityWorkspace } from "@/components/layout/EntityWorkspace"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -39,580 +69,817 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  GOODS_RECEIPT_MOCK_PURCHASE_ORDERS,
-  defaultGoodsReceiptValues,
-  goodsReceiptFormSchema,
-  type GoodsReceiptFormInput,
-  type GoodsReceiptFormOutput,
-} from "@/lib/marker-ofek/goods-receipt-schema"
+import { Textarea } from "@/components/ui/textarea"
+import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 
-const fieldClass =
-  "h-8 border-slate-200 bg-card text-sm text-foreground shadow-sm placeholder:text-slate-400 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-500/15"
-const labelClass = "text-xs font-semibold text-slate-600"
+// ─────────────────────────────────────────────────────────────────────────────
+// DTOs (mirror של ה-API — לא מייבאים מ-route handlers כדי לא לגרור server deps)
+// ─────────────────────────────────────────────────────────────────────────────
 
-function parseQty(v: unknown): number {
-  if (typeof v === "number" && Number.isFinite(v)) return v
-  if (v === "" || v == null) return 0
-  const n = Number(String(v).replace(",", ".").trim())
-  return Number.isFinite(n) ? n : 0
-}
-
-function lineReceiveBadge(orderedQty: number, receivedQty: number) {
-  if (receivedQty <= 0) {
-    return { label: "ממתין", className: "bg-slate-100 text-slate-700" }
-  }
-  if (receivedQty > orderedQty) {
-    return { label: "חריגה", className: "bg-red-100 text-red-800" }
-  }
-  if (receivedQty >= orderedQty) {
-    return { label: "מלא", className: "bg-emerald-100 text-emerald-800" }
-  }
-  return { label: "חלקי", className: "bg-amber-100 text-amber-900" }
-}
-
-type OcrExtractedLine = {
-  sku: string
-  itemName: string
+type OpenForReceiptPoDto = {
+  id: string
   poNumber: string
-  quantity: number
+  officialPoNumber: string | null
+  title: string
+  status: "SENT_TO_SUPPLIER" | "PARTIALLY_RECEIVED"
+  issuedAt: string | null
+  supplierName: string | null
+  projectName: string | null
+  openLineCount: number
 }
 
-type OcrResponse = {
-  supplierName: string
-  documentNumber: string
-  documentDate: string
-  lines: OcrExtractedLine[]
+type ReceiptContextLineDto = {
+  id: string
+  itemId: string | null
+  itemNumber: string | null
+  itemSku: string | null
+  description: string
+  orderedQty: number
+  receivedQty: number
+  remainingQty: number
 }
 
-function normalizePoToken(value: string): string {
-  return value.replace(/[^a-z0-9]/gi, "").toLowerCase()
+type ReceiptContextDto = {
+  id: string
+  poNumber: string
+  officialPoNumber: string | null
+  title: string
+  status: string
+  currency: string
+  supplier: { id: string; name: string } | null
+  project: { id: string; name: string | null } | null
+  lines: ReceiptContextLineDto[]
 }
 
-function isOcrResponse(value: unknown): value is OcrResponse {
-  if (!value || typeof value !== "object") return false
-  const v = value as Partial<OcrResponse>
-  return (
-    typeof v.supplierName === "string" &&
-    typeof v.documentNumber === "string" &&
-    typeof v.documentDate === "string" &&
-    Array.isArray(v.lines)
-  )
+type CompleteGoodsReceiptResponse = {
+  goodsReceiptId: string
+  grNumber: string
+  newGrStatus: string
+  purchaseOrderId: string
+  newPoStatus: string
+  totalOrderedQty: number
+  totalReceivedQty: number
 }
+
+type LineInputState = {
+  received: string
+  rejected: string
+  rejectReason: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+const numberFormatter = new Intl.NumberFormat("he-IL", {
+  maximumFractionDigits: 3,
+})
+
+function parseQty(input: string): number {
+  if (!input?.trim()) return 0
+  const n = Number(input.replace(",", "."))
+  return Number.isFinite(n) && n >= 0 ? n : 0
+}
+
+function buildDefaultLineInputs(
+  lines: ReceiptContextLineDto[],
+): Record<string, LineInputState> {
+  const out: Record<string, LineInputState> = {}
+  for (const l of lines) {
+    out[l.id] = {
+      received: l.remainingQty > 0 ? String(l.remainingQty) : "0",
+      rejected: "0",
+      rejectReason: "",
+    }
+  }
+  return out
+}
+
+function formatStatusLabel(status: string): string {
+  switch (status) {
+    case "SENT_TO_SUPPLIER":
+      return "נשלח לספק"
+    case "PARTIALLY_RECEIVED":
+      return "נקלט חלקית"
+    case "APPROVED":
+      return "מאושר"
+    case "FULLY_RECEIVED":
+      return "נקלט במלואו"
+    default:
+      return status
+  }
+}
+
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case "SENT_TO_SUPPLIER":
+      return "bg-indigo-500/15 text-indigo-700 border-indigo-500/30"
+    case "PARTIALLY_RECEIVED":
+      return "bg-amber-500/15 text-amber-800 border-amber-500/30"
+    case "FULLY_RECEIVED":
+      return "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+    case "APPROVED":
+      return "bg-sky-500/15 text-sky-700 border-sky-500/30"
+    default:
+      return "bg-slate-500/15 text-slate-700 border-slate-500/30"
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function GoodsReceiptWorkspace() {
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
-  const [isDragActive, setIsDragActive] = React.useState(false)
-  const [isAnalyzing, setIsAnalyzing] = React.useState(false)
-  const [ocrSupplierName, setOcrSupplierName] = React.useState("")
-  const [aiTouchedFields, setAiTouchedFields] = React.useState<Set<string>>(
-    () => new Set()
-  )
+  const [companyId, setCompanyId] = React.useState<string | null>(null)
+  const [availablePos, setAvailablePos] = React.useState<
+    OpenForReceiptPoDto[] | null
+  >(null)
+  const [posError, setPosError] = React.useState<string | null>(null)
+  const [loadingPos, setLoadingPos] = React.useState(false)
 
-  const initialDefaults = React.useMemo(
-    () => defaultGoodsReceiptValues(GOODS_RECEIPT_MOCK_PURCHASE_ORDERS[0]?.id ?? ""),
-    []
-  )
+  const [selectedPoId, setSelectedPoId] = React.useState<string | null>(null)
+  const [context, setContext] = React.useState<ReceiptContextDto | null>(null)
+  const [contextError, setContextError] = React.useState<string | null>(null)
+  const [loadingContext, setLoadingContext] = React.useState(false)
 
-  const form = useForm<GoodsReceiptFormInput, unknown, GoodsReceiptFormOutput>({
-    resolver: zodResolver(goodsReceiptFormSchema),
-    defaultValues: initialDefaults,
-    mode: "onChange",
-  })
+  const [lineInputs, setLineInputs] = React.useState<
+    Record<string, LineInputState>
+  >({})
+  const [vendorDeliveryNote, setVendorDeliveryNote] = React.useState("")
+  const [notes, setNotes] = React.useState("")
+  const [submitting, setSubmitting] = React.useState(false)
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    reset,
-    getValues,
-    watch,
-    formState: { errors },
-  } = form
-
-  const { fields } = useFieldArray({ control, name: "lines" })
-  const watchedLines = watch("lines")
-
-  const onSaveDraft = React.useCallback(() => {
-    const poNumber = getValues().poNumber
-    toast.success(
-      poNumber ? "טיוטה נשמרה (מקומית)" : "טיוטה נשמרה לפני בחירת הזמנת רכש"
-    )
-  }, [getValues])
-
-  const onAttachDeliveryNote = React.useCallback(() => {
-    fileInputRef.current?.click()
+  // Mount: קוראים ל-cookie וטוענים את ה-POs הפתוחים.
+  React.useEffect(() => {
+    setCompanyId(readActiveCompanyIdFromCookie())
   }, [])
 
-  const onPostReceipt: SubmitHandler<GoodsReceiptFormOutput> = (data) => {
-    const linesWithQty = data.lines.filter((line) => line.receivedQty > 0).length
-    toast.success(`קליטת סחורה נרשמה (${linesWithQty} שורות)`)
-  }
+  const loadPos = React.useCallback(async () => {
+    setLoadingPos(true)
+    setPosError(null)
+    try {
+      const data = await masterDataFetch<OpenForReceiptPoDto[]>(
+        "/api/procurement/orders/open-for-receipt",
+      )
+      setAvailablePos(data)
+    } catch (e: unknown) {
+      setPosError(e instanceof Error ? e.message : "שגיאת טעינת הזמנות")
+    } finally {
+      setLoadingPos(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (!companyId) return
+    void loadPos()
+  }, [companyId, loadPos])
+
+  // Loader של ההקשר כאשר בוחרים PO.
+  const loadContext = React.useCallback(
+    async (poId: string) => {
+      setLoadingContext(true)
+      setContextError(null)
+      setContext(null)
+      try {
+        const data = await masterDataFetch<ReceiptContextDto>(
+          `/api/procurement/orders/${encodeURIComponent(poId)}/receipt-context`,
+        )
+        setContext(data)
+        setLineInputs(buildDefaultLineInputs(data.lines))
+        setVendorDeliveryNote("")
+        setNotes("")
+      } catch (e: unknown) {
+        setContextError(
+          e instanceof Error ? e.message : "טעינת שורות ה-PO נכשלה",
+        )
+      } finally {
+        setLoadingContext(false)
+      }
+    },
+    [],
+  )
 
   const handlePoChange = React.useCallback(
     (poId: string) => {
-      reset(defaultGoodsReceiptValues(poId))
-      setAiTouchedFields(new Set())
-      setOcrSupplierName("")
+      setSelectedPoId(poId)
+      void loadContext(poId)
     },
-    [reset]
+    [loadContext],
   )
 
-  const applyOcrPayload = React.useCallback(
-    (payload: OcrResponse) => {
-      const firstPoNumber = payload.lines[0]?.poNumber ?? ""
-      const normalizedOcrPo = normalizePoToken(firstPoNumber)
-      const matchedPo =
-        GOODS_RECEIPT_MOCK_PURCHASE_ORDERS.find((po) =>
-          normalizePoToken(po.label).includes(normalizedOcrPo)
-        ) ?? GOODS_RECEIPT_MOCK_PURCHASE_ORDERS[0]
+  const handleLineChange = React.useCallback(
+    (lineId: string, patch: Partial<LineInputState>) => {
+      setLineInputs((prev) => ({
+        ...prev,
+        [lineId]: { ...prev[lineId]!, ...patch },
+      }))
+    },
+    [],
+  )
 
-      const nextValues = defaultGoodsReceiptValues(matchedPo?.id ?? "")
-      nextValues.deliveryNoteNumber = payload.documentNumber
-      nextValues.receiptDate = payload.documentDate
+  const handleResetLine = React.useCallback((lineId: string) => {
+    setLineInputs((prev) => ({
+      ...prev,
+      [lineId]: { received: "0", rejected: "0", rejectReason: "" },
+    }))
+  }, [])
 
-      const ocrBySku = new Map(
-        payload.lines.map((line) => [line.sku.trim().toLowerCase(), line])
-      )
+  const handleFillRemaining = React.useCallback(
+    (lineId: string, remaining: number) => {
+      setLineInputs((prev) => ({
+        ...prev,
+        [lineId]: {
+          ...prev[lineId]!,
+          received: String(remaining),
+          rejected: "0",
+          rejectReason: "",
+        },
+      }))
+    },
+    [],
+  )
 
-      nextValues.lines = nextValues.lines.map((line) => {
-        const ocrLine = ocrBySku.get(line.sku.trim().toLowerCase())
-        return {
-          ...line,
-          receivedQty: ocrLine ? parseQty(ocrLine.quantity) : 0,
-        }
+  // סיכום תצוגה: כמה שורות "נגעו" בהן (receive > 0 || reject > 0)
+  const summary = React.useMemo(() => {
+    if (!context) {
+      return { activeLines: 0, totalReceived: 0, totalRejected: 0 }
+    }
+    let activeLines = 0
+    let totalReceived = 0
+    let totalRejected = 0
+    for (const line of context.lines) {
+      const inp = lineInputs[line.id]
+      if (!inp) continue
+      const r = parseQty(inp.received)
+      const j = parseQty(inp.rejected)
+      if (r > 0 || j > 0) activeLines += 1
+      totalReceived += r
+      totalRejected += j
+    }
+    return { activeLines, totalReceived, totalRejected }
+  }, [context, lineInputs])
+
+  // וולידציה (עיוורת ל-submit) — מחזיר רשימת הודעות שגיאה בעברית.
+  const validationErrors = React.useMemo(() => {
+    if (!context) return [] as string[]
+    const errors: string[] = []
+    for (const line of context.lines) {
+      const inp = lineInputs[line.id]
+      if (!inp) continue
+      const r = parseQty(inp.received)
+      const j = parseQty(inp.rejected)
+      if (r + j > line.remainingQty + 1e-6) {
+        errors.push(
+          `שורה "${line.description}" — סה"כ ${numberFormatter.format(r + j)} חורג מהיתרה (${numberFormatter.format(line.remainingQty)})`,
+        )
+      }
+      if (j > 0 && !inp.rejectReason.trim()) {
+        errors.push(`שורה "${line.description}" — חסרה סיבת דחייה`)
+      }
+    }
+    if (summary.activeLines === 0) {
+      errors.push("לא הוזנו כמויות לקליטה בשום שורה")
+    }
+    return errors
+  }, [context, lineInputs, summary.activeLines])
+
+  const canSubmit =
+    Boolean(context) && !submitting && validationErrors.length === 0
+
+  const handleSubmit = React.useCallback(async () => {
+    if (!context || !canSubmit) return
+    setSubmitting(true)
+    try {
+      const activeLines = context.lines
+        .map((line) => {
+          const inp = lineInputs[line.id]
+          if (!inp) return null
+          const r = parseQty(inp.received)
+          const j = parseQty(inp.rejected)
+          if (r === 0 && j === 0) return null
+          return {
+            purchaseOrderLineId: line.id,
+            receivedQty: r,
+            rejectedQty: j,
+            rejectReason: inp.rejectReason.trim() || null,
+          }
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
+
+      const companyIdFromCookie = readActiveCompanyIdFromCookie()
+      const res = await fetch("/api/procurement/goods-receipt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(companyIdFromCookie
+            ? { "x-active-company-id": companyIdFromCookie }
+            : {}),
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          purchaseOrderId: context.id,
+          vendorDeliveryNote: vendorDeliveryNote.trim() || null,
+          notes: notes.trim() || null,
+          lines: activeLines,
+        }),
       })
 
-      reset(nextValues, { keepErrors: false })
-      setOcrSupplierName(payload.supplierName)
+      const body = (await res.json().catch(() => null)) as {
+        data?: CompleteGoodsReceiptResponse
+        error?: string
+      } | null
 
-      const touched = new Set<string>([
-        "poNumber",
-        "deliveryNoteNumber",
-        "receiptDate",
-        "supplierName",
-      ])
-      nextValues.lines.forEach((line, index) => {
-        if (line.receivedQty > 0) touched.add(`lines.${index}.receivedQty`)
-      })
-      setAiTouchedFields(touched)
-    },
-    [reset]
-  )
-
-  const analyzeDocument = React.useCallback(
-    async (file: File) => {
-      setIsAnalyzing(true)
-      try {
-        const body = new FormData()
-        body.append("file", file)
-        const response = await fetch("/api/ocr", {
-          method: "POST",
-          body,
-        })
-        const json = (await response.json()) as unknown
-        if (!response.ok) {
-          const message =
-            typeof json === "object" &&
-            json !== null &&
-            "error" in json &&
-            typeof (json as { error?: unknown }).error === "string"
-              ? (json as { error: string }).error
-              : "OCR נכשל"
-          throw new Error(message)
-        }
-        if (!isOcrResponse(json)) {
-          throw new Error("מבנה תשובת OCR לא תקין")
-        }
-        if ("error" in json) {
-          const message =
-            typeof (json as { error?: unknown }).error === "string"
-              ? ((json as { error?: string }).error ?? "OCR נכשל")
-              : "OCR נכשל"
-          throw new Error(message)
-        }
-        applyOcrPayload(json)
-        toast.success("Magic Extract הושלם", {
-          description: "השדות מולאו אוטומטית. נא לאמת ולאשר קליטה.",
-        })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        toast.error("פענוח תעודה נכשל", { description: message })
-      } finally {
-        setIsAnalyzing(false)
+      if (!res.ok || !body?.data) {
+        throw new Error(body?.error ?? `שגיאה ${res.status}`)
       }
-    },
-    [applyOcrPayload]
-  )
 
-  const onDropZoneFile = React.useCallback(
-    async (file: File | null | undefined) => {
-      if (!file) return
-      const isSupported =
-        file.type === "application/pdf" || file.type.startsWith("image/")
-      if (!isSupported) {
-        toast.error("סוג קובץ לא נתמך", {
-          description: "נא להעלות PDF, PNG או JPG.",
-        })
-        return
+      const result = body.data
+      const poLabel =
+        context.officialPoNumber ?? context.poNumber
+      if (result.newPoStatus === "FULLY_RECEIVED") {
+        toast.success(
+          `תעודה ${result.grNumber} נקלטה · PO ${poLabel} נסגרה (התקבלה במלואה)`,
+        )
+      } else if (result.newPoStatus === "PARTIALLY_RECEIVED") {
+        toast.success(
+          `תעודה ${result.grNumber} נקלטה · PO ${poLabel} במצב קליטה חלקית`,
+        )
+      } else {
+        toast.success(`תעודה ${result.grNumber} נקלטה בהצלחה`)
       }
-      await analyzeDocument(file)
-    },
-    [analyzeDocument]
-  )
 
-  const isAiField = React.useCallback(
-    (field: string) => aiTouchedFields.has(field),
-    [aiTouchedFields]
-  )
+      // איפוס לשלב א' ורענון ה-POs הפתוחים.
+      setSelectedPoId(null)
+      setContext(null)
+      setLineInputs({})
+      setVendorDeliveryNote("")
+      setNotes("")
+      void loadPos()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "שליחת קליטה נכשלה")
+    } finally {
+      setSubmitting(false)
+    }
+  }, [canSubmit, context, lineInputs, loadPos, notes, vendorDeliveryNote])
+
+  // ───────── render ─────────
+
+  if (!companyId) {
+    return (
+      <LoadingBanner>טוען הקשר חברה פעילה…</LoadingBanner>
+    )
+  }
 
   return (
-    <form
-      className="flex min-h-0 min-w-0 flex-1 flex-col bg-card [color-scheme:light]"
-      onSubmit={handleSubmit(onPostReceipt)}
-    >
-      <EntityWorkspace
-        title="קליטת סחורה (GR)"
-        description="קליטה מול הזמנת רכש מאושרת — תעודת משלוח וכמויות שהתקבלו (דמה)."
-        headerActions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1"
-              onClick={() => window.history.back()}
-            >
-              <Package className="size-3.5 opacity-90" aria-hidden />
-              חזרה לרכש
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1 text-sm"
-              onClick={onSaveDraft}
-            >
-              <Save className="size-3.5 opacity-90" aria-hidden />
-              טיוטה
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1 text-sm"
-              onClick={onAttachDeliveryNote}
-            >
-              <Paperclip className="size-3.5 opacity-90" aria-hidden />
-              צירוף תעודה
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              className="h-8 gap-1 bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              <ClipboardCheck className="size-3.5 opacity-95" aria-hidden />
-              אשר קליטה
-            </Button>
-          </>
-        }
-        sidebar={
-          <div className="flex flex-col gap-2">
-            <div
-              className={cn(
-                "relative overflow-hidden rounded-lg border bg-card p-3 shadow-sm transition",
-                isDragActive
-                  ? "border-sky-400 ring-2 ring-sky-100"
-                  : "border-slate-200",
-                isAnalyzing && "border-emerald-300"
-              )}
-              onDragOver={(e) => {
-                e.preventDefault()
-                setIsDragActive(true)
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault()
-                setIsDragActive(false)
-              }}
-              onDrop={(e) => {
-                e.preventDefault()
-                setIsDragActive(false)
-                const file = e.dataTransfer.files?.[0]
-                void onDropZoneFile(file)
-              }}
-            >
-              {isAnalyzing ? (
-                <div className="absolute inset-x-3 top-2 h-0.5 overflow-hidden rounded-full bg-emerald-100">
-                  <div className="h-full w-full animate-pulse bg-emerald-400/80" />
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  {isAnalyzing ? (
-                    <Bot className="size-4 animate-pulse text-emerald-600" aria-hidden />
-                  ) : (
-                    <Scan className="size-4 text-sky-700" aria-hidden />
-                  )}
-                  <p className="text-xs font-semibold text-slate-800">
-                    {isAnalyzing
-                      ? "AI Analyzing..."
-                      : "Magic Extract · Drag & Drop PDF/Image"}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1 border-slate-200 bg-card text-xs text-slate-800"
-                  disabled={isAnalyzing}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <FileUp className="size-3.5" aria-hidden />
-                  העלאת קובץ
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf,image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    e.currentTarget.value = ""
-                    void onDropZoneFile(file)
-                  }}
-                />
-              </div>
-              <p className="mt-1 text-[11px] text-slate-600">
-                גררו תעודת משלוח (PDF/תמונה) לפענוח אוטומטי של ספק, מספר מסמך ושורות קליטה.
-              </p>
+    <div dir="rtl" className="flex h-full min-h-0 flex-col gap-4 p-4">
+      {/* Page header */}
+      <header className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2">
+            <Truck className="size-5 text-emerald-700" aria-hidden />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">קליטת סחורה במחסן</h1>
+            <p className="text-xs text-muted-foreground">
+              Phase 8.2 — קליטה פיזית מול הזמנת רכש, עם סגירה אוטומטית של ה-PO.
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={loadPos}
+          disabled={loadingPos}
+          className="gap-2"
+        >
+          <RefreshCw
+            className={cn("size-4", loadingPos && "animate-spin")}
+            aria-hidden
+          />
+          רענן הזמנות
+        </Button>
+      </header>
+
+      {/* Stage 1 — PO selector */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Inbox className="size-4 text-muted-foreground" aria-hidden />
+            <CardTitle>שלב א׳ — בחירת הזמנת רכש לקליטה</CardTitle>
+          </div>
+          <CardDescription>
+            מוצגות רק הזמנות במצב &quot;נשלח לספק&quot; או &quot;נקלט חלקית&quot;.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {posError ? (
+            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-800">
+              {posError}
             </div>
+          ) : null}
 
-            <div className="rounded-lg border border-slate-200 bg-background/90 p-3 shadow-sm">
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold text-slate-600">
-                <Sparkles className="size-3.5 text-emerald-600" aria-hidden />
-                שדות עם מילוי AI מסומנים לאימות לפני אישור
-                <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700">
-                  AI Generated
+          {loadingPos ? (
+            <LoadingBanner>טוען הזמנות פתוחות…</LoadingBanner>
+          ) : availablePos && availablePos.length === 0 ? (
+            <EmptyInbox />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="po-select" className="text-sm">
+                הזמנת רכש
+              </Label>
+              <Select
+                value={selectedPoId ?? ""}
+                onValueChange={(v) => {
+                  if (typeof v === "string" && v.length > 0) handlePoChange(v)
+                }}
+              >
+                <SelectTrigger id="po-select" className="w-full" dir="rtl">
+                  <SelectValue placeholder="בחר הזמנה…" />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  {(availablePos ?? []).map((po) => (
+                    <SelectItem key={po.id} value={po.id}>
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">
+                          {po.officialPoNumber ?? po.poNumber}
+                        </span>
+                        <span className="text-muted-foreground">·</span>
+                        <span>{po.title}</span>
+                        {po.supplierName ? (
+                          <>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-muted-foreground">
+                              {po.supplierName}
+                            </span>
+                          </>
+                        ) : null}
+                        <Badge
+                          variant="outline"
+                          className={cn("ms-1", statusBadgeClass(po.status))}
+                        >
+                          {formatStatusLabel(po.status)}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="border-slate-300 bg-slate-50 text-slate-700"
+                        >
+                          {po.openLineCount} שורות פתוחות
+                        </Badge>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Stage 2 — line-by-line receive */}
+      {selectedPoId ? (
+        <Card className="flex min-h-0 flex-1 flex-col">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <PackageOpen className="size-4 text-muted-foreground" aria-hidden />
+              <CardTitle>שלב ב׳ — פירוט קליטה</CardTitle>
+            </div>
+            {context ? (
+              <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                <span>
+                  הזמנה:{" "}
+                  <b>{context.officialPoNumber ?? context.poNumber}</b>
                 </span>
-              </div>
-              <div className="flex flex-wrap gap-4">
-              <div className="flex min-w-[260px] flex-1 flex-col gap-1">
-                <span className={labelClass}>הזמנת רכש (PO)</span>
-                <Controller
-                  control={control}
-                  name="poNumber"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(v) => {
-                        const id = v ?? ""
-                        field.onChange(id)
-                        handlePoChange(id)
-                      }}
-                    >
-                      <SelectTrigger
-                        className={cn(
-                          fieldClass,
-                          "w-full",
-                          isAiField("poNumber") &&
-                            "border-emerald-300 bg-emerald-50/50",
-                          errors.poNumber && "border-red-300 ring-1 ring-red-200"
-                        )}
-                      >
-                        <SelectValue placeholder="בחרו PO" />
-                      </SelectTrigger>
-                      <SelectContent dir="rtl">
-                        {GOODS_RECEIPT_MOCK_PURCHASE_ORDERS.map((po) => (
-                          <SelectItem key={po.id} value={po.id}>
-                            {po.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.poNumber ? (
-                  <p className="text-[11px] text-red-600">
-                    {errors.poNumber.message}
-                  </p>
+                {context.supplier ? (
+                  <span>
+                    ספק: <b>{context.supplier.name}</b>
+                  </span>
                 ) : null}
-              </div>
-
-              <div className="flex min-w-[160px] flex-col gap-1">
-                <Label htmlFor="gr-delivery-note" className={labelClass}>
-                  מספר תעודת משלוח
-                </Label>
-                <Input
-                  id="gr-delivery-note"
-                  className={cn(
-                    fieldClass,
-                    isAiField("deliveryNoteNumber") &&
-                      "border-emerald-300 bg-emerald-50/50",
-                    errors.deliveryNoteNumber &&
-                      "border-red-300 ring-1 ring-red-200"
-                  )}
-                  placeholder="למשל DN-2026-0144"
-                  {...register("deliveryNoteNumber")}
-                />
-                {errors.deliveryNoteNumber ? (
-                  <p className="text-[11px] text-red-600">
-                    {errors.deliveryNoteNumber.message}
-                  </p>
+                {context.project?.name ? (
+                  <span>
+                    פרויקט: <b>{context.project.name}</b>
+                  </span>
                 ) : null}
-              </div>
-
-              <div className="flex min-w-[150px] flex-col gap-1">
-                <Label htmlFor="gr-date" className={labelClass}>
-                  תאריך קליטה
-                </Label>
-                <Input
-                  id="gr-date"
-                  type="date"
-                  className={cn(
-                    fieldClass,
-                    isAiField("receiptDate") &&
-                      "border-emerald-300 bg-emerald-50/50",
-                    errors.receiptDate && "border-red-300 ring-1 ring-red-200"
-                  )}
-                  {...register("receiptDate")}
-                />
-                {errors.receiptDate ? (
-                  <p className="text-[11px] text-red-600">
-                    {errors.receiptDate.message}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="flex min-w-[200px] flex-1 flex-col gap-1">
-                <Label className={labelClass}>ספק (זוהה מהתעודה)</Label>
-                <div
-                  className={cn(
-                    "flex h-8 items-center rounded-md border px-2 text-xs text-slate-800",
-                    isAiField("supplierName")
-                      ? "border-emerald-300 bg-emerald-50/60"
-                      : "border-slate-200 bg-card"
-                  )}
+                <Badge
+                  variant="outline"
+                  className={statusBadgeClass(context.status)}
                 >
-                  {ocrSupplierName || "—"}
-                  {isAiField("supplierName") ? (
-                    <span className="me-auto rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                      Needs Verification
+                  {formatStatusLabel(context.status)}
+                </Badge>
+              </CardDescription>
+            ) : null}
+          </CardHeader>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
+            {loadingContext ? (
+              <LoadingBanner>טוען שורות ההזמנה…</LoadingBanner>
+            ) : contextError ? (
+              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-800">
+                {contextError}
+              </div>
+            ) : context ? (
+              <ReceiveLinesTable
+                lines={context.lines}
+                inputs={lineInputs}
+                onChange={handleLineChange}
+                onReset={handleResetLine}
+                onFillRemaining={handleFillRemaining}
+              />
+            ) : null}
+
+            {context ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="vendor-delivery-note">
+                    מספר תעודת משלוח מהספק
+                  </Label>
+                  <Input
+                    id="vendor-delivery-note"
+                    dir="ltr"
+                    className="text-start"
+                    value={vendorDeliveryNote}
+                    onChange={(e) => setVendorDeliveryNote(e.target.value)}
+                    placeholder="לדוגמה: DN-45712"
+                    disabled={submitting}
+                    maxLength={128}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="warehouse-notes">הערות מחסנאי (רשות)</Label>
+                  <Textarea
+                    id="warehouse-notes"
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="למשל: ארגז #3 פגום, דווח לסמנכ״ל רכש."
+                    disabled={submitting}
+                    maxLength={2000}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {context && validationErrors.length > 0 ? (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900">
+                <div className="mb-1 font-semibold">לפני שליחה יש לתקן:</div>
+                <ul className="list-disc space-y-0.5 ps-5">
+                  {validationErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {context ? (
+              <div className="flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>
+                    שורות נקלטות: <b>{summary.activeLines}</b>
+                  </span>
+                  <span>
+                    סה״כ כמות נקלטת:{" "}
+                    <b>{numberFormatter.format(summary.totalReceived)}</b>
+                  </span>
+                  {summary.totalRejected > 0 ? (
+                    <span className="text-rose-700">
+                      נדחה:{" "}
+                      <b>{numberFormatter.format(summary.totalRejected)}</b>
                     </span>
                   ) : null}
                 </div>
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={!canSubmit}
+                  className="gap-2"
+                >
+                  {submitting ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <PackageCheck className="size-4" aria-hidden />
+                  )}
+                  אשר וקלוט סחורה
+                </Button>
               </div>
-              </div>
-            </div>
-          </div>
-        }
-        main={
-          <section className="min-h-0 flex-1 overflow-auto rounded-md border border-border bg-card p-1.5 shadow-sm">
-            <div className="px-1 pb-2 pt-1 md:px-2">
-              <p className="mb-2 text-xs font-bold text-slate-800">
-                שורות קליטה
-              </p>
-              <div className="rounded-md border border-slate-200 bg-card md:rounded-lg">
-                <Table dir="rtl" className="relative">
-                  <TableHeader>
-                    <TableRow className="border-slate-200 hover:bg-transparent">
-                      <TableHead className="w-[110px] py-2 text-start text-xs font-semibold text-slate-700">
-                        מק״ט
-                      </TableHead>
-                      <TableHead className="min-w-[200px] py-2 text-start text-xs font-semibold text-slate-700">
-                        תיאור פריט
-                      </TableHead>
-                      <TableHead className="w-[100px] py-2 text-start text-xs font-semibold text-slate-700">
-                        הוזמן
-                      </TableHead>
-                      <TableHead className="w-[120px] py-2 text-start text-xs font-semibold text-slate-700">
-                        התקבל
-                      </TableHead>
-                      <TableHead className="w-[100px] py-2 text-start text-xs font-semibold text-slate-700">
-                        סטטוס
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fields.map((field, index) => {
-                      const row = watchedLines?.[index]
-                      const ordered = parseQty(row?.orderedQty)
-                      const received = parseQty(row?.receivedQty)
-                      const badge = lineReceiveBadge(ordered, received)
-                      return (
-                        <TableRow
-                          key={field.id}
-                          className="border-slate-100 hover:bg-background/80"
-                        >
-                          <TableCell className="px-2 py-1.5 align-middle font-mono text-xs text-slate-800">
-                            <input
-                              type="hidden"
-                              {...register(`lines.${index}.sku`)}
-                            />
-                            {row?.sku ?? "—"}
-                          </TableCell>
-                          <TableCell className="px-2 py-1.5 align-middle">
-                            <input
-                              type="hidden"
-                              {...register(`lines.${index}.itemName`)}
-                            />
-                            <input
-                              type="hidden"
-                              {...register(`lines.${index}.orderedQty`, {
-                                valueAsNumber: true,
-                              })}
-                            />
-                            <span className="text-sm text-foreground">
-                              {row?.itemName ?? "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-2 py-1.5 align-middle tabular-nums text-sm text-slate-800">
-                            {ordered.toLocaleString("he-IL")}
-                          </TableCell>
-                          <TableCell className="px-2 py-1.5 align-middle">
-                            <Input
-                              inputMode="decimal"
-                              min={0}
-                              step="any"
-                              className={cn(
-                                fieldClass,
-                                "w-28 font-currency-mono tabular-nums",
-                                isAiField(`lines.${index}.receivedQty`) &&
-                                  "border-emerald-300 bg-emerald-50/50",
-                                errors.lines?.[index]?.receivedQty &&
-                                  "border-red-300 ring-1 ring-red-200"
-                              )}
-                              aria-label={`כמות שהתקבלה — שורה ${index + 1}`}
-                              {...register(`lines.${index}.receivedQty`, {
-                                setValueAs: (v) => parseQty(v),
-                              })}
-                            />
-                          </TableCell>
-                          <TableCell className="px-2 py-1.5 align-middle">
-                            <span
-                              className={cn(
-                                "inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold",
-                                badge.className
-                              )}
-                            >
-                              {badge.label}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-              {errors.lines && typeof errors.lines.message === "string" ? (
-                <p className="mt-2 text-[11px] text-red-600">
-                  {errors.lines.message}
-                </p>
-              ) : null}
-            </div>
-          </section>
-        }
-      />
-    </form>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
   )
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lines table
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ReceiveLinesTable({
+  lines,
+  inputs,
+  onChange,
+  onReset,
+  onFillRemaining,
+}: {
+  lines: ReceiptContextLineDto[]
+  inputs: Record<string, LineInputState>
+  onChange: (lineId: string, patch: Partial<LineInputState>) => void
+  onReset: (lineId: string) => void
+  onFillRemaining: (lineId: string, remaining: number) => void
+}) {
+  if (lines.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        ל-PO אין שורות.
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[12%]">מק״ט</TableHead>
+            <TableHead>תיאור</TableHead>
+            <TableHead className="w-[8%] text-center">הוזמן</TableHead>
+            <TableHead className="w-[10%] text-center">התקבל בעבר</TableHead>
+            <TableHead className="w-[10%] text-center">נותר לקבלה</TableHead>
+            <TableHead className="w-[14%]">כמות נקלטת כעת</TableHead>
+            <TableHead className="w-[12%]">כמות נדחית</TableHead>
+            <TableHead className="w-[16%]">סיבת דחייה</TableHead>
+            <TableHead className="w-[8%] text-center">פעולות</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {lines.map((line) => {
+            const inp = inputs[line.id] ?? {
+              received: "0",
+              rejected: "0",
+              rejectReason: "",
+            }
+            const receivedNum = parseQty(inp.received)
+            const rejectedNum = parseQty(inp.rejected)
+            const sum = receivedNum + rejectedNum
+            const over = sum > line.remainingQty + 1e-6
+            const isClosed = line.remainingQty <= 0
+
+            return (
+              <TableRow
+                key={line.id}
+                className={cn(
+                  isClosed && "bg-emerald-50/40",
+                  over && "bg-rose-50/40",
+                )}
+              >
+                <TableCell
+                  className="font-mono text-xs"
+                  dir="ltr"
+                >
+                  {line.itemNumber ?? line.itemSku ?? "—"}
+                </TableCell>
+                <TableCell className="text-sm">{line.description}</TableCell>
+                <TableCell className="text-center tabular-nums">
+                  {numberFormatter.format(line.orderedQty)}
+                </TableCell>
+                <TableCell className="text-center tabular-nums text-muted-foreground">
+                  {line.receivedQty > 0 ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Package className="size-3" aria-hidden />
+                      {numberFormatter.format(line.receivedQty)}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+                <TableCell className="text-center tabular-nums">
+                  {isClosed ? (
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                    >
+                      <CheckCircle2 className="me-1 size-3" aria-hidden />
+                      הושלם
+                    </Badge>
+                  ) : (
+                    <span className="font-semibold text-emerald-800">
+                      {numberFormatter.format(line.remainingQty)}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="0.001"
+                    max={line.remainingQty || undefined}
+                    value={inp.received}
+                    onChange={(e) =>
+                      onChange(line.id, { received: e.target.value })
+                    }
+                    disabled={isClosed}
+                    className={cn(
+                      "h-8 text-center",
+                      over &&
+                        "border-rose-500/60 focus-visible:border-rose-500",
+                    )}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="0.001"
+                    value={inp.rejected}
+                    onChange={(e) =>
+                      onChange(line.id, { rejected: e.target.value })
+                    }
+                    disabled={isClosed}
+                    className={cn(
+                      "h-8 text-center",
+                      rejectedNum > 0 && "border-rose-400 text-rose-800",
+                    )}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    value={inp.rejectReason}
+                    onChange={(e) =>
+                      onChange(line.id, { rejectReason: e.target.value })
+                    }
+                    disabled={isClosed || rejectedNum === 0}
+                    placeholder={
+                      rejectedNum > 0
+                        ? "למשל: פגום באריזה"
+                        : "—"
+                    }
+                    maxLength={500}
+                    className="h-8"
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      title="מלא יתרה"
+                      disabled={isClosed}
+                      onClick={() =>
+                        onFillRemaining(line.id, line.remainingQty)
+                      }
+                      className="h-7 w-7"
+                    >
+                      <PackageCheck className="size-4" aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      title="אפס שורה"
+                      onClick={() => onReset(line.id)}
+                      disabled={isClosed}
+                      className="h-7 w-7"
+                    >
+                      <RotateCcw className="size-4" aria-hidden />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Small UI helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function LoadingBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+      <Loader2 className="size-4 animate-spin" aria-hidden />
+      {children}
+    </div>
+  )
+}
+
+function EmptyInbox() {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center">
+      <div className="rounded-full bg-emerald-500/10 p-3">
+        <ClipboardCheck className="size-6 text-emerald-700" aria-hidden />
+      </div>
+      <div className="text-sm font-medium">אין כרגע הזמנות פתוחות לקליטה</div>
+      <div className="text-xs text-muted-foreground">
+        ברגע שהזמנת רכש תישלח לספק, היא תופיע כאן אוטומטית.
+      </div>
+    </div>
+  )
+}
+
