@@ -303,8 +303,29 @@ export type ErpPurchaseOrderStatus = (typeof ERP_PURCHASE_ORDER_STATUSES)[number
 export const ERP_GOODS_RECEIPT_STATUSES = ["DRAFT", "COMPLETED", "FINAL"] as const
 export type ErpGoodsReceiptStatus = (typeof ERP_GOODS_RECEIPT_STATUSES)[number]
 
-export const ERP_VENDOR_INVOICE_STATUSES = ["DRAFT", "FINAL", "CANCELLED"] as const
+export const ERP_VENDOR_INVOICE_STATUSES = [
+  "DRAFT",
+  "NEW",
+  "MATCHED",
+  "HAS_VARIANCES",
+  "APPROVED",
+  "READY_FOR_PAYMENT",
+  "FINAL",
+  "CANCELLED",
+] as const
 export type ErpVendorInvoiceStatus = (typeof ERP_VENDOR_INVOICE_STATUSES)[number]
+
+/**
+ * Phase 8.3 — תוצאת 3-Way Match ברמת שורת חשבונית מול שורת PO + GR מתאימות.
+ */
+export const ERP_INVOICE_MATCH_LINE_STATUSES = [
+  "PERFECT",
+  "QTY_VARIANCE",
+  "PRICE_VARIANCE",
+  "MIXED_VARIANCE",
+] as const
+export type ErpInvoiceMatchLineStatus =
+  (typeof ERP_INVOICE_MATCH_LINE_STATUSES)[number]
 
 export type ErpPurchaseOrder = {
   id: string
@@ -381,6 +402,10 @@ export type ErpVendorInvoice = {
   totalAmount: number
   priceVarianceAmount: number
   notes: string | null
+  /** Phase 8.3 — קישור ישיר ל-PO (ה-header). nullable — Direct AP ללא PO. */
+  purchaseOrderId?: string | null
+  /** Phase 8.3 — קישור ישיר ל-GR (ה-header). hint בלבד — שורות מגשרות עצמאית. */
+  goodsReceiptId?: string | null
 }
 
 export type ErpVendorInvoiceLine = {
@@ -395,6 +420,54 @@ export type ErpVendorInvoiceLine = {
   quantity: number
   unitPrice: number
   totalPrice: number
+  /** Phase 8.3 — קישור ישיר לשורת PO לצורך 3-Way Match. */
+  purchaseOrderLineId?: string | null
+}
+
+/**
+ * Phase 8.3 — שורת גישור בטבלת `erp_invoice_po_line_matches`.
+ * Snapshot של ההשוואה בזמן ההרצת ה-RPC erp_perform_3way_match.
+ */
+export type ErpInvoicePoLineMatch = {
+  id: string
+  companyId: string
+  invoiceId: string
+  invoiceLineId: string
+  poLineId: string
+  grLineId: string | null
+  invoiceQty: number
+  invoiceUnitPrice: number
+  poUnitPrice: number
+  poOrderedQty: number
+  grReceivedQty: number
+  /** invoice_qty - gr_received_qty */
+  qtyDiff: number
+  /** invoice_unit_price - po_unit_price */
+  priceDiff: number
+  matchStatus: ErpInvoiceMatchLineStatus
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Phase 8.3 — תוצאה מה-RPC `erp_perform_3way_match(p_invoice_id)`.
+ * ממופה הישר מ-snake_case ל-camelCase.
+ */
+export type ErpPerform3WayMatchResult = {
+  invoiceId: string
+  newInvoiceStatus: ErpVendorInvoiceStatus
+  totalInvoiceLines: number
+  matchedLines: number
+  perfectLines: number
+  qtyVarianceLines: number
+  priceVarianceLines: number
+  mixedVarianceLines: number
+  unmatchedLines: number
+  /** סכום qty_diff (yes-can-go-negative). */
+  totalQtyDiff: number
+  /** סכום price_diff מוכפל ב-invoice_qty (השפעה כספית). */
+  totalPriceDiffValue: number
 }
 
 export type ErpProcurementStatusEvent = {

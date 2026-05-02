@@ -110,7 +110,16 @@ const grFormSchema = z.object({
   notes: z.string().optional(),
 })
 const invoiceFormSchema = z.object({
-  status: z.enum(["DRAFT", "FINAL", "CANCELLED"]),
+  status: z.enum([
+    "DRAFT",
+    "NEW",
+    "MATCHED",
+    "HAS_VARIANCES",
+    "APPROVED",
+    "READY_FOR_PAYMENT",
+    "FINAL",
+    "CANCELLED",
+  ]),
   invoiceDate: z.string().optional(),
   notes: z.string().optional(),
 })
