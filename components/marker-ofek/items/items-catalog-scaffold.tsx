@@ -1,28 +1,31 @@
 "use client"
 
 /**
- * ItemsCatalogScaffold — Phase 7.13.5 (Hybrid Hierarchy).
+ * ItemsCatalogScaffold — UX Hotfix (post Phase 7.13.5).
  *
- * החלפה לקיים `ItemsDataGrid`. עוקב אחר הדפוס הקנוני של מרקר אופק:
- *   • `EntityWorkspace` כ-shell (header + sidebar + main)
- *   • `BentoSmartList` כטבלה ראשית
- *   • slide-over `ItemPreviewFocusPane` כ-FocusPane של בחירת שורה
- *   • CTA "פתח כרטיס מלא" ב-FocusPane → מנווט ל-`/marker-ofek/items/[id]` (V3)
+ * **Why this rewrite**
+ *   הלקוח פסל את ה-split pane (BentoSmartList + ItemPreviewPane אינליין). הוא
+ *   דורש חוויית ERP מלאה: data grid רחב על כל המסך, KPIs בשורה עילית, וקליק
+ *   על שורה מנווט ישר ל-`/marker-ofek/items/[id]` (כרטיס V3 העמוק).
  *
- * KPI sidebar:
- *   חישוב client-side מ-rows שכבר נטענו — ללא קריאה נוספת ל-API. אם נצטרך
- *   metrics אגרגטיביים (היסטוריית רכש וכו׳) נוסיף endpoint ייעודי בשלב הבא.
+ * **What changed vs. Phase 7.13.5**
+ *   • הוסרו `EntityWorkspace` (sidebar+main), `ItemPreviewPane`, ה-state
+ *     `selectedItemId`, וה-toggle של בחירה ב-onRowClick.
+ *   • ה-KPIs עברו מ-sidebar עמוד לשורה אופקית קומפקטית מעל הטבלה.
+ *   • ה-onRowClick עושה `router.push(/marker-ofek/items/{id})` — ניווט ישיר.
+ *   • הטבלה תופסת את כל הרוחב הזמין; ה-empty state נשאר.
  *
- * חיפוש:
- *   נשמר client-side (SKU / תיאור / משפחה) — אותו UX כמו ב-`ItemsDataGrid`
- *   הישן. רעיון לעתיד: לחבר ל-Cmd+K command palette הגלובלי.
+ * **What was preserved**
+ *   • טעינת `/api/master-data/items`, חיפוש client-side, סינון, קומפוט KPIs,
+ *     קומפוננטת KpiCard לוקאלית, פורמטור מטבע, פורמטור קומפקטי לסכומים.
+ *   • הקומפוננטה `ItemPreviewPane` לא נמחקה — נשארת ב-codebase למקרה של
+ *     שימוש עתידי (Cmd+K preview, mobile drawer וכו'); רק אינה מיובאת פה.
  */
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertTriangle,
-  Boxes,
   Loader2,
   Plus,
   Search,
@@ -31,8 +34,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { EntityWorkspace } from "@/components/layout/EntityWorkspace"
-import { ItemPreviewPane } from "@/components/marker-ofek/items/item-preview-pane"
 import {
   BentoSmartList,
   type BentoSmartListColumn,
@@ -65,7 +66,7 @@ type ItemRow = {
   activeSupplierCount: number
 }
 
-// פורמטור מטבע מטבע: ILS עם סמל ת, אחרת לפי קוד המטבע.
+// פורמטור מטבע: ILS עם סמל ₪, אחרת לפי קוד המטבע.
 function formatPrice(value: number | null, currency: string | null): string {
   if (value == null) return "—"
   const cur = currency ?? "ILS"
@@ -80,8 +81,7 @@ function formatPrice(value: number | null, currency: string | null): string {
   }
 }
 
-// Phase 7.14.4 — פורמטור קומפקטי ל-KPIs סכומיים: 1.2M / 350K / 12.5K.
-// מונע מהתפטתות מספרים גדולים בכרטיסיה קטנה של ה-sidebar.
+// פורמטור קומפקטי ל-KPIs סכומיים: 1.2M / 350K / 12.5K.
 function formatPriceCompact(value: number, currency: string | null): string {
   const cur = currency ?? "ILS"
   try {
@@ -112,7 +112,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 function statusTone(
-  status: string
+  status: string,
 ): "neutral" | "success" | "warning" | "info" | "danger" {
   if (status === "ACTIVE") return "success"
   if (status === "PURCHASE_ONLY") return "info"
@@ -130,9 +130,6 @@ export function ItemsCatalogScaffold() {
   const [rows, setRows] = React.useState<ItemRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
-  const [selectedItemId, setSelectedItemId] = React.useState<string | null>(
-    null
-  )
 
   // טעינת רשימת הפריטים — פעם אחת בעלייה.
   React.useEffect(() => {
@@ -148,7 +145,7 @@ export function ItemsCatalogScaffold() {
         toast.error(
           error instanceof Error
             ? error.message
-            : "טעינת רשימת הפריטים נכשלה"
+            : "טעינת רשימת הפריטים נכשלה",
         )
         setRows([])
       })
@@ -169,7 +166,7 @@ export function ItemsCatalogScaffold() {
       (row) =>
         row.sku.toLowerCase().includes(trimmed) ||
         row.description.toLowerCase().includes(trimmed) ||
-        (row.productFamily?.familyName ?? "").toLowerCase().includes(trimmed)
+        (row.productFamily?.familyName ?? "").toLowerCase().includes(trimmed),
     )
   }, [rows, searchTerm])
 
@@ -182,19 +179,17 @@ export function ItemsCatalogScaffold() {
     for (const r of rows) {
       if (r.productFamily?.familyCode) familySet.add(r.productFamily.familyCode)
     }
-    // ── Phase 7.14.2 — KPI טיה מחיר ──
-    // פריטים ללא מחיר רכש פתור = resolvedPriceSource = 'none'.
     const withoutPrice = rows.filter((r) => r.resolvedPriceSource === "none").length
-    // “premium” = עדיף מוגדר אבל לא הזול ביותר.
     const withPremium = rows.filter((r) => r.preferredIsOptimal === false).length
 
-    // ── Phase 7.14.4 — KPIs כספיים על פריטים פעילים בלבד ──
-    // נמנע mixed-currency: מסכמים רק את המטבע הנפוץ ביותר (גולה מה-resolved
-    // על פריטים פעילים). זה גישה מספיק לרוב החברות הישראליות (ILS).
+    // KPIs כספיים על פריטים פעילים בלבד — מטבע דומיננטי כדי למנוע mixed-currency.
     const currencyCounts = new Map<string, number>()
     for (const r of rows) {
       if (r.resolvedUnitPrice != null && r.resolvedCurrency) {
-        currencyCounts.set(r.resolvedCurrency, (currencyCounts.get(r.resolvedCurrency) ?? 0) + 1)
+        currencyCounts.set(
+          r.resolvedCurrency,
+          (currencyCounts.get(r.resolvedCurrency) ?? 0) + 1,
+        )
       }
     }
     let dominantCurrency: string | null = null
@@ -205,14 +200,10 @@ export function ItemsCatalogScaffold() {
         dominantCount = cnt
       }
     }
-    const otherCurrencyItems = Array.from(currencyCounts.values()).reduce(
-      (s, c) => s + c,
-      0
-    ) - dominantCount
+    const otherCurrencyItems =
+      Array.from(currencyCounts.values()).reduce((s, c) => s + c, 0) -
+      dominantCount
 
-    // סך ערך קטלוג: סכום resolvedUnitPrice על כל הפריטים הפעילים במטבע הדומיננטי.
-    // מלבד: לא מללה כמותיות (זו מדידת "ערך/יחידה" להשוואה מהירה — ערך סלים ידרוש
-    // לקחת בחשבון מלאי של לא זמין במטה).
     let catalogValue = 0
     let catalogValueItemCount = 0
     let savingsOpportunity = 0
@@ -229,7 +220,6 @@ export function ItemsCatalogScaffold() {
         r.preferredIsOptimal === false &&
         r.preferredPremium != null &&
         r.preferredPremium > 0 &&
-        // מסכמים רק premium באותה מטבע דומיננטי.
         r.resolvedCurrency === dominantCurrency
       ) {
         savingsOpportunity += r.preferredPremium
@@ -249,7 +239,6 @@ export function ItemsCatalogScaffold() {
       familyCount: familySet.size,
       withoutPrice,
       withPremium,
-      // Phase 7.14.4
       catalogValue,
       catalogValueItemCount,
       savingsOpportunity,
@@ -308,7 +297,6 @@ export function ItemsCatalogScaffold() {
           return item.uom
         },
       },
-      // ── Phase 7.14.2 — מחיר רכש פתור ──
       {
         key: "resolvedPrice",
         title: "מחיר רכש",
@@ -386,229 +374,189 @@ export function ItemsCatalogScaffold() {
         ),
       },
     ],
-    []
+    [],
   )
 
+  // ── Page layout: header → KPI strip → full-width data grid ──────────────
   return (
-    <EntityWorkspace
-      title="קטלוג פריטים"
-        description={
-          loading
-            ? "טוען רשימת פריטים…"
-            : `${filteredRows.length} מתוך ${rows.length} פריטים`
-        }
-        headerActions={
-          <>
-            <div className="relative">
-              <Search
-                className="pointer-events-none absolute end-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="חיפוש מק״ט / תיאור / משפחה…"
-                className="h-8 w-64 pe-8 text-xs"
-                aria-label="חיפוש פריטים"
-              />
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => router.push("/marker-ofek/items/new")}
-              className="gap-1.5"
-            >
-              <Plus className="size-3.5" aria-hidden />
-              פריט חדש
-            </Button>
-          </>
-        }
-        sidebar={
-          <div className="flex flex-col gap-2">
-            <KpiCard
-              title="סה״כ פריטים"
-              value={`${kpis.total}`}
-              hint="כל הפריטים בקטלוג"
+    <div
+      dir="rtl"
+      className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6"
+    >
+      {/* Page header — כותרת + מטא + פעולות */}
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">קטלוג פריטים</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {loading
+              ? "טוען רשימת פריטים…"
+              : `${filteredRows.length.toLocaleString("he-IL")} מתוך ${rows.length.toLocaleString("he-IL")} פריטים`}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search
+              className="pointer-events-none absolute end-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
             />
-            <KpiCard
-              title="פעילים"
-              value={`${kpis.active}`}
-              hint={`${kpis.total > 0 ? Math.round((kpis.active / kpis.total) * 100) : 0}% מתוך הקטלוג`}
-              tone="success"
+            <Input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="חיפוש מק״ט / תיאור / משפחה…"
+              className="h-9 w-72 pe-8 text-xs"
+              aria-label="חיפוש פריטים"
             />
-            <KpiCard
-              title="מיושנים"
-              value={`${kpis.obsolete}`}
-              hint="OBSOLETE — לא לשימוש פעיל"
-              tone={kpis.obsolete > 0 ? "warning" : "neutral"}
-            />
-            <KpiCard
-              title="משפחות מוצר"
-              value={`${kpis.familyCount}`}
-              hint={
-                kpis.withoutFamily > 0
-                  ? `${kpis.withoutFamily} פריטים ללא משפחה`
-                  : "כל הפריטים משויכים"
-              }
-              tone={kpis.withoutFamily > 0 ? "warning" : "neutral"}
-            />
-            <KpiCard
-              title="ללא מחיר תקף"
-              value={`${kpis.withoutPrice}`}
-              hint={
-                kpis.withoutPrice > 0
-                  ? "דרוש מיפוי ספק פעיל"
-                  : "לכל פריט יש מחיר"
-              }
-              tone={kpis.withoutPrice > 0 ? "warning" : "success"}
-            />
-            <KpiCard
-              title="מועדף לא זול"
-              value={`${kpis.withPremium}`}
-              hint={
-                kpis.withPremium > 0
-                  ? "מועדף > זול ביותר (הזדמנות לאופטימיזציה)"
-                  : "כל ספק מועדף = זול ביותר"
-              }
-              tone={kpis.withPremium > 0 ? "warning" : "success"}
-            />
-            {/* ├─ Phase 7.14.4 — KPIs כספיים על פריטים פעילים ──────────*/}
-            <KpiCard
-              title="ערך קטלוג"
-              value={
-                kpis.catalogValueItemCount > 0
-                  ? formatPriceCompact(kpis.catalogValue, kpis.dominantCurrency)
-                  : "—"
-              }
-              hint={
-                kpis.catalogValueItemCount > 0
-                  ? `סכום של ${kpis.catalogValueItemCount} פריטים פעילים${
-                      kpis.otherCurrencyItems > 0
-                        ? ` (ועוד ${kpis.otherCurrencyItems} במטבע אחר)`
-                        : ""
-                    }`
-                  : "אין פריטים פעילים עם מחיר"
-              }
-              tone="neutral"
-            />
-            <KpiCard
-              title="פוטנציאל חיסכון"
-              value={
-                kpis.savingsItemCount > 0
-                  ? formatPriceCompact(kpis.savingsOpportunity, kpis.dominantCurrency)
-                  : "—"
-              }
-              hint={
-                kpis.savingsItemCount > 0
-                  ? `מעבר למהזול ביותר ב-${kpis.savingsItemCount} פריטים${
-                      kpis.catalogValue > 0
-                        ? ` (≈${Math.round((kpis.savingsOpportunity / kpis.catalogValue) * 100)}% מערך הקטלוג)`
-                        : ""
-                    }`
-                  : "אין premium — המועדפים הם הזול ביותר"
-              }
-              tone={kpis.savingsItemCount > 0 ? "warning" : "success"}
-            />
-            <KpiCard
-              title="כיסוי ספקים ממוצע"
-              value={
-                kpis.active > 0 ? kpis.supplierCoverageAvg.toFixed(1) : "—"
-              }
-              hint={
-                kpis.active === 0
-                  ? "אין פריטים פעילים"
-                  : kpis.supplierCoverageAvg < 1.5
-                    ? "כיסוי דל — מומלץ להוסיף ספקים אלטרנטיביים"
-                    : kpis.supplierCoverageAvg < 3
-                      ? "כיסוי סביר — יש מרחב למשא ומתן"
-                      : "כיסוי טוב — תחרות בריאה"
-              }
-              tone={
-                kpis.active === 0
-                  ? "neutral"
-                  : kpis.supplierCoverageAvg < 1.5
-                    ? "warning"
-                    : kpis.supplierCoverageAvg >= 3
-                      ? "success"
-                      : "neutral"
-              }
-            />
-            <Card className="border-dashed border-border/60 bg-muted/30">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-1.5 text-xs">
-                  <Boxes className="size-3.5" aria-hidden />
-                  טיפ ניווט
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-[11px] leading-relaxed text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">קליק על שורה</strong> —
-                  פותח preview בצד שמאל בלי לסגור את הליסט.
-                </p>
-                <p>
-                  מה-preview: <strong className="text-foreground">&quot;פתח כרטיס מלא&quot;</strong>{" "}
-                  לכרטיס V3 העמוק.
-                </p>
-              </CardContent>
-            </Card>
           </div>
-        }
-        main={
-          // Master-detail אינליין: הליסט וה-preview זה לצד זה באותו אזור, ללא overlay.
-          // ללא בחירה: הליסט תופס את כל ה-main. עם בחירה: ליסט 60% | preview 40%.
-          // ב-mobile (<md): ה-preview נערם מעל הליסט (stack).
-          <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row md:items-stretch">
-            <div
-              className={cn(
-                "flex min-h-0 flex-col gap-2",
-                selectedItemId
-                  ? "md:w-3/5 md:flex-none"
-                  : "md:flex-1"
-              )}
-            >
-              {loading ? (
-                <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                  טוען פריטים…
-                </div>
-              ) : (
-                <BentoSmartList<ItemRow>
-                  items={filteredRows}
-                  columns={columns}
-                  rowKey={(item) => item.id}
-                  selectedRowKey={selectedItemId}
-                  onRowClick={(item) =>
-                    setSelectedItemId((prev) =>
-                      prev === item.id ? null : item.id
-                    )
-                  }
-                  emptyState={
-                    rows.length === 0
-                      ? "אין פריטים בקטלוג. לחץ \u201Cפריט חדש\u201D כדי ליצור את הראשון."
-                      : "לא נמצאו פריטים התואמים לחיפוש."
-                  }
-                />
-              )}
-            </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => router.push("/marker-ofek/items/new")}
+            className="gap-1.5"
+          >
+            <Plus className="size-3.5" aria-hidden />
+            פריט חדש
+          </Button>
+        </div>
+      </header>
 
-            {selectedItemId ? (
-              <div className="min-h-0 md:w-2/5 md:flex-none">
-                <ItemPreviewPane
-                  itemId={selectedItemId}
-                  onClose={() => setSelectedItemId(null)}
-                  className="h-full max-h-[calc(100vh-11rem)] md:sticky md:top-4"
-                />
-              </div>
-            ) : null}
+      {/* KPI strip — שורה עילית קומפקטית */}
+      <section
+        aria-label="סיכום קטלוג"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9"
+      >
+        <KpiCard
+          title="סה״כ פריטים"
+          value={`${kpis.total}`}
+          hint="כל הפריטים בקטלוג"
+        />
+        <KpiCard
+          title="פעילים"
+          value={`${kpis.active}`}
+          hint={`${kpis.total > 0 ? Math.round((kpis.active / kpis.total) * 100) : 0}% מהקטלוג`}
+          tone="success"
+        />
+        <KpiCard
+          title="מיושנים"
+          value={`${kpis.obsolete}`}
+          hint="OBSOLETE"
+          tone={kpis.obsolete > 0 ? "warning" : "neutral"}
+        />
+        <KpiCard
+          title="משפחות מוצר"
+          value={`${kpis.familyCount}`}
+          hint={
+            kpis.withoutFamily > 0
+              ? `${kpis.withoutFamily} ללא משפחה`
+              : "כולם משויכים"
+          }
+          tone={kpis.withoutFamily > 0 ? "warning" : "neutral"}
+        />
+        <KpiCard
+          title="ללא מחיר"
+          value={`${kpis.withoutPrice}`}
+          hint={kpis.withoutPrice > 0 ? "דרוש מיפוי ספק" : "כולם תמחורים"}
+          tone={kpis.withoutPrice > 0 ? "warning" : "success"}
+        />
+        <KpiCard
+          title="מועדף לא זול"
+          value={`${kpis.withPremium}`}
+          hint={
+            kpis.withPremium > 0 ? "הזדמנות חיסכון" : "מועדף = זול ביותר"
+          }
+          tone={kpis.withPremium > 0 ? "warning" : "success"}
+        />
+        <KpiCard
+          title="ערך קטלוג"
+          value={
+            kpis.catalogValueItemCount > 0
+              ? formatPriceCompact(kpis.catalogValue, kpis.dominantCurrency)
+              : "—"
+          }
+          hint={
+            kpis.catalogValueItemCount > 0
+              ? `${kpis.catalogValueItemCount} פריטים${
+                  kpis.otherCurrencyItems > 0
+                    ? ` (+${kpis.otherCurrencyItems} מטבע אחר)`
+                    : ""
+                }`
+              : "אין מחירים פעילים"
+          }
+        />
+        <KpiCard
+          title="פוט׳ חיסכון"
+          value={
+            kpis.savingsItemCount > 0
+              ? formatPriceCompact(
+                  kpis.savingsOpportunity,
+                  kpis.dominantCurrency,
+                )
+              : "—"
+          }
+          hint={
+            kpis.savingsItemCount > 0
+              ? `${kpis.savingsItemCount} פריטים${
+                  kpis.catalogValue > 0
+                    ? ` · ${Math.round((kpis.savingsOpportunity / kpis.catalogValue) * 100)}%`
+                    : ""
+                }`
+              : "אין premium"
+          }
+          tone={kpis.savingsItemCount > 0 ? "warning" : "success"}
+        />
+        <KpiCard
+          title="כיסוי ספקים"
+          value={kpis.active > 0 ? kpis.supplierCoverageAvg.toFixed(1) : "—"}
+          hint={
+            kpis.active === 0
+              ? "אין פעילים"
+              : kpis.supplierCoverageAvg < 1.5
+                ? "דל"
+                : kpis.supplierCoverageAvg < 3
+                  ? "סביר"
+                  : "טוב"
+          }
+          tone={
+            kpis.active === 0
+              ? "neutral"
+              : kpis.supplierCoverageAvg < 1.5
+                ? "warning"
+                : kpis.supplierCoverageAvg >= 3
+                  ? "success"
+                  : "neutral"
+          }
+        />
+      </section>
+
+      {/* Data Grid — רוחב מלא */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            טוען פריטים…
           </div>
-        }
-    />
+        ) : (
+          <BentoSmartList<ItemRow>
+            items={filteredRows}
+            columns={columns}
+            rowKey={(item) => item.id}
+            onRowClick={(item) =>
+              router.push(`/marker-ofek/items/${encodeURIComponent(item.id)}`)
+            }
+            emptyState={
+              rows.length === 0
+                ? "אין פריטים בקטלוג. לחץ \u201Cפריט חדש\u201D כדי ליצור את הראשון."
+                : "לא נמצאו פריטים התואמים לחיפוש."
+            }
+          />
+        )}
+      </div>
+    </div>
   )
 }
 
 // ----------------------------------------------------------------------------
-// Local KpiCard — תואם לקונבנציה של מודולים אחרים (כל מודול מגדיר משלו).
+// Local KpiCard — קומפקטי לשורה אופקית (קטן יותר מהגרסה הקודמת ב-sidebar).
 // ----------------------------------------------------------------------------
 
 function KpiCard({
@@ -626,22 +574,22 @@ function KpiCard({
     tone === "success"
       ? "text-emerald-600 dark:text-emerald-400"
       : tone === "warning"
-      ? "text-amber-600 dark:text-amber-400"
-      : "text-foreground"
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-foreground"
 
   return (
     <Card className="border-border">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-[11px] font-medium text-muted-foreground">
+      <CardHeader className="px-3 pb-1 pt-2">
+        <CardTitle className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-0.5">
-        <p className={cn("text-xl font-semibold tracking-tight", valueTone)}>
+      <CardContent className="space-y-0.5 px-3 pb-2">
+        <p className={cn("text-lg font-semibold tracking-tight", valueTone)}>
           {value}
         </p>
         {hint ? (
-          <p className="text-[10px] leading-tight text-muted-foreground">
+          <p className="line-clamp-1 text-[10px] leading-tight text-muted-foreground">
             {hint}
           </p>
         ) : null}
@@ -650,5 +598,4 @@ function KpiCard({
   )
 }
 
-// Suppress unused warning for the union type — kept for documentation/future strict typing.
 export type { ItemStatus }

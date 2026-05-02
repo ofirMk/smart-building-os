@@ -159,15 +159,16 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Building2,
       },
       {
-        // Phase 7.14.0 — שרשרת הרכש מצביעה על ה-master החי.
-        title: "קטלוג פריטים",
-        href: "/marker-ofek/items",
-        icon: Package,
-      },
-      {
         title: "מחירוני ספקים",
         href: "/marker-ofek/procurement/catalog",
         icon: FileStack,
+      },
+      {
+        // Phase 7.14.0 — שרשרת הרכש מצביעה על ה-master החי.
+        // UX Hotfix (post 8.2): הוזז ישירות מעל "הזמנות רכש" לפי בקשת לקוח.
+        title: "קטלוג פריטים",
+        href: "/marker-ofek/items",
+        icon: Package,
       },
       {
         title: "הזמנות רכש",
