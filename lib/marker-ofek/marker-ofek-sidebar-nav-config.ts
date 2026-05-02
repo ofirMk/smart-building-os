@@ -24,6 +24,7 @@ import {
   PackageOpen,
   ReceiptText,
   Receipt,
+  Scale,
   Shield,
   ShoppingCart,
   Sparkles,
@@ -190,6 +191,12 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "חשבוניות ספק (AP)",
         href: "/marker-ofek/procurement/invoices/new",
         icon: Receipt,
+      },
+      {
+        // Phase 8.3 Step 2 — התאמת חשבוניות (3-Way Match) למנהל הכספים.
+        title: "התאמת חשבוניות",
+        href: "/marker-ofek/finance/reconciliation",
+        icon: Scale,
       },
       {
         title: "זרימת הזמנה ואספקה",
