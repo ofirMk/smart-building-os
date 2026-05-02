@@ -165,8 +165,9 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
       },
       {
         // Phase 7.14.0 — שרשרת הרכש מצביעה על ה-master החי.
-        // UX Hotfix (post 8.2): הוזז ישירות מעל "הזמנות רכש" לפי בקשת לקוח.
-        title: "קטלוג פריטים",
+        // UX Hotfix (Phase 8.3 prep): הוזז ישירות מעל "הזמנות רכש" + שונה
+        // ל"כרטיס פריט" (שפה נגישה לאנשי שטח) לפי בקשת לקוח.
+        title: "כרטיס פריט",
         href: "/marker-ofek/items",
         icon: Package,
       },
