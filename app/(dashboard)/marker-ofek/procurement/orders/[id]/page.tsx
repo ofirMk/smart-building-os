@@ -50,9 +50,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  PoActionsToolbar,
+  buildPdfLines,
+  fetchLastSentAt,
+} from "@/components/marker-ofek/procurement/po-actions-toolbar"
 import { PoApprovalsTab } from "@/components/marker-ofek/procurement/po-approvals-tab"
 import { PoAttachmentsTab } from "@/components/marker-ofek/procurement/po-attachments-tab"
 import { PoHistoryTab } from "@/components/marker-ofek/procurement/po-history-tab"
+import type { PoOfficialPdfProps } from "@/components/marker-ofek/procurement/po-official-pdf"
 import {
   PoSmartPricingTab,
   type SmartPricingLineInput,
@@ -95,6 +101,7 @@ type ProcurementOrderDetailLineDto = {
 type ProcurementOrderDetailDto = {
   id: string
   poNumber: string
+  officialPoNumber: string | null
   title: string
   status: string
   notes: string | null
@@ -117,11 +124,21 @@ type ProcurementOrderDetailDto = {
     id: string
     name: string
     supplierNum: string | null
+    email: string | null
+    address: string | null
+    phone: string | null
+    taxVatId: string | null
+    paymentTerms: string | null
   } | null
   project: {
     id: string
     projectNumber: string | null
     name: string | null
+  } | null
+  company: {
+    id: string
+    nameHe: string
+    nameEn: string
   } | null
   lines: ProcurementOrderDetailLineDto[]
 }
@@ -134,6 +151,8 @@ const STATUS_LABEL: Record<string, string> = {
   DRAFT: "טיוטה",
   PENDING_APPROVAL: "ממתין לאישור",
   APPROVED: "מאושר",
+  SENT_TO_SUPPLIER: "נשלח לספק",
+  SENT: "נשלח לספק",
   ISSUED: "הוצא",
   CANCELLED: "מבוטל",
   CLOSED: "סגור",
@@ -144,6 +163,8 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   DRAFT: "bg-slate-500/15 text-slate-700 border-slate-500/30",
   PENDING_APPROVAL: "bg-amber-500/15 text-amber-700 border-amber-500/30",
   APPROVED: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  SENT_TO_SUPPLIER: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
+  SENT: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
   ISSUED: "bg-sky-500/15 text-sky-700 border-sky-500/30",
   CANCELLED: "bg-rose-500/15 text-rose-700 border-rose-500/30",
   CLOSED: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
@@ -285,7 +306,11 @@ export default function ProcurementOrderDetailPage() {
 
   return (
     <div dir="rtl" className="flex h-full min-h-0 flex-col gap-3 p-4 pb-8">
-      <PageHeader data={data} onBack={() => router.push("/marker-ofek/procurement/orders")} />
+      <PageHeader
+        data={data}
+        onBack={() => router.push("/marker-ofek/procurement/orders")}
+        onSent={refetch}
+      />
 
       <Tabs
         defaultValue="general"
@@ -392,9 +417,11 @@ export default function ProcurementOrderDetailPage() {
 function PageHeader({
   data,
   onBack,
+  onSent,
 }: {
   data: ProcurementOrderDetailDto
   onBack: () => void
+  onSent: () => void
 }) {
   const statusLabel = STATUS_LABEL[data.status] ?? data.status
   const statusClass =
@@ -452,11 +479,84 @@ function PageHeader({
           </p>
         </div>
       </div>
-      <Button type="button" variant="outline" onClick={onBack} className="gap-2">
-        <ArrowRight className="size-4" aria-hidden />
-        חזרה לרשימה
-      </Button>
+      <div className="flex flex-col items-end gap-2">
+        <Button type="button" variant="outline" onClick={onBack} className="gap-2">
+          <ArrowRight className="size-4" aria-hidden />
+          חזרה לרשימה
+        </Button>
+        <PoActionsMount data={data} onSent={onSent} />
+      </div>
     </header>
+  )
+}
+
+// ============================================================================
+// PoActionsMount — bridges DTO → PoActionsToolbar props. טוען גם את lastSentAt
+// מ-/sent-log. מקופץ מ-PageHeader כדי לשמור על קריאות JSX.
+// ============================================================================
+
+function PoActionsMount({
+  data,
+  onSent,
+}: {
+  data: ProcurementOrderDetailDto
+  onSent: () => void
+}) {
+  const [lastSentAt, setLastSentAt] = React.useState<string | null>(null)
+
+  const reloadLastSent = React.useCallback(() => {
+    void fetchLastSentAt(data.id).then(setLastSentAt)
+  }, [data.id])
+
+  React.useEffect(() => {
+    reloadLastSent()
+  }, [reloadLastSent])
+
+  const pdfProps: PoOfficialPdfProps = React.useMemo(() => {
+    const issueDateSource = data.issuedAt ?? data.createdAt
+    return {
+      officialPoNumber: data.officialPoNumber,
+      draftPoNumber: data.poNumber,
+      title: data.title,
+      issueDate: formatDate(issueDateSource),
+      currency: data.currency,
+      companyNameHe: data.company?.nameHe ?? "מרקר אופק",
+      companyNameEn: data.company?.nameEn ?? "",
+      supplierName: data.supplier?.name ?? "ספק",
+      supplierNumber: data.supplier?.supplierNum ?? null,
+      supplierTaxVatId: data.supplier?.taxVatId ?? null,
+      supplierAddress: data.supplier?.address ?? null,
+      supplierPhone: data.supplier?.phone ?? null,
+      supplierEmail: data.supplier?.email ?? null,
+      supplierPaymentTerms: data.supplier?.paymentTerms ?? null,
+      projectNumber: data.project?.projectNumber ?? null,
+      projectName: data.project?.name ?? null,
+      lines: buildPdfLines(data.lines),
+      subtotal: data.totalAmountNet,
+      vatAmount: data.vatAmount,
+      grandTotal: data.totalAmountGross,
+      approverName: null,
+      approvedAt: data.status === "APPROVED" || data.status === "SENT_TO_SUPPLIER"
+        ? formatDate(data.createdAt)
+        : null,
+      notes: data.notes,
+    }
+  }, [data])
+
+  return (
+    <PoActionsToolbar
+      poId={data.id}
+      poNumber={data.poNumber}
+      officialPoNumber={data.officialPoNumber}
+      status={data.status}
+      pdfProps={pdfProps}
+      defaultRecipientEmail={data.supplier?.email ?? null}
+      lastSentAt={lastSentAt}
+      onSent={() => {
+        onSent()
+        reloadLastSent()
+      }}
+    />
   )
 }
 

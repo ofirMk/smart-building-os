@@ -65,6 +65,8 @@ export type ProcurementOrderDetailDto = {
   // header
   id: string
   poNumber: string
+  /** Phase 8.1.1 — מספר PO רשמי שמוקצה אוטומטית כשהסטטוס → APPROVED. */
+  officialPoNumber: string | null
   title: string
   status: string
   notes: string | null
@@ -91,11 +93,23 @@ export type ProcurementOrderDetailDto = {
     id: string
     name: string
     supplierNum: string | null
+    /** Phase 8.1.3 — מוצג במסמך ה-PDF וכ-default לכתובת השליחה. */
+    email: string | null
+    address: string | null
+    phone: string | null
+    taxVatId: string | null
+    paymentTerms: string | null
   } | null
   project: {
     id: string
     projectNumber: string | null
     name: string | null
+  } | null
+  /** Phase 8.1.3 — ל-rendering של ה-PDF (שם החברה בלוגו + footer). */
+  company: {
+    id: string
+    nameHe: string
+    nameEn: string
   } | null
   lines: ProcurementOrderDetailLineDto[]
 }
@@ -108,6 +122,17 @@ type SupplierJoin = {
   id: string
   name: string
   supplier_number: string | null
+  email: string | null
+  address: string | null
+  phone: string | null
+  tax_vat_id: string | null
+  payment_terms: string | null
+} | null
+
+type CompanyJoin = {
+  id: string
+  name_he: string
+  name_en: string | null
 } | null
 
 type ProjectJoin = {
@@ -125,6 +150,7 @@ type ItemJoin = {
 type HeaderRow = {
   id: string
   po_number: string
+  official_po_number: string | null
   title: string
   status: string
   notes: string | null
@@ -145,6 +171,7 @@ type HeaderRow = {
   body_html_english: string | null
   supplier: SupplierJoin | SupplierJoin[]
   project: ProjectJoin | ProjectJoin[]
+  company: CompanyJoin | CompanyJoin[]
 }
 
 type LineRow = {
@@ -212,13 +239,14 @@ export async function GET(
     .from("erp_purchase_orders")
     .select(
       [
-        "id,po_number,title,status,notes,created_at,issued_at",
+        "id,po_number,official_po_number,title,status,notes,created_at,issued_at",
         "currency,total_amount,total_amount_net,vat_amount,total_amount_gross",
         "urgency_level,urgency_justification,ai_negotiation_status,ai_negotiation_log",
         "po_total_deviation_pct,requires_po_escalation",
         "body_html,body_html_english",
-        "supplier:erp_md_suppliers!supplier_id(id,name,supplier_number)",
+        "supplier:erp_md_suppliers!supplier_id(id,name,supplier_number,email,address,phone,tax_vat_id,payment_terms)",
         "project:erp_proj_projects!project_id(id,project_number,name)",
+        "company:erp_companies!company_id(id,name_he,name_en)",
       ].join(",")
     )
     .eq("company_id", activeCompanyId)
@@ -258,11 +286,13 @@ export async function GET(
 
   const supplier = pickSingle(header.supplier)
   const project = pickSingle(header.project)
+  const company = pickSingle(header.company)
   const lines = (linesQuery.data ?? []) as LineRow[]
 
   const dto: ProcurementOrderDetailDto = {
     id: header.id,
     poNumber: header.po_number,
+    officialPoNumber: header.official_po_number,
     title: header.title,
     status: header.status,
     notes: header.notes,
@@ -286,6 +316,11 @@ export async function GET(
           id: supplier.id,
           name: supplier.name,
           supplierNum: supplier.supplier_number,
+          email: supplier.email,
+          address: supplier.address,
+          phone: supplier.phone,
+          taxVatId: supplier.tax_vat_id,
+          paymentTerms: supplier.payment_terms,
         }
       : null,
     project: project
@@ -293,6 +328,13 @@ export async function GET(
           id: project.id,
           projectNumber: project.project_number,
           name: project.name,
+        }
+      : null,
+    company: company
+      ? {
+          id: company.id,
+          nameHe: company.name_he,
+          nameEn: company.name_en ?? "",
         }
       : null,
     lines: lines.map((line): ProcurementOrderDetailLineDto => {
