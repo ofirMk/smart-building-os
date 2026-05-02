@@ -14,6 +14,7 @@ import {
   Gauge,
   Gavel,
   GitCompare,
+  Inbox,
   LayoutDashboard,
   ListChecks,
   ListOrdered,
@@ -172,6 +173,11 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "הזמנות רכש",
         href: "/marker-ofek/procurement/orders",
         icon: ShoppingCart,
+      },
+      {
+        title: "תיבת אישורים",
+        href: "/marker-ofek/procurement/approvals",
+        icon: Inbox,
       },
       {
         title: "קבלות סחורה (GRPO)",
