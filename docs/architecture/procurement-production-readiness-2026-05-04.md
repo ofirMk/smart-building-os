@@ -140,3 +140,38 @@ vercel deploy --prod --scope holdengroup -y --no-wait
 ---
 
 **Owner:** ofirMk · **Reviewer:** Cascade · **Next review:** 2026-05-11
+
+---
+
+## 8. Updates — Wiring Verification Pass (2026-05-04, pm)
+
+סבב אימות Wiring פנימי (בזמן שהמשתמש נרשם ל-Resend). נבדקו 3 מודולים:
+
+### ✅ GRN (Goods Receipt) — production-quality
+- `@c:\Users\user\Desktop\smart-building-os\app\api\procurement\goods-receipt\route.ts` — POST עם validation מלא (status gate, over-receipt guard), atomic RPC `erp_complete_goods_receipt`, rollback on partial failure.
+- `@c:\Users\user\Desktop\smart-building-os\components\marker-ofek\procurement\goods-receipt-workspace.tsx` — UI מושלם: 2-stage flow (בחירת PO → line-by-line receive), real-time validation, status-specific toasts, auto-refresh.
+- `@c:\Users\user\Desktop\smart-building-os\app\api\procurement\orders\open-for-receipt\route.ts` + `receipt-context/route.ts` — filtered + DTO-shaped endpoints.
+- **מסקנה:** המודול מוכן כמות-שהוא לפרודקשן.
+
+### ⚠️ Invoice 3-way match — drift זוהה ותוקן
+**הגילוי:** שתי מערכות reconciliation קיימו בסימולטני:
+1. **Legacy** (`@c:\Users\user\Desktop\smart-building-os\app\(dashboard)\marker-ofek\procurement\reconciliation\page.tsx` הישן) — קרא מ-`supplier_invoices` + `purchase_orders` (טבלאות pre-ERP).
+2. **Canonical** (`@c:\Users\user\Desktop\smart-building-os\components\marker-ofek\finance\reconciliation-workspace.tsx`) — משתמש ב-`erp_vendor_invoices` + `erp_invoice_po_line_matches` דרך `/api/finance/invoices/pending-match`.
+
+**הבעיה:** 4 קישורים בקוד (orders-dashboard, inventory-hub, diamond dashboard) הפנו את המשתמש ל-**legacy** — שהיה מציג ריק/stale לפרודקשן חדש.
+
+**התיקון שבוצע:** הדף הישן הוחלף ב-`redirect("/marker-ofek/finance/reconciliation")`. כל הקישורים ממשיכים לעבוד; ה-canonical UI מוצג. `inventory-progress/` sub-route נשאר שלם (פיצ'ר שונה — מלאי מול חוזה).
+
+### ⚠️ Approval Notifications — Gap (לא בלוקר)
+- ✅ Engine + UI מושלמים: `erp_submit_po_for_approval` RPC + `erp_resolve_approval_chain` + inbox UI ב-`@c:\Users\user\Desktop\smart-building-os\app\(dashboard)\marker-ofek\procurement\approvals\page.tsx`.
+- ❌ **חסר:** כש-PO מוגש לאישור או מקדם level, **המאשר הבא לא מקבל email**. התשתית ב-`@c:\Users\user\Desktop\smart-building-os\lib\infrastructure\email-service.ts` זמינה — אבל לא מחוברת ל-`/api/procurement/orders/[id]/approvals/submit/route.ts` או ל-`/decide/route.ts`.
+- **השפעה:** המאשרים חייבים להיכנס ידנית ל-inbox. לצוות בית-פנימי זה בסדר; ללקוח גדול עם מאשרים external — gap אמיתי.
+- **פתרון (Phase F, 20 שורות):** לאחר שמופעל Resend, להוסיף hook ב-submit/decide שקורא ל-`sendTransactionalEmail` עם פרטי המאשר הבא מ-`erp_po_approvals.approver_user_id`.
+
+### סיכום Verification Pass
+- **GRN:** ready ✅
+- **Invoice 3-way match:** ready ✅ (אחרי תיקון הrediret drift)
+- **Approval routing:** ready ✅, notifications = nice-to-have Phase F
+
+**לא זוהו gaps אחרים קריטיים.** המערכת מוכנה ל-pilot עם לקוח משלם אחרי Resend configuration.
+
