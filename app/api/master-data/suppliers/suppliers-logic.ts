@@ -4,7 +4,11 @@ import {
   requireMasterDataApiContext,
   sanitizeOptionalString,
 } from "@/lib/erp/master-data-api"
-import type { CreateSupplierInput, ErpSupplier, ErpSupplierType } from "@/types/erp"
+import {
+  supplierCreateSchema,
+  toSupplierInsertRow,
+} from "@/lib/erp/supplier-card-schema"
+import type { ErpSupplier, ErpSupplierType } from "@/types/erp"
 
 // סטים לקטלוג סטטוסי PO — חייב להיות בסינכרון עם orders-list-scaffold
 // ואיתם /api/master-data/suppliers/[id]/purchase-orders. שינוי כאן ←
@@ -23,23 +27,9 @@ const OPEN_PO_STATUSES = [
 
 const PAID_INVOICE_STATUSES = ["APPROVED", "READY_FOR_PAYMENT"] as const
 
-type SupplierCreateBody = Partial<CreateSupplierInput> & {
-  supplierNumber?: unknown
-  supplierNum?: unknown
-  supplierKind?: unknown
-  foreignName?: unknown
-  address?: unknown
-  phone?: unknown
-  email?: unknown
-  taxVatId?: unknown
-  paymentTerms?: unknown
-}
-
-function normalizeSupplierKind(value: unknown): "supplier" | "subcontractor" {
-  return sanitizeOptionalString(value) === "subcontractor"
-    ? "subcontractor"
-    : "supplier"
-}
+// SupplierCreateBody / normalizeSupplierKind — removed.
+// POST validation moved to `lib/erp/supplier-card-schema.ts` (Phase A).
+// PUT in `[id]/route.ts` retains its own light normalizer for backwards compat.
 
 function toErpSupplierType(kind: "supplier" | "subcontractor"): ErpSupplierType {
   return kind === "subcontractor" ? "SUBCONTRACTOR" : "STANDARD"
@@ -291,38 +281,39 @@ export async function POST(req: NextRequest) {
   if (!gate.ok) return gate.response
 
   const { supabase, activeCompanyId } = gate.ctx
-  const body = (await req.json().catch(() => null)) as SupplierCreateBody | null
+  const raw = (await req.json().catch(() => null)) as Record<string, unknown> | null
 
-  const supplierNum =
-    sanitizeOptionalString(body?.supplierNum) ??
-    sanitizeOptionalString(body?.supplierNumber)
-  const name = sanitizeOptionalString(body?.name)
-  const supplierKind = normalizeSupplierKind(body?.supplierKind)
-  const taxVatId = sanitizeOptionalString(body?.taxVatId) ?? sanitizeOptionalString(body?.taxId)
-  const paymentTerms = sanitizeOptionalString(body?.paymentTerms)
+  // נורמליזציה: מקבלים גם `supplierNumber` (legacy) — מעבירים ל-`supplierNum`.
+  if (raw && raw.supplierNumber != null && raw.supplierNum == null) {
+    raw.supplierNum = raw.supplierNumber
+  }
+  // נורמליזציה: מקבלים גם `taxId` (legacy) — מעבירים ל-`taxVatId`.
+  if (raw && raw.taxId != null && raw.taxVatId == null) {
+    raw.taxVatId = raw.taxId
+  }
 
-  if (!supplierNum || !name) {
+  const parsed = supplierCreateSchema.safeParse(raw ?? {})
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "supplierNum and name are required" },
-      { status: 400 }
+      {
+        error: "Validation failed",
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      },
+      { status: 400 },
     )
   }
 
+  const insertRow = toSupplierInsertRow(parsed.data, activeCompanyId)
+
   const { data, error } = await supabase
     .from("erp_md_suppliers")
-    .insert({
-      company_id: activeCompanyId,
-      supplier_number: supplierNum,
-      supplier_kind: supplierKind,
-      name,
-      foreign_name: sanitizeOptionalString(body?.foreignName),
-      address: sanitizeOptionalString(body?.address),
-      phone: sanitizeOptionalString(body?.phone),
-      email: sanitizeOptionalString(body?.email),
-      tax_vat_id: taxVatId,
-      payment_terms: paymentTerms,
-    })
-    .select("id,company_id,supplier_number,name,supplier_kind,tax_vat_id,payment_terms")
+    .insert(insertRow)
+    .select(
+      "id,company_id,supplier_number,name,supplier_kind,tax_vat_id,payment_terms",
+    )
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

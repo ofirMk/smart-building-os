@@ -41,7 +41,6 @@ import { toast } from "sonner"
 import {
   BentoSmartList,
   type BentoSmartListColumn,
-  SmartListStatusPill,
 } from "@/components/ui/bento-smart-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -51,7 +50,10 @@ import { PoLinesTab } from "@/components/marker-ofek/procurement/detail-tabs/po-
 import { ReceiptTab } from "@/components/marker-ofek/procurement/detail-tabs/receipt-tab"
 import { ApprovalsTab } from "@/components/marker-ofek/procurement/detail-tabs/approvals-tab"
 import { PoInvoicesTab } from "@/components/marker-ofek/procurement/detail-tabs/po-invoices-tab"
+import { PoStatusBadge } from "@/components/marker-ofek/procurement/po-status-badge"
+import { PoSubmitButton } from "@/components/marker-ofek/procurement/po-submit-button"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
+import { usePoStatusTypes } from "@/lib/hooks/use-po-status-types"
 import { cn } from "@/lib/utils"
 
 // ----------------------------------------------------------------------------
@@ -76,64 +78,30 @@ type PoRow = {
 }
 
 // ----------------------------------------------------------------------------
-// Status configuration
+// Status classification
 // ----------------------------------------------------------------------------
+// Phase B' — הוסרו מפות STATUS_LABEL ו-statusTone ה-hardcoded. עכשיו התצוגה
+// מגיעה מ-erp_po_status_types (Phase A seed) דרך usePoStatusTypes() + <PoStatusBadge />.
+//
+// ה-KPI classification משתמש ב-legacy sets כ fallback בלבד כשה-hook עדיין
+// טוען — ברגע שה-hook טוען, פונה אל ה-statusMap (lifecycle_stage + is_closed +
+// is_cancelled + is_post_approval) לסיווג שמופגן בה-DB.
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "טיוטה",
-  PENDING: "ממתין לאישור",
-  PENDING_APPROVAL: "ממתין לאישור",
-  PENDING_PRICE_APPROVAL: "אישור מחיר",
-  PENDING_CEO_APPROVAL: "ממתין למנכ״ל",
-  APPROVED: "מאושר",
-  ISSUED: "הונפק לספק",
-  SENT_TO_SUPPLIER: "נשלח לספק",
-  PARTIALLY_RECEIVED: "קליטה חלקית",
-  FULLY_RECEIVED: "נקלט במלואו",
-  RECEIVED: "התקבל",
-  CLOSED: "סגור",
-  CANCELED: "מבוטל",
-  CANCELLED: "מבוטל",
-}
-
-function statusTone(
-  status: string,
-): "neutral" | "success" | "warning" | "info" | "danger" {
-  if (status === "DRAFT") return "neutral"
-  if (
-    status === "PENDING" ||
-    status === "PENDING_APPROVAL" ||
-    status === "PENDING_PRICE_APPROVAL" ||
-    status === "PENDING_CEO_APPROVAL"
-  )
-    return "warning"
-  if (status === "APPROVED") return "success"
-  if (
-    status === "ISSUED" ||
-    status === "SENT_TO_SUPPLIER" ||
-    status === "PARTIALLY_RECEIVED"
-  )
-    return "info"
-  if (status === "FULLY_RECEIVED" || status === "RECEIVED" || status === "CLOSED")
-    return "success"
-  if (status === "CANCELED" || status === "CANCELLED") return "danger"
-  return "neutral"
-}
-
-// סטים לצורך KPI classification
-const PENDING_STATUSES = new Set([
+const LEGACY_PENDING_STATUSES = new Set([
   "PENDING",
   "PENDING_APPROVAL",
   "PENDING_PRICE_APPROVAL",
   "PENDING_CEO_APPROVAL",
 ])
-const OPEN_FOR_RECEIPT_STATUSES = new Set([
+const LEGACY_OPEN_FOR_RECEIPT_STATUSES = new Set([
   "APPROVED",
   "ISSUED",
   "SENT_TO_SUPPLIER",
   "PARTIALLY_RECEIVED",
+  "ON_SHIP",
+  "SHIPMENT_CONFIRMED",
 ])
-const CLOSED_STATUSES = new Set([
+const LEGACY_CLOSED_STATUSES = new Set([
   "FULLY_RECEIVED",
   "RECEIVED",
   "CLOSED",
@@ -185,30 +153,30 @@ export function OrdersListScaffold() {
   const [searchTerm, setSearchTerm] = React.useState("")
   const [activePoId, setActivePoId] = React.useState<string | null>(null)
 
-  // ── Load on mount ────────────────────────────────────────────────────
-  React.useEffect(() => {
-    let cancelled = false
+  // Phase B' — טעינת מטא-דאטה של כל סטטוסי ה-PO מ-erp_po_status_types.
+  //           משמש ל-<PoStatusBadge /> (הוא קורא ל-hook פנימית) ול-KPI classifiers.
+  const { statusMap } = usePoStatusTypes()
+
+  // ── Load (callback כדי שנוכל לרענן אחרי quick-actions כגון submit) ──
+  const loadOrders = React.useCallback(async () => {
     setLoading(true)
-    masterDataFetch<PoRow[]>("/api/procurement/orders")
-      .then((data) => {
-        if (cancelled) return
-        setRows(data)
-      })
-      .catch((error) => {
-        if (cancelled) return
-        toast.error(
-          error instanceof Error ? error.message : "טעינת הזמנות הרכש נכשלה",
-        )
-        setRows([])
-      })
-      .finally(() => {
-        if (cancelled) return
-        setLoading(false)
-      })
-    return () => {
-      cancelled = true
+    try {
+      const data = await masterDataFetch<PoRow[]>("/api/procurement/orders")
+      setRows(data)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "טעינת הזמנות הרכש נכשלה",
+      )
+      setRows([])
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  // ── Load on mount ────────────────────────────────────────────────────
+  React.useEffect(() => {
+    void loadOrders()
+  }, [loadOrders])
 
   // ── Filter (client-side) ─────────────────────────────────────────────
   const filteredRows = React.useMemo(() => {
@@ -222,7 +190,30 @@ export function OrdersListScaffold() {
     )
   }, [rows, searchTerm])
 
-  // ── KPI computation ──────────────────────────────────────────────────
+  // ── KPI classifier helpers — dynamic from statusMap + legacy fallback ───
+  const classifyStatus = React.useCallback(
+    (status: string): "pending" | "open" | "closed" | "other" => {
+      const meta = statusMap[status]
+      if (meta) {
+        if (meta.isCancelled || meta.isClosed) return "closed"
+        // FULLY_RECEIVED — נסגור גם אם ה-PO לא נסגר פורמלית.
+        if (meta.status === "FULLY_RECEIVED") return "closed"
+        if (meta.status === "PENDING_APPROVAL" || meta.status === "PENDING_PRICE_APPROVAL") {
+          return "pending"
+        }
+        if (meta.allowsGr || meta.isPostApproval) return "open"
+        return "other"
+      }
+      // Fallback ל-legacy כאשר ה-hook עדיין לא נטען (ה-flash הראשון).
+      if (LEGACY_PENDING_STATUSES.has(status)) return "pending"
+      if (LEGACY_OPEN_FOR_RECEIPT_STATUSES.has(status)) return "open"
+      if (LEGACY_CLOSED_STATUSES.has(status)) return "closed"
+      return "other"
+    },
+    [statusMap]
+  )
+
+  // ── KPI computation ──────────────────────────────────────────────
   const kpis = React.useMemo(() => {
     const total = rows.length
     let pending = 0
@@ -234,7 +225,7 @@ export function OrdersListScaffold() {
     // Dominant currency across open POs — מונע mixed-currency בסיכום.
     const currencyCounts = new Map<string, number>()
     for (const r of rows) {
-      if (CLOSED_STATUSES.has(r.status)) continue
+      if (classifyStatus(r.status) === "closed") continue
       currencyCounts.set(r.currency, (currencyCounts.get(r.currency) ?? 0) + 1)
     }
     let dominantCurrency: string | null = null
@@ -250,9 +241,10 @@ export function OrdersListScaffold() {
       dominantCount
 
     for (const r of rows) {
-      if (PENDING_STATUSES.has(r.status)) pending += 1
-      if (OPEN_FOR_RECEIPT_STATUSES.has(r.status)) openForReceipt += 1
-      if (CLOSED_STATUSES.has(r.status)) {
+      const bucket = classifyStatus(r.status)
+      if (bucket === "pending") pending += 1
+      if (bucket === "open") openForReceipt += 1
+      if (bucket === "closed") {
         closed += 1
         if (r.currency === dominantCurrency) closedValue += r.totalAmount
       } else if (r.currency === dominantCurrency) {
@@ -269,7 +261,7 @@ export function OrdersListScaffold() {
       dominantCurrency,
       otherCurrencyOpen,
     }
-  }, [rows])
+  }, [rows, classifyStatus])
 
   // ── Columns ───────────────────────────────────────────────────────────
   const columns = React.useMemo<BentoSmartListColumn<PoRow>[]>(
@@ -333,13 +325,11 @@ export function OrdersListScaffold() {
         title: "סטטוס",
         className: "w-[8rem]",
         render: (r) => (
-          <SmartListStatusPill tone={statusTone(r.status)}>
-            {STATUS_LABEL[r.status] ?? r.status}
-          </SmartListStatusPill>
+          <PoStatusBadge status={r.status} meta={statusMap[r.status] ?? null} />
         ),
       },
     ],
-    [],
+    [statusMap],
   )
 
   // ── Master content ────────────────────────────────────────────────────
@@ -470,6 +460,17 @@ export function OrdersListScaffold() {
               )
             }
             emptyState="לא נמצאו הזמנות התואמות לחיפוש."
+            rowActions={(r) =>
+              // Quick-submit רק לשורות DRAFT. הרכיב עצמו self-gates ומחזיר null
+              // אחרת (defense in depth — גם אם הסטטוס ישתנה אחרי quick actions).
+              r.status === "DRAFT" ? (
+                <PoSubmitButton
+                  poId={r.id}
+                  status={r.status}
+                  onChanged={() => void loadOrders()}
+                />
+              ) : null
+            }
           />
         )}
       </div>

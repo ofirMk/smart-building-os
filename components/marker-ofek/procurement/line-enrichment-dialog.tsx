@@ -78,6 +78,20 @@ export type LineEnrichmentValues = {
   manufacturerName: string | null
   lineNotes: string | null
   priceSource: LinePriceSource | null
+  // Phase A — Priority parity (4 שדות נוספים שה-API כבר תומך בהם):
+  // • uom — יחידת מידה (snapshot ב-PO; עשוי להשתנות מה-default של ה-item).
+  // • supplierSku — מק"ט הספק (Priority field).
+  // • supplierSkuDescription — תיאור הפריט אצל הספק.
+  // • budgetItemCode — קוד תקציב ייעודי (מעבר ל-budget_sub_chapter; לדוחות מתקדמים).
+  uom: string | null
+  supplierSku: string | null
+  supplierSkuDescription: string | null
+  budgetItemCode: string | null
+  // Phase D.3 — קישור למערכות חיצוניות (דרישה / הזמנת מכירה):
+  // • demandNumber — מס' דרישה חופשי (מקושר לתהליך תכנון גילה המתחיל במגיש דרישה).
+  // • salesOrderId — UUID של הזמנת מכירה (sub-contracted procurement).
+  demandNumber: string | null
+  salesOrderId: string | null
 }
 
 export const EMPTY_LINE_ENRICHMENT: LineEnrichmentValues = {
@@ -88,6 +102,12 @@ export const EMPTY_LINE_ENRICHMENT: LineEnrichmentValues = {
   manufacturerName: null,
   lineNotes: null,
   priceSource: null,
+  uom: null,
+  supplierSku: null,
+  supplierSkuDescription: null,
+  budgetItemCode: null,
+  demandNumber: null,
+  salesOrderId: null,
 }
 
 /**
@@ -105,6 +125,12 @@ export function countFilledEnrichmentFields(
   if (values.manufacturerName?.trim()) count++
   if (values.lineNotes?.trim()) count++
   if (values.priceSource && values.priceSource !== "MANUAL") count++
+  if (values.uom?.trim()) count++
+  if (values.supplierSku?.trim()) count++
+  if (values.supplierSkuDescription?.trim()) count++
+  if (values.budgetItemCode?.trim()) count++
+  if (values.demandNumber?.trim()) count++
+  if (values.salesOrderId?.trim()) count++
   return count
 }
 
@@ -173,6 +199,15 @@ export function LineEnrichmentDialog({
         manufacturerName: draft.manufacturerName?.trim() || null,
         lineNotes: draft.lineNotes?.trim() || null,
         priceSource: draft.priceSource || null,
+        // Phase A — Priority parity
+        uom: draft.uom?.trim() || null,
+        supplierSku: draft.supplierSku?.trim() || null,
+        supplierSkuDescription:
+          draft.supplierSkuDescription?.trim() || null,
+        budgetItemCode: draft.budgetItemCode?.trim() || null,
+        // Phase D.3 — cross-system linkage
+        demandNumber: draft.demandNumber?.trim() || null,
+        salesOrderId: draft.salesOrderId?.trim() || null,
       })
       onOpenChange(false)
     } finally {
@@ -370,6 +405,141 @@ export function LineEnrichmentDialog({
               rows={3}
               placeholder="הערות פנימיות לשורה זו (לא מועברות לספק כברירת מחדל)."
             />
+          </div>
+
+          {/* ============================================================ */}
+          {/* Phase A — Priority parity שדות נוספים                       */}
+          {/* ============================================================ */}
+          <div className="sm:col-span-2 mt-2 border-t border-dashed border-border pt-3">
+            <p className="mb-2 text-[11px] font-semibold text-muted-foreground">
+              מימשק Priority — שדות תיאום ספק / תקציב
+            </p>
+          </div>
+
+          {/* uom */}
+          <div className="space-y-1.5">
+            <Label htmlFor="line-uom" className="text-xs">
+              יחידת מידה (UoM)
+            </Label>
+            <Input
+              id="line-uom"
+              value={draft.uom ?? ""}
+              onChange={(e) => handleChange("uom", e.target.value || null)}
+              maxLength={32}
+              className="h-9"
+              placeholder='יחידה / ק"ג / מטר…'
+            />
+            <p className="text-[10px] text-muted-foreground">
+              מאפשר PO לעקוף את ה-UoM של הפריט (למשל PCS במקום KG).
+            </p>
+          </div>
+
+          {/* budgetItemCode */}
+          <div className="space-y-1.5">
+            <Label htmlFor="line-budget-item" className="text-xs">
+              קוד תקציב ייעודי
+            </Label>
+            <Input
+              id="line-budget-item"
+              value={draft.budgetItemCode ?? ""}
+              onChange={(e) =>
+                handleChange("budgetItemCode", e.target.value || null)
+              }
+              className="h-9 font-mono"
+              dir="ltr"
+              placeholder="BC-1234 / 01.02.003"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              מעבר ל-budget_sub_chapter; משמש לדוחות מתקדמים.
+            </p>
+          </div>
+
+          {/* supplierSku */}
+          <div className="space-y-1.5">
+            <Label htmlFor="line-supplier-sku" className="text-xs">
+              מק&quot;ט ספק
+            </Label>
+            <Input
+              id="line-supplier-sku"
+              value={draft.supplierSku ?? ""}
+              onChange={(e) =>
+                handleChange("supplierSku", e.target.value || null)
+              }
+              maxLength={64}
+              className="h-9 font-mono"
+              dir="ltr"
+            />
+          </div>
+
+          {/* supplierSkuDescription */}
+          <div className="space-y-1.5">
+            <Label htmlFor="line-supplier-sku-desc" className="text-xs">
+              תיאור הספק
+            </Label>
+            <Input
+              id="line-supplier-sku-desc"
+              value={draft.supplierSkuDescription ?? ""}
+              onChange={(e) =>
+                handleChange(
+                  "supplierSkuDescription",
+                  e.target.value || null,
+                )
+              }
+              maxLength={256}
+              className="h-9"
+              placeholder="התיאור אצל הספק (לאימות)"
+            />
+          </div>
+
+          {/* ============================================================ */}
+          {/* Phase D.3 — קישור למערכות חיצוניות                            */}
+          {/* ============================================================ */}
+          <div className="sm:col-span-2 mt-2 border-t border-dashed border-border pt-3">
+            <p className="mb-2 text-[11px] font-semibold text-muted-foreground">
+              קישור למערכות חיצוניות — דרישה / הזמנת מכירה
+            </p>
+          </div>
+
+          {/* demandNumber */}
+          <div className="space-y-1.5">
+            <Label htmlFor="line-demand-number" className="text-xs">
+              מס&apos; דרישה
+            </Label>
+            <Input
+              id="line-demand-number"
+              value={draft.demandNumber ?? ""}
+              onChange={(e) =>
+                handleChange("demandNumber", e.target.value || null)
+              }
+              maxLength={64}
+              className="h-9 font-mono"
+              dir="ltr"
+              placeholder="DR-2025-0001"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              מספר דרישה חופשי לתהליך תכנון/גזירה.
+            </p>
+          </div>
+
+          {/* salesOrderId */}
+          <div className="space-y-1.5">
+            <Label htmlFor="line-sales-order-id" className="text-xs">
+              הזמנת מכירה (UUID)
+            </Label>
+            <Input
+              id="line-sales-order-id"
+              value={draft.salesOrderId ?? ""}
+              onChange={(e) =>
+                handleChange("salesOrderId", e.target.value || null)
+              }
+              maxLength={36}
+              className="h-9 font-mono text-[10px]"
+              dir="ltr"
+              placeholder="00000000-0000-0000-0000-000000000000"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              UUID של הזמנת מכירה לקישור (sub-contracted procurement).
+            </p>
           </div>
         </div>
 

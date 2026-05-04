@@ -4,25 +4,17 @@ import {
   requireMasterDataApiContext,
   sanitizeOptionalString,
 } from "@/lib/erp/master-data-api"
+import {
+  supplierUpdateSchema,
+  toSupplierUpdateRow,
+} from "@/lib/erp/supplier-card-schema"
 import type {
   ErpSupplier,
   ErpSupplierBankAccount,
   ErpSupplierContact,
   ErpSupplierMasterDetail,
   ErpSupplierType,
-  UpdateSupplierInput,
 } from "@/types/erp"
-
-type SupplierUpdateBody = Partial<UpdateSupplierInput> & {
-  supplierNumber?: unknown
-  supplierNum?: unknown
-  supplierKind?: unknown
-  taxVatId?: unknown
-  foreignName?: unknown
-  address?: unknown
-  phone?: unknown
-  email?: unknown
-}
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -168,33 +160,35 @@ export async function PUT(
   if (!gate.ok) return gate.response
   const { supabase, activeCompanyId } = gate.ctx
 
-  const body = (await req.json().catch(() => null)) as SupplierUpdateBody | null
-  const patch: Record<string, string | null> = {}
+  const raw = (await req.json().catch(() => null)) as Record<string, unknown> | null
 
-  const supplierNum =
-    sanitizeOptionalString(body?.supplierNum) ??
-    sanitizeOptionalString(body?.supplierNumber)
-  const name = sanitizeOptionalString(body?.name)
-  const supplierKind = sanitizeOptionalString(body?.supplierKind)
-  const taxVatId = sanitizeOptionalString(body?.taxVatId) ?? sanitizeOptionalString(body?.taxId)
-  const paymentTerms = sanitizeOptionalString(body?.paymentTerms)
-
-  if (supplierNum) patch.supplier_number = supplierNum
-  if (name) patch.name = name
-  if (supplierKind === "supplier" || supplierKind === "subcontractor") {
-    patch.supplier_kind = supplierKind
+  // Backward-compat aliases.
+  if (raw && raw.supplierNumber != null && raw.supplierNum == null) {
+    raw.supplierNum = raw.supplierNumber
   }
-  if (body?.foreignName !== undefined) patch.foreign_name = sanitizeOptionalString(body.foreignName)
-  if (body?.address !== undefined) patch.address = sanitizeOptionalString(body.address)
-  if (body?.phone !== undefined) patch.phone = sanitizeOptionalString(body.phone)
-  if (body?.email !== undefined) patch.email = sanitizeOptionalString(body.email)
-  if (taxVatId !== null) patch.tax_vat_id = taxVatId
-  if (paymentTerms !== null) patch.payment_terms = paymentTerms
+  if (raw && raw.taxId != null && raw.taxVatId == null) {
+    raw.taxVatId = raw.taxId
+  }
 
+  const parsed = supplierUpdateSchema.safeParse(raw ?? {})
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      },
+      { status: 400 },
+    )
+  }
+
+  const patch = toSupplierUpdateRow(parsed.data)
   if (Object.keys(patch).length === 0) {
     return NextResponse.json(
       { error: "No valid fields supplied for update" },
-      { status: 400 }
+      { status: 400 },
     )
   }
 

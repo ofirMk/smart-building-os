@@ -175,6 +175,14 @@ const PRICE_SOURCES = [
   "AI_CROSS_SUPPLIER",
 ] as const
 
+// Phase A — סטטוס שורה; חייב להיות תואם ל-CHECK constraint
+// `erp_purchase_order_lines_line_status_chk`.
+const LINE_STATUSES = ["OPEN", "PARTIAL", "CLOSED", "CANCELLED"] as const
+
+// Phase A — סיווג עלות יבוא; תואם ל-CHECK
+// `erp_purchase_order_lines_import_cost_type_chk`.
+const IMPORT_COST_TYPES = ["L", "S", "A"] as const
+
 const lineSchema = z.object({
   itemId: z.string().uuid("itemId חייב להיות uuid"),
   quantity: z.number().positive("quantity חייב להיות חיובי"),
@@ -199,9 +207,38 @@ const lineSchema = z.object({
   // Phase 7.5 — 3% Rule governance (optional; required only when requires_escalation computed=true)
   escalationJustification: z.string().trim().min(10).optional(),
   escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
+  // Phase A — Priority parity (all optional; auto-fill בשרת היכן שאפשר)
+  lineNumber: z.number().int().positive().optional(),
+  uom: z.string().trim().min(1).max(32).optional(),
+  supplierSku: z.string().trim().min(1).optional(),
+  supplierSkuDescription: z.string().trim().min(1).optional(),
+  budgetItemCode: z.string().trim().min(1).optional(),
+  budgetUtilizationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  importCostType: z.enum(IMPORT_COST_TYPES).optional(),
+  demandNumber: z.string().trim().min(1).optional(),
+  salesOrderId: z.string().uuid().optional(),
+  salesOrderLineId: z.string().uuid().optional(),
+  lineStatus: z.enum(LINE_STATUSES).optional(),
 })
 
 const URGENCY_LEVELS = ["NORMAL", "HIGH", "CRITICAL"] as const
+
+// Phase A — Shipping address sub-schema (Priority "כתובת למשלוח")
+const shippingAddrSchema = z
+  .object({
+    name: z.string().trim().optional(),
+    contact: z.string().trim().optional(),
+    phone: z.string().trim().optional(),
+    fax: z.string().trim().optional(),
+    line1: z.string().trim().optional(),
+    line2: z.string().trim().optional(),
+    line3: z.string().trim().optional(),
+    city: z.string().trim().optional(),
+    state: z.string().trim().optional(),
+    zip: z.string().trim().optional(),
+    country: z.string().trim().optional(),
+  })
+  .partial()
 
 const createOrderSchema = z.object({
   supplierId: z.string().uuid("supplierId חייב להיות uuid"),
@@ -218,6 +255,17 @@ const createOrderSchema = z.object({
   // Phase 7.4 — Urgency governance
   urgencyLevel: z.enum(URGENCY_LEVELS).optional(),
   urgencyJustification: z.string().trim().min(10).optional(),
+  // Phase A — Priority parity header fields (all optional; auto-fill מהספק אם אפשר)
+  contactId: z.string().uuid().optional(),
+  receivingWarehouseCode: z.string().trim().min(1).max(32).optional(),
+  orderDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  paymentTermsCode: z.string().trim().min(1).max(16).optional(),
+  vatCode: z.string().trim().min(1).max(32).optional(),
+  withholdingPct: z.number().min(0).max(100).optional(),
+  shippingAddrHe: shippingAddrSchema.optional(),
+  shippingAddrEn: shippingAddrSchema.optional(),
+  isConfidential: z.boolean().optional(),
+  affectsPlanning: z.boolean().optional(),
   lines: z.array(lineSchema).min(1, "חובה לפחות שורה אחת"),
 }).refine(
   (data) => {
@@ -269,10 +317,11 @@ export async function POST(req: NextRequest) {
   }
   const input = parsed.data
 
-  // 2) אימות שהספק שייך לחברה הפעילה. שומרים גם את השם לצורך יצירת title ברירת-מחדל.
+  // 2) אימות שהספק שייך לחברה הפעילה. שולפים שדות לצורך יצירת title ברירת-מחדל
+  //    ולצורך Tesla auto-fill של header fields בהמשך (payment terms, וכו').
   const supplierLookup = await supabase
     .from("erp_md_suppliers")
-    .select("id,name")
+    .select("id,name,payment_terms,address")
     .eq("company_id", activeCompanyId)
     .eq("id", input.supplierId)
     .maybeSingle()
@@ -289,6 +338,63 @@ export async function POST(req: NextRequest) {
     )
   }
   const supplierName = supplierLookup.data.name as string
+  // supplier.payment_terms הוא טקסט חופשי legacy — לא משתמשים בו ב-INSERT
+  // (payment_terms_code הוא FK ל-master). ה-UI יוכל לשלוף אותו בנפרד
+  // דרך GET של ה-supplier ולהציג כ-hint. לא נשמר ב-local var כאן.
+  const supplierAddress = (supplierLookup.data.address as string | null) ?? null
+
+  // 2.1) Tesla auto-fill — Primary contact של הספק (אם לא סופק contactId).
+  //      משתמש ב-is_primary=true; אם אין — לוקח את הראשון (בסדר זמן יצירה).
+  let resolvedContactId: string | null = input.contactId ?? null
+  if (!resolvedContactId) {
+    const contactLookup = await supabase
+      .from("erp_md_supplier_contacts")
+      .select("id,is_primary,created_at")
+      .eq("company_id", activeCompanyId)
+      .eq("supplier_id", input.supplierId)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (!contactLookup.error && contactLookup.data?.id) {
+      resolvedContactId = contactLookup.data.id as string
+    }
+  } else {
+    // ולידציה: ה-contact שסופק חייב להיות של אותו ספק באותה חברה.
+    const contactValidation = await supabase
+      .from("erp_md_supplier_contacts")
+      .select("id")
+      .eq("company_id", activeCompanyId)
+      .eq("supplier_id", input.supplierId)
+      .eq("id", resolvedContactId)
+      .maybeSingle()
+    if (contactValidation.error || !contactValidation.data) {
+      return NextResponse.json(
+        { error: "איש הקשר שסופק לא שייך לספק זה" },
+        { status: 400 }
+      )
+    }
+  }
+
+  // 2.2) Tesla auto-fill — Payment terms code.
+  //      erp_md_suppliers.payment_terms הוא טקסט חופשי legacy. אם המשתמש לא
+  //      סיפק paymentTermsCode, לא נבצע derivation אוטומטי (מסוכן לנחש) —
+  //      פשוט משאירים null. ה-UI יציג את הטקסט החופשי מה-supplier כרמז.
+  const resolvedPaymentTermsCode: string | null = input.paymentTermsCode ?? null
+  if (resolvedPaymentTermsCode) {
+    // ולידציה ש-code קיים ב-master. מגנה מפני typos.
+    const paymentTermsValidation = await supabase
+      .from("erp_payment_terms")
+      .select("code")
+      .eq("code", resolvedPaymentTermsCode)
+      .maybeSingle()
+    if (paymentTermsValidation.error || !paymentTermsValidation.data) {
+      return NextResponse.json(
+        { error: `קוד תנאי תשלום לא נמצא: ${resolvedPaymentTermsCode}` },
+        { status: 400 }
+      )
+    }
+  }
 
   // 3) אימות שהפרויקט שייך לחברה הפעילה. הטבלה הקנונית של פרויקטים היא
   //    `erp_proj_projects` (FK של erp_purchase_orders.project_id).
@@ -462,9 +568,18 @@ export async function POST(req: NextRequest) {
       ? "BYPASSED_URGENCY"
       : "NOT_ATTEMPTED"
 
+  // Phase A — Tesla auto-fill של shipping address (עברית בלבד; אנגלית רק אם
+  //           סופקה מפורשות). אם המשתמש לא סיפק shippingAddrHe — נגזור מכתובת
+  //           הספק כ-line1 (fallback שמרני; ב-Phase B ייווצר UI נפרד למחסני
+  //           החברה ששם נשאב את הכתובת).
+  const resolvedShippingAddrHe =
+    input.shippingAddrHe ??
+    (supplierAddress ? { line1: supplierAddress } : null)
+
   // 7) INSERT לכותרת. status נשאר ברירת-מחדל DRAFT (enum `erp_purchase_order_status`).
   //    total_amount נשאר 0 — הטריגר `erp_po_lines_recalculate_total` יעדכן לאחר
   //    הכנסת השורות. השדות הפיננסיים החדשים נשמרים מפורשות.
+  //    Phase A — שדות parity נשמרים גם הם; NULL מותר לכולם.
   const headerInsert = await supabase
     .from("erp_purchase_orders")
     .insert({
@@ -484,8 +599,19 @@ export async function POST(req: NextRequest) {
       ai_negotiation_status: aiNegotiationStatus,
       po_total_deviation_pct: poTotalDeviationPct,
       requires_po_escalation: requiresPoEscalation,
+      // Phase A — Priority parity fields
+      contact_id: resolvedContactId,
+      receiving_warehouse_code: input.receivingWarehouseCode ?? null,
+      order_date: input.orderDate ?? todayIso,
+      payment_terms_code: resolvedPaymentTermsCode,
+      vat_code: input.vatCode ?? null,
+      withholding_pct: input.withholdingPct ?? null,
+      shipping_addr_he: resolvedShippingAddrHe,
+      shipping_addr_en: input.shippingAddrEn ?? null,
+      is_confidential: input.isConfidential ?? false,
+      affects_planning: input.affectsPlanning ?? true,
     })
-    .select("id,po_number,title,status,currency,total_amount_net,vat_amount,total_amount_gross,notes,created_at,urgency_level,requires_po_escalation,po_total_deviation_pct,ai_negotiation_status")
+    .select("id,po_number,title,status,currency,total_amount_net,vat_amount,total_amount_gross,notes,created_at,urgency_level,requires_po_escalation,po_total_deviation_pct,ai_negotiation_status,contact_id,receiving_warehouse_code,order_date,payment_terms_code,is_confidential,affects_planning")
     .single()
 
   if (headerInsert.error || !headerInsert.data) {
@@ -545,8 +671,21 @@ export async function POST(req: NextRequest) {
       alternative_unit_price: enrichment?.alternativeUnitPrice ?? null,
       alternative_lead_time_days: enrichment?.alternativeLeadTimeDays ?? null,
       price_source: line.priceSource ?? ("MANUAL" as const),
-      // ניתן לעקוב אחר סדר השורות לפי created_at; אם נצטרך עמודת line_number
-      // מפורשת — נוסיף אותה ב-Phase 7.3 כ-ALTER additive.
+      // Phase A — Priority parity (Tesla auto-fill של line_number; שאר השדות
+      //          nullable ומקבלים את הערך מהקליינט אם סופק).
+      line_number: line.lineNumber ?? idx + 1,
+      uom: line.uom ?? null,
+      supplier_sku: line.supplierSku ?? null,
+      supplier_sku_description: line.supplierSkuDescription ?? null,
+      budget_item_code: line.budgetItemCode ?? null,
+      budget_utilization_date: line.budgetUtilizationDate ?? null,
+      import_cost_type: line.importCostType ?? null,
+      demand_number: line.demandNumber ?? null,
+      sales_order_id: line.salesOrderId ?? null,
+      sales_order_line_id: line.salesOrderLineId ?? null,
+      // line_status אם סופק — אחרת ברירת-מחדל 'OPEN' (ממילא default בסכמה);
+      // ה-trigger erp_po_lines_sync_line_status_trg שומר על סנכרון עם received_qty.
+      line_status: line.lineStatus ?? "OPEN",
       _lineIndex: idx, // נמחק לפני INSERT (לא קיים בסכמה).
     }
   })

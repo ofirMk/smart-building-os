@@ -18,6 +18,7 @@ import { AlertTriangle } from "lucide-react"
 import {
   BentoSmartList,
   type BentoSmartListColumn,
+  SmartListStatusPill,
 } from "@/components/ui/bento-smart-list"
 import {
   MasterDetailTabEmpty,
@@ -41,6 +42,13 @@ type LineRow = {
   requiresEscalation: boolean
   manufacturerName: string | null
   supplyDate: string | null
+  // Phase A — Priority parity
+  lineNumber: number | null
+  uom: string | null
+  supplierSku: string | null
+  lineStatus: string
+  receivedQty: number
+  isClosedLine: boolean
 }
 
 type DetailResponse = {
@@ -103,11 +111,30 @@ export function PoLinesTab({ poId }: { poId: string | null }) {
 
   const columns = React.useMemo<BentoSmartListColumn<LineRow>[]>(
     () => [
+      // Phase A — מספר שורה (#)
+      {
+        key: "lineNumber",
+        title: "#",
+        className: "w-[2.5rem] text-[11px] text-muted-foreground tabular-nums",
+        render: (r) => r.lineNumber ?? "—",
+      },
       {
         key: "sku",
-        title: "מק״ט",
-        className: "w-[8rem] font-mono text-[11px]",
-        render: (r) => r.itemNumber ?? r.itemSku ?? "—",
+        title: "מק׳ט",
+        className: "w-[9rem] font-mono text-[11px]",
+        render: (r) => (
+          <div className="flex flex-col gap-0.5 leading-tight">
+            <span>{r.itemNumber ?? r.itemSku ?? "—"}</span>
+            {r.supplierSku ? (
+              <span
+                className="truncate text-[10px] text-muted-foreground"
+                title={`מק׳ט ספק: ${r.supplierSku}`}
+              >
+                {r.supplierSku}
+              </span>
+            ) : null}
+          </div>
+        ),
       },
       {
         key: "description",
@@ -138,8 +165,31 @@ export function PoLinesTab({ poId }: { poId: string | null }) {
       {
         key: "qty",
         title: "כמות",
-        className: "w-[5rem] text-xs tabular-nums",
-        render: (r) => numberFormatter.format(r.quantity),
+        className: "w-[6rem] text-xs tabular-nums",
+        render: (r) => {
+          // Phase A — מציג received/ordered (כל הרולאופים Phase 8.2)
+          const showReceipt = r.receivedQty > 0 && r.receivedQty < r.quantity
+          return (
+            <div className="flex flex-col gap-0 leading-tight">
+              <span>
+                {numberFormatter.format(r.quantity)}
+                {r.uom ? (
+                  <span className="ms-1 text-[10px] text-muted-foreground">
+                    {r.uom}
+                  </span>
+                ) : null}
+              </span>
+              {showReceipt ? (
+                <span
+                  className="text-[10px] text-amber-600 dark:text-amber-400"
+                  title={`נקלטו ${r.receivedQty} מתוך ${r.quantity}`}
+                >
+                  +{numberFormatter.format(r.receivedQty)}
+                </span>
+              ) : null}
+            </div>
+          )
+        },
       },
       {
         key: "unitPrice",
@@ -174,7 +224,7 @@ export function PoLinesTab({ poId }: { poId: string | null }) {
       },
       {
         key: "total",
-        title: "סה״כ",
+        title: "סה׳כ",
         className: "w-[9rem] text-xs",
         render: (r) => (
           <span className="font-currency-mono tabular-nums">
@@ -188,6 +238,13 @@ export function PoLinesTab({ poId }: { poId: string | null }) {
         className: "w-[7rem] text-[11px]",
         render: (r) =>
           r.supplyDate ? dateFormatter.format(new Date(r.supplyDate)) : "—",
+      },
+      // Phase A — סטטוס שורה (מתעדכן מ-trigger erp_po_lines_sync_line_status_trg)
+      {
+        key: "lineStatus",
+        title: "סטטוס",
+        className: "w-[6.5rem]",
+        render: (r) => <LineStatusPill status={r.lineStatus} isClosedManually={r.isClosedLine} />,
       },
     ],
     [currency],
@@ -216,4 +273,51 @@ export function PoLinesTab({ poId }: { poId: string | null }) {
       emptyState="אין שורות פריטים בהזמנה זו."
     />
   )
+}
+
+// ---------------------------------------------------------------------------
+// LineStatusPill — Phase A (Priority parity)
+// ---------------------------------------------------------------------------
+// Pill קטן לסטטוס-שורה (`erp_purchase_order_lines.line_status` עם CHECK של
+// 'OPEN' | 'PARTIAL' | 'CLOSED' | 'CANCELLED'). הסטטוס מתעדכן אוטומטית
+// ע"י ה-trigger `erp_po_lines_sync_line_status_trg`:
+//   • OPEN      — received_qty = 0
+//   • PARTIAL   — 0 < received_qty < quantity
+//   • CLOSED    — received_qty >= quantity (או סגירה ידנית ב-is_closed_line=true)
+//   • CANCELLED — בוטל ידנית; נשמר גם מול ה-trigger
+// ---------------------------------------------------------------------------
+
+type LineStatus = "OPEN" | "PARTIAL" | "CLOSED" | "CANCELLED" | string
+
+function LineStatusPill({
+  status,
+  isClosedManually,
+}: {
+  status: LineStatus
+  isClosedManually: boolean
+}) {
+  const normalized = (status ?? "OPEN").toUpperCase()
+  const tone =
+    normalized === "CANCELLED"
+      ? "danger"
+      : normalized === "CLOSED"
+        ? "success"
+        : normalized === "PARTIAL"
+          ? "warning"
+          : normalized === "OPEN"
+            ? "neutral"
+            : "neutral"
+
+  const label =
+    normalized === "OPEN"
+      ? "פתוחה"
+      : normalized === "PARTIAL"
+        ? "חלקית"
+        : normalized === "CLOSED"
+          ? isClosedManually ? "סגורה ידנית" : "סגורה"
+          : normalized === "CANCELLED"
+            ? "מבוטלת"
+            : normalized
+
+  return <SmartListStatusPill tone={tone}>{label}</SmartListStatusPill>
 }

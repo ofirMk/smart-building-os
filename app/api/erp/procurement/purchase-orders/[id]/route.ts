@@ -13,11 +13,29 @@ import {
   resolveEffectivePrice,
 } from "@/lib/erp/price-ceiling"
 
+// Phase A — enum מסונכרן עם 13 הערכים של ה-DB (10 Priority + 3 legacy).
+// מומלץ להשתמש ב-API החדש `/api/procurement/orders/[id]` במקום ב-route זה.
+const PO_STATUS_VALUES = [
+  "DRAFT",
+  "PROFORMA",
+  "PENDING_APPROVAL",
+  "PENDING_PRICE_APPROVAL",
+  "APPROVED",
+  "SENT_TO_SUPPLIER",
+  "ON_SHIP",
+  "SHIPMENT_CONFIRMED",
+  "PARTIALLY_RECEIVED",
+  "FULLY_RECEIVED",
+  "SENT",
+  "CLOSED",
+  "CANCELLED",
+] as const
+
 const updatePurchaseOrderSchema = z.object({
   title: z.string().trim().min(2).optional(),
   notes: z.string().trim().nullable().optional(),
   issuedAt: z.string().trim().nullable().optional(),
-  status: z.enum(["DRAFT", "PENDING_PRICE_APPROVAL", "APPROVED", "SENT", "CLOSED", "CANCELLED"]).optional(),
+  status: z.enum(PO_STATUS_VALUES).optional(),
 })
 
 export const runtime = "nodejs"
@@ -114,7 +132,11 @@ export async function PUT(
         .eq("company_id", activeCompanyId)
         .in("item_number", skus)
       if (itemLookup.error) return NextResponse.json({ error: itemLookup.error.message }, { status: 500 })
-      itemIdBySku = new Map((itemLookup.data ?? []).map((row: any) => [row.item_number as string, row.id as string]))
+      itemIdBySku = new Map(
+        ((itemLookup.data ?? []) as Array<{ id: string; item_number: string }>).map(
+          (row) => [row.item_number, row.id]
+        )
+      )
     }
 
     for (const line of lines) {

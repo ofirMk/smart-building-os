@@ -24,9 +24,6 @@ import {
   AlertTriangle,
   ArrowRight,
   BadgeCheck,
-  Building2,
-  Calendar,
-  CircleDollarSign,
   ClipboardList,
   FileSignature,
   FileStack,
@@ -34,13 +31,11 @@ import {
   Loader2,
   PackageSearch,
   Sparkles,
-  TrendingUp,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -63,6 +58,10 @@ import {
   PoSmartPricingTab,
   type SmartPricingLineInput,
 } from "@/components/marker-ofek/procurement/po-smart-pricing-tab"
+import { PoGeneralTab } from "@/components/marker-ofek/procurement/po-general-tab"
+import { PoStatusBadge } from "@/components/marker-ofek/procurement/po-status-badge"
+import { PoSubmitButton } from "@/components/marker-ofek/procurement/po-submit-button"
+import { PoLineEditDialog } from "@/components/marker-ofek/procurement/po-line-edit-dialog"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
@@ -70,6 +69,20 @@ import { cn } from "@/lib/utils"
 // ============================================================================
 // DTOs (mirror של ה-API; נשמר כאן כדי להימנע מ-import מ-route handler)
 // ============================================================================
+
+type ShippingAddress = {
+  name?: string
+  contact?: string
+  phone?: string
+  fax?: string
+  line1?: string
+  line2?: string
+  line3?: string
+  city?: string
+  state?: string
+  zip?: string
+  country?: string
+}
 
 type ProcurementOrderDetailLineDto = {
   id: string
@@ -96,6 +109,10 @@ type ProcurementOrderDetailLineDto = {
   alternativeSupplierId: string | null
   alternativeUnitPrice: number | null
   alternativeLeadTimeDays: number | null
+  // Phase A — Priority parity (משמש את PoLineEditDialog)
+  uom: string | null
+  supplierSku: string | null
+  supplierSkuDescription: string | null
 }
 
 type ProcurementOrderDetailDto = {
@@ -120,6 +137,19 @@ type ProcurementOrderDetailDto = {
   requiresPoEscalation: boolean
   bodyHtml: string | null
   bodyHtmlEnglish: string | null
+  // Phase A — Priority parity header fields
+  contactId: string | null
+  receivingWarehouseCode: string | null
+  orderDate: string | null
+  paymentTermsCode: string | null
+  vatCode: string | null
+  withholdingPct: number | null
+  shippingAddrHe: ShippingAddress | null
+  shippingAddrEn: ShippingAddress | null
+  isConfidential: boolean
+  affectsPlanning: boolean
+  closedAt: string | null
+  closedBy: string | null
   supplier: {
     id: string
     name: string
@@ -147,29 +177,8 @@ type ProcurementOrderDetailDto = {
 // Constants — UI translation
 // ============================================================================
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "טיוטה",
-  PENDING_APPROVAL: "ממתין לאישור",
-  APPROVED: "מאושר",
-  SENT_TO_SUPPLIER: "נשלח לספק",
-  SENT: "נשלח לספק",
-  ISSUED: "הוצא",
-  CANCELLED: "מבוטל",
-  CLOSED: "סגור",
-  PENDING_PRICE_APPROVAL: "ממתין לאישור מחיר",
-}
-
-const STATUS_BADGE_CLASS: Record<string, string> = {
-  DRAFT: "bg-slate-500/15 text-slate-700 border-slate-500/30",
-  PENDING_APPROVAL: "bg-amber-500/15 text-amber-700 border-amber-500/30",
-  APPROVED: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
-  SENT_TO_SUPPLIER: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
-  SENT: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
-  ISSUED: "bg-sky-500/15 text-sky-700 border-sky-500/30",
-  CANCELLED: "bg-rose-500/15 text-rose-700 border-rose-500/30",
-  CLOSED: "bg-zinc-500/15 text-zinc-700 border-zinc-500/30",
-  PENDING_PRICE_APPROVAL: "bg-orange-500/15 text-orange-700 border-orange-500/30",
-}
+// STATUS_LABEL / STATUS_BADGE_CLASS — הוסרו. הסטטוס מוצג עכשיו דרך
+// <PoStatusBadge /> שטעון דינמית ע"י usePoStatusTypes() hook (Phase B').
 
 const URGENCY_LABEL: Record<string, string> = {
   NORMAL: "רגילה",
@@ -347,14 +356,20 @@ export default function ProcurementOrderDetailPage() {
           value="general"
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
-          <GeneralTab data={data} />
+          <PoGeneralTab data={data} onChanged={refetch} />
         </TabsContent>
 
         <TabsContent
           value="lines"
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
-          <LinesTab lines={data.lines} currency={data.currency} />
+          <LinesTab
+            poId={data.id}
+            lines={data.lines}
+            currency={data.currency}
+            canEdit={data.status === "DRAFT"}
+            onChanged={refetch}
+          />
         </TabsContent>
 
         <TabsContent
@@ -423,10 +438,6 @@ function PageHeader({
   onBack: () => void
   onSent: () => void
 }) {
-  const statusLabel = STATUS_LABEL[data.status] ?? data.status
-  const statusClass =
-    STATUS_BADGE_CLASS[data.status] ??
-    "bg-slate-500/15 text-slate-700 border-slate-500/30"
   const urgencyLabel = URGENCY_LABEL[data.urgencyLevel] ?? data.urgencyLevel
   const urgencyClass =
     URGENCY_BADGE_CLASS[data.urgencyLevel] ??
@@ -444,9 +455,7 @@ function PageHeader({
             <h1 className="font-mono text-lg font-semibold tabular-nums">
               {data.poNumber}
             </h1>
-            <Badge variant="outline" className={cn("font-medium", statusClass)}>
-              {statusLabel}
-            </Badge>
+            <PoStatusBadge status={data.status} />
             {data.urgencyLevel !== "NORMAL" ? (
               <Badge
                 variant="outline"
@@ -480,10 +489,17 @@ function PageHeader({
         </div>
       </div>
       <div className="flex flex-col items-end gap-2">
-        <Button type="button" variant="outline" onClick={onBack} className="gap-2">
-          <ArrowRight className="size-4" aria-hidden />
-          חזרה לרשימה
-        </Button>
+        <div className="flex items-center gap-2">
+          <PoSubmitButton
+            poId={data.id}
+            status={data.status}
+            onChanged={onSent}
+          />
+          <Button type="button" variant="outline" onClick={onBack} className="gap-2">
+            <ArrowRight className="size-4" aria-hidden />
+            חזרה לרשימה
+          </Button>
+        </div>
         <PoActionsMount data={data} onSent={onSent} />
       </div>
     </header>
@@ -561,281 +577,32 @@ function PoActionsMount({
 }
 
 // ============================================================================
-// GeneralTab — header info + summary + body_html (read-only)
+// GeneralTab — MOVED to dedicated component (Phase B''):
+//   @/components/marker-ofek/procurement/po-general-tab
+//
+// הרכיב החדש כולל view + edit mode עם PUT ל-/api/procurement/orders/[id],
+// שימוש ב-`allow_changes` flag מ-`usePoStatusTypes()` כ-gate לכפתור העריכה,
+// וטעינה lazy של payment-terms + supplier contacts.
 // ============================================================================
-
-function GeneralTab({ data }: { data: ProcurementOrderDetailDto }) {
-  return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      {/* Left column — info cards */}
-      <div className="space-y-4">
-        <InfoCard title="פרטי ספק ופרויקט" icon={<Building2 className="size-4" />}>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-            <DLRow
-              label="ספק"
-              value={
-                data.supplier ? (
-                  <span>
-                    {data.supplier.supplierNum ? (
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {data.supplier.supplierNum} ·{" "}
-                      </span>
-                    ) : null}
-                    {data.supplier.name}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )
-              }
-            />
-            <DLRow
-              label="פרויקט"
-              value={
-                data.project ? (
-                  <span>
-                    {data.project.projectNumber ? (
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {data.project.projectNumber} ·{" "}
-                      </span>
-                    ) : null}
-                    {data.project.name ?? "—"}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )
-              }
-            />
-            <DLRow label="מטבע" value={<span className="font-mono">{data.currency}</span>} />
-            <DLRow
-              label="תאריך יצירה"
-              value={
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="size-3.5 text-muted-foreground" aria-hidden />
-                  {formatDateTime(data.createdAt)}
-                </span>
-              }
-            />
-            {data.issuedAt ? (
-              <DLRow
-                label="תאריך הוצאה"
-                value={
-                  <span className="inline-flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-muted-foreground" aria-hidden />
-                    {formatDate(data.issuedAt)}
-                  </span>
-                }
-              />
-            ) : null}
-          </dl>
-        </InfoCard>
-
-        {data.urgencyJustification ||
-        data.requiresPoEscalation ||
-        data.aiNegotiationStatus !== "NOT_ATTEMPTED" ? (
-          <InfoCard
-            title="משילות AI ובקרה"
-            icon={<TrendingUp className="size-4" />}
-          >
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              <DLRow
-                label="רמת דחיפות"
-                value={
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-medium",
-                      URGENCY_BADGE_CLASS[data.urgencyLevel] ??
-                        URGENCY_BADGE_CLASS.NORMAL
-                    )}
-                  >
-                    {URGENCY_LABEL[data.urgencyLevel] ?? data.urgencyLevel}
-                  </Badge>
-                }
-              />
-              <DLRow
-                label="סטטוס AI Negotiation"
-                value={
-                  <span className="font-mono text-xs">
-                    {data.aiNegotiationStatus ?? "—"}
-                  </span>
-                }
-              />
-              {data.poTotalDeviationPct !== null ? (
-                <DLRow
-                  label="חריגת מחיר ב-PO (משוקללת)"
-                  value={
-                    <span
-                      className={cn(
-                        "font-mono tabular-nums",
-                        data.requiresPoEscalation
-                          ? "font-semibold text-amber-700"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {data.poTotalDeviationPct.toFixed(2)}%
-                    </span>
-                  }
-                />
-              ) : null}
-              {data.urgencyJustification ? (
-                <DLRow
-                  label="הצדקת דחיפות"
-                  fullWidth
-                  value={
-                    <p className="rounded-md bg-muted/40 p-2 text-xs leading-relaxed text-foreground">
-                      {data.urgencyJustification}
-                    </p>
-                  }
-                />
-              ) : null}
-            </dl>
-          </InfoCard>
-        ) : null}
-
-        {data.notes ? (
-          <InfoCard title="הערות" icon={<ClipboardList className="size-4" />}>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
-              {data.notes}
-            </p>
-          </InfoCard>
-        ) : null}
-
-        {data.bodyHtml ? (
-          <InfoCard
-            title="גוף מסמך ההזמנה"
-            icon={<FileSignature className="size-4" />}
-          >
-            <div
-              className="prose prose-sm max-w-none rounded-md border border-border bg-background p-3 text-sm leading-relaxed dark:prose-invert"
-              // body_html מאוחסן כ-sanitized HTML מהשרת (Phase 7.6).
-              // הצגה Read-only בלבד; עורך Tiptap יבוא ב-Phase 7.13.X.
-              dangerouslySetInnerHTML={{ __html: data.bodyHtml }}
-            />
-          </InfoCard>
-        ) : null}
-      </div>
-
-      {/* Right column — financial summary */}
-      <div className="space-y-4">
-        <SummaryCard data={data} />
-      </div>
-    </div>
-  )
-}
-
-function SummaryCard({ data }: { data: ProcurementOrderDetailDto }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <CircleDollarSign className="size-4 text-primary" aria-hidden />
-        <h2 className="text-sm font-semibold text-muted-foreground">
-          סיכום פיננסי
-        </h2>
-      </div>
-      <dl className="space-y-2 text-sm">
-        <SumRow
-          label="סכום נטו"
-          value={`${numberFormatter.format(data.totalAmountNet)} ${data.currency}`}
-        />
-        <SumRow
-          label={`מע"מ`}
-          value={`${numberFormatter.format(data.vatAmount)} ${data.currency}`}
-        />
-        <Separator />
-        <SumRow
-          label="סכום ברוטו"
-          value={`${numberFormatter.format(data.totalAmountGross)} ${data.currency}`}
-          emphasis
-        />
-      </dl>
-      <Separator className="my-3" />
-      <p className="text-xs text-muted-foreground">
-        חישוב מע&quot;מ 17% מתבצע אוטומטית בשרת לפי גרסת ה-VAT ב-`erp_purchase_orders`.
-      </p>
-    </div>
-  )
-}
-
-function SumRow({
-  label,
-  value,
-  emphasis,
-}: {
-  label: string
-  value: string
-  emphasis?: boolean
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <dt
-        className={cn(
-          "text-muted-foreground",
-          emphasis && "text-base font-semibold text-foreground"
-        )}
-      >
-        {label}
-      </dt>
-      <dd
-        className={cn(
-          "font-medium tabular-nums",
-          emphasis && "text-base font-bold text-primary"
-        )}
-      >
-        {value}
-      </dd>
-    </div>
-  )
-}
-
-function InfoCard({
-  title,
-  icon,
-  children,
-}: {
-  title: string
-  icon: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-primary" aria-hidden>
-          {icon}
-        </span>
-        <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function DLRow({
-  label,
-  value,
-  fullWidth,
-}: {
-  label: string
-  value: React.ReactNode
-  fullWidth?: boolean
-}) {
-  return (
-    <div className={cn("space-y-0.5", fullWidth && "sm:col-span-2")}>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm">{value}</dd>
-    </div>
-  )
-}
 
 // ============================================================================
 // LinesTab — read-only table with all 7.4 enrichment columns visible
 // ============================================================================
 
 function LinesTab({
+  poId,
   lines,
   currency,
+  canEdit,
+  onChanged,
 }: {
+  poId: string
   lines: ProcurementOrderDetailLineDto[]
   currency: string
+  /** מאופשר רק כש-PO ב-DRAFT (Phase B''' line edit gate). */
+  canEdit: boolean
+  /** קוראים ל-refetch אחרי PATCH מוצלח. */
+  onChanged: () => void
 }) {
   if (lines.length === 0) {
     return (
@@ -866,15 +633,23 @@ function LinesTab({
               <TableHead className="w-32 text-start">יצרן</TableHead>
               <TableHead className="w-24 text-start">סעיף תקציבי</TableHead>
               <TableHead className="w-28 text-start">3% Rule</TableHead>
+              {canEdit ? (
+                <TableHead className="w-12 text-center">
+                  <span className="sr-only">עריכה</span>
+                </TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {lines.map((line, index) => (
               <LineDataRow
                 key={line.id}
+                poId={poId}
                 line={line}
                 index={index}
                 currency={currency}
+                canEdit={canEdit}
+                onChanged={onChanged}
               />
             ))}
           </TableBody>
@@ -885,13 +660,19 @@ function LinesTab({
 }
 
 function LineDataRow({
+  poId,
   line,
   index,
   currency,
+  canEdit,
+  onChanged,
 }: {
+  poId: string
   line: ProcurementOrderDetailLineDto
   index: number
   currency: string
+  canEdit: boolean
+  onChanged: () => void
 }) {
   const lineCurrency = line.lineCurrency ?? currency
   const priceSourceLabel = line.priceSource
@@ -963,6 +744,29 @@ function LineDataRow({
             <BadgeCheck className="size-4 text-emerald-600" aria-hidden />
           )}
         </TableCell>
+        {canEdit ? (
+          <TableCell className="text-center">
+            <PoLineEditDialog
+              poId={poId}
+              line={{
+                id: line.id,
+                description: line.description,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                discountPct: line.discountPct,
+                supplyDate: line.supplyDate,
+                uom: line.uom,
+                supplierSku: line.supplierSku,
+                supplierSkuDescription: line.supplierSkuDescription,
+                manufacturerName: line.manufacturerName,
+                lineNotes: line.lineNotes,
+              }}
+              currency={lineCurrency}
+              canEdit={canEdit}
+              onChanged={onChanged}
+            />
+          </TableCell>
+        ) : null}
       </TableRow>
 
       {/* Escalation/notes secondary row — מוצג כאשר יש שדות עשירים נוספים */}
@@ -970,7 +774,7 @@ function LineDataRow({
       line.lineNotes ||
       line.alternativeSupplierId ? (
         <TableRow className="border-t-0 hover:bg-transparent">
-          <TableCell colSpan={12} className="bg-muted/20 px-3 py-2">
+          <TableCell colSpan={canEdit ? 13 : 12} className="bg-muted/20 px-3 py-2">
             <div className="grid gap-2 text-xs lg:grid-cols-3">
               {line.escalationJustification ? (
                 <div className="space-y-0.5">

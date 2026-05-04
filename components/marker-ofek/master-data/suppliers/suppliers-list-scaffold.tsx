@@ -25,7 +25,7 @@
  */
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   AlertTriangle,
   Building2,
@@ -123,11 +123,12 @@ function formatMoneyCompact(value: number, currency: string | null): string {
 
 export function SuppliersListScaffold() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [rows, setRows] = React.useState<SupplierRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
   const [activeSupplierId, setActiveSupplierId] = React.useState<string | null>(
-    null,
+    () => searchParams?.get("selected") ?? null,
   )
 
   // ── Load on mount ────────────────────────────────────────────────────
@@ -344,7 +345,9 @@ export function SuppliersListScaffold() {
           <Button
             type="button"
             size="sm"
-            onClick={() => router.push("/marker-ofek/entities/new")}
+            onClick={() =>
+              router.push("/marker-ofek/procurement/suppliers/new")
+            }
             className="gap-1.5"
           >
             <Plus className="size-3.5" aria-hidden />
@@ -408,7 +411,9 @@ export function SuppliersListScaffold() {
           </div>
         ) : rows.length === 0 ? (
           <EmptySuppliersState
-            onCreate={() => router.push("/marker-ofek/entities/new")}
+            onCreate={() =>
+              router.push("/marker-ofek/procurement/suppliers/new")
+            }
           />
         ) : (
           <BentoSmartList<SupplierRow>
@@ -417,11 +422,6 @@ export function SuppliersListScaffold() {
             rowKey={(r) => r.id}
             selectedRowKey={activeSupplierId}
             onRowClick={(r) => setActiveSupplierId(r.id)}
-            onRowDoubleClick={(r) =>
-              router.push(
-                `/marker-ofek/entities/${encodeURIComponent(r.id)}`,
-              )
-            }
             emptyState="לא נמצאו ספקים התואמים לחיפוש."
           />
         )}

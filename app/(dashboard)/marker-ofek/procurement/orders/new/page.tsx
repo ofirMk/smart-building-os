@@ -60,6 +60,8 @@ import {
 } from "@/components/marker-ofek/procurement/line-enrichment-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import {
   Form,
   FormControl,
@@ -143,6 +145,25 @@ type ProjectOption = {
   status: string
 }
 
+type PaymentTermOption = {
+  code: string
+  description: string
+  isEom: boolean
+  monthsToAdd: number
+  daysToAdd: number
+  installments: number
+}
+
+// Phase D.2 — איש קשר אצל הספק. ממפה ל-DTO של /api/erp/master-data/suppliers/[id]/contacts.
+type SupplierContactOption = {
+  id: string
+  name: string
+  role: string | null
+  phone: string | null
+  email: string | null
+  isPrimary: boolean
+}
+
 type ItemOption = {
   id: string
   itemNumber: string
@@ -212,6 +233,19 @@ const lineFormSchema = z.object({
   manufacturerName: z.string().trim().nullable().optional(),
   lineNotes: z.string().trim().nullable().optional(),
   priceSource: z.enum(LINE_PRICE_SOURCES).nullable().optional(),
+  // Phase D — Priority parity (מועברים דרך LineEnrichmentDialog).
+  uom: z.string().trim().nullable().optional(),
+  supplierSku: z.string().trim().nullable().optional(),
+  supplierSkuDescription: z.string().trim().nullable().optional(),
+  budgetItemCode: z.string().trim().nullable().optional(),
+  // Phase D.3 — cross-system linkage
+  demandNumber: z.string().trim().nullable().optional(),
+  salesOrderId: z
+    .string()
+    .uuid({ message: "מזהה הזמנת מכירה חייב להיות UUID תקני" })
+    .nullable()
+    .optional()
+    .or(z.literal("")),
   // Phase 7.5 — 3% Rule governance. אופציונליים בסכמה (השרת אוכף תנאית);
   // ה-UI חושף אותם כשהשרת מסמן `escalation_required`.
   escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
@@ -231,6 +265,43 @@ const formSchema = z
     urgencyLevel: z.enum(URGENCY_LEVELS),
     urgencyJustification: z.string().trim().optional().or(z.literal("")),
     notes: z.string().trim().optional(),
+    // Phase D — Priority parity header fields (כולם אופציונליים; ה-API
+    // מבצע גם Tesla auto-fill מתוך master data לטובת המשתמש).
+    paymentTermsCode: z.string().trim().nullable().optional().or(z.literal("")),
+    receivingWarehouseCode: z
+      .string()
+      .trim()
+      .max(32)
+      .nullable()
+      .optional()
+      .or(z.literal("")),
+    withholdingPct: z.coerce
+      .number({ message: "ניכוי במקור חייב להיות מספר" })
+      .min(0)
+      .max(100)
+      .nullable()
+      .optional(),
+    shippingAddrLine1: z.string().trim().nullable().optional().or(z.literal("")),
+    shippingAddrCity: z.string().trim().nullable().optional().or(z.literal("")),
+    // Phase D.3 — כתובת באנגלית (הזמנות בין -לאומיות / יצוא).
+    shippingAddrEnLine1: z.string().trim().nullable().optional().or(z.literal("")),
+    shippingAddrEnCity: z.string().trim().nullable().optional().or(z.literal("")),
+    shippingAddrEnCountry: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .or(z.literal("")),
+    // Phase D.2 — contact, VAT, order date, classification flags
+    contactId: z.string().uuid().nullable().optional().or(z.literal("")),
+    vatCode: z.string().trim().max(32).nullable().optional().or(z.literal("")),
+    orderDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "תאריך לא תקין" })
+      .optional()
+      .or(z.literal("")),
+    isConfidential: z.boolean().optional(),
+    affectsPlanning: z.boolean().optional(),
     lines: z.array(lineFormSchema).min(1, { message: "חובה לפחות שורה אחת" }),
   })
   .refine(
@@ -287,6 +358,13 @@ export default function NewProcurementOrderPage() {
   const [suppliers, setSuppliers] = React.useState<SupplierOption[]>([])
   const [projects, setProjects] = React.useState<ProjectOption[]>([])
   const [items, setItems] = React.useState<ItemOption[]>([])
+  // Phase D — master-data לתנאי תשלום (Priority "תנאי תשלום").
+  const [paymentTerms, setPaymentTerms] = React.useState<PaymentTermOption[]>([])
+  // Phase D.2 — אנשי קשר של הספק הנבחר (נטען לאחר בחירת הספק).
+  const [supplierContacts, setSupplierContacts] = React.useState<
+    SupplierContactOption[]
+  >([])
+  const [loadingContacts, setLoadingContacts] = React.useState(false)
   const [loadingLookups, setLoadingLookups] = React.useState(true)
   const [submitting, setSubmitting] = React.useState(false)
 
@@ -323,6 +401,21 @@ export default function NewProcurementOrderPage() {
       urgencyLevel: "NORMAL",
       urgencyJustification: "",
       notes: "",
+      // Phase D — Priority parity header defaults
+      paymentTermsCode: "",
+      receivingWarehouseCode: "",
+      withholdingPct: null,
+      shippingAddrLine1: "",
+      shippingAddrCity: "",
+      shippingAddrEnLine1: "",
+      shippingAddrEnCity: "",
+      shippingAddrEnCountry: "",
+      // Phase D.2 — ברירת מחדל ל-orderDate היא היום (yyyy-mm-dd, local).
+      contactId: "",
+      vatCode: "",
+      orderDate: new Date().toISOString().slice(0, 10),
+      isConfidential: false,
+      affectsPlanning: true,
       lines: [
         {
           itemId: "",
@@ -339,6 +432,12 @@ export default function NewProcurementOrderPage() {
           manufacturerName: null,
           lineNotes: null,
           priceSource: null,
+          uom: null,
+          supplierSku: null,
+          supplierSkuDescription: null,
+          budgetItemCode: null,
+          demandNumber: null,
+          salesOrderId: null,
           escalationCategory: undefined,
           escalationJustification: "",
         },
@@ -366,8 +465,12 @@ export default function NewProcurementOrderPage() {
       masterDataFetch<SupplierOption[]>("/api/master-data/suppliers"),
       masterDataFetch<ProjectOption[]>("/api/projects"),
       masterDataFetch<ItemOption[]>("/api/master-data/items"),
+      // Phase D — תנאי תשלום מ-master data הגלובלי. catch מקומי — אם ה-table
+      // ריקה / ה-endpoint לא זמין לא לשבור את טעינת ה-page.
+      masterDataFetch<PaymentTermOption[]>("/api/master-data/payment-terms")
+        .catch(() => [] as PaymentTermOption[]),
     ])
-      .then(([suppliersData, projectsData, itemsData]) => {
+      .then(([suppliersData, projectsData, itemsData, paymentTermsData]) => {
         if (cancelled) return
         setSuppliers(suppliersData ?? [])
         // מעדיפים פרויקטים פעילים בראש הרשימה — UX משופר.
@@ -379,6 +482,7 @@ export default function NewProcurementOrderPage() {
         })
         setProjects(sortedProjects)
         setItems(itemsData ?? [])
+        setPaymentTerms(paymentTermsData ?? [])
       })
       .catch((error: unknown) => {
         if (cancelled) return
@@ -483,6 +587,29 @@ export default function NewProcurementOrderPage() {
   // -- כשהמשתמש משנה ספק → רץ על כל השורות שכבר יש בהן פריט ומעדכן מחיר.
   const handleSupplierChange = React.useCallback(
     async (supplierId: string) => {
+      // Phase D.2 — מאפסים contactId הקודם (שייך לספק הקודם) וטוענים את האנשים
+      // של הספק החדש. מסמנים primary-contact אוטומטית אם קיים — מקביל ל-Tesla
+      // auto-fill שה-API מבצע אם משאירים null.
+      form.setValue("contactId", "", { shouldDirty: true })
+      setSupplierContacts([])
+      setLoadingContacts(true)
+      const contactsPromise = masterDataFetch<SupplierContactOption[]>(
+        `/api/erp/master-data/suppliers/${supplierId}/contacts`
+      )
+        .then((data) => {
+          const list = data ?? []
+          setSupplierContacts(list)
+          // Auto-select primary contact ל-UX — ניתן לשנות ידנית.
+          const primary = list.find((c) => c.isPrimary) ?? list[0]
+          if (primary) {
+            form.setValue("contactId", primary.id, { shouldDirty: true })
+          }
+        })
+        .catch(() => {
+          // שקט — לא להרעיש UX. ה-API הראשי מבצע auto-fill דרך קוד.
+        })
+        .finally(() => setLoadingContacts(false))
+
       const lines = form.getValues("lines")
       const updates = await Promise.all(
         lines.map(async (line, idx) => {
@@ -503,6 +630,7 @@ export default function NewProcurementOrderPage() {
         altsUpdate[u.idx] = u.pricing.bestAlternative
       }
       setLineBestAlts((prev) => ({ ...prev, ...altsUpdate }))
+      await contactsPromise
     },
     [form, fetchPricing]
   )
@@ -517,6 +645,32 @@ export default function NewProcurementOrderPage() {
       setLineErrors({})
 
       try {
+        // Phase D — בונה shipping address sub-object מה-form fields השטוחים.
+        // מעבירים ל-API רק אם יש לפחות שדה אחד מלא; אחרת משאירים null —
+        // וה-API מבצע Tesla auto-fill מכתובת הספק.
+        const shippingLine1 = values.shippingAddrLine1?.trim() ?? ""
+        const shippingCity = values.shippingAddrCity?.trim() ?? ""
+        const shippingAddrHe =
+          shippingLine1 || shippingCity
+            ? {
+                line1: shippingLine1 || undefined,
+                city: shippingCity || undefined,
+              }
+            : undefined
+        // Phase D.3 — כתובת אנגלית (להזמנות בין-לאומיות). השרת מתגדיר
+        // מה להדפיס ב-PO המודפס לספק. משאירים undefined אם אין מידע.
+        const shippingEnLine1 = values.shippingAddrEnLine1?.trim() ?? ""
+        const shippingEnCity = values.shippingAddrEnCity?.trim() ?? ""
+        const shippingEnCountry = values.shippingAddrEnCountry?.trim() ?? ""
+        const shippingAddrEn =
+          shippingEnLine1 || shippingEnCity || shippingEnCountry
+            ? {
+                line1: shippingEnLine1 || undefined,
+                city: shippingEnCity || undefined,
+                country: shippingEnCountry || undefined,
+              }
+            : undefined
+
         const requestBody = {
           supplierId: values.supplierId,
           projectId: values.projectId,
@@ -527,6 +681,24 @@ export default function NewProcurementOrderPage() {
               ? values.urgencyJustification?.trim() || undefined
               : undefined,
           notes: values.notes?.trim() ? values.notes.trim() : null,
+          // Phase D — Priority parity header fields
+          paymentTermsCode: values.paymentTermsCode?.trim() || undefined,
+          receivingWarehouseCode:
+            values.receivingWarehouseCode?.trim() || undefined,
+          withholdingPct:
+            values.withholdingPct != null &&
+            Number.isFinite(values.withholdingPct)
+              ? values.withholdingPct
+              : undefined,
+          shippingAddrHe,
+          shippingAddrEn,
+          // Phase D.2 — מעבירים undefined ל-UUID/תאריך ריקים כדי שה-API יבצע
+          // Tesla auto-fill (primary contact מהדב; תאריך הזמנה = היום).
+          contactId: values.contactId?.trim() || undefined,
+          vatCode: values.vatCode?.trim() || undefined,
+          orderDate: values.orderDate?.trim() || undefined,
+          isConfidential: values.isConfidential ?? false,
+          affectsPlanning: values.affectsPlanning ?? true,
           lines: values.lines.map((line) => ({
             itemId: line.itemId,
             quantity: line.quantity,
@@ -548,6 +720,15 @@ export default function NewProcurementOrderPage() {
             manufacturerName: line.manufacturerName?.trim() || undefined,
             lineNotes: line.lineNotes?.trim() || undefined,
             priceSource: line.priceSource ?? undefined,
+            // Phase D — Priority parity
+            uom: line.uom?.trim() || undefined,
+            supplierSku: line.supplierSku?.trim() || undefined,
+            supplierSkuDescription:
+              line.supplierSkuDescription?.trim() || undefined,
+            budgetItemCode: line.budgetItemCode?.trim() || undefined,
+            // Phase D.3 — cross-system linkage
+            demandNumber: line.demandNumber?.trim() || undefined,
+            salesOrderId: line.salesOrderId?.trim() || undefined,
             // השדות מועברים תמיד; השרת אוכף אותם רק אם נדרש escalation.
             escalationCategory: line.escalationCategory ?? undefined,
             escalationJustification:
@@ -871,6 +1052,409 @@ export default function NewProcurementOrderPage() {
           </section>
 
           {/* ------------------------------------------------------------ */}
+          {/* Section 1.5 — Phase D: לוגיסטיקה ומסחר (Priority parity)    */}
+          {/* כל השדות אופציונליים. ה-API מבצע Tesla auto-fill ממה        */}
+          {/* שאפשר (כתובת מהספק וכו') כשמשאירים ריק.                     */}
+          {/* ------------------------------------------------------------ */}
+          <section className="rounded-lg border border-border bg-card p-4">
+            <h2 className="mb-1 text-sm font-semibold text-muted-foreground">
+              לוגיסטיקה ותנאי מסחר
+            </h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              שדות אופציונליים מותאמים ל-Priority. ניתן לדלג ולעדכן בהמשך
+              במסך הפרט.
+            </p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Phase D.2 — orderDate */}
+              <FormField
+                control={form.control}
+                name="orderDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>תאריך הזמנה</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        type="date"
+                        className="tabular-nums"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-[11px]">
+                      ברירת מחדל: היום.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Phase D.2 — contactId (depends on supplier) */}
+              <FormField
+                control={form.control}
+                name="contactId"
+                render={({ field }) => {
+                  const supplierIdValue = form.getValues("supplierId")
+                  const disabled =
+                    !supplierIdValue || supplierContacts.length === 0
+                  return (
+                    <FormItem>
+                      <FormLabel>איש קשר אצל הספק</FormLabel>
+                      <Select
+                        value={field.value ?? ""}
+                        onValueChange={(value) => field.onChange(value ?? "")}
+                        disabled={disabled}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                !supplierIdValue
+                                  ? "בחר ספק תחילה…"
+                                  : loadingContacts
+                                    ? "טוען אנשי קשר…"
+                                    : supplierContacts.length === 0
+                                      ? "אין אנשי קשר רשומים"
+                                      : "בחר איש קשר…"
+                              }
+                            >
+                              {(() => {
+                                if (!field.value) return null
+                                const c = supplierContacts.find(
+                                  (sc) => sc.id === field.value,
+                                )
+                                if (!c) return field.value
+                                return c.isPrimary
+                                  ? `★ ${c.name}`
+                                  : c.name
+                              })()}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {supplierContacts.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              <span>
+                                {c.isPrimary ? "★ " : ""}
+                                {c.name}
+                              </span>
+                              {c.role ? (
+                                <span className="ms-2 text-xs text-muted-foreground">
+                                  {c.role}
+                                </span>
+                              ) : null}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-[11px]">
+                        ★ = איש קשר ראשי (יבחר אוטומטית).
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
+
+              {/* Phase D.2 — vatCode (free text — no master table yet) */}
+              <FormField
+                control={form.control}
+                name="vatCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>קוד מע&quot;מ</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        maxLength={32}
+                        placeholder="I / Z / X"
+                        className="font-mono"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-[11px]">
+                      I=רגיל, Z=אפס, X=פטור (Override של ברירת המחדל).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* paymentTermsCode */}
+              <FormField
+                control={form.control}
+                name="paymentTermsCode"
+                render={({ field }) => (
+                  <FormItem className="lg:col-span-2">
+                    <FormLabel>תנאי תשלום</FormLabel>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(value) => field.onChange(value ?? "")}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="ברירת מחדל מהספק…">
+                            {(() => {
+                              if (!field.value) return null
+                              const pt = paymentTerms.find(
+                                (p) => p.code === field.value
+                              )
+                              return pt
+                                ? `${pt.code} · ${pt.description}`
+                                : field.value
+                            })()}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {paymentTerms.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            לא הוגדרו תנאי תשלום במערכת.
+                          </div>
+                        ) : (
+                          paymentTerms.map((pt) => (
+                            <SelectItem key={pt.code} value={pt.code}>
+                              <span className="font-mono text-xs">
+                                {pt.code}
+                              </span>
+                              <span className="ms-2">{pt.description}</span>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Override של תנאי התשלום הדיפולטיים של הספק.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* receivingWarehouseCode */}
+              <FormField
+                control={form.control}
+                name="receivingWarehouseCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>מחסן קליטה</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        maxLength={32}
+                        placeholder="MAIN / WH-01"
+                        className="font-mono"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-[11px]">
+                      קוד המחסן שמקבל את הסחורה.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* withholdingPct */}
+              <FormField
+                control={form.control}
+                name="withholdingPct"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ניכוי במקור (%)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={(field.value ?? "") as string | number}
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.01"
+                        placeholder="0"
+                        className="tabular-nums"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-[11px]">
+                      הוראת ניכוי לתשלום הספק (אם רלוונטי).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* shippingAddrLine1 */}
+              <FormField
+                control={form.control}
+                name="shippingAddrLine1"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2 lg:col-span-3">
+                    <FormLabel>כתובת למשלוח (רחוב + מספר)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder='לדוגמה: רחוב הרצל 12'
+                      />
+                    </FormControl>
+                    <FormDescription className="text-[11px]">
+                      ריק = יוגדר אוטומטית מכתובת הספק.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* shippingAddrCity */}
+              <FormField
+                control={form.control}
+                name="shippingAddrCity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>עיר</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder="תל אביב"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Phase D.3 — Shipping address (English, for export/intl orders) */}
+              <div className="md:col-span-2 lg:col-span-4 mt-2 border-t border-dashed border-border pt-3">
+                <p className="mb-2 text-[11px] font-semibold text-muted-foreground">
+                  Shipping address (English) — להזמנות יצוא / בינ&quot;ל
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="shippingAddrEnLine1"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2 lg:col-span-2">
+                    <FormLabel>Address line 1</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder="12 Herzl St."
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="shippingAddrEnCity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder="Tel Aviv"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="shippingAddrEnCountry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder="Israel"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Phase D.2 — classification flags */}
+            <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:gap-6">
+              <FormField
+                control={form.control}
+                name="isConfidential"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        id="po-is-confidential"
+                        checked={field.value ?? false}
+                        onCheckedChange={(value) =>
+                          field.onChange(value === true)
+                        }
+                      />
+                    </FormControl>
+                    <div className="grid gap-0.5">
+                      <Label
+                        htmlFor="po-is-confidential"
+                        className="cursor-pointer text-sm font-medium"
+                      >
+                        הזמנה חסויה
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        מסתיר מ-feed הארגוני; נראה רק לשרשרת האישור.
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="affectsPlanning"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        id="po-affects-planning"
+                        checked={field.value ?? true}
+                        onCheckedChange={(value) =>
+                          field.onChange(value === true)
+                        }
+                      />
+                    </FormControl>
+                    <div className="grid gap-0.5">
+                      <Label
+                        htmlFor="po-affects-planning"
+                        className="cursor-pointer text-sm font-medium"
+                      >
+                        משפיע על תכנון (MRP)
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        כברירת מחדל פעיל. בטל רק עבור הזמנות שלא נכנסות לתכנון
+                        חומרים.
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </section>
+
+          {/* ------------------------------------------------------------ */}
           {/* Section 2 — Lines */}
           {/* ------------------------------------------------------------ */}
           <section className="rounded-lg border border-border bg-card p-4">
@@ -897,6 +1481,12 @@ export default function NewProcurementOrderPage() {
                     manufacturerName: null,
                     lineNotes: null,
                     priceSource: null,
+                    uom: null,
+                    supplierSku: null,
+                    supplierSkuDescription: null,
+                    budgetItemCode: null,
+                    demandNumber: null,
+                    salesOrderId: null,
                     escalationCategory: undefined,
                     escalationJustification: "",
                   })
@@ -1041,6 +1631,13 @@ function LineEnrichmentDialogConnector({
       manufacturerName: line?.manufacturerName ?? null,
       lineNotes: line?.lineNotes ?? null,
       priceSource: line?.priceSource ?? null,
+      // Phase D — Priority parity
+      uom: line?.uom ?? null,
+      supplierSku: line?.supplierSku ?? null,
+      supplierSkuDescription: line?.supplierSkuDescription ?? null,
+      budgetItemCode: line?.budgetItemCode ?? null,
+      demandNumber: line?.demandNumber ?? null,
+      salesOrderId: line?.salesOrderId ?? null,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineIndex, open])
@@ -1085,6 +1682,34 @@ function LineEnrichmentDialogConnector({
         form.setValue(`lines.${lineIndex}.priceSource`, next.priceSource, {
           shouldDirty: true,
         })
+        // Phase D — Priority parity
+        form.setValue(`lines.${lineIndex}.uom`, next.uom, {
+          shouldDirty: true,
+        })
+        form.setValue(`lines.${lineIndex}.supplierSku`, next.supplierSku, {
+          shouldDirty: true,
+        })
+        form.setValue(
+          `lines.${lineIndex}.supplierSkuDescription`,
+          next.supplierSkuDescription,
+          { shouldDirty: true },
+        )
+        form.setValue(
+          `lines.${lineIndex}.budgetItemCode`,
+          next.budgetItemCode,
+          { shouldDirty: true },
+        )
+        // Phase D.3 — cross-system linkage
+        form.setValue(
+          `lines.${lineIndex}.demandNumber`,
+          next.demandNumber,
+          { shouldDirty: true },
+        )
+        form.setValue(
+          `lines.${lineIndex}.salesOrderId`,
+          next.salesOrderId,
+          { shouldDirty: true },
+        )
       }}
     />
   )
@@ -1184,6 +1809,13 @@ function LineRow({
       manufacturerName: watched.manufacturerName ?? null,
       lineNotes: watched.lineNotes ?? null,
       priceSource: watched.priceSource ?? null,
+      // Phase D — Priority parity
+      uom: watched.uom ?? null,
+      supplierSku: watched.supplierSku ?? null,
+      supplierSkuDescription: watched.supplierSkuDescription ?? null,
+      budgetItemCode: watched.budgetItemCode ?? null,
+      demandNumber: watched.demandNumber ?? null,
+      salesOrderId: watched.salesOrderId ?? null,
     })
   }, [
     watched?.supplyDate,
@@ -1193,6 +1825,12 @@ function LineRow({
     watched?.manufacturerName,
     watched?.lineNotes,
     watched?.priceSource,
+    watched?.uom,
+    watched?.supplierSku,
+    watched?.supplierSkuDescription,
+    watched?.budgetItemCode,
+    watched?.demandNumber,
+    watched?.salesOrderId,
     watched,
   ])
 

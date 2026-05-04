@@ -86,7 +86,7 @@ export async function GET(
     .select(
       [
         "id,item_id,supplier_sku,base_price,net_unit_price,discount_percentage,currency,uom,is_preferred,valid_from,valid_to",
-        "item:erp_md_items!item_id(sku,description)",
+        "item:erp_md_items!erp_md_supplier_items_company_item_fk(sku,description)",
       ].join(","),
     )
     .eq("company_id", activeCompanyId)

@@ -10,6 +10,7 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 
 import { requireProcurementApiContext } from "@/lib/erp/procurement-api"
 
@@ -59,6 +60,36 @@ export type ProcurementOrderDetailLineDto = {
   alternativeSupplierId: string | null
   alternativeUnitPrice: number | null
   alternativeLeadTimeDays: number | null
+  // Phase 8.2 — Goods Receipt rollup
+  receivedQty: number
+  // Phase A — Priority parity
+  lineNumber: number | null
+  uom: string | null
+  supplierSku: string | null
+  supplierSkuDescription: string | null
+  budgetItemCode: string | null
+  budgetUtilizationDate: string | null
+  importCostType: string | null
+  demandNumber: string | null
+  salesOrderId: string | null
+  salesOrderLineId: string | null
+  lineStatus: string
+  isClosedLine: boolean
+  splitParentLineId: string | null
+}
+
+export type ProcurementShippingAddress = {
+  name?: string
+  contact?: string
+  phone?: string
+  fax?: string
+  line1?: string
+  line2?: string
+  line3?: string
+  city?: string
+  state?: string
+  zip?: string
+  country?: string
 }
 
 export type ProcurementOrderDetailDto = {
@@ -88,6 +119,19 @@ export type ProcurementOrderDetailDto = {
   // Phase 7.6 rich body
   bodyHtml: string | null
   bodyHtmlEnglish: string | null
+  // Phase A — Priority parity header fields
+  contactId: string | null
+  receivingWarehouseCode: string | null
+  orderDate: string | null
+  paymentTermsCode: string | null
+  vatCode: string | null
+  withholdingPct: number | null
+  shippingAddrHe: ProcurementShippingAddress | null
+  shippingAddrEn: ProcurementShippingAddress | null
+  isConfidential: boolean
+  affectsPlanning: boolean
+  closedAt: string | null
+  closedBy: string | null
   // relations
   supplier: {
     id: string
@@ -169,6 +213,19 @@ type HeaderRow = {
   requires_po_escalation: boolean | null
   body_html: string | null
   body_html_english: string | null
+  // Phase A — Priority parity
+  contact_id: string | null
+  receiving_warehouse_code: string | null
+  order_date: string | null
+  payment_terms_code: string | null
+  vat_code: string | null
+  withholding_pct: number | string | null
+  shipping_addr_he: ProcurementShippingAddress | null
+  shipping_addr_en: ProcurementShippingAddress | null
+  is_confidential: boolean | null
+  affects_planning: boolean | null
+  closed_at: string | null
+  closed_by: string | null
   supplier: SupplierJoin | SupplierJoin[]
   project: ProjectJoin | ProjectJoin[]
   company: CompanyJoin | CompanyJoin[]
@@ -198,6 +255,21 @@ type LineRow = {
   alternative_supplier_id: string | null
   alternative_unit_price: number | string | null
   alternative_lead_time_days: number | null
+  received_qty: number | string | null
+  // Phase A — Priority parity
+  line_number: number | null
+  uom: string | null
+  supplier_sku: string | null
+  supplier_sku_description: string | null
+  budget_item_code: string | null
+  budget_utilization_date: string | null
+  import_cost_type: string | null
+  demand_number: string | null
+  sales_order_id: string | null
+  sales_order_line_id: string | null
+  line_status: string | null
+  is_closed_line: boolean | null
+  split_parent_line_id: string | null
   item: ItemJoin | ItemJoin[]
   created_at: string
 }
@@ -244,6 +316,10 @@ export async function GET(
         "urgency_level,urgency_justification,ai_negotiation_status,ai_negotiation_log",
         "po_total_deviation_pct,requires_po_escalation",
         "body_html,body_html_english",
+        // Phase A — Priority parity header fields
+        "contact_id,receiving_warehouse_code,order_date,payment_terms_code",
+        "vat_code,withholding_pct,shipping_addr_he,shipping_addr_en",
+        "is_confidential,affects_planning,closed_at,closed_by",
         "supplier:erp_md_suppliers!supplier_id(id,name,supplier_number,email,address,phone,tax_vat_id,payment_terms)",
         "project:erp_proj_projects!project_id(id,project_number,name)",
         "company:erp_companies!company_id(id,name_he,name_en)",
@@ -262,6 +338,8 @@ export async function GET(
   const header = headerQuery.data as HeaderRow
 
   // 2) Lines + item join
+  //    Phase A — מיון ע"פ line_number (Tesla auto-filled ב-POST); fallback
+  //    ל-created_at אם line_number null לשמירת תאימות עם שורות ישנות.
   const linesQuery = await supabase
     .from("erp_purchase_order_lines")
     .select(
@@ -272,12 +350,19 @@ export async function GET(
         "supply_date,manufacturer_name,line_notes,price_source",
         "price_deviation_pct,requires_escalation,escalation_category,escalation_justification",
         "alternative_supplier_id,alternative_unit_price,alternative_lead_time_days",
+        "received_qty",
+        // Phase A — Priority parity line fields
+        "line_number,uom,supplier_sku,supplier_sku_description",
+        "budget_item_code,budget_utilization_date,import_cost_type",
+        "demand_number,sales_order_id,sales_order_line_id",
+        "line_status,is_closed_line,split_parent_line_id",
         "created_at",
         "item:erp_md_items!item_id(id,item_number,description)",
       ].join(",")
     )
     .eq("company_id", activeCompanyId)
     .eq("purchase_order_id", id)
+    .order("line_number", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true })
 
   if (linesQuery.error) {
@@ -311,6 +396,19 @@ export async function GET(
     requiresPoEscalation: Boolean(header.requires_po_escalation),
     bodyHtml: header.body_html,
     bodyHtmlEnglish: header.body_html_english,
+    // Phase A — Priority parity header fields
+    contactId: header.contact_id,
+    receivingWarehouseCode: header.receiving_warehouse_code,
+    orderDate: header.order_date,
+    paymentTermsCode: header.payment_terms_code,
+    vatCode: header.vat_code,
+    withholdingPct: toNumberOrNull(header.withholding_pct),
+    shippingAddrHe: header.shipping_addr_he,
+    shippingAddrEn: header.shipping_addr_en,
+    isConfidential: Boolean(header.is_confidential),
+    affectsPlanning: header.affects_planning ?? true,
+    closedAt: header.closed_at,
+    closedBy: header.closed_by,
     supplier: supplier
       ? {
           id: supplier.id,
@@ -364,9 +462,226 @@ export async function GET(
         alternativeSupplierId: line.alternative_supplier_id,
         alternativeUnitPrice: toNumberOrNull(line.alternative_unit_price),
         alternativeLeadTimeDays: line.alternative_lead_time_days,
+        // Phase 8.2 — Goods Receipt rollup
+        receivedQty: toNumber(line.received_qty),
+        // Phase A — Priority parity
+        lineNumber: line.line_number,
+        uom: line.uom,
+        supplierSku: line.supplier_sku,
+        supplierSkuDescription: line.supplier_sku_description,
+        budgetItemCode: line.budget_item_code,
+        budgetUtilizationDate: line.budget_utilization_date,
+        importCostType: line.import_cost_type,
+        demandNumber: line.demand_number,
+        salesOrderId: line.sales_order_id,
+        salesOrderLineId: line.sales_order_line_id,
+        lineStatus: line.line_status ?? "OPEN",
+        isClosedLine: Boolean(line.is_closed_line),
+        splitParentLineId: line.split_parent_line_id,
       }
     }),
   }
 
   return NextResponse.json({ data: dto })
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// PUT — Phase A (Priority parity)
+// ─────────────────────────────────────────────────────────────────────
+// עדכון header של PO קיים. שדות המותרים לעדכון:
+//   * Basic      : title, notes
+//   * Priority A : contactId, receivingWarehouseCode, orderDate,
+//                  paymentTermsCode, vatCode, withholdingPct,
+//                  shippingAddrHe, shippingAddrEn, isConfidential,
+//                  affectsPlanning
+//   * Body rich  : bodyHtml, bodyHtmlEnglish (Phase 7.6)
+//
+// שדות שה-PUT *לא* מטפל בהם (מופנים ל-endpoints נפרדים):
+//   * status           → /submit, /approvals/[id]/decide, /close, ...
+//   * total_amount_*   → מחושב אוטומטית דרך triggers
+//   * lines            → Phase B' (POST /lines, PATCH /lines/[id], DELETE /lines/[id])
+//   * supplier_id, project_id → אי-ניתן לשנות; צור PO חדש במקום
+//
+// Gate: ה-status חייב להיות באחד מ-`erp_po_status_types.allow_changes=true`.
+// דוגמאות לערכים שמאפשרים שינוי: DRAFT, PROFORMA, APPROVED, SENT_TO_SUPPLIER,
+// PARTIALLY_RECEIVED, ON_SHIP, SHIPMENT_CONFIRMED, SENT (legacy).
+// דוגמאות שחוסמים: PENDING_APPROVAL, FULLY_RECEIVED, CLOSED, CANCELLED.
+// ─────────────────────────────────────────────────────────────────────
+
+const shippingAddrPatchSchema = z
+  .object({
+    name: z.string().trim().optional(),
+    contact: z.string().trim().optional(),
+    phone: z.string().trim().optional(),
+    fax: z.string().trim().optional(),
+    line1: z.string().trim().optional(),
+    line2: z.string().trim().optional(),
+    line3: z.string().trim().optional(),
+    city: z.string().trim().optional(),
+    state: z.string().trim().optional(),
+    zip: z.string().trim().optional(),
+    country: z.string().trim().optional(),
+  })
+  .partial()
+
+const updateOrderSchema = z
+  .object({
+    // Basic
+    title: z.string().trim().min(1).optional(),
+    notes: z.string().trim().nullable().optional(),
+    // Phase 7.6 — rich body (dual-language)
+    bodyHtml: z.string().nullable().optional(),
+    bodyHtmlEnglish: z.string().nullable().optional(),
+    // Phase A — Priority parity
+    contactId: z.string().uuid().nullable().optional(),
+    receivingWarehouseCode: z.string().trim().min(1).max(32).nullable().optional(),
+    orderDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    paymentTermsCode: z.string().trim().min(1).max(16).nullable().optional(),
+    vatCode: z.string().trim().min(1).max(32).nullable().optional(),
+    withholdingPct: z.number().min(0).max(100).nullable().optional(),
+    shippingAddrHe: shippingAddrPatchSchema.nullable().optional(),
+    shippingAddrEn: shippingAddrPatchSchema.nullable().optional(),
+    isConfidential: z.boolean().optional(),
+    affectsPlanning: z.boolean().optional(),
+  })
+  .strict()
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<RouteParams> | RouteParams }
+) {
+  const { id } = await normalizeParams(params)
+
+  const ctx = await requireProcurementApiContext(req)
+  if (!ctx.ok) return ctx.response
+  const { supabase, activeCompanyId } = ctx
+
+  // 1) Parse + validate
+  const body = await req.json().catch(() => null)
+  const parsed = updateOrderSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+      { status: 400 }
+    )
+  }
+  const input = parsed.data
+
+  // 2) שליפת ה-PO הנוכחי. אין FK מפורש בין status ל-erp_po_status_types,
+  //    לכן עושים 2 קריאות קצרות במקום JOIN (PostgREST לא יתן לנו להצטרף ללא FK).
+  const currentQuery = await supabase
+    .from("erp_purchase_orders")
+    .select("id,supplier_id,status")
+    .eq("company_id", activeCompanyId)
+    .eq("id", id)
+    .maybeSingle()
+
+  if (currentQuery.error) {
+    return NextResponse.json({ error: currentQuery.error.message }, { status: 500 })
+  }
+  if (!currentQuery.data) {
+    return NextResponse.json({ error: "הזמנת רכש לא נמצאה" }, { status: 404 })
+  }
+
+  const currentStatus = (currentQuery.data as { status: string }).status
+  const currentSupplierId = (currentQuery.data as { supplier_id: string }).supplier_id
+
+  // 2.1) Status metadata lookup — Phase A governance gate.
+  const statusMetaQuery = await supabase
+    .from("erp_po_status_types")
+    .select("allow_changes")
+    .eq("status", currentStatus)
+    .maybeSingle()
+
+  // Gate: הסטטוס חייב להתיר שינויים. אם אין metadata (סטטוס legacy לא-seeded) —
+  //       fallback שמרני: מרשה DRAFT בלבד, חוסם אחרת.
+  const allowChanges = statusMetaQuery.data
+    ? Boolean((statusMetaQuery.data as { allow_changes: boolean }).allow_changes)
+    : currentStatus === "DRAFT"
+
+  if (!allowChanges) {
+    return NextResponse.json(
+      {
+        error: `לא ניתן לערוך הזמנת רכש בסטטוס ${currentStatus}. העבירי לטיוטה או בטלי את האישור.`,
+        code: "STATUS_LOCKED",
+      },
+      { status: 409 }
+    )
+  }
+
+  // 3) אם supplied contactId — ולידציה שהוא באותו ספק + חברה.
+  if (input.contactId) {
+    const contactValidation = await supabase
+      .from("erp_md_supplier_contacts")
+      .select("id")
+      .eq("company_id", activeCompanyId)
+      .eq("supplier_id", currentSupplierId)
+      .eq("id", input.contactId)
+      .maybeSingle()
+    if (contactValidation.error || !contactValidation.data) {
+      return NextResponse.json(
+        { error: "איש הקשר שסופק לא שייך לספק של ההזמנה" },
+        { status: 400 }
+      )
+    }
+  }
+
+  // 4) אם supplied paymentTermsCode — ולידציה שהוא קיים ב-master.
+  if (input.paymentTermsCode) {
+    const paymentTermsValidation = await supabase
+      .from("erp_payment_terms")
+      .select("code")
+      .eq("code", input.paymentTermsCode)
+      .maybeSingle()
+    if (paymentTermsValidation.error || !paymentTermsValidation.data) {
+      return NextResponse.json(
+        { error: `קוד תנאי תשלום לא נמצא: ${input.paymentTermsCode}` },
+        { status: 400 }
+      )
+    }
+  }
+
+  // 5) בניית patch דינמי — רק שדות שסופקו במפורש נכנסים ל-UPDATE.
+  //    חשוב: null הוא ערך תקף (מחיקת שדה); undefined = "לא נשלח".
+  const patch: Record<string, unknown> = {}
+  if (input.title !== undefined) patch.title = input.title
+  if (input.notes !== undefined) patch.notes = input.notes
+  if (input.bodyHtml !== undefined) patch.body_html = input.bodyHtml
+  if (input.bodyHtmlEnglish !== undefined) patch.body_html_english = input.bodyHtmlEnglish
+  if (input.contactId !== undefined) patch.contact_id = input.contactId
+  if (input.receivingWarehouseCode !== undefined)
+    patch.receiving_warehouse_code = input.receivingWarehouseCode
+  if (input.orderDate !== undefined) patch.order_date = input.orderDate
+  if (input.paymentTermsCode !== undefined)
+    patch.payment_terms_code = input.paymentTermsCode
+  if (input.vatCode !== undefined) patch.vat_code = input.vatCode
+  if (input.withholdingPct !== undefined) patch.withholding_pct = input.withholdingPct
+  if (input.shippingAddrHe !== undefined) patch.shipping_addr_he = input.shippingAddrHe
+  if (input.shippingAddrEn !== undefined) patch.shipping_addr_en = input.shippingAddrEn
+  if (input.isConfidential !== undefined) patch.is_confidential = input.isConfidential
+  if (input.affectsPlanning !== undefined) patch.affects_planning = input.affectsPlanning
+
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: "אף שדה לא סופק לעדכון" }, { status: 400 })
+  }
+
+  // 6) UPDATE. Trigger `erp_po_change_log` (אם פעיל — Phase 7.8) יתעד כל שינוי
+  //    ברמת-שדה ל-audit trail. אין כאן צורך בטיפול ידני.
+  const updateRes = await supabase
+    .from("erp_purchase_orders")
+    .update(patch)
+    .eq("company_id", activeCompanyId)
+    .eq("id", id)
+
+  if (updateRes.error) {
+    return NextResponse.json({ error: updateRes.error.message }, { status: 500 })
+  }
+
+  // 7) מחזירים minimal success. ה-UI עושה re-fetch של GET כדי לקבל את המצב המלא.
+  return NextResponse.json({
+    data: {
+      id,
+      updated: Object.keys(patch),
+    },
+  })
 }
