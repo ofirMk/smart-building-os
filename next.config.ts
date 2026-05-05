@@ -38,6 +38,29 @@ const nextConfig: NextConfig = {
             ]
           : undefined,
     },
+    /**
+     * Tree-shake imports of heavy multi-export packages that are NOT in Next 16's
+     * default optimized list. The default list (lucide-react, date-fns, recharts,
+     * @radix-ui split per-package, etc.) is already handled — see
+     * node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/optimizePackageImports.md.
+     *
+     * Packages chosen here have many sub-exports and are imported across the app:
+     *   - framer-motion: dozens of sub-modules, often pulls full lib if barrel-imported
+     *   - @dnd-kit/*: modular but wide barrel surface
+     *   - @base-ui/react: same pattern
+     *   - @tanstack/react-table: large surface, mostly uses just a few hooks
+     *
+     * Safe: this only changes how imports are resolved at build time; runtime is
+     * identical. Worst case = no measurable improvement; never breaks code.
+     */
+    optimizePackageImports: [
+      "framer-motion",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@dnd-kit/utilities",
+      "@base-ui/react",
+      "@tanstack/react-table",
+    ],
   },
 };
 
