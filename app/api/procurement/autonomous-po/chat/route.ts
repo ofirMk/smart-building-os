@@ -78,6 +78,24 @@ type SupplierCtx = {
   foreignName: string | null
 }
 
+/**
+ * Phase E — Reasonable Defaults: ה-PO האחרון של החברה.
+ *
+ * נשלף מ-`erp_purchase_orders` ומוזרק ל-grounding כדי שהסוכן יוכל להשתמש
+ * ב-projectId/supplierId כברירת מחדל אם המשתמש לא ציין אותם במפורש.
+ * זה חוסך 50% מהשאלות הפתוחות ("באיזה פרויקט?" / "איזה ספק?") כשהדפוס
+ * עקבי. הסוכן עדיין מחויב לשאול אם המקור לא ברור או אם הסיטואציה השתנתה.
+ */
+type RecentPoCtx = {
+  id: string
+  poNumber: string
+  status: string
+  projectId: string
+  supplierId: string
+  totalAmount: number
+  createdAt: string
+}
+
 type RpcRow = {
   purchase_order_id: string
   po_number: string
@@ -136,7 +154,7 @@ export async function POST(req: Request) {
   }
 
   // 3) Context fetching — Grounding ל-LLM. כל ה-queries תחת RLS של המשתמש.
-  const [projectsRes, assembliesRes, locationsRes, suppliersRes] =
+  const [projectsRes, assembliesRes, locationsRes, suppliersRes, recentPoRes] =
     await Promise.all([
       supabase
         .from("erp_proj_projects")
@@ -165,6 +183,15 @@ export async function POST(req: Request) {
         .eq("status", "ACTIVE")
         .order("name", { ascending: true })
         .limit(80),
+      // Phase E — Reasonable Defaults: ה-PO האחרון של החברה.
+      // RLS מבטיח שהשאילתה מסוננת לחברה הפעילה; אין צורך בסינון user-id
+      // (אין `created_by` בטבלה, ובכל מקרה רוב המשתמשים 1:1 עם חברה).
+      supabase
+        .from("erp_purchase_orders")
+        .select("id,po_number,status,project_id,supplier_id,total_amount,created_at")
+        .eq("company_id", activeCompanyId)
+        .order("created_at", { ascending: false })
+        .limit(1),
     ])
 
   const projects: ProjectCtx[] = (projectsRes.data ?? []).map((r: any) => ({
@@ -193,6 +220,20 @@ export async function POST(req: Request) {
     name: r.name,
     foreignName: r.foreign_name ?? null,
   }))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recentPoRow = (recentPoRes.data ?? [])[0] as any | undefined
+  const recentPo: RecentPoCtx | null = recentPoRow
+    ? {
+        id: recentPoRow.id,
+        poNumber: recentPoRow.po_number,
+        status: recentPoRow.status,
+        projectId: recentPoRow.project_id,
+        supplierId: recentPoRow.supplier_id,
+        totalAmount: Number(recentPoRow.total_amount ?? 0),
+        createdAt: recentPoRow.created_at,
+      }
+    : null
 
   // 4) Build grounding system prompt
   const projectsBlock = projects.length
@@ -344,6 +385,37 @@ ${locationsBlock}
 
 SUPPLIERS (ספקים פעילים — שלוף UUID לפי שם כשהמשתמש מציין ספק):
 ${suppliersBlock}
+
+PO_RECENT_HISTORY (Phase E — Reasonable Defaults):
+${
+  recentPo
+    ? (() => {
+        const proj = projects.find((p) => p.id === recentPo.projectId)
+        const sup = suppliers.find((s) => s.id === recentPo.supplierId)
+        return [
+          `  - last_po_number="${recentPo.poNumber}"`,
+          `    status="${recentPo.status}"`,
+          `    created_at="${recentPo.createdAt}"`,
+          `    default_project_id="${recentPo.projectId}"${
+            proj ? ` (${proj.name} / ${proj.projectNumber})` : ""
+          }`,
+          `    default_supplier_id="${recentPo.supplierId}"${
+            sup ? ` (${sup.name})` : ""
+          }`,
+          `    total_amount=${recentPo.totalAmount}`,
+        ].join("\n")
+      })()
+    : "  (אין PO היסטורי בחברה זו — שאל את המשתמש לפני התחלה)"
+}
+
+כלל ברירת מחדל סבירה (Phase E):
+  • אם המשתמש *לא* ציין projectId — השתמש ב-default_project_id מ-PO_RECENT_HISTORY,
+    אבל ציין במפורש בתשובתך "הנחתי שמדובר בפרויקט <X> כי זה ה-PO האחרון; רוצה לשנות?".
+  • אם המשתמש *לא* ציין ספק — השתמש ב-default_supplier_id באותה צורה.
+  • אם אין PO היסטורי (PO_RECENT_HISTORY ריק) — חובה לשאול במפורש.
+  • אם המשתמש שינה במפורש את הפרויקט/הספק — *אל* תחזור לדפולט; כבד את הבחירה החדשה.
+  • החוק הזה לא מבטל את ה-Vision flow: עדיין חובה לקרוא ל-prepare_vision_po_draft
+    כשמצורפת תמונה, ולחכות לאישור משתמש לפני generate_engineering_po.
 `
 
   // 5) Tool definition — wrapper around the deterministic RPC
@@ -499,6 +571,60 @@ ${suppliersBlock}
           bomRequestId: row.bom_request_id,
           violations: violationsArr,
           poUrl: `/marker-ofek/procurement/orders/${row.purchase_order_id}`,
+        }
+      },
+    }),
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Phase E — import_supplier_catalog (Step 1: placeholder)
+    //
+    // ה-tool הזה הוא **scaffold ריק** ב-Phase E Step 1. הוא מוכרז למודל
+    // כדי לבסס את החוזה (signature + grounding), אבל ההטמעה מלאה (העלאת
+    // קובץ → LLM extraction → כתיבה ל-erp_supplier_catalog_imports +
+    // erp_supplier_catalog_import_lines) תיכנס ב-Phase E Step 2. עד אז
+    // הקריאה תחזיר not_implemented כדי שלא יווצרו שורות חצי-בסיסיות ב-DB.
+    //
+    // ה-DB schema (טבלאות + RLS + טריגרים) **כן** קיים בפרודקשן (migration
+    // 20260813100000), אז המשך הזרימה ינוע במהירות.
+    // ─────────────────────────────────────────────────────────────────────
+    import_supplier_catalog: tool({
+      description:
+        "Phase E (Step 1 — placeholder) — מקבל קובץ קטלוג ספק (PDF/Excel) שכבר " +
+        "הועלה, מחלץ שורות מוצרים+מחירים, וכותב ל-erp_supplier_catalog_imports. " +
+        "ההטמעה המלאה תגיע ב-Step 2; כרגע הכלי מחזיר not_implemented.",
+      inputSchema: z.object({
+        supplierId: z
+          .string()
+          .uuid()
+          .describe("UUID של הספק שהקטלוג שייך אליו (חובה)."),
+        fileUrl: z
+          .string()
+          .min(1)
+          .describe("נתיב הקובץ שהועלה ל-Supabase Storage."),
+        originalFilename: z
+          .string()
+          .min(1)
+          .describe("שם הקובץ המקורי לצורך תצוגה ב-UI."),
+      }),
+      execute: async (input) => {
+        if (!suppliers.some((s) => s.id === input.supplierId)) {
+          return {
+            ok: false as const,
+            error: `supplierId לא נמצא בקונטקסט (${input.supplierId}).`,
+          }
+        }
+        // Placeholder — לא יוצר רשומה ב-DB עד Step 2.
+        return {
+          ok: false as const,
+          notImplemented: true as const,
+          message:
+            "קליטת קטלוגי ספקים תיתמך ב-Phase E Step 2. השלד של מסד הנתונים " +
+            "מוכן (erp_supplier_catalog_imports + erp_supplier_catalog_import_lines), " +
+            "אבל ה-extraction pipeline טרם נבנה. אנא הוסף את המחירים ידנית בינתיים.",
+          inputEcho: {
+            supplierId: input.supplierId,
+            originalFilename: input.originalFilename,
+          },
         }
       },
     }),

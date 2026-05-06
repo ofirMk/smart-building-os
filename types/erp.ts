@@ -847,3 +847,86 @@ export interface ErpAiBomRequest {
   updatedAt: string
 }
 
+// ============================================================================
+// Phase E — Supplier Catalog Ingestion
+// (DB schema: 20260813100000_supplier_catalog_imports_schema.sql)
+// ============================================================================
+
+export const ERP_SUPPLIER_CATALOG_IMPORT_STATUSES = [
+  "PENDING",
+  "EXTRACTING",
+  "READY",
+  "IMPORTED",
+  "FAILED",
+  "CANCELLED",
+] as const
+export type ErpSupplierCatalogImportStatus =
+  (typeof ERP_SUPPLIER_CATALOG_IMPORT_STATUSES)[number]
+
+export const ERP_SUPPLIER_CATALOG_LINE_STATUSES = [
+  "PENDING",
+  "CONFIRMED",
+  "EDITED",
+  "REJECTED",
+  "IMPORTED",
+] as const
+export type ErpSupplierCatalogLineStatus =
+  (typeof ERP_SUPPLIER_CATALOG_LINE_STATUSES)[number]
+
+export const ERP_SUPPLIER_CATALOG_FILE_FORMATS = [
+  "pdf",
+  "xlsx",
+  "csv",
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+] as const
+export type ErpSupplierCatalogFileFormat =
+  (typeof ERP_SUPPLIER_CATALOG_FILE_FORMATS)[number]
+
+/** Header של ייבוא קטלוג ספק (PDF/Excel). השורות שחולצו ב-`ErpSupplierCatalogImportLine`. */
+export interface ErpSupplierCatalogImport {
+  id: string
+  companyId: string
+  supplierId: string
+  fileUrl: string
+  originalFilename: string
+  fileFormat: ErpSupplierCatalogFileFormat
+  fileSizeBytes: number
+  status: ErpSupplierCatalogImportStatus
+  linesCount: number
+  /** ממוצע confidence_score של כל השורות שחולצו (0..1). */
+  confidenceAvg: number | null
+  importedBy: string | null
+  metadata: Record<string, unknown>
+  errorMessage: string | null
+  extractedAt: string | null
+  importedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** שורה שחולצה מקטלוג ספק — ממתינה לאישור איש רכש. */
+export interface ErpSupplierCatalogImportLine {
+  id: string
+  companyId: string
+  importId: string
+  lineNumber: number
+  sku: string | null
+  description: string
+  uom: string
+  price: number
+  currency: string
+  /** 0..1 — ה-UI מציג שורות עם <0.85 בצבע אזהרה. */
+  confidenceScore: number
+  status: ErpSupplierCatalogLineStatus
+  matchedItemId: string | null
+  reviewerNotes: string | null
+  reviewedBy: string | null
+  reviewedAt: string | null
+  rawExtracted: Record<string, unknown>
+  createdAt: string
+  updatedAt: string
+}
+
