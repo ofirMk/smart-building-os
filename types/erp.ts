@@ -770,6 +770,55 @@ export interface ErpEngineeringRuleViolation {
   createdAt: string
 }
 
+// =============================================================================
+// Phase B — Deterministic Engine RPC contracts
+// Migration: 20260809100000_ai_procurement_deterministic_engine.sql
+// =============================================================================
+
+/** שורת BOM פתורה ע"י `erp_resolve_assembly_bom`. */
+export interface ErpResolvedBomLine {
+  itemId: string
+  itemNumber: string
+  itemDescription: string
+  /** UoM של הפריט (לא של ה-assembly). */
+  itemUom: string
+  role: ErpAssemblyLineRole
+  quantityPerBase: number
+  /** quantityPerBase × requestedQty לפני עיגול. */
+  rawQuantity: number
+  /** הכמות הסופית אחרי CEIL/ROUND לפי UoM של ה-assembly. */
+  resolvedQuantity: number
+  isOptional: boolean
+}
+
+/** הפרת חוק הנדסי שמוחזרת מ-`erp_validate_engineering_rules`. */
+export interface ErpEngineeringViolation {
+  ruleId: string
+  ruleCode: string
+  ruleName: string
+  ruleType: ErpEngineeringRuleType
+  violationAction: ErpEngineeringRuleAction
+  actualValue: number
+  expectedValue: number
+  deltaPct: number
+  tolerancePct: number
+  message: string
+}
+
+/** התוצאה של `erp_generate_draft_po_from_bom` (Phase B orchestrator). */
+export interface ErpGenerateDraftPoResult {
+  purchaseOrderId: string
+  poNumber: string
+  /** 'DRAFT' אם אין violations חמורות, 'PENDING_APPROVAL' אם יש ESCALATE. */
+  status: string
+  totalAmountNet: number
+  /** ESCALATE/WARN בלבד מגיעים לכאן; BLOCK זורק exception (HTTP 409). */
+  violations: ErpEngineeringViolation[]
+  /** מזהה רשומת ה-audit ב-erp_ai_bom_requests. */
+  bomRequestId: string
+  linesCount: number
+}
+
 /** Audit log של בקשת AI לתכנון BOM. Replay מלא דרך השדות jsonb. */
 export interface ErpAiBomRequest {
   id: string

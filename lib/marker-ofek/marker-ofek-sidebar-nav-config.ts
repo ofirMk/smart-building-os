@@ -5,6 +5,7 @@ import {
   ArrowLeftRight,
   Building2,
   ClipboardList,
+  Cog,
   Database,
   FileEdit,
   FileSearch,
@@ -181,6 +182,13 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         title: "תיבת אישורים",
         href: "/marker-ofek/procurement/approvals",
         icon: Inbox,
+      },
+      {
+        // Phase B (זמני) — טופס דטרמיניסטי לפיצוץ Assembly → DRAFT PO.
+        // ב-Phase C ימוזג עם מנוע ה-LLM להפעלה דרך פרומפט חופשי.
+        title: "הנדסת רכש (בטא)",
+        href: "/marker-ofek/procurement/autonomous-po/new",
+        icon: Cog,
       },
       {
         title: "קבלת סחורה",
