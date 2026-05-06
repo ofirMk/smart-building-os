@@ -318,6 +318,14 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
     defaultOpen: true,
     items: [
       {
+        // Phase 8.3 Step 2 — 3-Way Match Reconciliation Dashboard.
+        // ממוקם ראשון בקבוצת כספים על פי בקשת מנהל ה-AP — מעל "תיבת אישורים"
+        // (שיושבת ב-procurement-chain) כקיצור דרך מקבוצה זו.
+        title: "התאמת חשבוניות ספק",
+        href: "/marker-ofek/finance/reconciliation",
+        icon: Scale,
+      },
+      {
         title: "לקוחות",
         href: "/marker-ofek/finance/customers",
         icon: Users,
