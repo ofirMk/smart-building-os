@@ -1,34 +1,38 @@
 "use client"
 
 /**
- * Phase B — Engineering BOM → DRAFT PO (Manual Trigger UI)
+ * Phase C — AI Copilot for Autonomous Procurement
  *
- * עמוד טופס דטרמיניסטי (ללא AI) לאימות שכבת הפיצוץ ההנדסי.
- * המשתמש בוחר פרויקט / מיקום / Assembly / כמות, ומפעיל את ה-RPC
- * `erp_generate_draft_po_from_bom` (דרך `POST /api/procurement/autonomous-po`).
+ * עמוד זה מכיל שני tabs:
+ *   1) **מהנדס רכש AI** (ברירת מחדל) — צ'אט בעברית עם LLM שמפעיל את ה-RPC
+ *      הדטרמיניסטי `erp_generate_draft_po_from_bom` כ-tool.
+ *   2) **טופס ידני** (Phase B baseline) — הטופס הדטרמיניסטי לבדיקה ישירה
+ *      של המנוע, ללא LLM.
  *
- * זרימה:
- *   1) GET `/api/procurement/autonomous-po`  → projects + assemblies + locations
- *   2) משתמש מזין פרמטרים → POST.
- *   3) 201 → toast ירוק + ניווט אל `/marker-ofek/procurement/orders/{id}`.
- *   4) 409 (engineering_block) → toast אדום עם פירוט החריגות.
- *   5) 4xx/500 אחר → toast אדום.
+ * שני המסלולים קוראים לאותו RPC. ה-LLM הוא "שפתיים ואוזניים", המתמטיקה
+ * רצה ב-DB. אין דרך ל-LLM להמציא מחיר/כמות/יחס.
  *
- * ב-Phase C/D, אותו UI יקבל בנוסף תיבת prompt חופשי שתפעיל את LLM
- * Intent Parser, ש-בתורו יקרא לאותו RPC כ-tool. כלומר זה ה-baseline
- * דטרמיניסטי שעליו ה-AI ייבנה.
+ * Mic button — Web Speech API (he-IL). זמין רק בדפדפנים מבוססי Chromium/Edge.
  */
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport, type UIMessage } from "ai"
 import {
   AlertTriangle,
   ArrowRight,
+  Bot,
   CheckCircle2,
   Cog,
   Layers,
   Loader2,
   MapPin,
+  Mic,
+  MicOff,
+  SendHorizontal,
+  Sparkles,
+  User2,
   Wrench,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -53,11 +57,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { masterDataFetch } from "@/lib/erp/master-data-browser"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
+import { masterDataFetch } from "@/lib/erp/master-data-browser"
+import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
+import { cn } from "@/lib/utils"
 
 // ============================================================================
-// Types — מתאימים ל-DTO המוחזר מ-`GET /api/procurement/autonomous-po`
+// Shared types — match GET /api/procurement/autonomous-po DTOs
 // ============================================================================
 
 type ProjectOption = {
@@ -66,7 +74,6 @@ type ProjectOption = {
   name: string
   status: string
 }
-
 type AssemblyOption = {
   id: string
   code: string
@@ -74,7 +81,6 @@ type AssemblyOption = {
   category: string
   unitOfMeasure: string
 }
-
 type LocationOption = {
   id: string
   projectId: string
@@ -84,81 +90,28 @@ type LocationOption = {
   lengthM: number | null
   areaSqm: number | null
 }
-
 type OptionsDto = {
   projects: ProjectOption[]
   assemblies: AssemblyOption[]
   locations: LocationOption[]
 }
 
-type ViolationDto = {
-  rule_code: string
-  rule_name?: string
-  rule_type: string
-  violation_action: "WARN" | "BLOCK" | "ESCALATE"
-  actual_value: number
-  expected_value: number
-  delta_pct: number
-  tolerance_pct: number
-  message: string
-}
-
-type GenerateSuccessDto = {
-  purchaseOrderId: string
-  poNumber: string
-  status: string
-  totalAmountNet: number
-  violations: ViolationDto[]
-  bomRequestId: string
-  linesCount: number
-}
-
-type GenerateErrorBlocked = {
-  error: "engineering_block"
-  message: string
-  violations: ViolationDto[]
-  hint: string | null
-}
-
 const NONE_VALUE = "__none__"
-
-const VIOLATION_ACTION_LABELS: Record<ViolationDto["violation_action"], string> = {
-  WARN: "אזהרה",
-  BLOCK: "חוסם",
-  ESCALATE: "מצריך אישור",
-}
-
-const VIOLATION_ACTION_VARIANT: Record<
-  ViolationDto["violation_action"],
-  "default" | "secondary" | "destructive"
-> = {
-  WARN: "secondary",
-  BLOCK: "destructive",
-  ESCALATE: "default",
-}
+const SPEECH_LANG = "he-IL"
 
 // ============================================================================
-// Page
+// Page (root)
 // ============================================================================
 
 export default function AutonomousPoNewPage() {
-  const router = useRouter()
   const [activeCompanyId, setActiveCompanyId] = React.useState<string | null>(null)
   const [options, setOptions] = React.useState<OptionsDto | null>(null)
   const [loadingOptions, setLoadingOptions] = React.useState(true)
-  const [submitting, setSubmitting] = React.useState(false)
 
-  const [projectId, setProjectId] = React.useState<string>("")
-  const [locationId, setLocationId] = React.useState<string>(NONE_VALUE)
-  const [assemblyId, setAssemblyId] = React.useState<string>("")
-  const [requestedQty, setRequestedQty] = React.useState<string>("100")
-
-  // Phase A — קריאה אחידה של החברה הפעילה מהקוקי (לתצוגה בלבד)
   React.useEffect(() => {
     setActiveCompanyId(readActiveCompanyIdFromCookie())
   }, [])
 
-  // טען את 3 הקולקציות בקריאה אחת
   React.useEffect(() => {
     let cancelled = false
     setLoadingOptions(true)
@@ -166,9 +119,6 @@ export default function AutonomousPoNewPage() {
       .then((data) => {
         if (cancelled) return
         setOptions(data)
-        // אם יש ערכי seed יחידים, נבחר אותם אוטומטית — UX חלק.
-        if (data.projects.length === 1) setProjectId(data.projects[0].id)
-        if (data.assemblies.length === 1) setAssemblyId(data.assemblies[0].id)
       })
       .catch((err: Error) => {
         toast.error(`טעינת אפשרויות נכשלה: ${err.message}`)
@@ -181,13 +131,490 @@ export default function AutonomousPoNewPage() {
     }
   }, [])
 
-  // מסנן locations לפי הפרויקט הנבחר
-  const filteredLocations = React.useMemo<LocationOption[]>(() => {
-    if (!options || !projectId) return []
-    return options.locations.filter((l) => l.projectId === projectId)
-  }, [options, projectId])
+  return (
+    <div className="container mx-auto max-w-4xl py-8">
+      <div className="mb-6 flex items-start gap-3">
+        <div className="rounded-xl bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 p-3 text-violet-600 dark:text-violet-400">
+          <Bot className="h-7 w-7" />
+        </div>
+        <div className="flex-1">
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+            מהנדס רכש AI
+            <Badge variant="secondary" className="text-xs">
+              Phase C
+            </Badge>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            צ'אט חופשי בעברית.{" "}
+            <span className="font-medium">ה-LLM הוא רק מתורגמן</span> — כל
+            החישובים, חוקי התקן והמחירים רצים ב-RPC הדטרמיניסטי שבנינו ב-Phase B.
+          </p>
+        </div>
+      </div>
 
-  // אם המיקום הנבחר לא שייך לפרויקט החדש → איפוס
+      {activeCompanyId ? (
+        <p className="mb-4 text-xs text-muted-foreground">
+          חברה פעילה: <code>{activeCompanyId}</code>
+        </p>
+      ) : null}
+
+      <Tabs defaultValue="ai" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="ai" className="gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" /> Copilot AI
+          </TabsTrigger>
+          <TabsTrigger value="form" className="gap-1.5">
+            <Wrench className="h-3.5 w-3.5" /> טופס ידני
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="ai" className="mt-4">
+          <AiCopilotPane />
+        </TabsContent>
+
+        <TabsContent value="form" className="mt-4">
+          <ManualFormPane options={options} loading={loadingOptions} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+// ============================================================================
+// AI Copilot tab
+// ============================================================================
+
+const COPILOT_INTRO_MESSAGE: UIMessage = {
+  id: "copilot-intro",
+  role: "assistant",
+  parts: [
+    {
+      type: "text",
+      text:
+        "שלום, אני מהנדס הרכש האוטונומי 🤖\n\n" +
+        "ספרו לי בעברית חופשית מה אתם רוצים להזמין. " +
+        'לדוגמה: "צריך 100 מטר תעלת חשמל למפלס -1 בגינדי סביון".\n\n' +
+        "אני אאתר את הפרויקט, המיקום וה-Assembly המתאימים, " +
+        "ואפעיל את המנוע ההנדסי הדטרמיניסטי שייצר את הזמנת הרכש.",
+    },
+  ],
+}
+
+function AiCopilotPane() {
+  const transport = React.useMemo(() => {
+    return new DefaultChatTransport({
+      api: "/api/procurement/autonomous-po/chat",
+      // x-active-company-id מועבר כ-cookie אוטומטית; ה-helper של חברת
+      // master-data קורא ממנו. ה-API route מחזיר 401 אם חסר.
+      headers: () => {
+        const cid = readActiveCompanyIdFromCookie()
+        const out: Record<string, string> = {}
+        if (cid) {
+          out["x-company-id"] = cid
+          out["x-active-company-id"] = cid
+        }
+        return out
+      },
+    })
+  }, [])
+
+  const { messages, sendMessage, status, error, clearError, setMessages, stop } =
+    useChat({
+      transport,
+      messages: [COPILOT_INTRO_MESSAGE],
+    })
+
+  const busy = status === "submitted" || status === "streaming"
+
+  const [input, setInput] = React.useState("")
+  const [listening, setListening] = React.useState(false)
+  const [speechSupported, setSpeechSupported] = React.useState(false)
+  const recognitionRef = React.useRef<SpeechRecognition | null>(null)
+  const speechPrefixRef = React.useRef("")
+  const speechFinalsRef = React.useRef("")
+  const scrollRef = React.useRef<HTMLDivElement | null>(null)
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null)
+
+  React.useEffect(() => {
+    setSpeechSupported(getSpeechRecognitionConstructor() !== null)
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      try {
+        recognitionRef.current?.abort()
+      } catch {
+        /* ignore */
+      }
+      recognitionRef.current = null
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (!error) return
+    toast.error(error.message ?? "שגיאת צ'אט")
+  }, [error])
+
+  React.useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+  }, [messages, status])
+
+  function stopSpeechRecognition() {
+    try {
+      recognitionRef.current?.stop()
+    } catch {
+      /* ignore */
+    }
+    recognitionRef.current = null
+    setListening(false)
+  }
+
+  function startSpeechRecognition() {
+    const Ctor = getSpeechRecognitionConstructor()
+    if (!Ctor || busy) return
+
+    if (listening) {
+      stopSpeechRecognition()
+      return
+    }
+
+    speechPrefixRef.current = input
+    speechFinalsRef.current = ""
+
+    const recognition = new Ctor()
+    recognition.lang = SPEECH_LANG
+    recognition.continuous = true
+    recognition.interimResults = true
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = ""
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const r = event.results[i]
+        const piece = r[0]?.transcript ?? ""
+        if (r.isFinal) {
+          speechFinalsRef.current += piece
+        } else {
+          interim += piece
+        }
+      }
+      const prefix = speechPrefixRef.current
+      const finals = speechFinalsRef.current
+      setInput(prefix + finals + interim)
+    }
+
+    recognition.onerror = () => {
+      recognitionRef.current = null
+      setListening(false)
+    }
+
+    recognition.onend = () => {
+      recognitionRef.current = null
+      setListening(false)
+    }
+
+    try {
+      recognition.start()
+      recognitionRef.current = recognition
+      setListening(true)
+    } catch {
+      recognitionRef.current = null
+      setListening(false)
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const text = input.trim()
+    if (!text || busy) return
+    if (listening) stopSpeechRecognition()
+    void sendMessage({ text })
+    setInput("")
+    textareaRef.current?.focus()
+  }
+
+  function clearChat() {
+    stop()
+    clearError()
+    setMessages([COPILOT_INTRO_MESSAGE])
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter שולח, Shift+Enter שורה חדשה
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e as unknown as React.FormEvent)
+    }
+  }
+
+  return (
+    <Card className="flex h-[640px] flex-col overflow-hidden">
+      <CardHeader className="border-b py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-violet-500" />
+              שיחה עם מהנדס הרכש האוטונומי
+            </CardTitle>
+            <CardDescription className="text-xs">
+              המודל יבחר את ה-IDs הנכונים מהקונטקסט וייצר הזמנה דרך
+              <code className="mx-1">erp_generate_draft_po_from_bom</code>
+            </CardDescription>
+          </div>
+          <Button variant="ghost" size="sm" onClick={clearChat} disabled={busy}>
+            ניקוי שיחה
+          </Button>
+        </div>
+      </CardHeader>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <ChatMessageBubble key={message.id} message={message} />
+          ))}
+          {busy ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              חושב ופועל...
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <CardFooter className="border-t bg-muted/30 p-3">
+        <form onSubmit={handleSubmit} className="w-full space-y-2">
+          <div className="flex items-end gap-2">
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={busy}
+              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון"
+              className="min-h-[60px] flex-1 resize-none"
+              dir="auto"
+            />
+            <div className="flex flex-col gap-1.5">
+              {speechSupported ? (
+                <Button
+                  type="button"
+                  variant={listening ? "destructive" : "outline"}
+                  size="icon"
+                  onClick={startSpeechRecognition}
+                  disabled={busy}
+                  aria-pressed={listening}
+                  aria-label={listening ? "עצירת הקלטה" : "הקלטה קולית בעברית"}
+                  className={cn(listening && "animate-pulse")}
+                  title={listening ? "עצירת הקלטה" : "הקלטה קולית (he-IL)"}
+                >
+                  {listening ? (
+                    <MicOff className="h-4 w-4" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+              ) : null}
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!input.trim() || busy}
+                aria-label="שליחה"
+              >
+                <SendHorizontal className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          {!speechSupported ? (
+            <p className="text-[11px] text-muted-foreground">
+              הקלטה קולית בעברית זמינה ב-Chrome/Edge בלבד.
+            </p>
+          ) : null}
+        </form>
+      </CardFooter>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Chat message bubble — renders text parts with inline markdown links
+// ============================================================================
+
+const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\(([^)]+)\)/g
+
+/** ממיר רק `[text](url)` של markdown ל-anchor בטוח. שאר התוכן נשאר כטקסט. */
+function renderTextWithLinks(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = []
+  let lastIndex = 0
+  let key = 0
+  const regex = new RegExp(MARKDOWN_LINK_REGEX)
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index))
+    }
+    const label = match[1]
+    const href = match[2]
+    const isInternal = href.startsWith("/")
+    nodes.push(
+      <a
+        key={`link-${key++}`}
+        href={href}
+        className="font-medium text-violet-600 underline underline-offset-2 hover:text-violet-700 dark:text-violet-400"
+        target={isInternal ? undefined : "_blank"}
+        rel={isInternal ? undefined : "noopener noreferrer"}
+      >
+        {label}
+      </a>
+    )
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex))
+  }
+  return nodes
+}
+
+function ChatMessageBubble({ message }: { message: UIMessage }) {
+  const isUser = message.role === "user"
+  const isAssistant = message.role === "assistant"
+
+  // ה-AI SDK v5 משתמש ב-parts: text/tool-<name>/step-start/...
+  const textParts: string[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toolCalls: Array<{ name: string; state: string; output?: any; input?: any }> = []
+  for (const part of message.parts ?? []) {
+    if (part.type === "text" && typeof part.text === "string") {
+      textParts.push(part.text)
+    } else if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = part as any
+      toolCalls.push({
+        name: part.type.replace(/^tool-/, ""),
+        state: p.state ?? "unknown",
+        output: p.output,
+        input: p.input,
+      })
+    }
+  }
+  const fullText = textParts.join("")
+
+  return (
+    <div className={cn("flex gap-2", isUser ? "justify-end" : "justify-start")}>
+      {isAssistant ? (
+        <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300">
+          <Bot className="h-3.5 w-3.5" />
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          "max-w-[80%] space-y-1.5 rounded-lg px-3 py-2 text-sm",
+          isUser
+            ? "bg-violet-600 text-white"
+            : "border bg-card text-card-foreground"
+        )}
+        dir="auto"
+      >
+        {fullText ? (
+          <p className="whitespace-pre-wrap leading-relaxed">
+            {renderTextWithLinks(fullText)}
+          </p>
+        ) : null}
+
+        {toolCalls.length > 0 ? (
+          <div className="space-y-1 pt-1">
+            {toolCalls.map((tc, idx) => (
+              <ToolCallChip key={idx} toolCall={tc} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {isUser ? (
+        <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-700 text-white">
+          <User2 className="h-3.5 w-3.5" />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function ToolCallChip({
+  toolCall,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  toolCall: { name: string; state: string; output?: any; input?: any }
+}) {
+  const isPending =
+    toolCall.state === "input-streaming" ||
+    toolCall.state === "input-available" ||
+    toolCall.state === "calling"
+  const isDone =
+    toolCall.state === "output-available" || toolCall.state === "result"
+  const ok = toolCall.output?.ok === true
+  const blocked = toolCall.output?.blocked === true
+
+  const variant: "default" | "secondary" | "destructive" = blocked
+    ? "destructive"
+    : ok
+      ? "default"
+      : "secondary"
+
+  return (
+    <Badge variant={variant} className="gap-1 font-mono text-[10px]">
+      {isPending ? (
+        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+      ) : isDone && ok ? (
+        <CheckCircle2 className="h-2.5 w-2.5" />
+      ) : isDone && blocked ? (
+        <AlertTriangle className="h-2.5 w-2.5" />
+      ) : null}
+      {toolCall.name}
+      {isDone && ok && toolCall.output?.poNumber ? (
+        <span className="font-normal opacity-90">
+          {" "}
+          · {toolCall.output.poNumber}
+        </span>
+      ) : null}
+    </Badge>
+  )
+}
+
+// ============================================================================
+// Manual Form tab (Phase B baseline)
+// ============================================================================
+
+function ManualFormPane({
+  options,
+  loading,
+}: {
+  options: OptionsDto | null
+  loading: boolean
+}) {
+  const router = useRouter()
+  const [submitting, setSubmitting] = React.useState(false)
+  const [projectId, setProjectId] = React.useState("")
+  const [locationId, setLocationId] = React.useState(NONE_VALUE)
+  const [assemblyId, setAssemblyId] = React.useState("")
+  const [requestedQty, setRequestedQty] = React.useState("100")
+
+  React.useEffect(() => {
+    if (!options) return
+    if (options.projects.length === 1 && !projectId) {
+      setProjectId(options.projects[0].id)
+    }
+    if (options.assemblies.length === 1 && !assemblyId) {
+      setAssemblyId(options.assemblies[0].id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options])
+
+  const filteredLocations = React.useMemo(
+    () => (options && projectId ? options.locations.filter((l) => l.projectId === projectId) : []),
+    [options, projectId]
+  )
+
   React.useEffect(() => {
     if (locationId === NONE_VALUE) return
     if (!filteredLocations.some((l) => l.id === locationId)) {
@@ -201,293 +628,194 @@ export default function AutonomousPoNewPage() {
   )
 
   const canSubmit =
-    !!projectId &&
-    !!assemblyId &&
-    !!requestedQty &&
-    Number(requestedQty) > 0 &&
-    !submitting
+    !!projectId && !!assemblyId && !!requestedQty && Number(requestedQty) > 0 && !submitting
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!canSubmit) return
-
     setSubmitting(true)
     try {
-      const payload = {
-        projectId,
-        assemblyId,
-        requestedQty: Number(requestedQty),
-        locationId: locationId === NONE_VALUE ? null : locationId,
-      }
-      const activeCompanyHeader = readActiveCompanyIdFromCookie()
+      const cid = readActiveCompanyIdFromCookie()
       const res = await fetch("/api/procurement/autonomous-po", {
         method: "POST",
         credentials: "same-origin",
         cache: "no-store",
         headers: {
           "content-type": "application/json",
-          ...(activeCompanyHeader
-            ? {
-                "x-company-id": activeCompanyHeader,
-                "x-active-company-id": activeCompanyHeader,
-              }
-            : {}),
+          ...(cid ? { "x-company-id": cid, "x-active-company-id": cid } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          projectId,
+          assemblyId,
+          requestedQty: Number(requestedQty),
+          locationId: locationId === NONE_VALUE ? null : locationId,
+        }),
       })
-
       if (res.status === 201) {
-        const json = (await res.json()) as { data: GenerateSuccessDto }
+        const json = await res.json()
         const data = json.data
-        const escalateCount = data.violations.filter(
-          (v) => v.violation_action === "ESCALATE"
-        ).length
-        const warnCount = data.violations.filter(
-          (v) => v.violation_action === "WARN"
-        ).length
-
         toast.success(
-          `נוצרה הזמנה ${data.poNumber} בסטטוס ${data.status} (${data.linesCount} שורות, נטו ${data.totalAmountNet.toLocaleString(
-            "he-IL"
-          )} ₪)` +
-            (escalateCount + warnCount > 0
-              ? ` — ${escalateCount} אישורים נדרשים, ${warnCount} אזהרות`
-              : "")
+          `נוצרה ${data.poNumber} בסטטוס ${data.status} (${data.linesCount} שורות)`
         )
         router.push(`/marker-ofek/procurement/orders/${data.purchaseOrderId}`)
         return
       }
-
       if (res.status === 409) {
-        const json = (await res.json()) as GenerateErrorBlocked
+        const json = await res.json()
         const lines = (json.violations ?? [])
-          .map(
-            (v) => `• ${v.rule_code} (${v.rule_type}): ${v.message ?? "חריגה"}`
-          )
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((v: any) => `• ${v.rule_code} (${v.rule_type}): ${v.message ?? ""}`)
           .join("\n")
-        toast.error(`חריגה הנדסית חוסמת — ${lines || json.message}`, {
-          duration: 12000,
-        })
+        toast.error(`חריגה הנדסית — ${lines || json.message}`, { duration: 12000 })
         return
       }
-
-      const json = (await res.json().catch(() => null)) as { error?: string } | null
+      const json = await res.json().catch(() => null)
       toast.error(json?.error ?? `שגיאה ${res.status}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "שגיאה לא צפויה")
+      toast.error(err instanceof Error ? err.message : "שגיאה")
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-8">
-      <div className="mb-6 flex items-start gap-3">
-        <div className="rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 p-3 text-amber-600 dark:text-amber-400">
-          <Cog className="h-7 w-7" />
-        </div>
-        <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            הנדסת רכש (בטא)
-            <Badge variant="secondary" className="text-xs">
-              Phase B
-            </Badge>
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            פיצוץ עץ מוצר → ולידציה הנדסית → DRAFT PO.{" "}
-            <span className="font-medium">דטרמיניסטי, ללא AI.</span> כל החישובים
-            רצים ב-RPC <code className="text-xs">erp_generate_draft_po_from_bom</code>.
-          </p>
-        </div>
-      </div>
-
-      {activeCompanyId ? (
-        <p className="mb-4 text-xs text-muted-foreground">
-          חברה פעילה: <code>{activeCompanyId}</code>
-        </p>
-      ) : null}
-
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5" /> פרמטרי הפעלה
-            </CardTitle>
-            <CardDescription>
-              בחרי פרויקט, מיקום, Assembly וכמות בסיס. המערכת תפצוץ את עץ המוצר,
-              תפעיל את חוקי התקן ההנדסיים, ותיצור הזמנת רכש בסטטוס המתאים
-              (DRAFT אם אין חריגות, PENDING_APPROVAL אם נדרש אישור).
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {loadingOptions ? (
-              <div className="flex items-center gap-2 py-8 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                טוען אפשרויות...
+    <form onSubmit={handleSubmit}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Cog className="h-4 w-4" /> טופס דטרמיניסטי (Phase B)
+          </CardTitle>
+          <CardDescription>
+            הפעלה ישירה של ה-RPC ללא LLM. שימושי ל-debugging וכ-fallback.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {loading ? (
+            <div className="flex items-center gap-2 py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> טוען אפשרויות...
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="project" className="font-medium">
+                  פרויקט <span className="text-red-500">*</span>
+                </Label>
+                <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "")}>
+                  <SelectTrigger id="project">
+                    <SelectValue placeholder="בחרי פרויקט..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options?.projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {p.projectNumber}
+                        </span>{" "}
+                        — {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="location"
+                  className="flex items-center gap-1.5 font-medium"
+                >
+                  <MapPin className="h-3.5 w-3.5" /> מיקום (אופציונלי)
+                </Label>
+                <Select
+                  value={locationId}
+                  onValueChange={(v) => setLocationId(v ?? NONE_VALUE)}
+                  disabled={!projectId}
+                >
+                  <SelectTrigger id="location">
+                    <SelectValue placeholder="בחרי מיקום..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE_VALUE}>— ללא מיקום ספציפי —</SelectItem>
+                    {filteredLocations.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {l.code}
+                        </span>{" "}
+                        — {l.name}
+                        {l.lengthM !== null ? (
+                          <span className="ms-2 text-xs text-muted-foreground">
+                            ({l.lengthM} מ׳)
+                          </span>
+                        ) : null}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="assembly"
+                  className="flex items-center gap-1.5 font-medium"
+                >
+                  <Layers className="h-3.5 w-3.5" /> Assembly{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select value={assemblyId} onValueChange={(v) => setAssemblyId(v ?? "")}>
+                  <SelectTrigger id="assembly">
+                    <SelectValue placeholder="בחרי קיט..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options?.assemblies.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {a.code}
+                        </span>{" "}
+                        — {a.name} ({a.unitOfMeasure})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="qty" className="font-medium">
+                  כמות בסיס{" "}
+                  {selectedAssembly ? (
+                    <span className="font-normal text-muted-foreground">
+                      (ביחידות {selectedAssembly.unitOfMeasure})
+                    </span>
+                  ) : null}{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="qty"
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={requestedQty}
+                  onChange={(e) => setRequestedQty(e.target.value)}
+                  placeholder="100"
+                />
+              </div>
+
+              <Separator />
+            </>
+          )}
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button type="submit" disabled={!canSubmit || loading}>
+            {submitting ? (
+              <>
+                <Loader2 className="me-2 h-4 w-4 animate-spin" /> מחולל...
+              </>
             ) : (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="project" className="font-medium">
-                    פרויקט <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={projectId}
-                    onValueChange={(v) => setProjectId(v ?? "")}
-                  >
-                    <SelectTrigger id="project">
-                      <SelectValue placeholder="בחרי פרויקט..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options?.projects.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {p.projectNumber}
-                          </span>{" "}
-                          — {p.name}{" "}
-                          <span className="text-xs text-muted-foreground">
-                            ({p.status})
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location" className="flex items-center gap-1.5 font-medium">
-                    <MapPin className="h-3.5 w-3.5" />
-                    מיקום (אופציונלי, נדרש לחוקי PER_LENGTH/PER_AREA)
-                  </Label>
-                  <Select
-                    value={locationId}
-                    onValueChange={(v) => setLocationId(v ?? NONE_VALUE)}
-                    disabled={!projectId}
-                  >
-                    <SelectTrigger id="location">
-                      <SelectValue placeholder="בחרי מיקום..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NONE_VALUE}>— ללא מיקום ספציפי —</SelectItem>
-                      {filteredLocations.map((l) => (
-                        <SelectItem key={l.id} value={l.id}>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {l.code}
-                          </span>{" "}
-                          — {l.name}
-                          {l.lengthM !== null ? (
-                            <span className="ms-2 text-xs text-muted-foreground">
-                              ({l.lengthM} מ׳
-                              {l.areaSqm !== null ? `, ${l.areaSqm} מ"ר` : ""})
-                            </span>
-                          ) : null}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {projectId && filteredLocations.length === 0 ? (
-                    <p className="text-xs text-amber-600">
-                      אין מיקומים מוגדרים בפרויקט זה.
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="assembly" className="flex items-center gap-1.5 font-medium">
-                    <Layers className="h-3.5 w-3.5" />
-                    Assembly (עץ מוצר) <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={assemblyId}
-                    onValueChange={(v) => setAssemblyId(v ?? "")}
-                  >
-                    <SelectTrigger id="assembly">
-                      <SelectValue placeholder="בחרי קיט..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options?.assemblies.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {a.code}
-                          </span>{" "}
-                          — {a.name}{" "}
-                          <span className="text-xs text-muted-foreground">
-                            ({a.unitOfMeasure})
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="qty" className="font-medium">
-                    כמות בסיס{" "}
-                    {selectedAssembly ? (
-                      <span className="font-normal text-muted-foreground">
-                        (ביחידות {selectedAssembly.unitOfMeasure})
-                      </span>
-                    ) : null}{" "}
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="qty"
-                    type="number"
-                    min={0.01}
-                    step={0.01}
-                    value={requestedQty}
-                    onChange={(e) => setRequestedQty(e.target.value)}
-                    placeholder="100"
-                  />
-                  {selectedAssembly ? (
-                    <p className="text-xs text-muted-foreground">
-                      כל יחידת בסיס תפוצץ לרכיבים לפי ההגדרות ב-
-                      <code>erp_md_assembly_lines</code>; כמויות יעוגלו לפי UoM
-                      (CEIL ל-UNIT/KG, ROUND ל-METER/SQM).
-                    </p>
-                  ) : null}
-                </div>
-
-                <Separator />
-
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
-                  <p className="flex items-center gap-1.5 font-medium text-amber-800 dark:text-amber-200">
-                    <AlertTriangle className="h-4 w-4" />
-                    Phase B — ללא AI
-                  </p>
-                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                    מנוע ה-LLM ושכבת ה-Intent Parser ייכנסו ב-Phase C. כאן
-                    מאמתים שהמתמטיקה והוולידציה ההנדסית עובדות 100% דטרמיניסטית.
-                    BLOCK violation יחזיר 409 ולא ייווצר PO.
-                  </p>
-                </div>
+                <CheckCircle2 className="me-2 h-4 w-4" /> חולל הזמנה הנדסית
+                <ArrowRight className="ms-2 h-4 w-4" />
               </>
             )}
-          </CardContent>
-          <CardFooter className="justify-between">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => router.back()}
-              disabled={submitting}
-            >
-              ביטול
-            </Button>
-            <Button type="submit" disabled={!canSubmit || loadingOptions} size="lg">
-              {submitting ? (
-                <>
-                  <Loader2 className="me-2 h-4 w-4 animate-spin" /> מחולל...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="me-2 h-4 w-4" /> חולל הזמנה הנדסית
-                  <ArrowRight className="ms-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
-    </div>
+          </Button>
+        </CardFooter>
+      </Card>
+    </form>
   )
 }

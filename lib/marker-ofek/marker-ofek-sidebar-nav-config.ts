@@ -3,9 +3,9 @@ import {
   AlertTriangle,
   Archive,
   ArrowLeftRight,
+  Bot,
   Building2,
   ClipboardList,
-  Cog,
   Database,
   FileEdit,
   FileSearch,
@@ -184,11 +184,11 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: Inbox,
       },
       {
-        // Phase B (זמני) — טופס דטרמיניסטי לפיצוץ Assembly → DRAFT PO.
-        // ב-Phase C ימוזג עם מנוע ה-LLM להפעלה דרך פרומפט חופשי.
-        title: "הנדסת רכש (בטא)",
+        // Phase C — Copilot AI עם tool-calling לעטיפת ה-RPC הדטרמיניסטי
+        // מ-Phase B. כולל גם טאב טופס ידני כ-fallback ל-debugging.
+        title: "מהנדס רכש AI 🤖",
         href: "/marker-ofek/procurement/autonomous-po/new",
-        icon: Cog,
+        icon: Bot,
       },
       {
         title: "קבלת סחורה",
