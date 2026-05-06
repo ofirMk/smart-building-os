@@ -69,6 +69,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
+import { pdfFileToPngFiles } from "@/lib/pdf-to-images"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 
@@ -127,8 +128,10 @@ const SUPPORTED_IMAGE_MIME_TYPES = new Set([
   "image/gif",
 ])
 const ATTACHMENT_TYPE_ERROR_HE =
-  "פורמט לא נתמך. אנא העלה PNG / JPG / WebP. PDF ו-HEIC לא נקראים ע\"י המודל — " +
-  "שמור את השרטוט כתמונה (Export → PNG) ונסה שוב."
+  "פורמט לא נתמך. אנא העלה PNG / JPG / WebP או PDF. HEIC לא נתמך — שמור כ-PNG ונסה שוב."
+
+/** הגבלת מספר העמודים שנמיר מ-PDF — ממלא ל-payload+זמן מודל. */
+const MAX_PDF_PAGES_TO_RENDER = 5
 
 function filesToFileList(files: File[]): FileList {
   const dt = new DataTransfer()
@@ -283,6 +286,7 @@ function AiCopilotPane() {
   const [input, setInput] = React.useState("")
   const [attachments, setAttachments] = React.useState<File[]>([])
   const [attachmentError, setAttachmentError] = React.useState<string | null>(null)
+  const [convertingPdf, setConvertingPdf] = React.useState(false)
   const [listening, setListening] = React.useState(false)
   const [speechSupported, setSpeechSupported] = React.useState(false)
   const [confirmedDraftIds, setConfirmedDraftIds] = React.useState<Set<string>>(
@@ -399,16 +403,25 @@ function AiCopilotPane() {
     }
   }
 
-  function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files) return
     setAttachmentError(null)
     const valid: File[] = []
+    const pdfsToRender: File[] = []
     let typeRejected = false
     let sizeRejected = false
+
     for (const file of Array.from(files)) {
-      // טיפוס: gpt-4o לא מקבל PDF/HEIC. דוחים בקול רם במקום בשקט.
       const mime = (file.type || "").toLowerCase()
+      if (mime === "application/pdf") {
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          sizeRejected = true
+          continue
+        }
+        pdfsToRender.push(file)
+        continue
+      }
       if (!SUPPORTED_IMAGE_MIME_TYPES.has(mime)) {
         typeRejected = true
         continue
@@ -419,6 +432,7 @@ function AiCopilotPane() {
       }
       valid.push(file)
     }
+
     if (typeRejected) {
       setAttachmentError(ATTACHMENT_TYPE_ERROR_HE)
       toast.error(ATTACHMENT_TYPE_ERROR_HE)
@@ -426,9 +440,44 @@ function AiCopilotPane() {
       setAttachmentError(ATTACHMENT_SIZE_ERROR_HE)
       toast.error(ATTACHMENT_SIZE_ERROR_HE)
     }
+
+    // מייד מצרףים תמונות תקינות ל-state (טוב ל-feedback מיידי למשתמש).
     if (valid.length > 0) {
       setAttachments((prev) => [...prev, ...valid])
     }
+
+    // ל-PDF: ממירים בצד הלקוח ל-PNG לפני שליחה (gpt-4o לא מקבל PDF ישירות).
+    if (pdfsToRender.length > 0) {
+      setConvertingPdf(true)
+      const toastId = toast.loading(
+        `ממיר ${pdfsToRender.length === 1 ? "PDF" : `${pdfsToRender.length} PDFs`} לתמונות…`,
+      )
+      try {
+        for (const pdf of pdfsToRender) {
+          const pages = await pdfFileToPngFiles(pdf, {
+            maxPages: MAX_PDF_PAGES_TO_RENDER,
+          })
+          if (pages.length === 0) {
+            toast.error(`לא הצלחתי לקרוא עמודים מ-${pdf.name}.`, {
+              id: toastId,
+            })
+            continue
+          }
+          // אזהרה: PDF עם >MAX_PDF_PAGES_TO_RENDER עמודים. ממשיכים רק עם ה-N הראשונים.
+          // (pdfjs-dist לא מנסה לקרוא maxPages לפני ה-render, אז ה-util מגביל בעצמו).
+          // אם מספר העמודים בפועל גדול מהמגבלה, המשתמש יראה זאת דרך ה-thumbnail count.
+          setAttachments((prev) => [...prev, ...pages])
+        }
+        toast.success("PDF הומר לתמונות. מוכן לשליחה.", { id: toastId })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "שגיאה לא ידועה"
+        toast.error(`המרת PDF נכשלה: ${msg}`, { id: toastId })
+        setAttachmentError(`המרת PDF נכשלה: ${msg}`)
+      } finally {
+        setConvertingPdf(false)
+      }
+    }
+
     e.target.value = ""
   }
 
@@ -439,7 +488,7 @@ function AiCopilotPane() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const text = input.trim()
-    if ((!text && attachments.length === 0) || busy) return
+    if ((!text && attachments.length === 0) || busy || convertingPdf) return
     if (listening) stopSpeechRecognition()
     setAttachmentError(null)
     const files = attachments.length > 0 ? filesToFileList(attachments) : undefined
@@ -570,7 +619,7 @@ function AiCopilotPane() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={busy}
-              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון  —  או צרף תמונת תוכנית (PNG/JPG/WebP) וציין קנה מידה + ספק"
+              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון  —  או צרף תוכנית (PDF / PNG / JPG / WebP) וציין קנה מידה + ספק"
               className="min-h-[60px] flex-1 resize-none"
               dir="auto"
             />
@@ -578,7 +627,7 @@ function AiCopilotPane() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
                 multiple
                 hidden
                 onChange={handleFilePicked}
@@ -588,9 +637,13 @@ function AiCopilotPane() {
                 variant="outline"
                 size="icon"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={busy}
-                aria-label="צירוף תמונה (שרטוט חשמל)"
-                title="צירוף תמונה (PNG/JPG/WebP עד 10MB). PDF/HEIC לא נתמכים — ייצא כ-PNG."
+                disabled={busy || convertingPdf}
+                aria-label="צירוף תוכנית / תמונה (שרטוט חשמל)"
+                title={
+                  convertingPdf
+                    ? "ממיר PDF…"
+                    : `צירוף PDF / PNG / JPG / WebP (עד 10MB; PDF ימומר בלקוח לתמונות, עד ${MAX_PDF_PAGES_TO_RENDER} עמודים).`
+                }
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
@@ -616,15 +669,29 @@ function AiCopilotPane() {
               <Button
                 type="submit"
                 size="icon"
-                disabled={(!input.trim() && attachments.length === 0) || busy}
+                disabled={
+                  (!input.trim() && attachments.length === 0) ||
+                  busy ||
+                  convertingPdf
+                }
                 aria-label="שליחה"
               >
-                <SendHorizontal className="h-4 w-4" />
+                {convertingPdf ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SendHorizontal className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
           {attachmentError ? (
             <p className="text-[11px] text-destructive">{attachmentError}</p>
+          ) : null}
+          {convertingPdf ? (
+            <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              ממיר PDF לתמונות PNG…
+            </p>
           ) : null}
           {!speechSupported ? (
             <p className="text-[11px] text-muted-foreground">
