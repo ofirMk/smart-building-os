@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button-variants"
+import { FinanceInvestorHero } from "@/components/marker-ofek/pitch/finance-investor-hero"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import {
   Table,
@@ -138,6 +139,8 @@ export default function MarkerOfekFinancePage() {
         <ArrowRight className="size-4 rotate-180" aria-hidden />
         חזרה ללוח הבקרה
       </Link>
+
+      <FinanceInvestorHero />
 
       <header className="pharmacy-hero-card p-6 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { fetchGanttsByProject } from "@/app/actions/gantt-actions"
+import { InvestorCommandCenter } from "@/components/marker-ofek/pitch/investor-command-center"
 import { ProjectMasterHub360 } from "@/components/marker-ofek/projects/project-master-hub-360"
 import {
   getProjectMasterHubMock,
@@ -63,14 +64,21 @@ export async function MarkerOfekProjectHubSection({ id }: { id: string }) {
   const ganttCharts = await fetchGanttsByProject(project.id)
 
   return (
-    <ProjectMasterHub360
-      projectId={project.id}
-      displayName={displayName}
-      internalCode={project.internal_project_code}
-      status={project.status}
-      addressLine={addressLine}
-      mock={mock}
-      ganttCharts={ganttCharts}
-    />
+    <div className="space-y-6">
+      <InvestorCommandCenter
+        projectId={project.id}
+        projectName={displayName}
+        internalCode={project.internal_project_code}
+      />
+      <ProjectMasterHub360
+        projectId={project.id}
+        displayName={displayName}
+        internalCode={project.internal_project_code}
+        status={project.status}
+        addressLine={addressLine}
+        mock={mock}
+        ganttCharts={ganttCharts}
+      />
+    </div>
   )
 }
