@@ -106,10 +106,29 @@ type OptionsDto = {
 
 const NONE_VALUE = "__none__"
 const SPEECH_LANG = "he-IL"
-/** מגבלת גודל קובץ למניעת העמסת API מיותרת (זהה ל-AiAssistant.tsx). */
-const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024
+/**
+ * מגבלת גודל קובץ. גדלה מ-4MB ל-10MB ב-Phase D follow-up: שרטוטי חשמל
+ * סרוקים נוטים להיות 5-8MB גם אחרי דחיסה סבירה.
+ */
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 const ATTACHMENT_SIZE_ERROR_HE =
-  "הקובץ גדול מדי (מעל 4MB). לחץ אותו או השתמש בצילום מסך באיכות נמוכה יותר."
+  "הקובץ גדול מדי (מעל 10MB). לחץ אותו או צלם מסך באיכות נמוכה יותר."
+
+/**
+ * gpt-4o vision מקבל אך ורק PNG/JPEG/WebP/GIF. PDF, HEIC, TIFF וכו' לא נתמכים
+ * — נדחה אותם כאן עם הודעה ברורה במקום לבלוע בשקט (זה היה הבאג: המשתמש
+ * צירף PDF, הכפתור נראה כאילו פעל, אבל ה-thumbnail לא הופיע ושום שגיאה).
+ */
+const SUPPORTED_IMAGE_MIME_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "image/gif",
+])
+const ATTACHMENT_TYPE_ERROR_HE =
+  "פורמט לא נתמך. אנא העלה PNG / JPG / WebP. PDF ו-HEIC לא נקראים ע\"י המודל — " +
+  "שמור את השרטוט כתמונה (Export → PNG) ונסה שוב."
 
 function filesToFileList(files: File[]): FileList {
   const dt = new DataTransfer()
@@ -385,13 +404,27 @@ function AiCopilotPane() {
     if (!files) return
     setAttachmentError(null)
     const valid: File[] = []
+    let typeRejected = false
+    let sizeRejected = false
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue
+      // טיפוס: gpt-4o לא מקבל PDF/HEIC. דוחים בקול רם במקום בשקט.
+      const mime = (file.type || "").toLowerCase()
+      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mime)) {
+        typeRejected = true
+        continue
+      }
       if (file.size > MAX_ATTACHMENT_BYTES) {
-        setAttachmentError(ATTACHMENT_SIZE_ERROR_HE)
+        sizeRejected = true
         continue
       }
       valid.push(file)
+    }
+    if (typeRejected) {
+      setAttachmentError(ATTACHMENT_TYPE_ERROR_HE)
+      toast.error(ATTACHMENT_TYPE_ERROR_HE)
+    } else if (sizeRejected) {
+      setAttachmentError(ATTACHMENT_SIZE_ERROR_HE)
+      toast.error(ATTACHMENT_SIZE_ERROR_HE)
     }
     if (valid.length > 0) {
       setAttachments((prev) => [...prev, ...valid])
@@ -537,7 +570,7 @@ function AiCopilotPane() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={busy}
-              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון  —  או צרף תמונת תוכנית וציין קנה מידה + ספק"
+              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון  —  או צרף תמונת תוכנית (PNG/JPG/WebP) וציין קנה מידה + ספק"
               className="min-h-[60px] flex-1 resize-none"
               dir="auto"
             />
@@ -557,7 +590,7 @@ function AiCopilotPane() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={busy}
                 aria-label="צירוף תמונה (שרטוט חשמל)"
-                title="צירוף תמונה (PNG/JPG/WebP עד 4MB)"
+                title="צירוף תמונה (PNG/JPG/WebP עד 10MB). PDF/HEIC לא נתמכים — ייצא כ-PNG."
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
