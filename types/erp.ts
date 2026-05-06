@@ -596,3 +596,205 @@ export interface HistoricalPriceStats {
   lastPaidPrice: number
   sampleCount: number
 }
+
+// =============================================================================
+// Phase A — AI Autonomous Procurement: Knowledge Foundation
+// Migration: 20260808100000_ai_autonomous_procurement_foundation.sql
+// =============================================================================
+
+export const ERP_PROJ_LOCATION_LEVELS = [
+  "BUILDING",
+  "FLOOR",
+  "ZONE",
+  "ROOM",
+  "AREA",
+] as const
+export type ErpProjLocationLevel = (typeof ERP_PROJ_LOCATION_LEVELS)[number]
+
+export const ERP_ASSEMBLY_UOMS = [
+  "METER",
+  "SQM",
+  "CBM",
+  "UNIT",
+  "KG",
+  "METER_RUN",
+] as const
+export type ErpAssemblyUom = (typeof ERP_ASSEMBLY_UOMS)[number]
+
+export const ERP_ASSEMBLY_LINE_ROLES = [
+  "PRIMARY",
+  "SUPPORT",
+  "FASTENER",
+  "CONSUMABLE",
+  "OPTIONAL",
+  "ACCESSORY",
+] as const
+export type ErpAssemblyLineRole = (typeof ERP_ASSEMBLY_LINE_ROLES)[number]
+
+export const ERP_ENGINEERING_RULE_TYPES = [
+  "RATIO",
+  "PER_LENGTH",
+  "PER_AREA",
+  "ABSOLUTE_MIN",
+  "ABSOLUTE_MAX",
+  "COMPATIBILITY",
+] as const
+export type ErpEngineeringRuleType = (typeof ERP_ENGINEERING_RULE_TYPES)[number]
+
+export const ERP_ENGINEERING_RULE_ACTIONS = [
+  "WARN",
+  "BLOCK",
+  "ESCALATE",
+] as const
+export type ErpEngineeringRuleAction =
+  (typeof ERP_ENGINEERING_RULE_ACTIONS)[number]
+
+export const ERP_AI_BOM_REQUEST_MODALITIES = ["TEXT", "VOICE", "FORM"] as const
+export type ErpAiBomRequestModality =
+  (typeof ERP_AI_BOM_REQUEST_MODALITIES)[number]
+
+export const ERP_AI_BOM_REQUEST_ACTIONS = [
+  "PENDING",
+  "DRAFT_PO_CREATED",
+  "BLOCKED",
+  "ESCALATED",
+  "USER_OVERRIDE",
+  "CANCELLED",
+] as const
+export type ErpAiBomRequestAction =
+  (typeof ERP_AI_BOM_REQUEST_ACTIONS)[number]
+
+/** היררכיית מיקומים בפרויקט (קומה/מפלס/אזור/חדר). */
+export interface ErpProjLocation {
+  id: string
+  companyId: string
+  projectId: string
+  parentId: string | null
+  code: string
+  name: string
+  levelType: ErpProjLocationLevel
+  /** אורך במטרים — נדרש לחוקי PER_LENGTH/RATIO על UoM=METER. */
+  lengthM: number | null
+  /** שטח במ"ר — נדרש לחוקי PER_AREA. */
+  areaSqm: number | null
+  metadata: Record<string, unknown>
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+/** עץ מוצר (קיט). embedding מתמלא ב-Phase C. */
+export interface ErpProductAssembly {
+  id: string
+  companyId: string
+  code: string
+  name: string
+  description: string
+  category: string
+  unitOfMeasure: ErpAssemblyUom
+  version: number
+  parentAssemblyId: string | null
+  /** vector(1536) — מוחזר כמערך מספרים מ-PostgREST. null עד Phase C. */
+  embedding: number[] | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+/** שורת רכיב בקיט. quantity_per_base_unit הוא היחס לתוך UoM של ה-assembly. */
+export interface ErpAssemblyLine {
+  id: string
+  companyId: string
+  assemblyId: string
+  itemId: string
+  quantityPerBaseUnit: number
+  role: ErpAssemblyLineRole
+  isOptional: boolean
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** מילה נרדפת לחיפוש NL. embedding מתמלא ב-Phase C. */
+export interface ErpAssemblyAlias {
+  id: string
+  companyId: string
+  assemblyId: string
+  aliasText: string
+  aliasEmbedding: number[] | null
+  language: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** חוק תקן הנדסי. parameters שונה לפי ruleType (RATIO ≠ PER_LENGTH). */
+export interface ErpEngineeringRule {
+  id: string
+  companyId: string
+  code: string
+  name: string
+  description: string
+  regulatorySource: string | null
+  /** ריק = החוק חל על כל ה-assemblies לפי applicableCategories. */
+  applicableAssemblyIds: string[]
+  applicableCategories: string[]
+  ruleType: ErpEngineeringRuleType
+  parameters: Record<string, unknown>
+  expectedValue: number | null
+  tolerancePct: number
+  violationAction: ErpEngineeringRuleAction
+  isActive: boolean
+  effectiveFrom: string
+  effectiveUntil: string | null
+  /** auth.users.id של המהנדס המוסמך שחתם. */
+  signedBy: string | null
+  signedAt: string | null
+  metadata: Record<string, unknown>
+  createdAt: string
+  updatedAt: string
+}
+
+/** Audit log של חריגה מחוק. immutable — אין updatedAt. */
+export interface ErpEngineeringRuleViolation {
+  id: string
+  companyId: string
+  ruleId: string
+  bomRequestId: string | null
+  severity: ErpEngineeringRuleAction
+  actualValue: number
+  expectedValue: number
+  /** סטיה באחוזים מהערך המצופה (חיובי = מעל, שלילי = מתחת). */
+  deltaPct: number
+  decidedAction: string | null
+  context: Record<string, unknown>
+  createdAt: string
+}
+
+/** Audit log של בקשת AI לתכנון BOM. Replay מלא דרך השדות jsonb. */
+export interface ErpAiBomRequest {
+  id: string
+  companyId: string
+  projectId: string | null
+  locationId: string | null
+  requestedBy: string | null
+  rawInput: string
+  inputModality: ErpAiBomRequestModality
+  parsedIntent: Record<string, unknown>
+  confidenceScore: number | null
+  /** Array of { tool, args, result, durationMs }. */
+  toolCallLog: unknown[]
+  /** Array of resolved BOM lines (item_id, qty, role). */
+  generatedBom: unknown[]
+  /** Array of violations triggered during validation. */
+  engineeringViolations: unknown[]
+  finalAction: ErpAiBomRequestAction
+  draftPoId: string | null
+  latencyMs: number | null
+  llmTokensUsed: number | null
+  /** true אם total היה חורג מ-po_auto_limit (₪50K MVP). */
+  hardLimitExceeded: boolean
+  errorMessage: string | null
+  createdAt: string
+  updatedAt: string
+}
+
