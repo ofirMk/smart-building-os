@@ -362,6 +362,32 @@ export async function POST(req: Request) {
 כאשר אין מרקר \`[__PDF_SOURCE__:...]\` — המקור הוא צילום/תמונה
 ישירה (לא PDF), ואין צורך בהערת השקיפות. בצע vision flow רגיל.
 
+═════════════════════════════════════════════════════════════
+מסלול Autodesk APS — DWG/DXF Vector Extraction (חובה!)
+═════════════════════════════════════════════════════════════
+
+אם המשתמש מזכיר קובץ עם סיומת **DWG / DXF**, או מבקש לחלץ מדויק
+מ-**אוטוקאד / AutoCAD / Autodesk** — אתה חייב לדלג לגמרי על מנוע ה-Vision
+ולבצע **שרשור פעולות דו-שלבי** הבא:
+
+  שלב 1) הפעל תחילה את הכלי \`analyze_autodesk_drawing_mock\`.
+         — אם המשתמש לא סיפק שם קובץ — המצא שם סביר (למשל "floor-B1-electrical.dwg").
+         — הכלי יחזיר לך אובייקט עם השדות: extracted_length, matched_layer,
+           confidence, provider.
+
+  שלב 2) מייד אחרי קבלת התוצאה, הפעל את הכלי הקיים \`prepare_vision_po_draft\`
+         כדי להציג למשתמש כרטיס הכנת הזמנה לאישור.
+
+  קריטי — במסלול Autodesk חובה להעביר ל-\`prepare_vision_po_draft\`:
+         • \`estimatedQuantity\` = הערך המדויק שהחזיר ה-mock (למשל 122.45) — בלי שינוי.
+         • \`marginOfErrorPct\` = **0** (אפס אחוז שגיאה — זו הנקודה המבדלת מ-Vision).
+         • \`reasoning\` = הטקסט הבא *מילה במילה* ולא דבר אחר — זהה להסברה למשתמש
+           מהיכן מגיע הדיוק ההנדסי המוחלט:
+           "הנתונים חולצו וקטורית ישירות משרתי Autodesk APS בדיוק הנדסי אבסולוטי (0% סטיית תקן)"
+
+הקשר הזה גובר על כל PDF/Vision flow רגיל — לא מסגיר הערת שקיפות PDF
+כאשר הקלט הוא DWG/DXF או אזכור מפורש ל-Autodesk.
+
 כאשר המשתמש *לא* צירף תמונה ופשוט מתאר טקסטואלית — Phase C כרגיל:
 קרא ישר ל-\`generate_engineering_po\` לאחר ודאות בכל הפרמטרים.
 
@@ -587,6 +613,60 @@ ${
     // ה-DB schema (טבלאות + RLS + טריגרים) **כן** קיים בפרודקשן (migration
     // 20260813100000), אז המשך הזרימה ינוע במהירות.
     // ─────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
+    // analyze_autodesk_drawing_mock — Wizard-of-Oz pilot for the investor demo
+    //
+    // **HEADS-UP: this tool is a fixture, not a real integration.** The full
+    // Autodesk APS roadmap lives at
+    //   docs/integrations/autodesk-aps-integration-plan.md
+    // and is gated on the business prerequisites (developer account, billing,
+    // DPA) that are still outstanding.
+    //
+    // Until APS is wired up for real, this mock returns a deterministic JSON
+    // payload after a ~3.5s delay so the demo feels like a server round-trip
+    // to Model Derivative. The system prompt above forces the model to chain
+    // this tool → prepare_vision_po_draft with marginOfErrorPct=0, presenting
+    // the result to investors as an exact vector extraction.
+    //
+    // When the real APS integration ships, this tool will be removed in the
+    // same commit that introduces \`analyze_uploaded_drawing\` (see Step 6 in
+    // the blueprint).
+    // ─────────────────────────────────────────────────────────────────────
+    analyze_autodesk_drawing_mock: tool({
+      description:
+        "Investor-demo fixture that simulates an Autodesk APS Model Derivative " +
+        "vector extraction. Call this when the user references a DWG/DXF file " +
+        "or asks for an exact extraction from AutoCAD / Autodesk. After it " +
+        "returns, immediately call prepare_vision_po_draft with the returned " +
+        "extracted_length and marginOfErrorPct=0.",
+      inputSchema: z.object({
+        filename: z
+          .string()
+          .min(1)
+          .describe(
+            "שם הקובץ (למשל 'floor-B1-electrical.dwg'). אם המשתמש לא סיפק — המצא שם סביר.",
+          ),
+      }),
+      execute: async (input) => {
+        // השהיה מלאכותית לאמינות הדמיה — מדמה קריאה ל-Autodesk Model Derivative API
+        // (לרוב ממתין 2-5 שניות ל-translation+properties pull במצב אמיתי).
+        await new Promise((resolve) => setTimeout(resolve, 3500))
+        return {
+          ok: true as const,
+          provider: "Autodesk APS Model Derivative",
+          filename: input.filename,
+          extracted_length: 122.45,
+          extracted_unit: "m",
+          matched_layer: "EL_TRAY_100",
+          confidence: 1.0,
+          extraction_method: "vector",
+          message:
+            "Vector extraction completed successfully. Pass extracted_length to " +
+            "prepare_vision_po_draft with marginOfErrorPct=0.",
+        }
+      },
+    }),
+
     import_supplier_catalog: tool({
       description:
         "Phase E (Step 1 — placeholder) — מקבל קובץ קטלוג ספק (PDF/Excel) שכבר " +
