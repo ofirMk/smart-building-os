@@ -133,6 +133,25 @@ const ATTACHMENT_TYPE_ERROR_HE =
 /** הגבלת מספר העמודים שנמיר מ-PDF — ממלא ל-payload+זמן מודל. */
 const MAX_PDF_PAGES_TO_RENDER = 5
 
+/**
+ * מרקר מכונה מוטמן להודעת המשתמש — המודל מזהה אותו דרך ה-system prompt
+ * ומפעיל זרימת Reverse-Engineering + הערת שקיפות PDF (לפי ההנחיות שניתנו).
+ * הבובה מסוננת מרנדור הבועה (ראה ChatMessageBubble) כדי לא להציג למשתמש.
+ */
+const PDF_SOURCE_MARKER_PREFIX = "[__PDF_SOURCE__:"
+const PDF_SOURCE_MARKER_SUFFIX = "]"
+function buildPdfSourceMarker(pdfNames: string[]): string {
+  return `${PDF_SOURCE_MARKER_PREFIX}${pdfNames.join("|")}${PDF_SOURCE_MARKER_SUFFIX}`
+}
+/** מסיר מה-text המוצג את המרקר (למניעת זיהום עם משתמש שמקליד מרכאות). */
+function stripPdfSourceMarker(text: string): string {
+  // מסיר הופעה ראשונה בלבד אם היא בתחילת המחרוזת (UI מוסיף אותו אוטומטית).
+  return text.replace(
+    /^\s*\[__PDF_SOURCE__:[^\]]*\]\s*\n?/,
+    "",
+  )
+}
+
 function filesToFileList(files: File[]): FileList {
   const dt = new DataTransfer()
   for (const file of files) dt.items.add(file)
@@ -287,6 +306,11 @@ function AiCopilotPane() {
   const [attachments, setAttachments] = React.useState<File[]>([])
   const [attachmentError, setAttachmentError] = React.useState<string | null>(null)
   const [convertingPdf, setConvertingPdf] = React.useState(false)
+  /**
+   * שמות מקור של ה-PDF-ים שהומרו — נשלח ל-system prompt כמרקר
+   * כדי שהמודל ידע להלביש Reverse-Engineering + הערת שקיפות PDF.
+   */
+  const [pdfSourceNames, setPdfSourceNames] = React.useState<string[]>([])
   const [listening, setListening] = React.useState(false)
   const [speechSupported, setSpeechSupported] = React.useState(false)
   const [confirmedDraftIds, setConfirmedDraftIds] = React.useState<Set<string>>(
@@ -453,6 +477,7 @@ function AiCopilotPane() {
         `ממיר ${pdfsToRender.length === 1 ? "PDF" : `${pdfsToRender.length} PDFs`} לתמונות…`,
       )
       try {
+        const renderedPdfNames: string[] = []
         for (const pdf of pdfsToRender) {
           const pages = await pdfFileToPngFiles(pdf, {
             maxPages: MAX_PDF_PAGES_TO_RENDER,
@@ -463,10 +488,14 @@ function AiCopilotPane() {
             })
             continue
           }
-          // אזהרה: PDF עם >MAX_PDF_PAGES_TO_RENDER עמודים. ממשיכים רק עם ה-N הראשונים.
-          // (pdfjs-dist לא מנסה לקרוא maxPages לפני ה-render, אז ה-util מגביל בעצמו).
-          // אם מספר העמודים בפועל גדול מהמגבלה, המשתמש יראה זאת דרך ה-thumbnail count.
+          // pdfjs-dist מגביל ל-MAX_PDF_PAGES_TO_RENDER בעצמו; מספר עמודים בפועל משתקף
+          // דרך thumbnail count ב-UI.
           setAttachments((prev) => [...prev, ...pages])
+          renderedPdfNames.push(pdf.name)
+        }
+        if (renderedPdfNames.length > 0) {
+          // מסמנים ל-state — ימומש ב-handleSubmit לתיוג ההודעה מלפני שליחה.
+          setPdfSourceNames((prev) => [...prev, ...renderedPdfNames])
         }
         toast.success("PDF הומר לתמונות. מוכן לשליחה.", { id: toastId })
       } catch (err) {
@@ -492,9 +521,19 @@ function AiCopilotPane() {
     if (listening) stopSpeechRecognition()
     setAttachmentError(null)
     const files = attachments.length > 0 ? filesToFileList(attachments) : undefined
-    void sendMessage({ text: text || "נא לנתח את התמונה המצורפת.", files })
+
+    // אם המשתמש מצרף תמונות שמקורן PDF — מוסיף מרקר בראש ה-text
+    // כדי שה-system prompt יזהה את המקרה ויפעיל את הרוטינת Reverse-Engineering
+    // + הערת שקיפות PDF. המרקר מסונן ב-ChatMessageBubble לפני הרנדור.
+    const baseText = text || "נא לנתח את התמונה המצורפת."
+    const fullText = pdfSourceNames.length > 0
+      ? `${buildPdfSourceMarker(pdfSourceNames)}\n${baseText}`
+      : baseText
+
+    void sendMessage({ text: fullText, files })
     setInput("")
     setAttachments([])
+    setPdfSourceNames([])
     if (fileInputRef.current) fileInputRef.current.value = ""
     textareaRef.current?.focus()
   }
@@ -506,6 +545,7 @@ function AiCopilotPane() {
     setAttachments([])
     setAttachmentError(null)
     setConfirmedDraftIds(new Set())
+    setPdfSourceNames([])
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -773,7 +813,8 @@ function ChatMessageBubble({
   }> = []
   for (const part of message.parts ?? []) {
     if (part.type === "text" && typeof part.text === "string") {
-      textParts.push(part.text)
+      // מסיר מרקר PDF_SOURCE מסליק הצגה (נשלח למודל לזיהוי המקור בלבד).
+      textParts.push(stripPdfSourceMarker(part.text))
     } else if (part.type === "file") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const p = part as any
