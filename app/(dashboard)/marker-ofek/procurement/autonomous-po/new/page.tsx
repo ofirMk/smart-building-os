@@ -1,16 +1,19 @@
 "use client"
 
 /**
- * Phase C — AI Copilot for Autonomous Procurement
+ * Phase C → D — AI Copilot for Autonomous Procurement
  *
  * עמוד זה מכיל שני tabs:
  *   1) **מהנדס רכש AI** (ברירת מחדל) — צ'אט בעברית עם LLM שמפעיל את ה-RPC
  *      הדטרמיניסטי `erp_generate_draft_po_from_bom` כ-tool.
+ *      Phase D מוסיף העלאת תמונות (שרטוטי חשמל) + "כרטיס הכנת
+ *      הזמנה" אינטראקטיבי לאישור מדידה ויזואלית לפני יצירת PO.
  *   2) **טופס ידני** (Phase B baseline) — הטופס הדטרמיניסטי לבדיקה ישירה
  *      של המנוע, ללא LLM.
  *
  * שני המסלולים קוראים לאותו RPC. ה-LLM הוא "שפתיים ואוזניים", המתמטיקה
- * רצה ב-DB. אין דרך ל-LLM להמציא מחיר/כמות/יחס.
+ * רצה ב-DB. אין דרך ל-LLM להמציא מחיר/כמות/יחס. גם בזרימת ראייה
+ * מדידה ויזואלית עוברת דרך אישור משתמש מפורש בכרטיס.
  *
  * Mic button — Web Speech API (he-IL). זמין רק בדפדפנים מבוססי Chromium/Edge.
  */
@@ -25,15 +28,20 @@ import {
   Bot,
   CheckCircle2,
   Cog,
+  ImageIcon,
   Layers,
   Loader2,
   MapPin,
   Mic,
   MicOff,
+  Paperclip,
+  Ruler,
   SendHorizontal,
+  ShoppingCart,
   Sparkles,
   User2,
   Wrench,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -98,6 +106,33 @@ type OptionsDto = {
 
 const NONE_VALUE = "__none__"
 const SPEECH_LANG = "he-IL"
+/** מגבלת גודל קובץ למניעת העמסת API מיותרת (זהה ל-AiAssistant.tsx). */
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024
+const ATTACHMENT_SIZE_ERROR_HE =
+  "הקובץ גדול מדי (מעל 4MB). לחץ אותו או השתמש בצילום מסך באיכות נמוכה יותר."
+
+function filesToFileList(files: File[]): FileList {
+  const dt = new DataTransfer()
+  for (const file of files) dt.items.add(file)
+  return dt.files
+}
+
+// ============================================================================
+// Phase D — vision-po-draft tool output type (מוחזר מה-API route)
+// ============================================================================
+
+type VisionPoDraftToolOutput = {
+  ok: true
+  status: "pending_user_confirmation"
+  assembly: { id: string; code: string; name: string; unitOfMeasure: string }
+  project: { id: string; projectNumber: string; name: string }
+  location: { id: string; code: string; name: string } | null
+  supplier: { id: string; supplierNumber: string; name: string }
+  estimatedQuantity: number
+  marginOfErrorPct: number
+  reasoning: string
+  message: string
+}
 
 // ============================================================================
 // Page (root)
@@ -227,13 +262,34 @@ function AiCopilotPane() {
   const busy = status === "submitted" || status === "streaming"
 
   const [input, setInput] = React.useState("")
+  const [attachments, setAttachments] = React.useState<File[]>([])
+  const [attachmentError, setAttachmentError] = React.useState<string | null>(null)
   const [listening, setListening] = React.useState(false)
   const [speechSupported, setSpeechSupported] = React.useState(false)
+  const [confirmedDraftIds, setConfirmedDraftIds] = React.useState<Set<string>>(
+    () => new Set()
+  )
   const recognitionRef = React.useRef<SpeechRecognition | null>(null)
   const speechPrefixRef = React.useRef("")
   const speechFinalsRef = React.useRef("")
   const scrollRef = React.useRef<HTMLDivElement | null>(null)
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null)
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+
+  const previewUrls = React.useMemo(
+    () =>
+      attachments.map((file) =>
+        file.type.startsWith("image/") ? URL.createObjectURL(file) : null
+      ),
+    [attachments]
+  )
+  React.useEffect(() => {
+    return () => {
+      for (const url of previewUrls) {
+        if (url) URL.revokeObjectURL(url)
+      }
+    }
+  }, [previewUrls])
 
   React.useEffect(() => {
     setSpeechSupported(getSpeechRecognitionConstructor() !== null)
@@ -324,13 +380,40 @@ function AiCopilotPane() {
     }
   }
 
+  function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files) return
+    setAttachmentError(null)
+    const valid: File[] = []
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setAttachmentError(ATTACHMENT_SIZE_ERROR_HE)
+        continue
+      }
+      valid.push(file)
+    }
+    if (valid.length > 0) {
+      setAttachments((prev) => [...prev, ...valid])
+    }
+    e.target.value = ""
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const text = input.trim()
-    if (!text || busy) return
+    if ((!text && attachments.length === 0) || busy) return
     if (listening) stopSpeechRecognition()
-    void sendMessage({ text })
+    setAttachmentError(null)
+    const files = attachments.length > 0 ? filesToFileList(attachments) : undefined
+    void sendMessage({ text: text || "נא לנתח את התמונה המצורפת.", files })
     setInput("")
+    setAttachments([])
+    if (fileInputRef.current) fileInputRef.current.value = ""
     textareaRef.current?.focus()
   }
 
@@ -338,6 +421,9 @@ function AiCopilotPane() {
     stop()
     clearError()
     setMessages([COPILOT_INTRO_MESSAGE])
+    setAttachments([])
+    setAttachmentError(null)
+    setConfirmedDraftIds(new Set())
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -371,7 +457,32 @@ function AiCopilotPane() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
         <div className="space-y-4">
           {messages.map((message) => (
-            <ChatMessageBubble key={message.id} message={message} />
+            <ChatMessageBubble
+              key={message.id}
+              message={message}
+              onConfirmVisionDraft={(toolCallId, output, confirmedQty) => {
+                if (confirmedDraftIds.has(toolCallId)) return
+                setConfirmedDraftIds((prev) => {
+                  const next = new Set(prev)
+                  next.add(toolCallId)
+                  return next
+                })
+                const locPart = output.location
+                  ? ` locationId=${output.location.id}`
+                  : ""
+                void sendMessage({
+                  text:
+                    `אני מאשר את הכמות: ${confirmedQty} ${output.assembly.unitOfMeasure}. ` +
+                    `הפעל עכשיו את generate_engineering_po עם: ` +
+                    `projectId=${output.project.id}` +
+                    ` assemblyId=${output.assembly.id}` +
+                    ` supplierId=${output.supplier.id}` +
+                    locPart +
+                    ` requestedQty=${confirmedQty}.`,
+                })
+              }}
+              isDraftConfirmed={(toolCallId) => confirmedDraftIds.has(toolCallId)}
+            />
           ))}
           {busy ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -384,6 +495,41 @@ function AiCopilotPane() {
 
       <CardFooter className="border-t bg-muted/30 p-3">
         <form onSubmit={handleSubmit} className="w-full space-y-2">
+          {/* Attachment previews */}
+          {attachments.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((file, idx) => {
+                const url = previewUrls[idx]
+                return (
+                  <div
+                    key={`${file.name}-${idx}`}
+                    className="group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border bg-card"
+                    title={file.name}
+                  >
+                    {url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={url}
+                        alt={file.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(idx)}
+                      aria-label={`הסר ${file.name}`}
+                      className="absolute end-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
+
           <div className="flex items-end gap-2">
             <Textarea
               ref={textareaRef}
@@ -391,11 +537,30 @@ function AiCopilotPane() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={busy}
-              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון"
+              placeholder="לדוגמה: צריך 100 מטר תעלת חשמל במפלס -1 בגינדי סביון  —  או צרף תמונת תוכנית וציין קנה מידה + ספק"
               className="min-h-[60px] flex-1 resize-none"
               dir="auto"
             />
             <div className="flex flex-col gap-1.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                hidden
+                onChange={handleFilePicked}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy}
+                aria-label="צירוף תמונה (שרטוט חשמל)"
+                title="צירוף תמונה (PNG/JPG/WebP עד 4MB)"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               {speechSupported ? (
                 <Button
                   type="button"
@@ -418,13 +583,16 @@ function AiCopilotPane() {
               <Button
                 type="submit"
                 size="icon"
-                disabled={!input.trim() || busy}
+                disabled={(!input.trim() && attachments.length === 0) || busy}
                 aria-label="שליחה"
               >
                 <SendHorizontal className="h-4 w-4" />
               </Button>
             </div>
           </div>
+          {attachmentError ? (
+            <p className="text-[11px] text-destructive">{attachmentError}</p>
+          ) : null}
           {!speechSupported ? (
             <p className="text-[11px] text-muted-foreground">
               הקלטה קולית בעברית זמינה ב-Chrome/Edge בלבד.
@@ -475,29 +643,66 @@ function renderTextWithLinks(text: string): React.ReactNode[] {
   return nodes
 }
 
-function ChatMessageBubble({ message }: { message: UIMessage }) {
+function ChatMessageBubble({
+  message,
+  onConfirmVisionDraft,
+  isDraftConfirmed,
+}: {
+  message: UIMessage
+  onConfirmVisionDraft: (
+    toolCallId: string,
+    output: VisionPoDraftToolOutput,
+    confirmedQty: number
+  ) => void
+  isDraftConfirmed: (toolCallId: string) => boolean
+}) {
   const isUser = message.role === "user"
   const isAssistant = message.role === "assistant"
 
-  // ה-AI SDK v5 משתמש ב-parts: text/tool-<name>/step-start/...
+  // ה-AI SDK v5 משתמש ב-parts: text/tool-<name>/file/step-start/...
   const textParts: string[] = []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const toolCalls: Array<{ name: string; state: string; output?: any; input?: any }> = []
+  const imageParts: Array<{ url: string; alt?: string }> = []
+  const toolCalls: Array<{
+    name: string
+    state: string
+    toolCallId: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    output?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input?: any
+  }> = []
   for (const part of message.parts ?? []) {
     if (part.type === "text" && typeof part.text === "string") {
       textParts.push(part.text)
+    } else if (part.type === "file") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = part as any
+      const mediaType: string = p.mediaType ?? p.mimeType ?? ""
+      const url: string | undefined = p.url ?? (p.data ? `data:${mediaType};base64,${p.data}` : undefined)
+      if (url && mediaType.startsWith("image/")) {
+        imageParts.push({ url, alt: p.filename ?? "attachment" })
+      }
     } else if (typeof part.type === "string" && part.type.startsWith("tool-")) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const p = part as any
       toolCalls.push({
         name: part.type.replace(/^tool-/, ""),
         state: p.state ?? "unknown",
+        toolCallId: p.toolCallId ?? "",
         output: p.output,
         input: p.input,
       })
     }
   }
   const fullText = textParts.join("")
+
+  // זיהוי prepare_vision_po_draft שהסתיים בהצלחה — ירונדרו כה-VisionPoDraftCard.
+  const visionDrafts = toolCalls.filter(
+    (tc) =>
+      tc.name === "prepare_vision_po_draft" &&
+      (tc.state === "output-available" || tc.state === "result") &&
+      tc.output?.ok === true
+  )
 
   return (
     <div className={cn("flex gap-2", isUser ? "justify-end" : "justify-start")}>
@@ -516,17 +721,46 @@ function ChatMessageBubble({ message }: { message: UIMessage }) {
         )}
         dir="auto"
       >
+        {imageParts.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 pb-1">
+            {imageParts.map((img, idx) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={idx}
+                src={img.url}
+                alt={img.alt ?? "attached"}
+                className="max-h-48 max-w-full rounded border border-white/30 object-contain"
+              />
+            ))}
+          </div>
+        ) : null}
+
         {fullText ? (
           <p className="whitespace-pre-wrap leading-relaxed">
             {renderTextWithLinks(fullText)}
           </p>
         ) : null}
 
+        {/* Phase D — כרטיס אישור PO מלא (מחליף את ToolCallChip הרגיל) */}
+        {visionDrafts.map((tc) => (
+          <VisionPoDraftCard
+            key={tc.toolCallId || tc.name}
+            toolCallId={tc.toolCallId}
+            output={tc.output as VisionPoDraftToolOutput}
+            confirmed={isDraftConfirmed(tc.toolCallId)}
+            onConfirm={(qty) =>
+              onConfirmVisionDraft(tc.toolCallId, tc.output as VisionPoDraftToolOutput, qty)
+            }
+          />
+        ))}
+
         {toolCalls.length > 0 ? (
           <div className="space-y-1 pt-1">
-            {toolCalls.map((tc, idx) => (
-              <ToolCallChip key={idx} toolCall={tc} />
-            ))}
+            {toolCalls
+              .filter((tc) => tc.name !== "prepare_vision_po_draft")
+              .map((tc, idx) => (
+                <ToolCallChip key={idx} toolCall={tc} />
+              ))}
           </div>
         ) : null}
       </div>
@@ -578,6 +812,132 @@ function ToolCallChip({
         </span>
       ) : null}
     </Badge>
+  )
+}
+
+// ============================================================================
+// Phase D — VisionPoDraftCard
+// ============================================================================
+//
+// מוצג כתגובה ל-tool `prepare_vision_po_draft`. מציג למשתמש הערכה מה-AI,
+// מאפשר לערוך את הכמות (להוסיף פחת/מרגן), ועם לחיצה על "אשר והפקת PO"
+// שולח הודעה אוטומטית ל-LLM שמזמינה את generate_engineering_po.
+//
+// לאחר אישור הכרטיס נעשה read-only כדי למנוע לחיצה כפולה (למנוע PO כפול).
+// ============================================================================
+
+function VisionPoDraftCard({
+  toolCallId,
+  output,
+  confirmed,
+  onConfirm,
+}: {
+  toolCallId: string
+  output: VisionPoDraftToolOutput
+  confirmed: boolean
+  onConfirm: (qty: number) => void
+}) {
+  const [qty, setQty] = React.useState(String(output.estimatedQuantity))
+  const numericQty = Number(qty)
+  const valid = Number.isFinite(numericQty) && numericQty > 0
+  const margin = output.marginOfErrorPct
+  const lower = (output.estimatedQuantity * (1 - margin / 100)).toFixed(1)
+  const upper = (output.estimatedQuantity * (1 + margin / 100)).toFixed(1)
+
+  return (
+    <div
+      className="my-2 space-y-3 rounded-lg border-2 border-violet-300 bg-violet-50/70 p-3 text-card-foreground dark:border-violet-700/60 dark:bg-violet-950/40"
+      data-tool-call-id={toolCallId}
+    >
+      <div className="flex items-center gap-2">
+        <ShoppingCart className="h-4 w-4 text-violet-600 dark:text-violet-300" />
+        <h4 className="text-sm font-semibold">
+          🛒 הכנת הזמנת רכש (סריקת שרטוט AI)
+        </h4>
+      </div>
+
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+        <dt className="text-muted-foreground">ספק</dt>
+        <dd className="font-medium">
+          {output.supplier.name}{" "}
+          <span className="font-mono text-[10px] text-muted-foreground">
+            ({output.supplier.supplierNumber})
+          </span>
+        </dd>
+
+        <dt className="text-muted-foreground">פרויקט</dt>
+        <dd className="font-medium">{output.project.name}</dd>
+
+        <dt className="text-muted-foreground">Assembly</dt>
+        <dd className="font-medium">
+          {output.assembly.name}{" "}
+          <span className="font-mono text-[10px] text-muted-foreground">
+            ({output.assembly.code})
+          </span>
+        </dd>
+
+        {output.location ? (
+          <>
+            <dt className="text-muted-foreground">מיקום</dt>
+            <dd className="font-medium">{output.location.name}</dd>
+          </>
+        ) : null}
+      </dl>
+
+      <div className="rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="flex items-start gap-1.5">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div>
+            <strong>מדידה אופטית.</strong> הכמות המוערכת:{" "}
+            <strong>
+              {output.estimatedQuantity} {output.assembly.unitOfMeasure}
+            </strong>
+            . ייתכן פחת/סטיית סריקה של כ-{margin}% (טווח: {lower}–{upper}).
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-md bg-card/60 p-2 text-[11px] leading-relaxed text-muted-foreground">
+        <div className="flex items-start gap-1.5">
+          <Ruler className="mt-0.5 h-3 w-3 shrink-0" />
+          <div className="whitespace-pre-wrap">{output.reasoning}</div>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor={`qty-${toolCallId}`} className="text-xs font-medium">
+          כמות סופית ({output.assembly.unitOfMeasure}) — ניתן לעריכה
+        </Label>
+        <Input
+          id={`qty-${toolCallId}`}
+          type="number"
+          min={0.01}
+          step={0.01}
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          disabled={confirmed}
+          className="h-8 text-sm"
+        />
+      </div>
+
+      <Button
+        type="button"
+        size="sm"
+        className="w-full bg-violet-600 text-white hover:bg-violet-700"
+        disabled={!valid || confirmed}
+        onClick={() => valid && onConfirm(numericQty)}
+      >
+        {confirmed ? (
+          <>
+            <CheckCircle2 className="me-2 h-4 w-4" /> אושר — ה-AI מפיק הזמנה...
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="me-2 h-4 w-4" /> אשר והפק הזמנת רכש רשמית
+          </>
+        )}
+      </Button>
+    </div>
   )
 }
 

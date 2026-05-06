@@ -1,13 +1,24 @@
 /**
- * `/api/procurement/autonomous-po/chat` — Phase C
+ * `/api/procurement/autonomous-po/chat` — Phase C → D
  *
  * AI Copilot chat endpoint for the autonomous procurement engine.
  *
- * ## ארכיטקטורה
+ * ## ארכיטקטורה (Phase C)
  * ה-LLM משמש *אך ורק* כ-Intent Parser. החישובים, חוקי התקן והמחירים
  * רצים ב-RPC הדטרמיניסטי `erp_generate_draft_po_from_bom` (Phase B).
  * זוהי "חומת אש נגד הזיות" — המודל לא יכול להמציא כמויות או מחירים,
  * רק לאתר את ה-UUIDs המתאימים בקונטקסט ולהעביר אותם ל-tool.
+ *
+ * ## הוספות Phase D — Vision-to-PO interactive
+ * 1) Suppliers נוספים ל-grounding כדי ש-LLM יוכל לזהות "חשמל ישיר".
+ * 2) `generate_engineering_po` מקבל `supplierId` אופציונלי שמועבר ל-RPC
+ *    כ-`p_supplier_id_override`.
+ * 3) Tool חדש `prepare_vision_po_draft` שלא יוצר PO ב-DB אלא מחזיר "כרטיס
+ *    הכנת הזמנה" ל-UI: כמות מוערכת + אזהרת ±7% + שדה עריכה למשתמש.
+ *    זהו ה-human-in-the-loop שמגן על ה-firewall גם בזרימת ראייה.
+ * 4) System prompt מורחב לסריקת שרטוטים, בקשת קנה מידה, ואיסור מוחלט
+ *    על הפעלת `generate_engineering_po` ישירות מתוך מדידה ויזואלית בלי
+ *    אישור משתמש מפורש.
  *
  * ## זרימה
  * 1) מאמת tenant דרך `requireProcurementApiContext` (RLS-safe).
@@ -59,6 +70,12 @@ type LocationCtx = {
   name: string
   lengthM: number | null
   areaSqm: number | null
+}
+type SupplierCtx = {
+  id: string
+  supplierNumber: string
+  name: string
+  foreignName: string | null
 }
 
 type RpcRow = {
@@ -119,28 +136,36 @@ export async function POST(req: Request) {
   }
 
   // 3) Context fetching — Grounding ל-LLM. כל ה-queries תחת RLS של המשתמש.
-  const [projectsRes, assembliesRes, locationsRes] = await Promise.all([
-    supabase
-      .from("erp_proj_projects")
-      .select("id,project_number,name,status")
-      .eq("company_id", activeCompanyId)
-      .order("project_number", { ascending: true })
-      .limit(50),
-    supabase
-      .from("erp_md_product_assemblies")
-      .select("id,code,name,category,unit_of_measure")
-      .eq("company_id", activeCompanyId)
-      .eq("is_active", true)
-      .order("code", { ascending: true })
-      .limit(50),
-    supabase
-      .from("erp_proj_locations")
-      .select("id,project_id,code,name,length_m,area_sqm")
-      .eq("company_id", activeCompanyId)
-      .eq("is_active", true)
-      .order("code", { ascending: true })
-      .limit(200),
-  ])
+  const [projectsRes, assembliesRes, locationsRes, suppliersRes] =
+    await Promise.all([
+      supabase
+        .from("erp_proj_projects")
+        .select("id,project_number,name,status")
+        .eq("company_id", activeCompanyId)
+        .order("project_number", { ascending: true })
+        .limit(50),
+      supabase
+        .from("erp_md_product_assemblies")
+        .select("id,code,name,category,unit_of_measure")
+        .eq("company_id", activeCompanyId)
+        .eq("is_active", true)
+        .order("code", { ascending: true })
+        .limit(50),
+      supabase
+        .from("erp_proj_locations")
+        .select("id,project_id,code,name,length_m,area_sqm")
+        .eq("company_id", activeCompanyId)
+        .eq("is_active", true)
+        .order("code", { ascending: true })
+        .limit(200),
+      supabase
+        .from("erp_md_suppliers")
+        .select("id,supplier_number,name,foreign_name,status")
+        .eq("company_id", activeCompanyId)
+        .eq("status", "ACTIVE")
+        .order("name", { ascending: true })
+        .limit(80),
+    ])
 
   const projects: ProjectCtx[] = (projectsRes.data ?? []).map((r: any) => ({
     id: r.id,
@@ -161,6 +186,12 @@ export async function POST(req: Request) {
     name: r.name,
     lengthM: r.length_m === null ? null : Number(r.length_m),
     areaSqm: r.area_sqm === null ? null : Number(r.area_sqm),
+  }))
+  const suppliers: SupplierCtx[] = (suppliersRes.data ?? []).map((r: any) => ({
+    id: r.id,
+    supplierNumber: r.supplier_number,
+    name: r.name,
+    foreignName: r.foreign_name ?? null,
   }))
 
   // 4) Build grounding system prompt
@@ -198,6 +229,17 @@ export async function POST(req: Request) {
         .join("\n")
     : "  (אין מיקומים)"
 
+  const suppliersBlock = suppliers.length
+    ? suppliers
+        .map(
+          (s) =>
+            `  - id="${s.id}"  number="${s.supplierNumber}"  name="${s.name}"${
+              s.foreignName ? `  foreign="${s.foreignName}"` : ""
+            }`
+        )
+        .join("\n")
+    : "  (אין ספקים פעילים)"
+
   const systemPrompt = `אתה "מהנדס רכש אוטונומי" של מערכת Marker Ofek.
 
 תפקידך: להבין מה איש הרכש רוצה להזמין בעברית טבעית, לאתר את ה-UUIDs
@@ -215,10 +257,34 @@ export async function POST(req: Request) {
    ולציין זאת ("הנחתי שמדובר ב…").
 5. תמיד דבר עברית. השתמש בלשון נכבד וענייני.
 
-אחרי קריאה מוצלחת לכלי — נסח תשובה קצרה בעברית והוסף קישור Markdown
-לצפייה בהזמנה: \`[לצפייה בהזמנת רכש לחץ כאן](/marker-ofek/procurement/orders/<id>)\`.
+אחרי קריאה מוצלחת ל-\`generate_engineering_po\` — נסח תשובה קצרה בעברית
+והוסף קישור Markdown לצפייה בהזמנה:
+\`[לצפייה בהזמנת רכש לחץ כאן](/marker-ofek/procurement/orders/<id>)\`.
 אם הסטטוס \`PENDING_APPROVAL\` — ציין שיש חריגות הנדסיות שדורשות אישור,
 ופרט אותן בקצרה.
+
+═══════════════════════════════════════════════════════════════
+זרימת Vision-to-PO (Phase D) — חובה לעקוב!
+═══════════════════════════════════════════════════════════════
+
+כאשר המשתמש מצרף תמונה (שרטוט/תוכנית חשמל):
+  1) השתמש ביכולות ה-Vision שלך לזהות את תוואי החומרים מהמקרא.
+  2) אם לא צוין קנה מידה (1:50, 1:100 וכו') — בקש אותו מהמשתמש.
+     אל תנחש קנה מידה!
+  3) לאחר שיש קנה מידה, הערך את האורך הכולל מהשרטוט. ציין נקודות
+     רוחב/גובה שעליהן ביססת את ההערכה.
+  4) זהה את הספק המבוקש בקונטקסט (למשל "חשמל ישיר" → חפש בבלוק
+     SUPPLIERS את ה-UUID לפי שם).
+  5) קרא **אך ורק** ל-\`prepare_vision_po_draft\` כדי להציג כרטיס
+     אישור למשתמש. אסור באיסור מוחלט להפעיל \`generate_engineering_po\`
+     ישירות על סמך מדידה ויזואלית!
+  6) המשתמש יראה את הכרטיס, יערוך את הכמות אם צריך, ויאשר.
+     רק אז יישלח אליך הודעה "אני מאשר את הכמות של X. הפעל
+     generate_engineering_po עם supplierId=...". אז ורק אז תפעיל את
+     ה-tool ההוא — עם הכמות המאושרת והספק הנכון.
+
+כאשר המשתמש *לא* צירף תמונה ופשוט מתאר טקסטואלית — Phase C כרגיל:
+קרא ישר ל-\`generate_engineering_po\` לאחר ודאות בכל הפרמטרים.
 
 אם הכלי החזיר \`blocked: true\` — *אל תייצר שוב* אלא הסבר למשתמש בעברית
 טבעית למה ה-PO נחסם, על בסיס ה-violations שהכלי החזיר. למשל:
@@ -226,7 +292,7 @@ export async function POST(req: Request) {
 1419 (סף מותר 20%). אנא בדוק את ה-Assembly או הפעל אישור חריג."
 
 ═══════════════════════════════════════════════════════════════
-ChatContext (chống חברה ${activeCompanyId}) — Grounding מקור-אמת:
+ChatContext (חברה ${activeCompanyId}) — Grounding מקור-אמת:
 ═══════════════════════════════════════════════════════════════
 
 PROJECTS:
@@ -237,6 +303,9 @@ ${assembliesBlock}
 
 LOCATIONS (מיקומים בפרויקט; חשוב לחוקי PER_LENGTH/PER_AREA):
 ${locationsBlock}
+
+SUPPLIERS (ספקים פעילים — שלוף UUID לפי שם כשהמשתמש מציין ספק):
+${suppliersBlock}
 `
 
   // 5) Tool definition — wrapper around the deterministic RPC
@@ -272,6 +341,15 @@ ${locationsBlock}
           .describe(
             "UUID של מיקום (אופציונלי). נדרש לחוקי PER_LENGTH/PER_AREA."
           ),
+        supplierId: z
+          .string()
+          .uuid()
+          .nullable()
+          .optional()
+          .describe(
+            "UUID של ספק להעדפה (Phase D). מועבר ל-RPC כ-p_supplier_id_override. " +
+              "אם null/חסר — ה-RPC בוחר ספק לפי preferred_supplier של פריט PRIMARY."
+          ),
       }),
       execute: async (input) => {
         // ─────────────────────────────────────────────────────────────────
@@ -303,6 +381,16 @@ ${locationsBlock}
             error: `locationId לא נמצא בקונטקסט (${input.locationId}).`,
           }
         }
+        if (
+          input.supplierId &&
+          !suppliers.some((s) => s.id === input.supplierId)
+        ) {
+          return {
+            ok: false as const,
+            blocked: false as const,
+            error: `supplierId לא נמצא בקונטקסט (${input.supplierId}).`,
+          }
+        }
 
         // ─────────────────────────────────────────────────────────────────
         // RPC call — נעטף ב-try/catch כי PL/pgSQL זורק exception על BLOCK.
@@ -317,7 +405,7 @@ ${locationsBlock}
             p_requested_qty: input.requestedQty,
             p_location_id: input.locationId ?? null,
             p_created_by: userId ?? null,
-            p_supplier_id_override: null,
+            p_supplier_id_override: input.supplierId ?? null,
           }
         )
 
@@ -376,16 +464,132 @@ ${locationsBlock}
         }
       },
     }),
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Phase D — prepare_vision_po_draft
+    //
+    // *לא יוצר PO ב-DB!* תפקיד הכלי לעצור את ה-LLM ולהחזיר "כרטיס הכנת
+    // הזמנה" שה-UI ירנדר עם שדה כמות עריך + כפתור אישור. רק לאחר אישור
+    // המשתמש המודל יקרא ל-`generate_engineering_po` עם הכמות המאושרת.
+    //
+    // אנו מבצעים גם כאן grounding-check (project/assembly/supplier UUIDs)
+    // כדי לוודא שה-UI לא מקבל IDs ממוצאים שלא קיימים ב-DB.
+    // ─────────────────────────────────────────────────────────────────────
+    prepare_vision_po_draft: tool({
+      description:
+        "Phase D — מציג כרטיס הכנת הזמנה אינטראקטיבי למשתמש לאחר מדידה ויזואלית של שרטוט. " +
+        "הכלי לא יוצר PO ב-DB; הוא רק מחזיר את הנתונים ל-UI שיציג כרטיס לאישור. " +
+        "חובה לקרוא לכלי הזה (ולא ל-generate_engineering_po) כשהמשתמש מצרף תמונה ומבקש הזמנה.",
+      inputSchema: z.object({
+        projectId: z.string().uuid().describe("UUID פרויקט מהקונטקסט."),
+        assemblyId: z
+          .string()
+          .uuid()
+          .describe("UUID assembly (KIT) מהקונטקסט."),
+        locationId: z
+          .string()
+          .uuid()
+          .nullable()
+          .optional()
+          .describe("UUID מיקום (אופציונלי)."),
+        supplierId: z
+          .string()
+          .uuid()
+          .describe(
+            "UUID ספק מהקונטקסט. חובה ב-vision flow — המשתמש בחר ספק."
+          ),
+        estimatedQuantity: z
+          .number()
+          .positive()
+          .describe("הכמות שהוערכה מהשרטוט, ביחידות ה-assembly UoM."),
+        marginOfErrorPct: z
+          .number()
+          .default(7)
+          .describe("שולי טעות בסריקה האופטית (ברירת מחדל 7%)."),
+        reasoning: z
+          .string()
+          .min(1)
+          .describe(
+            "הסבר קצר בעברית כיצד חישבת את הכמות (קנה מידה, אורך מתואר, נקודות התייחסות)."
+          ),
+      }),
+      execute: async (input) => {
+        const proj = projects.find((p) => p.id === input.projectId)
+        const asm = assemblies.find((a) => a.id === input.assemblyId)
+        const sup = suppliers.find((s) => s.id === input.supplierId)
+        const loc = input.locationId
+          ? locations.find((l) => l.id === input.locationId)
+          : null
+
+        if (!proj) {
+          return {
+            ok: false as const,
+            error: `projectId לא בקונטקסט (${input.projectId}).`,
+          }
+        }
+        if (!asm) {
+          return {
+            ok: false as const,
+            error: `assemblyId לא בקונטקסט (${input.assemblyId}).`,
+          }
+        }
+        if (!sup) {
+          return {
+            ok: false as const,
+            error: `supplierId לא בקונטקסט (${input.supplierId}).`,
+          }
+        }
+        if (input.locationId && !loc) {
+          return {
+            ok: false as const,
+            error: `locationId לא בקונטקסט (${input.locationId}).`,
+          }
+        }
+
+        // החזרת "snapshot" של כל המידע שה-UI צריך כדי לרנדר את הכרטיס.
+        // הסטטוס pending_user_confirmation מסמן ל-LLM ול-UI שצריך לחכות.
+        return {
+          ok: true as const,
+          status: "pending_user_confirmation" as const,
+          assembly: {
+            id: asm.id,
+            code: asm.code,
+            name: asm.name,
+            unitOfMeasure: asm.unitOfMeasure,
+          },
+          project: {
+            id: proj.id,
+            projectNumber: proj.projectNumber,
+            name: proj.name,
+          },
+          location: loc
+            ? { id: loc.id, code: loc.code, name: loc.name }
+            : null,
+          supplier: {
+            id: sup.id,
+            supplierNumber: sup.supplierNumber,
+            name: sup.name,
+          },
+          estimatedQuantity: input.estimatedQuantity,
+          marginOfErrorPct: input.marginOfErrorPct,
+          reasoning: input.reasoning,
+          message:
+            "כרטיס הכנת ההזמנה נוצר. ממתין לאישור המשתמש לפני יצירת PO.",
+        }
+      },
+    }),
   }
 
-  // 6) Stream the LLM response. stepCountIs(4) = עד 4 צעדים: clarify→tool→answer.
+  // 6) Stream the LLM response. stepCountIs(6) — Phase D vision flow may need:
+  //    vision-analyze → prepare_vision_po_draft → text → (user confirms) →
+  //    generate_engineering_po → text. כל אחד הוא step.
   const result = streamText({
     model: openai("gpt-4o"),
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
     tools,
     toolChoice: "auto",
-    stopWhen: stepCountIs(4),
+    stopWhen: stepCountIs(6),
   })
 
   return result.toUIMessageStreamResponse({
