@@ -10,6 +10,7 @@ import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tra
 import { TopNavigation } from "@/components/layout/top-navigation"
 import { CompanyContextGate } from "@/components/layout/company-context-gate"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
+import { GlobalPitchNavButton } from "@/components/marker-ofek/pitch/global-pitch-nav-button"
 import { SaveWorkspaceButton } from "@/components/marker-ofek/workspace/save-workspace-button"
 import { WorkspaceEfficiencyHost } from "@/components/marker-ofek/workspace/workspace-efficiency-host"
 import { WorkspaceScenarioSwitcher } from "@/components/marker-ofek/workspace/workspace-scenario-switcher"
@@ -112,6 +113,12 @@ export function DashboardShell({
             פונקציונליות לא-זמינה אחרת. ברדקרמבים/כותרת-עמוד הוסרו —
             הניווט החדש מסתמך על פריטי התפריט עצמם להתמצאות.
           */}
+          {/*
+            Investor Pitch shortcut — global "🚀 חמ"ל משקיעים" button. Always
+            mounted first in the actions slot so the CEO can return to the
+            pitch lobby in one click from any screen.
+          */}
+          <GlobalPitchNavButton />
           <CommandPaletteHeaderTrigger />
           {isMarkerOfekPath(pathname) ? <WorkspaceParallelSplitControl /> : null}
           {isMarkerOfekPath(pathname) ? <DiamondSidekickToggle /> : null}

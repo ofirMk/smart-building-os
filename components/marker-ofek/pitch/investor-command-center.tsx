@@ -42,6 +42,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
+import { playMicStart, playMicStop, playSuccess } from "@/lib/audio-sfx"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
@@ -424,6 +425,25 @@ function CopilotChat({
     })
   }, [messages.length])
 
+  // Play a success chime whenever the AI just finished streaming a reply
+  // (status transitions away from "streaming"/"submitted" → "ready").
+  // We track previous status with a ref to fire only on the falling edge.
+  const prevStatusRef = React.useRef(status)
+  React.useEffect(() => {
+    const wasBusy =
+      prevStatusRef.current === "streaming" ||
+      prevStatusRef.current === "submitted"
+    const isIdle = status === "ready"
+    if (wasBusy && isIdle && messages.length > 1) {
+      try {
+        playSuccess()
+      } catch {
+        /* SFX is best-effort. */
+      }
+    }
+    prevStatusRef.current = status
+  }, [status, messages.length])
+
   const stopListening = React.useCallback(() => {
     try {
       recognitionRef.current?.stop()
@@ -431,11 +451,23 @@ function CopilotChat({
       /* no-op */
     }
     setListening(false)
+    // Audible release cue.
+    try {
+      playMicStop()
+    } catch {
+      /* SFX is best-effort; never break UX. */
+    }
   }, [])
 
   function startListening() {
     const Ctor = getSpeechRecognitionConstructor()
     if (!Ctor) return
+    // Synth bloop — plays through speakers immediately on user gesture.
+    try {
+      playMicStart()
+    } catch {
+      /* SFX is best-effort. */
+    }
     const rec = new Ctor()
     rec.lang = "he-IL"
     rec.continuous = true
