@@ -3,7 +3,18 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as React from "react"
-import { ArrowRight, LayoutGrid, Loader2, Plus, Search } from "lucide-react"
+import {
+  ArrowRight,
+  Boxes,
+  CircleDollarSign,
+  Hash,
+  LayoutGrid,
+  Loader2,
+  Package,
+  Plus,
+  Search,
+  Tag,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { CatalogVsSheetHint } from "@/components/marker-ofek/catalog-vs-sheet-hint"
@@ -78,6 +89,14 @@ export default function ProcurementCatalogPage() {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [ctxMenu, setCtxMenu] = React.useState<{
+    x: number
+    y: number
+    row: CatalogRow
+  } | null>(null)
+  // Floating spec preview shown on row hover. Tracks the hovered row + cursor
+  // position so the card can be rendered as a fixed-positioned portal-style
+  // panel near (but not overlapping) the pointer.
+  const [hoverPreview, setHoverPreview] = React.useState<{
     x: number
     y: number
     row: CatalogRow
@@ -253,7 +272,7 @@ export default function ProcurementCatalogPage() {
     <div className="flex min-h-0 flex-1 flex-col gap-6 bg-card pb-10">
       <Link
         href="/marker-ofek"
-        className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-indigo-700"
+        className="inline-flex w-fit items-center gap-2 text-sm text-slate-500 transition-colors hover:text-emerald-700"
       >
         <ArrowRight className="size-4 rotate-180" aria-hidden />
         חזרה ללוח מרקר אופק
@@ -273,7 +292,7 @@ export default function ProcurementCatalogPage() {
               type="button"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "shrink-0 gap-2 bg-indigo-600 hover:bg-indigo-500"
+                "shrink-0 gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
               )}
             >
               <Plus className="size-4 stroke-[1.5]" aria-hidden />
@@ -369,7 +388,7 @@ export default function ProcurementCatalogPage() {
                 </label>
               </div>
               <DialogFooter className="gap-2 sm:justify-start">
-                <Button type="submit" disabled={saving} className="bg-indigo-600">
+                <Button type="submit" disabled={saving} className="bg-emerald-600 text-white hover:bg-emerald-700">
                   {saving ? "שומר…" : "שמירה"}
                 </Button>
               </DialogFooter>
@@ -382,7 +401,7 @@ export default function ProcurementCatalogPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 stroke-[1.5] text-indigo-600"
+            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 stroke-[1.5] text-emerald-600"
             aria-hidden
           />
           <Input
@@ -404,7 +423,7 @@ export default function ProcurementCatalogPage() {
             href="/marker-ofek/items"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "text-indigo-600 hover:text-indigo-500"
+              "text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
             )}
           >
             לגיליון המלא →
@@ -425,43 +444,62 @@ export default function ProcurementCatalogPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-100 bg-card hover:bg-card">
-                  <TableHead className="text-start text-indigo-950">מק״ט</TableHead>
-                  <TableHead className="text-start text-indigo-950">תיאור</TableHead>
-                  <TableHead className="text-start text-indigo-950">יחידה</TableHead>
-                  <TableHead className="text-start text-indigo-950">קטגוריה</TableHead>
-                  <TableHead className="text-end text-indigo-950">מחיר ברירת מחדל</TableHead>
-                  <TableHead className="text-start text-indigo-950">מלאי</TableHead>
+                  <TableHead className="text-start text-slate-700">מק״ט</TableHead>
+                  <TableHead className="text-start text-slate-700">תיאור</TableHead>
+                  <TableHead className="text-start text-slate-700">יחידה</TableHead>
+                  <TableHead className="text-start text-slate-700">קטגוריה</TableHead>
+                  <TableHead className="text-end text-slate-700">מחיר ברירת מחדל</TableHead>
+                  <TableHead className="text-start text-slate-700">מלאי</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="border-slate-100"
+                    className="cursor-pointer border-slate-100 transition-colors hover:bg-emerald-50/50"
                     onContextMenu={(e) => {
                       e.preventDefault()
                       setCtxMenu({ x: e.clientX, y: e.clientY, row })
                     }}
+                    onMouseEnter={(e) =>
+                      setHoverPreview({ row, x: e.clientX, y: e.clientY })
+                    }
+                    onMouseMove={(e) =>
+                      setHoverPreview((prev) =>
+                        prev && prev.row.id === row.id
+                          ? { row, x: e.clientX, y: e.clientY }
+                          : prev
+                      )
+                    }
+                    onMouseLeave={() =>
+                      setHoverPreview((prev) =>
+                        prev && prev.row.id === row.id ? null : prev
+                      )
+                    }
+                    onClick={() => router.push(`/marker-ofek/items/${row.id}`)}
                   >
-                    <TableCell className="font-mono text-sm text-indigo-950">
-                      <Link
-                        href={`/marker-ofek/items/${row.id}`}
-                        className="font-medium text-indigo-600 underline-offset-2 hover:underline"
-                      >
+                    <TableCell className="font-mono text-sm text-slate-800">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-900 group-hover:text-emerald-700">
+                        <Hash className="size-3 text-emerald-500" aria-hidden />
                         {row.sku}
-                      </Link>
+                      </span>
                     </TableCell>
-                    <TableCell className="max-w-[280px]">{row.description}</TableCell>
-                    <TableCell>{row.uom ?? "—"}</TableCell>
-                    <TableCell>{row.category ?? "—"}</TableCell>
-                    <TableCell className="text-end font-currency-mono tabular-nums text-indigo-950">
+                    <TableCell className="max-w-[280px] text-slate-700">
+                      {row.description}
+                    </TableCell>
+                    <TableCell className="text-slate-600">{row.uom ?? "—"}</TableCell>
+                    <TableCell className="text-slate-600">
+                      {row.category ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-end font-currency-mono tabular-nums text-slate-900">
                       {row.legacyDefaultPrice != null
                         ? currencyFormatter.format(Number(row.legacyDefaultPrice))
                         : "—"}
                     </TableCell>
                     <TableCell>
                       {row.isInventoryManaged ? (
-                        <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs text-indigo-800">
+                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                          <Boxes className="size-3" aria-hidden />
                           כן
                         </span>
                       ) : (
@@ -489,6 +527,136 @@ export default function ProcurementCatalogPage() {
         actions={ctxMenu ? catalogContextActions(ctxMenu.row) : []}
         navItems={catalogCtxNav}
       />
+
+      {hoverPreview ? (
+        <CatalogHoverPreview
+          row={hoverPreview.row}
+          x={hoverPreview.x}
+          y={hoverPreview.y}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+// ============================================================================
+// CatalogHoverPreview — floating spec sheet shown when hovering a catalog row
+// ============================================================================
+
+function CatalogHoverPreview({
+  row,
+  x,
+  y,
+}: {
+  row: CatalogRow
+  x: number
+  y: number
+}) {
+  // Position the card near the cursor but flip-aware: keep it inside the
+  // viewport (assumes the page is RTL — the card should appear to the LEFT
+  // of the pointer in RTL, so we offset negatively).
+  const offset = 18
+  const cardW = 320
+  const cardH = 230
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1280
+  const vh = typeof window !== "undefined" ? window.innerHeight : 800
+
+  // Default position: to the LEFT of the cursor (RTL-natural).
+  let left = x - cardW - offset
+  if (left < 8) left = x + offset
+  // Clamp inside viewport horizontally too — guards against very wide cursors
+  // or zoomed browser scenarios.
+  if (left + cardW > vw - 8) left = vw - cardW - 8
+  let top = y - 10
+  if (top + cardH > vh - 8) top = vh - cardH - 8
+  if (top < 8) top = 8
+
+  return (
+    <div
+      role="dialog"
+      aria-label={`פרטי פריט ${row.sku}`}
+      style={{
+        position: "fixed",
+        left,
+        top,
+        width: cardW,
+        zIndex: 60,
+        pointerEvents: "none",
+      }}
+      className="animate-in fade-in zoom-in-95 duration-150"
+      dir="rtl"
+    >
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-[0_24px_60px_-20px_rgba(16,185,129,0.45)]">
+        {/* accent strip */}
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-emerald-500 via-emerald-600 to-cyan-600" />
+
+        <div className="p-4 pt-5">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                פריט קטלוג
+              </div>
+              <div className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-sm font-bold text-slate-900">
+                <Hash className="size-3.5 text-emerald-500" aria-hidden />
+                {row.sku}
+              </div>
+            </div>
+            <span className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-emerald-700">
+              <Package className="size-4" aria-hidden />
+            </span>
+          </div>
+
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-800">
+            {row.description}
+          </p>
+
+          <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                <Tag className="size-3" aria-hidden />
+                קטגוריה
+              </dt>
+              <dd className="mt-1 font-medium text-slate-800">
+                {row.category ?? "—"}
+              </dd>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                <Boxes className="size-3" aria-hidden />
+                יחידה
+              </dt>
+              <dd className="mt-1 font-medium text-slate-800">
+                {row.uom ?? "—"}
+              </dd>
+            </div>
+            <div className="col-span-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+              <dt className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+                <CircleDollarSign className="size-3" aria-hidden />
+                מחיר ברירת מחדל
+              </dt>
+              <dd className="mt-1 font-currency-mono text-base font-bold tabular-nums text-emerald-900">
+                {row.legacyDefaultPrice != null
+                  ? currencyFormatter.format(Number(row.legacyDefaultPrice))
+                  : "לא הוגדר"}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+                row.isInventoryManaged
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-slate-100 text-slate-600"
+              )}
+            >
+              {row.isInventoryManaged ? "מנוהל מלאי" : "ללא מלאי"}
+            </span>
+            <span className="text-slate-400">לחיצה לפתיחת הגיליון</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
