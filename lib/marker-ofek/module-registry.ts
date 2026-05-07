@@ -26,10 +26,29 @@ export const DEFAULT_MODULE_VISIBILITY: ModuleVisibilityState = {
   executiveSummary: true,
 }
 
+/**
+ * Investor-Pitch / Demo override — when set, every module is forced ON regardless
+ * of any persisted state in `user_dashboard_configs.modules` or `localStorage`.
+ *
+ * Activate via `NEXT_PUBLIC_FORCE_ALL_MODULES_ON=1` in `.env.local` (or in Vercel's
+ * project env). Useful when stale per-user toggles hide most of the sidebar and you
+ * need the full menu visible for a demo. Turn it off (unset or `0`) post-pitch.
+ *
+ * Implementation note: read from `process.env` directly so both server (`getDashboardBootstrap`)
+ * and client (`loadModuleVisibilityFromStorage`) hit the same flag at build time.
+ */
+export function isForceAllModulesOn(): boolean {
+  const raw = process.env.NEXT_PUBLIC_FORCE_ALL_MODULES_ON
+  return typeof raw === "string" && /^(1|true|on|yes)$/i.test(raw.trim())
+}
+
 /** Merge persisted JSON into defaults (used by server + client; not a Server Action). */
 export function mergeRemoteModuleConfig(
   partial: Partial<ModuleVisibilityState> | null | undefined
 ): ModuleVisibilityState {
+  // Pitch override — return all-true regardless of stored state.
+  if (isForceAllModulesOn()) return { ...DEFAULT_MODULE_VISIBILITY }
+
   const next: ModuleVisibilityState = { ...DEFAULT_MODULE_VISIBILITY }
   if (!partial) return next
   for (const id of MODULE_IDS) {
@@ -69,6 +88,8 @@ const STORAGE_KEY = "sbos:module-visibility:v1"
 
 export function loadModuleVisibilityFromStorage(): ModuleVisibilityState | null {
   if (typeof window === "undefined") return null
+  // Pitch override — ignore any stored state and force all modules ON.
+  if (isForceAllModulesOn()) return { ...DEFAULT_MODULE_VISIBILITY }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
