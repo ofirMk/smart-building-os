@@ -1,17 +1,19 @@
 "use client"
 
 /**
- * InvestorCommandCenter — "Pitch Ready" hero for the project hub.
+ * InvestorCommandCenter — the **CEO Command Center** hero for the project hub.
  *
- * תפקיד: לתת למנכ"ל מסך בולט ומרהיב שמדבר את שפת המשקיעים — KPI פיננסי,
- * חיסכון AI בולט, אבני דרך, ו-AI Copilot חי בנגיעה — מבלי להפר את שאר
- * חוויית הניהול הקיימת ב-`ProjectMasterHub360`.
+ * תפקיד: לתת למנכ"ל מסך בולט — KPI פיננסי, חיסכון AI בולט, אבני דרך,
+ * ו-AI Copilot חי בנגיעה — מבלי להפר את שאר חוויית הניהול הקיימת ב-`ProjectMasterHub360`.
  *
- * **Mock-data only** — אסור לקרוא ל-DB. כל הערכים מתחת קבועים, ויפים
- * לעין, כדי שהמסך ייראה זהה בהצגה גם כשהפרויקט בסביבת dev/empty.
+ * **Mock-data only** — אסור לקרוא ל-DB. כל הערכים מתחת קבועים, כדי שהמסך ייראה זהה
+ * גם כשהפרויקט בסביבת dev/empty.
  *
- * חלק 2 של הדרישה (Live Audio UI) מוטמע בכפתור המיקרופון בתוך ה-Sheet:
- * 5 בריקסים דקים מטה-מעלה עם stagger ב-`animationDelay` שמדמים גלי קול.
+ * Live Audio UI מוטמע בכפתור המיקרופון: 5 בריקסים דקים מטה-מעלה עם stagger ב-`animationDelay`
+ * שמדמים גלי קול.
+ *
+ * Attachments — הדראוור תומך צירוף תמונות (PNG / JPG / WebP) ו-PDF זהה להודעת ה-API
+ * דרך `useChat`. הזרימה מתבצעת דרך אותו ה-endpoint שמשתמש ה Autonomous-PO Copilot.
  */
 
 import * as React from "react"
@@ -20,8 +22,11 @@ import { DefaultChatTransport, type UIMessage } from "ai"
 import {
   Bot,
   Coins,
+  FileText,
+  ImageIcon,
   Mic,
   MicOff,
+  Paperclip,
   Send,
   Sparkles,
   TrendingDown,
@@ -97,8 +102,8 @@ export function InvestorCommandCenter({
   return (
     <section
       dir="rtl"
-      className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
-      data-investor-pitch="command-center"
+      className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.18)]"
+      data-ceo-command-center="hero"
     >
       {/* Decorative gradient halo */}
       <div
@@ -114,16 +119,16 @@ export function InvestorCommandCenter({
         <div className="space-y-1.5">
           <Badge
             variant="secondary"
-            className="border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"
+            className="border border-emerald-200 bg-emerald-50 text-emerald-700"
           >
             <Sparkles className="me-1 size-3" />
-            Investor Command Center
+            מרכז שליטה פרויקט
           </Badge>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
             {projectName}
           </h2>
           {internalCode ? (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               קוד פנימי <span className="font-mono">{internalCode}</span>
             </p>
           ) : null}
@@ -171,19 +176,19 @@ export function InvestorCommandCenter({
       </div>
 
       {/* Milestones strip */}
-      <div className="relative mt-6 rounded-2xl border border-slate-200 bg-white/70 p-5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="relative mt-6 rounded-2xl border border-border bg-card/70 p-5 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               אבני דרך
             </p>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
+            <h3 className="text-base font-semibold text-foreground">
               התקדמות הפרויקט · {MOCK_KPI.progressPct}%
             </h3>
           </div>
           <Badge
             variant="outline"
-            className="border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+            className="border-emerald-300 bg-emerald-50 text-emerald-700"
           >
             On-Track
           </Badge>
@@ -194,13 +199,13 @@ export function InvestorCommandCenter({
             <li
               key={m.id}
               className={cn(
-                "rounded-xl border bg-white p-3 text-sm shadow-sm dark:bg-slate-950",
+                "rounded-xl border bg-card p-3 text-sm shadow-sm",
                 m.status === "done" &&
-                  "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
+                  "border-emerald-300 bg-emerald-50 text-emerald-900",
                 m.status === "in-progress" &&
-                  "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
+                  "border-amber-300 bg-amber-50 text-amber-900",
                 m.status === "upcoming" &&
-                  "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-400",
+                  "border-border text-muted-foreground",
               )}
             >
               <div className="text-xs font-medium opacity-75">{m.label}</div>
@@ -220,20 +225,17 @@ export function InvestorCommandCenter({
 // ============================================================================
 
 const TONE_CLASS = {
-  indigo:
-    "from-indigo-500/10 to-transparent ring-indigo-200 dark:ring-indigo-900",
-  amber:
-    "from-amber-500/10 to-transparent ring-amber-200 dark:ring-amber-900",
-  emerald:
-    "from-emerald-500/15 to-transparent ring-emerald-300 dark:ring-emerald-800",
-  sky: "from-sky-500/10 to-transparent ring-sky-200 dark:ring-sky-900",
+  indigo: "from-indigo-500/10 to-transparent ring-indigo-200",
+  amber: "from-amber-500/10 to-transparent ring-amber-200",
+  emerald: "from-emerald-500/15 to-transparent ring-emerald-300",
+  sky: "from-sky-500/10 to-transparent ring-sky-200",
 } as const
 
 const TONE_TEXT = {
-  indigo: "text-indigo-700 dark:text-indigo-300",
-  amber: "text-amber-700 dark:text-amber-300",
-  emerald: "text-emerald-700 dark:text-emerald-300",
-  sky: "text-sky-700 dark:text-sky-300",
+  indigo: "text-indigo-700",
+  amber: "text-amber-700",
+  emerald: "text-emerald-700",
+  sky: "text-sky-700",
 } as const
 
 function KpiTile({
@@ -258,7 +260,7 @@ function KpiTile({
       className={cn(
         "relative overflow-hidden border-0 bg-gradient-to-br p-5 shadow-sm ring-1",
         TONE_CLASS[tone],
-        "bg-white dark:bg-slate-900",
+        "bg-card",
       )}
     >
       {glow ? (
@@ -273,7 +275,7 @@ function KpiTile({
         </span>
         <span
           className={cn(
-            "rounded-full bg-white p-1.5 ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-800",
+            "rounded-full bg-card p-1.5 ring-1 ring-border",
             TONE_TEXT[tone],
           )}
         >
@@ -283,17 +285,13 @@ function KpiTile({
       <div
         className={cn(
           "relative mt-3 text-2xl font-bold tracking-tight",
-          tone === "emerald"
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-slate-900 dark:text-slate-50",
+          tone === "emerald" ? "text-emerald-600" : "text-foreground",
         )}
       >
         {value}
       </div>
       {hint ? (
-        <p className="relative mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {hint}
-        </p>
+        <p className="relative mt-1 text-xs text-muted-foreground">{hint}</p>
       ) : null}
       {typeof progressPct === "number" ? (
         <div className="relative mt-3">
@@ -352,8 +350,8 @@ function CopilotDrawer({
         className="flex w-full flex-col gap-0 p-0 sm:max-w-xl"
         dir="rtl"
       >
-        <SheetHeader className="border-b bg-gradient-to-l from-emerald-50 to-cyan-50 p-4 dark:from-emerald-950/40 dark:to-cyan-950/40">
-          <SheetTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+        <SheetHeader className="border-b bg-gradient-to-l from-emerald-50 to-cyan-50 p-4">
+          <SheetTitle className="flex items-center gap-2 text-emerald-700">
             <Bot className="size-5" />
             AI Copilot · {projectName}
           </SheetTitle>
@@ -413,6 +411,16 @@ function CopilotChat({
   const recognitionRef = React.useRef<SpeechRecognition | null>(null)
   const speechFinalsRef = React.useRef("")
   const scrollRef = React.useRef<HTMLDivElement | null>(null)
+
+  // ----- Attachments -----
+  // The Copilot drawer accepts the same image/PDF set as the Autonomous-PO
+  // chat (mirrored intentionally so the underlying AI tools route identically).
+  // Only images are sent verbatim; PDFs are flagged here but not pre-rendered
+  // — the API already accepts `application/pdf` MIME for engineering drawings.
+  const [attachments, setAttachments] = React.useState<File[]>([])
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const MAX_BYTES = 10 * 1024 * 1024 // 10MB
+  const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,application/pdf"
 
   React.useEffect(() => {
     setSpeechSupported(!!getSpeechRecognitionConstructor())
@@ -501,17 +509,86 @@ function CopilotChat({
     }
   }
 
+  // Object-URL previews for image attachments. We rebuild the full list on
+  // every change so URLs stay 1:1 with `attachments` and revoke cleanly on
+  // unmount / remove. PDFs render with a generic icon (no URL needed).
+  const previewUrls = React.useMemo(
+    () =>
+      attachments.map((f) =>
+        f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+      ),
+    [attachments],
+  )
+  React.useEffect(() => {
+    return () => {
+      previewUrls.forEach((u) => {
+        if (u) URL.revokeObjectURL(u)
+      })
+    }
+  }, [previewUrls])
+
+  function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = e.target.files
+    if (!list || list.length === 0) return
+    const next: File[] = []
+    let rejectedSize = false
+    let rejectedType = false
+    for (const f of Array.from(list)) {
+      const mime = (f.type || "").toLowerCase()
+      const allowed =
+        mime.startsWith("image/") || mime === "application/pdf"
+      if (!allowed) {
+        rejectedType = true
+        continue
+      }
+      if (f.size > MAX_BYTES) {
+        rejectedSize = true
+        continue
+      }
+      next.push(f)
+    }
+    if (next.length > 0) setAttachments((prev) => [...prev, ...next])
+    if (rejectedType) {
+      // Lightweight inline notice via console; toast plumbing is intentionally
+      // avoided in the drawer to keep the dependency surface minimal.
+      console.warn("[copilot:attach] rejected unsupported file type(s)")
+    }
+    if (rejectedSize) {
+      console.warn("[copilot:attach] rejected oversized file(s) (>10MB)")
+    }
+    e.target.value = ""
+  }
+
+  function removeAttachment(idx: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  /** Convert an array of File into a FileList via DataTransfer (browser-only). */
+  function filesToFileList(files: File[]): FileList {
+    const dt = new DataTransfer()
+    for (const f of files) dt.items.add(f)
+    return dt.files
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const text = input.trim()
-    if (!text || busy) return
+    if ((!text && attachments.length === 0) || busy) return
     if (listening) stopListening()
+
     // Inject hidden project context — system prompt sees project mention
     // even when the user typed only the request.
+    const baseText = text || "נא לנתח את הקובץ המצורף."
     const wrapped =
-      `[PROJECT_CONTEXT: id="${projectId}" name="${projectName}"]\n` + text
-    void sendMessage({ text: wrapped })
+      `[PROJECT_CONTEXT: id="${projectId}" name="${projectName}"]\n` + baseText
+
+    const files =
+      attachments.length > 0 ? filesToFileList(attachments) : undefined
+
+    void sendMessage({ text: wrapped, files })
     setInput("")
+    setAttachments([])
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   return (
@@ -519,13 +596,13 @@ function CopilotChat({
       {/* messages */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-4 dark:bg-slate-950/40"
+        className="flex-1 space-y-3 overflow-y-auto bg-muted/30 p-4"
       >
         {messages.map((m) => (
           <ChatBubble key={m.id} message={m} />
         ))}
         {busy ? (
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="size-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.3s]" />
             <span className="size-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.15s]" />
             <span className="size-1.5 animate-bounce rounded-full bg-emerald-500" />
@@ -537,18 +614,18 @@ function CopilotChat({
       {/* composer */}
       <form
         onSubmit={handleSubmit}
-        className="border-t bg-white p-3 dark:bg-slate-950"
+        className="border-t bg-card p-3"
       >
         {listening ? (
-          <div className="mb-2 flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-900 dark:bg-rose-950/40">
+          <div className="mb-2 flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
             <LiveAudioWaveform />
-            <span className="text-xs font-medium text-rose-700 dark:text-rose-300">
+            <span className="text-xs font-medium text-rose-700">
               מקליט · דבר חופשי בעברית
             </span>
             <button
               type="button"
               onClick={stopListening}
-              className="ms-auto rounded-md p-1 text-rose-700 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-900/40"
+              className="ms-auto rounded-md p-1 text-rose-700 hover:bg-rose-100"
               aria-label="עצור הקלטה"
             >
               <X className="size-4" />
@@ -556,7 +633,65 @@ function CopilotChat({
           </div>
         ) : null}
 
+        {/* Attachment thumbnails */}
+        {attachments.length > 0 ? (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {attachments.map((f, idx) => {
+              const url = previewUrls[idx]
+              const isPdf = f.type === "application/pdf"
+              return (
+                <div
+                  key={`${f.name}-${idx}`}
+                  className="group relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
+                  title={f.name}
+                >
+                  {url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={url}
+                      alt={f.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : isPdf ? (
+                    <FileText className="h-6 w-6 text-rose-600" aria-hidden />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(idx)}
+                    aria-label={`הסר ${f.name}`}
+                    className="absolute end-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+
         <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            multiple
+            hidden
+            onChange={handleFilePicked}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            aria-label="צירוף תוכנית / תמונה / PDF"
+            title="צירוף PNG / JPG / WebP / PDF (עד 10MB לקובץ)"
+            className="shrink-0"
+          >
+            <Paperclip className="size-4" />
+          </Button>
           {speechSupported ? (
             <Button
               type="button"
@@ -566,8 +701,7 @@ function CopilotChat({
               aria-label={listening ? "עצור הקלטה" : "הקלט הודעה"}
               className={cn(
                 "shrink-0 transition-transform",
-                listening &&
-                  "scale-110 ring-4 ring-rose-300/60 dark:ring-rose-900/60",
+                listening && "scale-110 ring-4 ring-rose-300/60",
               )}
             >
               {listening ? (
@@ -593,19 +727,19 @@ function CopilotChat({
           <Button
             type="submit"
             size="icon"
-            disabled={!input.trim() || busy}
+            disabled={(!input.trim() && attachments.length === 0) || busy}
             className="shrink-0 bg-emerald-600 hover:bg-emerald-700"
             aria-label="שלח"
           >
             <Send className="size-4" />
           </Button>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-          <span>פרויקט מקושר אוטומטית</span>
+        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>פרויקט מקושר אוטומטית · תמיכה בתמונות ו-PDF</span>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            className="text-muted-foreground hover:text-foreground"
           >
             סגור
           </button>
@@ -676,7 +810,7 @@ function ChatBubble({ message }: { message: UIMessage }) {
           "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
           isUser
             ? "bg-emerald-600 text-white"
-            : "border bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100",
+            : "border border-border bg-card text-foreground",
         )}
       >
         {text.split("\n").map((line, i) => (

@@ -1326,69 +1326,16 @@ export default function NewProcurementOrderPage() {
                 )}
               />
 
-              {/* Phase D.3 — Shipping address (English, for export/intl orders) */}
-              <div className="md:col-span-2 lg:col-span-4 mt-2 border-t border-dashed border-border pt-3">
-                <p className="mb-2 text-[11px] font-semibold text-muted-foreground">
-                  Shipping address (English) — להזמנות יצוא / בינ&quot;ל
-                </p>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="shippingAddrEnLine1"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2 lg:col-span-2">
-                    <FormLabel>Address line 1</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        placeholder="12 Herzl St."
-                        dir="ltr"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="shippingAddrEnCity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        placeholder="Tel Aviv"
-                        dir="ltr"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="shippingAddrEnCountry"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        placeholder="Israel"
-                        dir="ltr"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/*
+                Phase D.3 — English shipping address fields (Address line 1 / City /
+                Country) were intentionally removed: 90%+ of Israeli construction
+                companies do not run cross-border procurement, and the LTR-English
+                block in the middle of the RTL Hebrew form felt like a generic ERP
+                template grafted on top of the product. The schema fields
+                (`shippingAddrEnLine1` / `shippingAddrEnCity` / `shippingAddrEnCountry`)
+                remain in the Zod model and the API payload as optional values
+                so that any external integration that relies on them keeps working.
+              */}
             </div>
 
             {/* Phase D.2 — classification flags */}

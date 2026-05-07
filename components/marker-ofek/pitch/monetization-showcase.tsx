@@ -111,40 +111,41 @@ export function MonetizationShowcase() {
   return (
     <div
       dir="rtl"
-      className="relative min-h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
-      data-investor-pitch="monetization"
+      className="relative min-h-full bg-background text-foreground"
+      data-ceo-command-center="monetization"
     >
+      {/* Subtle light-mode halos. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-fuchsia-500/20 blur-[140px]"
+        className="pointer-events-none absolute -top-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-fuchsia-300/15 blur-[140px]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-40 right-1/4 h-[28rem] w-[28rem] rounded-full bg-amber-500/20 blur-[140px]"
+        className="pointer-events-none absolute -bottom-40 right-1/4 h-[28rem] w-[28rem] rounded-full bg-amber-300/15 blur-[140px]"
       />
 
       <div className="relative mx-auto max-w-7xl px-6 py-10 sm:py-14">
         {/* Back link */}
         <Link
           href="/marker-ofek/pitch"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-emerald-300 hover:text-emerald-200"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-emerald-700 hover:text-emerald-800"
         >
           <ArrowUpLeft className="size-4 rotate-180" />
-          חזרה ללובי המשקיעים
+          חזרה למרכז שליטה הנהלה
         </Link>
 
         <header className="mb-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-3 py-1 text-xs font-medium text-fuchsia-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-medium text-fuchsia-700">
             <Rocket className="size-3" />
-            Growth & Monetization
+            חבילות ותמחור
           </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            מנוע הצמיחה — שלוש שכבות
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            המודל העסקי — שלוש שכבות
           </h1>
-          <p className="text-base text-slate-300">
-            מודל מסחור מדורג שמאפשר חדירה אורגנית בשטח, רוחב ארגוני, ומנוף רווח
-            אקספוננציאלי. מדורג לפי{" "}
-            <span className="font-semibold text-emerald-300">ARPU עולה</span> —
+          <p className="text-base text-muted-foreground">
+            המוצר בנוי משלוש שכבות המאפשרות חדירה מהשטח ועד ההנהלה, ושימוש לפי הצורך
+            במנועי ה-AI. מדורג לפי{" "}
+            <span className="font-semibold text-emerald-700">ARPU עולה</span> —
             כל לקוח שעולה רמה משלם פי 3-10.
           </p>
         </header>
@@ -163,16 +164,16 @@ export function MonetizationShowcase() {
         </section>
 
         {/* Closing summary strip */}
-        <section className="mt-10 rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-slate-900/60 p-6 backdrop-blur">
+        <section className="mt-10 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-cyan-50/40 to-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
                 Combined Run-rate
               </div>
-              <h3 className="text-2xl font-bold tracking-tight">
+              <h3 className="text-2xl font-bold tracking-tight text-foreground">
                 MRR משולב $184K · +34% MoM
               </h3>
-              <p className="max-w-xl text-sm text-slate-300">
+              <p className="max-w-xl text-sm text-muted-foreground">
                 Tier 1 מזין את Tier 2, Tier 2 מזין את Tier 3. AI Credits הם
                 המתאוצץ — ככל שהמערכת חכמה יותר, רווחיות הקריאה הבודדת עולה.
               </p>
@@ -197,7 +198,7 @@ function TierCard({ tier }: { tier: Tier }) {
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:shadow-[0_30px_80px_-30px_rgba(16,185,129,0.45)]",
+        "group relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-[0_30px_80px_-30px_rgba(16,185,129,0.35)]",
       )}
     >
       <div
@@ -211,32 +212,32 @@ function TierCard({ tier }: { tier: Tier }) {
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
               {tier.badge}
             </div>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
               {tier.title}
             </h2>
-            <div className="text-sm text-slate-300">{tier.subtitle}</div>
+            <div className="text-sm text-muted-foreground">{tier.subtitle}</div>
           </div>
-          <span className="rounded-2xl border border-white/10 bg-white/5 p-2.5 text-emerald-200 ring-1 ring-emerald-400/20">
+          <span className="rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-200/60">
             {tier.icon}
           </span>
         </div>
 
         <div className="mt-5 flex items-end gap-2">
-          <div className="text-4xl font-extrabold tracking-tight text-white">
+          <div className="text-4xl font-extrabold tracking-tight text-foreground">
             {tier.price}
           </div>
-          <div className="pb-1 text-xs text-slate-400">{tier.priceSub}</div>
+          <div className="pb-1 text-xs text-muted-foreground">{tier.priceSub}</div>
         </div>
 
-        <div className="mt-3 flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+        <div className="mt-3 flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
           <span className="font-bold tabular-nums">{tier.metric.value}</span>
           <span>{tier.metric.label}</span>
         </div>
 
-        <p className="mt-4 text-sm leading-relaxed text-slate-300">
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           {tier.description}
         </p>
 
@@ -244,9 +245,9 @@ function TierCard({ tier }: { tier: Tier }) {
           {tier.bullets.map((b) => (
             <li
               key={b}
-              className="flex items-start gap-2 text-sm text-slate-200"
+              className="flex items-start gap-2 text-sm text-foreground"
             >
-              <span className="mt-1 inline-block size-1.5 shrink-0 rounded-full bg-emerald-400" />
+              <span className="mt-1 inline-block size-1.5 shrink-0 rounded-full bg-emerald-500" />
               {b}
             </li>
           ))}
@@ -280,11 +281,11 @@ function AiCreditsGauge() {
   const fullEndY = cy
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 backdrop-blur">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-sm">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
         AI Credits Engine · Live
       </div>
-      <h3 className="mt-1 text-xl font-bold tracking-tight text-white">
+      <h3 className="mt-1 text-xl font-bold tracking-tight text-foreground">
         צריכת אסימוני AI הנדסיים — חודש נוכחי
       </h3>
 
@@ -306,7 +307,7 @@ function AiCreditsGauge() {
           <path
             d={`M ${startX} ${startY} A ${r} ${r} 0 1 1 ${fullEndX} ${fullEndY}`}
             fill="none"
-            stroke="rgba(148,163,184,0.18)"
+            stroke="rgba(148,163,184,0.28)"
             strokeWidth="14"
             strokeLinecap="round"
           />
@@ -323,7 +324,7 @@ function AiCreditsGauge() {
             x="120"
             y="105"
             textAnchor="middle"
-            className="fill-white"
+            className="fill-foreground"
             style={{ fontSize: 28, fontWeight: 700 }}
           >
             {(consumed / 1_000_000).toFixed(2)}M
@@ -332,14 +333,14 @@ function AiCreditsGauge() {
             x="120"
             y="125"
             textAnchor="middle"
-            className="fill-slate-400"
+            className="fill-muted-foreground"
             style={{ fontSize: 11 }}
           >
             of {(capacity / 1_000_000).toFixed(1)}M Credits
           </text>
         </svg>
 
-        <div className="mt-4 flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+        <div className="mt-4 flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
           <Cpu className="size-3" />
           {Math.round(pct * 100)}% utilisation · projected MRR ₪
           {(consumed * 0.42).toLocaleString("he-IL")} this month
@@ -366,14 +367,14 @@ function AiCreditsHistory() {
   const max = Math.max(...HISTORY.map((h) => h.credits))
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-6 backdrop-blur">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-sm">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
         Run-rate · Last 6 Months
       </div>
-      <h3 className="mt-1 text-xl font-bold tracking-tight text-white">
+      <h3 className="mt-1 text-xl font-bold tracking-tight text-foreground">
         צמיחה אקספוננציאלית של צריכת AI Credits
       </h3>
-      <p className="mt-1 text-xs text-slate-400">
+      <p className="mt-1 text-xs text-muted-foreground">
         סך אסימונים שנצרכו בכל חודש · מודגש: 4.3× צמיחה בחצי שנה
       </p>
 
@@ -386,14 +387,14 @@ function AiCreditsHistory() {
               key={h.month}
               className="group flex flex-1 flex-col items-center gap-2"
             >
-              <span className="text-[11px] font-semibold tabular-nums text-slate-200">
+              <span className="text-[11px] font-semibold tabular-nums text-foreground">
                 {(h.credits / 1000).toFixed(0)}K
               </span>
               <div
                 className={cn(
                   "w-full rounded-t-md transition-transform duration-500 group-hover:scale-[1.04]",
                   isPeak
-                    ? "bg-gradient-to-t from-fuchsia-500 via-violet-500 to-emerald-400 shadow-[0_0_30px_-5px_rgba(168,85,247,0.6)]"
+                    ? "bg-gradient-to-t from-fuchsia-500 via-violet-500 to-emerald-400 shadow-[0_0_30px_-5px_rgba(168,85,247,0.4)]"
                     : "bg-gradient-to-t from-emerald-600 via-cyan-500 to-cyan-300",
                 )}
                 style={{ height: `${heightPct}%`, minHeight: 14 }}
@@ -402,8 +403,8 @@ function AiCreditsHistory() {
                 className={cn(
                   "text-[10px]",
                   isPeak
-                    ? "font-semibold text-fuchsia-200"
-                    : "text-slate-500",
+                    ? "font-semibold text-fuchsia-700"
+                    : "text-muted-foreground",
                 )}
               >
                 {h.month}
@@ -430,13 +431,13 @@ function Stat({
   sub: string
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-slate-700/60 bg-slate-900/60 px-3 py-2 backdrop-blur">
-      <span className="text-emerald-300">{icon}</span>
+    <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2 shadow-sm">
+      <span className="text-emerald-600">{icon}</span>
       <div>
-        <div className="text-base font-bold tabular-nums text-white">
+        <div className="text-base font-bold tabular-nums text-foreground">
           {value}
         </div>
-        <div className="text-[10px] uppercase tracking-wide text-slate-400">
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
           {sub}
         </div>
       </div>

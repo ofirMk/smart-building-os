@@ -22,13 +22,29 @@ export async function ensureProjectVaultDefaultFolders(projectId: string): Promi
   try {
     // Bootstrap folders are system-level defaults; use service role to bypass RLS safely.
     const supabase = createSupabaseServiceRoleClient()
+
+    // Preflight: silently skip "ghost" projects (FK target missing). Avoids
+    // noisy 23503 foreign-key-violation logs on demo / hardcoded UUIDs that
+    // do not exist in `projects` for the current environment. This protects
+    // the investor pitch from spurious console.error noise.
+    const { data: projectExists, error: existsErr } = await supabase
+      .schema("public")
+      .from("projects")
+      .select("id")
+      .eq("id", pid)
+      .maybeSingle()
+    if (existsErr) throw existsErr
+    if (!projectExists) return
+
     await ensureDefaultVaultFoldersForProjectId(supabase, pid)
   } catch (error) {
-    // Never crash Project Hub for vault bootstrap drift; log and continue.
+    // Never crash Project Hub for vault bootstrap drift; log a single rich
+    // line and continue. The payload is guaranteed to be human-readable
+    // even when `error` is not a standard PostgrestError.
     const sbError = toSupabaseErrorPayload(error)
-    console.error("[vault:init] failed to ensure default folders", {
+    console.warn("[vault:init] failed to ensure default folders", {
       projectId: pid,
-      error: error instanceof Error ? error.message : String(error),
+      message: sbError.message,
       code: sbError.code,
       details: sbError.details,
       hint: sbError.hint,
@@ -37,22 +53,63 @@ export async function ensureProjectVaultDefaultFolders(projectId: string): Promi
   }
 }
 
+/**
+ * Normalise *anything* (PostgrestError / Error / string / random object) into a
+ * single payload that always contains a non-empty `message`. This is what makes
+ * the dev console show meaningful text instead of a confusing `{}`.
+ */
 function toSupabaseErrorPayload(error: unknown): {
+  message: string
   code: string | null
   details: string | null
   hint: string | null
   status: number | null
 } {
-  if (!error || typeof error !== "object") {
-    return { code: null, details: null, hint: null, status: null }
+  // Primitive / null / undefined → stringify directly.
+  if (error == null) {
+    return {
+      message: "unknown error (null/undefined)",
+      code: null,
+      details: null,
+      hint: null,
+      status: null,
+    }
   }
+  if (typeof error !== "object") {
+    return {
+      message: String(error),
+      code: null,
+      details: null,
+      hint: null,
+      status: null,
+    }
+  }
+
   const row = error as Record<string, unknown>
-  return {
-    code: typeof row.code === "string" ? row.code : null,
-    details: typeof row.details === "string" ? row.details : null,
-    hint: typeof row.hint === "string" ? row.hint : null,
-    status: typeof row.status === "number" ? row.status : null,
+  const code = typeof row.code === "string" ? row.code : null
+  const details = typeof row.details === "string" ? row.details : null
+  const hint = typeof row.hint === "string" ? row.hint : null
+  const status = typeof row.status === "number" ? row.status : null
+
+  // Resolve a meaningful `message` even when the object is opaque.
+  let message: string
+  if (error instanceof Error && error.message) {
+    message = error.message
+  } else if (typeof row.message === "string" && row.message) {
+    message = row.message
+  } else if (details) {
+    message = details
+  } else {
+    // Last resort: serialize the object so the dev console never sees `{}`.
+    try {
+      message = JSON.stringify(error)
+      if (message === "{}") message = error.constructor?.name ?? "unknown error"
+    } catch {
+      message = error.constructor?.name ?? "unknown error"
+    }
   }
+
+  return { message, code, details, hint, status }
 }
 
 async function ensureDefaultVaultFoldersForProjectId(

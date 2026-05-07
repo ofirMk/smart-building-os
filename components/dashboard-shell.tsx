@@ -114,9 +114,10 @@ export function DashboardShell({
             הניווט החדש מסתמך על פריטי התפריט עצמם להתמצאות.
           */}
           {/*
-            Investor Pitch shortcut — global "🚀 חמ"ל משקיעים" button. Always
-            mounted first in the actions slot so the CEO can return to the
-            pitch lobby in one click from any screen.
+            Executive lobby shortcut — global "מרכז שליטה הנהלה" button.
+            Always mounted first in the actions slot so the CEO can return
+            to the executive command-center lobby in one click from any
+            screen. Renamed from the previous "חמ"ל משקיעים" demo copy.
           */}
           <GlobalPitchNavButton />
           <CommandPaletteHeaderTrigger />
