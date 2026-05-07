@@ -907,6 +907,97 @@ export interface ErpSupplierCatalogImport {
   updatedAt: string
 }
 
+/* ---------------------------------------------------------------------------
+ * Phase 9 Step 1 — Personal Productivity & Microsoft Graph integration types.
+ * Mirror של 20260815100000_user_integrations_schema.sql.
+ * ה-RLS על הטבלאות הוא per-user (auth.uid() = user_id), לא per-company —
+ * ולכן השדות פה לא כוללים companyId.
+ * ------------------------------------------------------------------------- */
+
+export const ERP_USER_INTEGRATION_PROVIDERS = [
+  "MICROSOFT_GRAPH",
+  "GOOGLE_WORKSPACE",
+  "SLACK",
+] as const
+export type ErpUserIntegrationProvider =
+  (typeof ERP_USER_INTEGRATION_PROVIDERS)[number]
+
+export const ERP_USER_INTEGRATION_SYNC_STATUSES = [
+  "PENDING",
+  "SYNCING",
+  "ACTIVE",
+  "STALE",
+  "EXPIRED",
+  "REVOKED",
+  "ERROR",
+] as const
+export type ErpUserIntegrationSyncStatus =
+  (typeof ERP_USER_INTEGRATION_SYNC_STATUSES)[number]
+
+export const ERP_COMMUNICATION_TYPES = ["EMAIL", "MEETING", "CHAT"] as const
+export type ErpCommunicationType = (typeof ERP_COMMUNICATION_TYPES)[number]
+
+export const ERP_COMMUNICATION_LINKED_ENTITY_TYPES = [
+  "PROJECT",
+  "PURCHASE_ORDER",
+  "SUPPLIER",
+  "INVOICE",
+] as const
+export type ErpCommunicationLinkedEntityType =
+  (typeof ERP_COMMUNICATION_LINKED_ENTITY_TYPES)[number]
+
+/** OAuth integration אחד פר משתמש × provider. אסור לחשוף ל-UI את ה-tokens. */
+export interface ErpUserIntegration {
+  id: string
+  userId: string
+  provider: ErpUserIntegrationProvider
+  /** UI-safe — לא לחשוף את הטוקן עצמו ב-API responses; רק boolean / ה-email. */
+  emailAddress: string
+  externalTenantId: string | null
+  syncStatus: ErpUserIntegrationSyncStatus
+  lastSyncAt: string | null
+  lastSyncError: string | null
+  expiresAt: string
+  scopes: string[]
+  metadata: Record<string, unknown>
+  createdAt: string
+  updatedAt: string
+}
+
+/** שולח/נמען מנורמל בכרטיס תקשורת. */
+export interface ErpCommunicationParticipant {
+  name: string | null
+  address: string
+  isInternal?: boolean
+}
+
+/** פריט יחיד במטמון התקשורת — מייל / פגישה / (בעתיד) צ׳אט. */
+export interface ErpCommunicationCacheItem {
+  id: string
+  userId: string
+  integrationId: string | null
+  externalId: string
+  type: ErpCommunicationType
+  sender: ErpCommunicationParticipant
+  recipients: ErpCommunicationParticipant[]
+  subject: string
+  bodyPreview: string | null
+  isRead: boolean
+  isFlagged: boolean
+  hasAttachments: boolean
+  receivedAt: string
+  /** Meeting only. */
+  endsAt: string | null
+  /** Meeting only. */
+  location: string | null
+  linkedEntityType: ErpCommunicationLinkedEntityType | null
+  linkedEntityId: string | null
+  /** 0..1; UI מציג קישור רק כש-≥ 0.6. */
+  linkConfidence: number | null
+  createdAt: string
+  updatedAt: string
+}
+
 /** שורה שחולצה מקטלוג ספק — ממתינה לאישור איש רכש. */
 export interface ErpSupplierCatalogImportLine {
   id: string

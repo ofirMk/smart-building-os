@@ -29,6 +29,7 @@ import {
   Shield,
   ShoppingCart,
   Sparkles,
+  Sun,
   Users,
   Wrench,
   Zap,
@@ -51,6 +52,20 @@ export type MarkerOfekSidebarNavSection = {
 
 /** ניווט מרקר אופק — מקור אמת יחיד לסרגל ולמגירה */
 export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
+  {
+    // Phase 9 Step 1 — מערכת הפעלה יומית. מוצב כראשון בסרגל כי זה
+    // נקודת הכניסה היומית של ה-CEO לפני שהוא נכנס לישויות עסקיות.
+    id: "personal-workspace",
+    label: "סביבת עבודה אישית",
+    defaultOpen: true,
+    items: [
+      {
+        title: "My Day ☀️",
+        href: "/marker-ofek/my-day",
+        icon: Sun,
+      },
+    ],
+  },
   {
     id: "master-data-core",
     label: "תשתיות נתונים (Master Data)",
