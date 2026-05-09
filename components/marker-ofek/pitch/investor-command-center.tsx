@@ -30,6 +30,7 @@ import {
   Printer,
   ReceiptText,
   Send,
+  ShoppingCart,
   Sparkles,
   TrendingDown,
   TrendingUp,
@@ -54,6 +55,7 @@ import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 import {
+  DEMO_PURCHASE_ORDER_ID,
   DEMO_SUBCONTRACTOR_BILL_ID,
   DEMO_SUBCONTRACTOR_CONTRACT_ID,
 } from "@/types/erp"
@@ -174,6 +176,23 @@ export function InvestorCommandCenter({
           >
             <ReceiptText className="size-4" aria-hidden />
             חשבון קבלן מצטבר (PDF)
+          </Button>
+          {/* Demo: print the seeded Purchase Order (change-order on top of the contract) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
+            data-demo-link="purchase-order-print"
+            render={
+              <a
+                href={`/print/purchase-orders/${DEMO_PURCHASE_ORDER_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <ShoppingCart className="size-4" aria-hidden />
+            הזמנת רכש (PDF)
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>

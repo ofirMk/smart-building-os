@@ -1158,3 +1158,10 @@ export type ErpSubcontractorBillDetail = ErpSubcontractorBill & {
 /** UUID דמו של החשבון החלקי המוצג (Seed bill #5). יציב עבור כפתור המצגת. */
 export const DEMO_SUBCONTRACTOR_BILL_ID =
   "b1110000-0000-4000-8000-555555555555"
+
+/**
+ * UUID דמו של הזמנת הרכש המוצגת (Seed PO-2026-001). יציב עבור כפתור המצגת.
+ * מייצג "עבודות חשמל נוספות" — change-order style מעל חוזה קבלן המשנה.
+ */
+export const DEMO_PURCHASE_ORDER_ID =
+  "d0000000-0000-4000-8000-777777777777"
