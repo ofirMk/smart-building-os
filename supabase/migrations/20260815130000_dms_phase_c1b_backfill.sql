@@ -61,7 +61,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $func$
 declare
   v_folders_inserted int := 0;
   v_documents_inserted int := 0;
@@ -112,7 +112,7 @@ begin
            pd.company_id,
            pd.project_id,
            pd.parent_document_id,
-           pd.title,
+           pd.file_name as title,
            pd.vault_folder_key,
            pd.created_at,
            pd.updated_at
@@ -161,7 +161,7 @@ begin
            fr.company_id,
            fr.project_id,
            fr.parent_document_id as folder_id,
-           fr.title,
+           fr.file_name as title,
            fr.document_kind,
            fr.created_at,
            fr.updated_at
@@ -212,7 +212,7 @@ begin
            pd.file_path,
            pd.mime_type,
            pd.size,
-           pd.title,
+           pd.file_name as title,
            pd.created_at,
            pd.is_current
     from public.project_documents pd
@@ -336,7 +336,7 @@ begin
       using errcode = 'P0001';
   end if;
 end;
-$$;
+$func$;
 
 comment on function public.dms_backfill_from_project_documents(boolean) is
   'Phase C.1.b — idempotent backfill from public.project_documents to DMS tables. '
