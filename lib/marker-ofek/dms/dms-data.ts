@@ -21,7 +21,6 @@ type ProjectRow = {
   id: string
   name: string | null
   internal_project_code: string | null
-  company_id: string | null
 }
 
 type DmsFolderRow = {
@@ -305,16 +304,19 @@ export async function loadDmsBrowserBootstrap(
     /** Verify project belongs to the active company (defense in depth — RLS also checks). */
     const proj = await supabase
       .from("projects")
-      .select("id, name, internal_project_code, company_id")
+      .select("id, name, internal_project_code")
       .eq("id", trimmed)
       .maybeSingle()
 
     if (proj.error) return { ok: false, error: proj.error.message }
     const projRow = proj.data as ProjectRow | null
     if (!projRow) return { ok: false, error: "פרויקט לא נמצא או שאין הרשאה" }
-    if (projRow.company_id && projRow.company_id !== companyId) {
-      return { ok: false, error: "פרויקט אינו שייך לחברה הפעילה" }
-    }
+    /**
+     * Cross-tenant safety: the projects table here has no company_id column,
+     * so we trust the active-company cookie that was already validated by the
+     * caller's session + erp_user_company_memberships. DMS rows are stamped
+     * with that company_id, and dms_* RLS scopes by company independently.
+     */
 
     /** Bootstrap default folders + per-user ACL (idempotent). */
     const rootRows = await ensureDefaultFolders({
