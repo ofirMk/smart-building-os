@@ -1096,3 +1096,65 @@ export type ErpSubcontractorContractDetail = ErpSubcontractorContract & {
 /** UUID דמו של חוזה ההדגמה (Seed). יציב עבור כפתור ה"הדפס" במצגת. */
 export const DEMO_SUBCONTRACTOR_CONTRACT_ID =
   "c0700000-0000-4000-8000-cccccccccccc"
+
+// ===========================================================================
+// Subcontractor Partial Bills (חשבונות חלקיים) — מיגרציה 20260819100000
+// ===========================================================================
+
+export const ERP_SUBCONTRACTOR_BILL_STATUSES = [
+  "DRAFT",
+  "SUBMITTED",
+  "APPROVED",
+  "PAID",
+  "REJECTED",
+] as const
+export type ErpSubcontractorBillStatus =
+  (typeof ERP_SUBCONTRACTOR_BILL_STATUSES)[number]
+
+export type ErpSubcontractorBill = {
+  id: string
+  companyId: string
+  projectId: string
+  contractId: string
+  billNumber: number
+  executionMonth: string
+  billDate: string
+  cumulativeExecutedAmount: number
+  retentionDeductionAmount: number
+  insuranceDeductionAmount: number
+  /** Computed (generated stored) — cumulative_executed − retention − insurance */
+  cumulativeNetAmount: number
+  previousBilledAmount: number
+  /** = cumulativeNetAmount − previousBilledAmount */
+  amountToPay: number
+  vatPct: number
+  vatAmount: number
+  grandTotalAmount: number
+  status: ErpSubcontractorBillStatus
+  notes: string | null
+  approvedAt: string | null
+  paidAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ErpSubcontractorBillLine = {
+  id: string
+  companyId: string
+  billId: string
+  boqLineId: string
+  cumulativeQty: number
+  cumulativePct: number
+  cumulativeAmount: number
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ErpSubcontractorBillDetail = ErpSubcontractorBill & {
+  lines?: ErpSubcontractorBillLine[]
+}
+
+/** UUID דמו של החשבון החלקי המוצג (Seed bill #5). יציב עבור כפתור המצגת. */
+export const DEMO_SUBCONTRACTOR_BILL_ID =
+  "b1110000-0000-4000-8000-555555555555"

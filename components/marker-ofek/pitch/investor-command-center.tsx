@@ -28,6 +28,7 @@ import {
   MicOff,
   Paperclip,
   Printer,
+  ReceiptText,
   Send,
   Sparkles,
   TrendingDown,
@@ -52,7 +53,10 @@ import { playMicStart, playMicStop, playSuccess } from "@/lib/audio-sfx"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
-import { DEMO_SUBCONTRACTOR_CONTRACT_ID } from "@/types/erp"
+import {
+  DEMO_SUBCONTRACTOR_BILL_ID,
+  DEMO_SUBCONTRACTOR_CONTRACT_ID,
+} from "@/types/erp"
 
 // ============================================================================
 // Mock data — investor-grade numbers
@@ -153,6 +157,23 @@ export function InvestorCommandCenter({
           >
             <Printer className="size-4" aria-hidden />
             חוזה קבלן משנה (PDF)
+          </Button>
+          {/* Demo: print the seeded subcontractor partial bill (cumulative + waterfall) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            data-demo-link="subcontractor-bill-print"
+            render={
+              <a
+                href={`/print/bills/${DEMO_SUBCONTRACTOR_BILL_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <ReceiptText className="size-4" aria-hidden />
+            חשבון קבלן מצטבר (PDF)
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>
