@@ -1,0 +1,70 @@
+/* ============================================================================
+ * Print engine — A4 base styles
+ * ----------------------------------------------------------------------------
+ * שלא יושפע מ-Dark Mode וייראה זהה במסך ובהדפסה.
+ * ============================================================================
+ */
+
+/* כל ה-canvas של ה-(print) layout מאלץ צבעים בהירים גם ב-dark mode */
+.print-canvas,
+.print-canvas * {
+  color-scheme: light;
+}
+
+/* פריסת A4 בעת הדפסה בפועל */
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  /* רקעי בית לבנים, ללא צללים — חיסכון בדיו ועקביות */
+  html,
+  body,
+  .print-canvas {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* ביטול overflow גלובלי שמגיע מ-app/layout — מאפשר pagination תקין */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* הסתרת אלמנטים שמסומנים `print:hidden` (Tailwind מספק זאת אוטומטית,
+     זה fallback למקרה ש-Tailwind נכשל לטעון את ה-variant) */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* "כפתור צף" של ההדפסה (אם קיים) לא יודפס */
+  [data-print-control] {
+    display: none !important;
+  }
+
+  /* כל אלמנט שמסומן break-before-page יפתח עמוד חדש */
+  .print-break-before-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* החלקה — מונע חיתוך באמצע שורות בטבלאות */
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}
+
+/* פונט עברי קריא במסך ובהדפסה */
+.print-canvas {
+  font-family: var(--font-rubik), "Rubik", "Heebo", "Noto Sans Hebrew",
+    "Segoe UI", Arial, sans-serif;
+}

@@ -1021,3 +1021,78 @@ export interface ErpSupplierCatalogImportLine {
   updatedAt: string
 }
 
+// ===========================================================================
+// Subcontractor Contracts (חוזי קבלן משנה) — מיגרציה 20260818100000
+// ===========================================================================
+
+export const ERP_SUBCONTRACTOR_CONTRACT_TYPES = [
+  "PAUSHALI",
+  "MEASURED",
+] as const
+export type ErpSubcontractorContractType =
+  (typeof ERP_SUBCONTRACTOR_CONTRACT_TYPES)[number]
+
+export const ERP_SUBCONTRACTOR_CONTRACT_STATUSES = [
+  "DRAFT",
+  "ACTIVE",
+  "COMPLETED",
+  "CANCELLED",
+] as const
+export type ErpSubcontractorContractStatus =
+  (typeof ERP_SUBCONTRACTOR_CONTRACT_STATUSES)[number]
+
+export type ErpSubcontractorContract = {
+  id: string
+  companyId: string
+  projectId: string
+  subcontractorId: string
+  contractNumber: string
+  contractType: ErpSubcontractorContractType
+  totalAmount: number
+  insurancePct: number
+  retentionPct: number
+  paymentTerms: string | null
+  escalationIncluded: boolean
+  status: ErpSubcontractorContractStatus
+  signedAt: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ErpContractBoqLine = {
+  id: string
+  companyId: string
+  contractId: string
+  lineNo: number
+  sectionCode: string
+  description: string
+  uom: string
+  quantity: number
+  unitPrice: number
+  discountAmount: number
+  totalLinePrice: number
+  escalationIncluded: boolean
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ErpContractGeneralTerm = {
+  id: string
+  companyId: string
+  contractId: string
+  termIndex: number
+  termText: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type ErpSubcontractorContractDetail = ErpSubcontractorContract & {
+  boqLines?: ErpContractBoqLine[]
+  generalTerms?: ErpContractGeneralTerm[]
+}
+
+/** UUID דמו של חוזה ההדגמה (Seed). יציב עבור כפתור ה"הדפס" במצגת. */
+export const DEMO_SUBCONTRACTOR_CONTRACT_ID =
+  "c0700000-0000-4000-8000-cccccccccccc"

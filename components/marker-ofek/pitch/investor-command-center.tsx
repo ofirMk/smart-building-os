@@ -27,6 +27,7 @@ import {
   Mic,
   MicOff,
   Paperclip,
+  Printer,
   Send,
   Sparkles,
   TrendingDown,
@@ -51,6 +52,7 @@ import { playMicStart, playMicStop, playSuccess } from "@/lib/audio-sfx"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
+import { DEMO_SUBCONTRACTOR_CONTRACT_ID } from "@/types/erp"
 
 // ============================================================================
 // Mock data — investor-grade numbers
@@ -134,7 +136,26 @@ export function InvestorCommandCenter({
           ) : null}
         </div>
 
-        <CopilotDrawer projectId={projectId} projectName={projectName} />
+        <div className="flex items-center gap-2">
+          {/* Demo: print the seeded subcontractor contract (one-click for pitch) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+            data-demo-link="subcontractor-contract-print"
+            render={
+              <a
+                href={`/print/contracts/${DEMO_SUBCONTRACTOR_CONTRACT_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <Printer className="size-4" aria-hidden />
+            חוזה קבלן משנה (PDF)
+          </Button>
+          <CopilotDrawer projectId={projectId} projectName={projectName} />
+        </div>
       </header>
 
       {/* Bento KPI grid */}
