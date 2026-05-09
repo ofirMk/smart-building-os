@@ -55,6 +55,9 @@ function tabLabelForPath(pathname: string): string {
   if (pathname.startsWith("/marker-ofek/items")) return "קטלוג"
   if (pathname.startsWith("/marker-ofek/holden-erp")) return "Holden ERP"
   if (pathname.startsWith("/marker-ofek/finance")) return "כספים"
+  if (pathname === "/marker-ofek/dms" || pathname === "/marker-ofek/dms/")
+    return "כספת מסמכים (DMS)"
+  if (pathname.startsWith("/marker-ofek/dms/")) return "DMS — מסמכי פרויקט"
   if (pathname.startsWith("/marker-ofek/settings")) return "הגדרות"
   return "מערכת הביצוע"
 }

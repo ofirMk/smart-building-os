@@ -53,7 +53,12 @@ const NAV_ITEMS: NavItem[] = [
       },
       { title: "מכרזים", links: [] },
       { title: "חוזים וחשבונות", links: [] },
-      { title: "פרויקטים", links: [] },
+      {
+        title: "פרויקטים",
+        links: [
+          { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
+        ],
+      },
       { title: "בקרה תקציבית", links: [] },
       { title: "שינויי דיירים", links: [] },
       { title: "בדק", links: [] },
