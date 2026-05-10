@@ -16,6 +16,11 @@
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 
+import {
+  listAdminAuditEntries,
+  recordAdminAction,
+  type AdminAuditEntry,
+} from "@/lib/admin/audit-log"
 import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
@@ -39,6 +44,7 @@ export type MemberRow = {
 
 async function ensureAdminMembership(): Promise<{
   userId: string
+  userEmail: string | null
   companyId: string
 }> {
   const store = await cookies()
@@ -62,7 +68,7 @@ async function ensureAdminMembership(): Promise<{
   if (!mem || !mem.is_active) throw new Error("אין לך גישה פעילה לחברה זו")
   if (mem.role !== "admin") throw new Error("רק admin יכול לנהל משתמשים")
 
-  return { userId: user.id, companyId }
+  return { userId: user.id, userEmail: user.email ?? null, companyId }
 }
 
 function normalizeRole(raw: string): MembershipRole {
@@ -168,7 +174,11 @@ export async function inviteMember(input: {
   | { ok: false; error: string }
 > {
   try {
-    const { companyId } = await ensureAdminMembership()
+    const {
+      userId: actorId,
+      userEmail: actorEmail,
+      companyId,
+    } = await ensureAdminMembership()
     const email = input.email.trim().toLowerCase()
     const fullName = input.fullName.trim()
     const role = normalizeRole(input.role)
@@ -237,6 +247,17 @@ export async function inviteMember(input: {
       return { ok: false, error: `שגיאה ביצירת חברות: ${memErr.message}` }
     }
 
+    await recordAdminAction({
+      client: sr,
+      companyId,
+      actorUserId: actorId,
+      actorEmail,
+      action: "invite_member",
+      targetUserId: userId,
+      targetEmail: email,
+      details: { invited, role, full_name: fullName },
+    })
+
     revalidatePath("/admin/users")
     return { ok: true, userId, invited }
   } catch (e) {
@@ -254,7 +275,11 @@ export async function updateMemberRole(input: {
   role: MembershipRole
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { companyId, userId: callerId } = await ensureAdminMembership()
+    const {
+      companyId,
+      userId: callerId,
+      userEmail: actorEmail,
+    } = await ensureAdminMembership()
     const role = normalizeRole(input.role)
 
     // Guard: admin can't demote themselves (prevents locking the tenant out).
@@ -266,12 +291,34 @@ export async function updateMemberRole(input: {
     }
 
     const sr = createSupabaseServiceRoleClient()
+
+    // Capture previous role for the audit entry.
+    const { data: existingMem } = await sr
+      .from("erp_user_company_memberships")
+      .select("role")
+      .eq("company_id", companyId)
+      .eq("user_id", input.userId)
+      .maybeSingle()
+    const previousRole = (existingMem as { role: string } | null)?.role ?? null
+
     const { error } = await sr
       .from("erp_user_company_memberships")
       .update({ role })
       .eq("company_id", companyId)
       .eq("user_id", input.userId)
     if (error) return { ok: false, error: error.message }
+
+    const { data: tu } = await sr.auth.admin.getUserById(input.userId)
+    await recordAdminAction({
+      client: sr,
+      companyId,
+      actorUserId: callerId,
+      actorEmail,
+      action: "update_role",
+      targetUserId: input.userId,
+      targetEmail: tu.user?.email ?? null,
+      details: { previous_role: previousRole, new_role: role },
+    })
 
     revalidatePath("/admin/users")
     return { ok: true }
@@ -285,7 +332,11 @@ export async function toggleMemberActive(input: {
   isActive: boolean
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { companyId, userId: callerId } = await ensureAdminMembership()
+    const {
+      companyId,
+      userId: callerId,
+      userEmail: actorEmail,
+    } = await ensureAdminMembership()
     if (input.userId === callerId && !input.isActive) {
       return { ok: false, error: "אינך יכול להשבית את עצמך." }
     }
@@ -298,6 +349,18 @@ export async function toggleMemberActive(input: {
       .eq("user_id", input.userId)
     if (error) return { ok: false, error: error.message }
 
+    const { data: tu } = await sr.auth.admin.getUserById(input.userId)
+    await recordAdminAction({
+      client: sr,
+      companyId,
+      actorUserId: callerId,
+      actorEmail,
+      action: "toggle_active",
+      targetUserId: input.userId,
+      targetEmail: tu.user?.email ?? null,
+      details: { is_active: input.isActive },
+    })
+
     revalidatePath("/admin/users")
     return { ok: true }
   } catch (e) {
@@ -309,12 +372,31 @@ export async function removeMember(input: {
   userId: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { companyId, userId: callerId } = await ensureAdminMembership()
+    const {
+      companyId,
+      userId: callerId,
+      userEmail: actorEmail,
+    } = await ensureAdminMembership()
     if (input.userId === callerId) {
       return { ok: false, error: "אינך יכול להסיר את עצמך." }
     }
 
     const sr = createSupabaseServiceRoleClient()
+
+    // Capture target email + previous role for audit BEFORE the delete.
+    const [{ data: existingMem }, { data: tu }] = await Promise.all([
+      sr
+        .from("erp_user_company_memberships")
+        .select("role,is_active")
+        .eq("company_id", companyId)
+        .eq("user_id", input.userId)
+        .maybeSingle(),
+      sr.auth.admin.getUserById(input.userId),
+    ])
+    const removedRole =
+      (existingMem as { role: string; is_active: boolean } | null)?.role ?? null
+    const targetEmail = tu.user?.email ?? null
+
     const { error } = await sr
       .from("erp_user_company_memberships")
       .delete()
@@ -322,9 +404,32 @@ export async function removeMember(input: {
       .eq("user_id", input.userId)
     if (error) return { ok: false, error: error.message }
 
+    await recordAdminAction({
+      client: sr,
+      companyId,
+      actorUserId: callerId,
+      actorEmail,
+      action: "remove_member",
+      targetUserId: input.userId,
+      targetEmail,
+      details: { removed_role: removedRole },
+    })
+
     revalidatePath("/admin/users")
     return { ok: true }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "כשל" }
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Audit log reader                                                           */
+/* -------------------------------------------------------------------------- */
+
+export async function listAuditLog(
+  limit: number = 20,
+): Promise<AdminAuditEntry[]> {
+  const { companyId } = await ensureAdminMembership()
+  const sr = createSupabaseServiceRoleClient()
+  return listAdminAuditEntries(sr, companyId, limit)
 }

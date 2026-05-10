@@ -1,13 +1,17 @@
 import Link from "next/link"
-import { UserPlus, Users } from "lucide-react"
+import { History, UserPlus, Users } from "lucide-react"
 
-import { listMembers } from "./actions"
+import { listAuditLog, listMembers } from "./actions"
+import { AuditPanel } from "./audit-panel"
 import { MembersTableClient } from "./members-table-client"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminUsersPage() {
-  const members = await listMembers()
+  const [members, auditEntries] = await Promise.all([
+    listMembers(),
+    listAuditLog(20),
+  ])
   const activeCount = members.filter((m) => m.isActive).length
   const adminCount = members.filter((m) => m.role === "admin" && m.isActive).length
 
@@ -47,6 +51,16 @@ export default async function AdminUsersPage() {
       ) : (
         <MembersTableClient initialMembers={members} />
       )}
+
+      <div className="space-y-3 pt-4">
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-slate-500" />
+          <h3 className="text-sm font-semibold text-slate-700">
+            יומן פעולות אדמין (20 אחרונות)
+          </h3>
+        </div>
+        <AuditPanel entries={auditEntries} />
+      </div>
     </div>
   )
 }
