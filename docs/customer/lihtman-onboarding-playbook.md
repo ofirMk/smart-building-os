@@ -208,6 +208,11 @@ on conflict (user_id, company_id) do update
 - **PO lines**: הקובץ הוא מקור האמת לכל PO שמופיע בו — שורות קיימות נמחקות ומוחלפות. POs שאינם בקובץ לא מושפעים.
 - `resource_id` ב-PO lines הוא טקסט חופשי (אין FK לקטלוג). אפשר לעדכן זאת ב-Sprint 2 אם יוחלט לבנות resource catalog.
 
+**Sprint 1 / Step 7 — Sample CSVs + dry-run script (10/05/2026):**
+- 10 קבצי דוגמה ב-`@docs/customer/sample-imports/` עם נתוני לייטמן ריאליים (3 פרויקטים, 5 ספקים, 3 חוזים, 4 POs + שורות, יתרות פתיחה מאוזנות).
+- סקריפט `npm run dry-run:imports` מריץ את כולם דרך ה-engine ומדווח על aliases/transforms שבורים.
+- **באג שנתפס ב-baseline:** `contract_type` חייב להיות `PAUSHALI/MEASURED/TARGET/COST_PLUS` (לא `FIXED_PRICE`). יש לתעד ב-data-mapping של לייטמן.
+
 ### Step 13 — ייצוא Master Suppliers
 - **בעלים:** [Lihtman IT] · **תוצר:** `lihtman-suppliers-export.xlsx`.
 - **שיטה:** Priority → SUPPLIERS form → Tabula export → Excel.

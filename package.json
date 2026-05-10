@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "patch-package",
+    "dry-run:imports": "tsx scripts/dry-run-imports.ts",
     "dev": "next dev",
     "dev:restart:clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true});console.log('Cleaned .next cache')}catch(e){}\" && next dev",
     "build": "next build",
