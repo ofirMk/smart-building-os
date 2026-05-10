@@ -40,6 +40,7 @@ const FILE_TO_KIND: Record<string, ImporterEntityKind> = {
   "contract-boq-lines.csv": "contract_boq_lines",
   "purchase-order-lines.csv": "purchase_order_lines",
   "subcontractor-bills.csv": "subcontractor_bills",
+  "bank-statements.csv": "bank_statements",
 }
 
 type Outcome = {

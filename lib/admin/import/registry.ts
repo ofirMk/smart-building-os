@@ -12,6 +12,7 @@
  * bills) — each is a single new file + 1-line registration here.
  */
 import { ACCOUNTS_IMPORTER } from "./entities/accounts"
+import { BANK_STATEMENTS_IMPORTER } from "./entities/bank-statements"
 import { CONTRACT_BOQ_LINES_IMPORTER } from "./entities/contract-boq-lines"
 import { ITEMS_IMPORTER } from "./entities/items"
 import { OPENING_BALANCES_IMPORTER } from "./entities/opening-balances"
@@ -55,6 +56,9 @@ register(PURCHASE_ORDER_LINES_IMPORTER) // -> purchase_orders (delete-then-inser
 
 /* Layer 5 — references Layer-4 (BOQ lines): */
 register(SUBCONTRACTOR_BILLS_IMPORTER) // -> contracts + boq_lines (waterfall validation)
+
+/* Layer 6 — bank reconciliation (independent surface, references erp_bank_accounts): */
+register(BANK_STATEMENTS_IMPORTER) // -> bank_accounts (statement = bank_account × period)
 
 export function getRegisteredEntities(): {
   kind: ImporterEntityKind

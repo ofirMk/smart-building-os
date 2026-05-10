@@ -4,7 +4,7 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search } from "lucide-react"
+import { Rocket, Search } from "lucide-react"
 
 import {
   isMarkerOfekDiamondFormPath,
@@ -94,6 +94,22 @@ function MarkerOfekWorkspaceChrome({
             ))}
           </nav>
           <div className="flex shrink-0 items-center gap-2">
+            {/*
+             * Pitch Protection Directive — global header anchor to the investor demo lobby.
+             * MUST remain reachable from every /marker-ofek/* page for ad-hoc investor meetings.
+             * Do not remove or hide. Reference: app/(dashboard)/marker-ofek/pitch/page.tsx.
+             */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm transition-all duration-200 hover:border-emerald-400 hover:bg-emerald-100"
+              data-pitch-hub-anchor="header"
+              render={<Link href="/marker-ofek/pitch" prefetch />}
+            >
+              <Rocket className="size-4 shrink-0" aria-hidden />
+              <span className="hidden sm:inline">חמ&quot;ל משקיעים</span>
+            </Button>
             <Button
               type="button"
               variant="outline"

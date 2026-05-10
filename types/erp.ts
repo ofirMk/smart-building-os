@@ -1165,3 +1165,10 @@ export const DEMO_SUBCONTRACTOR_BILL_ID =
  */
 export const DEMO_PURCHASE_ORDER_ID =
   "d0000000-0000-4000-8000-777777777777"
+
+/**
+ * UUID דמו של דוח התאמת בנק לחודש 11/2026 (Seed). יציב עבור כפתור המצגת
+ * "דוח התאמת בנק (PDF)" ב-CEO Command Center.
+ */
+export const DEMO_BANK_RECONCILIATION_ID =
+  "e0000000-0000-4000-8000-888888888888"

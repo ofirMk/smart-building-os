@@ -24,6 +24,7 @@ import {
   Coins,
   FileText,
   ImageIcon,
+  Landmark,
   Mic,
   MicOff,
   Paperclip,
@@ -55,6 +56,7 @@ import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 import {
+  DEMO_BANK_RECONCILIATION_ID,
   DEMO_PURCHASE_ORDER_ID,
   DEMO_SUBCONTRACTOR_BILL_ID,
   DEMO_SUBCONTRACTOR_CONTRACT_ID,
@@ -193,6 +195,23 @@ export function InvestorCommandCenter({
           >
             <ShoppingCart className="size-4" aria-hidden />
             הזמנת רכש (PDF)
+          </Button>
+          {/* Demo: print the seeded bank reconciliation report (Sprint A.1 — Financial Closure) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-indigo-300 bg-indigo-50 text-indigo-800 hover:bg-indigo-100"
+            data-demo-link="bank-reconciliation-print"
+            render={
+              <a
+                href={`/print/bank-reconciliations/${DEMO_BANK_RECONCILIATION_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <Landmark className="size-4" aria-hidden />
+            דוח התאמת בנק (PDF)
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>
