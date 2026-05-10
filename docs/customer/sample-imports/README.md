@@ -19,6 +19,7 @@
 | `opening_balances` | `opening-balances.csv` | 4 | `accounts` |
 | `contract_boq_lines` | `contract-boq-lines.csv` | 9 | `subcontractor_contracts` |
 | `purchase_order_lines` | `purchase-order-lines.csv` | 8 | `purchase_orders` |
+| `subcontractor_bills` | `subcontractor-bills.csv` | 6 (=2 חשבונות × 3 שורות) | `subcontractor_contracts` + `contract_boq_lines` |
 
 ## נתוני הדוגמה — קונסיסטנטיים
 
@@ -29,6 +30,14 @@
 - **3 חוזי קבלן משנה** עם שורות BOQ ריאליות.
 - **4 PO פתוחים** עם שורות מקושרות.
 - **יתרות פתיחה מאוזנות** ל-01/01/2026: סך חיובים ₪4,250,000 = סך זיכויים ₪4,250,000.
+
+## חשבונות חלקיים — הערות נוספות
+
+הקובץ `subcontractor-bills.csv` מכיל **2 חשבונות** עם **3 שורות BOQ כל אחד**:
+- `C-1001` חשבון #5: 65/55/40% ביצוע מצטבר. תואם ל-seed הקיים בסכימה.
+- `C-1002` חשבון #1: 30% ביצוע אחיד.
+
+ה-importer מבצע **waterfall validation** ב-commit (לא ב-dry-run): קיזוז עכבון/ביטוח לפי תנאי החוזה, חישוב נטו, החסרת מצטבר קודם, ומע"מ. שגיאה ב-validation דוחה רק את החשבון הספציפי, לא את כל הקובץ.
 
 ## הרצת dry-run
 

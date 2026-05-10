@@ -142,6 +142,63 @@ export async function resolveSubcontractorContractIds(
 }
 
 /**
+ * Resolve `contract_number → { id, project_id, retention_pct, insurance_pct }`.
+ * Used by the subcontractor-bills importer to compute the waterfall (deductions
+ * are pulled from the contract terms, not from the bill input).
+ */
+export async function resolveContractsWithTerms(
+  client: SupabaseClient,
+  companyId: string,
+  contractNumbers: readonly string[],
+): Promise<
+  Map<
+    string,
+    {
+      id: string
+      project_id: string
+      retention_pct: number
+      insurance_pct: number
+    }
+  >
+> {
+  const unique = [...new Set(contractNumbers.filter((n) => n))]
+  if (unique.length === 0) return new Map()
+
+  const { data, error } = await client
+    .from("erp_subcontractor_contracts")
+    .select("id,contract_number,project_id,retention_pct,insurance_pct")
+    .eq("company_id", companyId)
+    .in("contract_number", unique)
+
+  if (error) throw new Error(`שגיאה בטעינת חוזים: ${error.message}`)
+
+  const map = new Map<
+    string,
+    {
+      id: string
+      project_id: string
+      retention_pct: number
+      insurance_pct: number
+    }
+  >()
+  for (const row of (data ?? []) as {
+    id: string
+    contract_number: string
+    project_id: string
+    retention_pct: number | null
+    insurance_pct: number | null
+  }[]) {
+    map.set(row.contract_number, {
+      id: row.id,
+      project_id: row.project_id,
+      retention_pct: row.retention_pct ?? 0,
+      insurance_pct: row.insurance_pct ?? 0,
+    })
+  }
+  return map
+}
+
+/**
  * Resolve `po_number → { id, project_id }`. Returns `project_id` alongside
  * the UUID because PO lines require the parent PO's project (FK).
  */

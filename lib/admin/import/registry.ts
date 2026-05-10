@@ -19,6 +19,7 @@ import { PRODUCT_FAMILIES_IMPORTER } from "./entities/product-families"
 import { PROJECTS_IMPORTER } from "./entities/projects"
 import { PURCHASE_ORDER_LINES_IMPORTER } from "./entities/purchase-order-lines"
 import { PURCHASE_ORDERS_IMPORTER } from "./entities/purchase-orders"
+import { SUBCONTRACTOR_BILLS_IMPORTER } from "./entities/subcontractor-bills"
 import { SUBCONTRACTOR_CONTRACTS_IMPORTER } from "./entities/subcontractor-contracts"
 import { SUPPLIERS_IMPORTER } from "./entities/suppliers"
 import type { ImporterEntityKind, ImporterSpec } from "./types"
@@ -52,10 +53,8 @@ register(OPENING_BALANCES_IMPORTER) // -> accounts (single journal entry per fil
 register(CONTRACT_BOQ_LINES_IMPORTER) // -> subcontractor_contracts (upsert on line_no)
 register(PURCHASE_ORDER_LINES_IMPORTER) // -> purchase_orders (delete-then-insert per PO)
 
-/*
- * NOT YET REGISTERED (deferred to Sprint 2):
- *   - subcontractor_bills (cumulative math validation needs separate design)
- */
+/* Layer 5 — references Layer-4 (BOQ lines): */
+register(SUBCONTRACTOR_BILLS_IMPORTER) // -> contracts + boq_lines (waterfall validation)
 
 export function getRegisteredEntities(): {
   kind: ImporterEntityKind

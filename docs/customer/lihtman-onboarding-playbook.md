@@ -202,6 +202,7 @@ on conflict (user_id, company_id) do update
 | 8 | יתרות פתיחה | `public.erp_gl_journal_entries` + `_lines` | ✅ Sprint 1 / Step 4 (auto D/C, balance check) |
 | 9 | שורות BOQ לחוזים | `public.erp_contract_boq_lines` | ✅ Sprint 1 / Step 5 (upsert על `contract_id+line_no`) |
 | 10 | שורות הזמנות רכש | `public.erp_purchase_order_lines` | ✅ Sprint 1 / Step 5 (delete-then-insert לכל PO) |
+| 11 | חשבונות חלקיים — קבלן משנה | `public.erp_subcontractor_bills` + `_lines` | ✅ Sprint 2 / Step 1 (waterfall: עכבון/ביטוח/מצטבר/מע"מ + sanity per line) |
 
 **Note on lines:**
 - **BOQ**: upsert idempotent לפי `(contract, line_no)` — שורות חדשות נוספות, קיימות מעודכנות, שורות ישנות שלא בקובץ לא נמחקות.
