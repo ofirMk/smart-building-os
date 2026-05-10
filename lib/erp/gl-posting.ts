@@ -33,6 +33,8 @@ export const STD_GL_ACCOUNTS = {
   INSURANCE_DEDUCTION: "2230",
   /** Dr — מע"מ תשומות (Asset). */
   VAT_INPUT: "1450",
+  /** Cr — בנק תפעולי (Asset). יורד עם תשלום. */
+  BANK_OPERATIONS: "1110",
 } as const
 
 export type GlPostingResult =
@@ -247,6 +249,132 @@ export async function postSubcontractorBillToGL(
       error: `Failed to post JE (period closed or unbalanced): ${postErr.message}`,
     }
   }
+
+  return { ok: true, journalEntryId: header.id, created: true }
+}
+
+// ===========================================================================
+// Sprint A.2 — Payment Run posting
+// ===========================================================================
+
+type PaymentRunRow = {
+  id: string
+  company_id: string
+  run_number: string
+  run_date: string
+  status: string
+  total_amount: number
+  payment_method: string
+}
+
+/**
+ * Auto-post an EXECUTED AP Payment Run to the GL as a single balanced JE:
+ *   Dr SUBCONTRACTOR_AP  (total_amount)
+ *   Cr BANK_OPERATIONS   (total_amount)
+ *
+ * Idempotent on (source_type='payment_run', source_ref=runId). Returns the
+ * existing JE id on a duplicate call.
+ */
+export async function postPaymentRunToGL(
+  client: SupabaseClient,
+  runId: string,
+): Promise<GlPostingResult> {
+  const { data: run, error: runErr } = await client
+    .from("erp_ap_payment_runs")
+    .select(
+      "id, company_id, run_number, run_date, status, total_amount, payment_method",
+    )
+    .eq("id", runId)
+    .maybeSingle<PaymentRunRow>()
+  if (runErr) return { ok: false, error: `Failed to load run: ${runErr.message}` }
+  if (!run) return { ok: false, error: `Payment run ${runId} not found` }
+  if (run.status !== "EXECUTED" && run.status !== "RECONCILED") {
+    return {
+      ok: false,
+      error: `Run ${run.run_number} status=${run.status}; expected EXECUTED or RECONCILED.`,
+    }
+  }
+
+  // Idempotency check.
+  const existing = await client
+    .from("erp_gl_journal_entries")
+    .select("id")
+    .eq("company_id", run.company_id)
+    .eq("source_type", "payment")
+    .eq("source_ref", run.id)
+    .maybeSingle<{ id: string }>()
+  if (existing.data?.id) {
+    return { ok: true, journalEntryId: existing.data.id, created: false }
+  }
+
+  const accounts = await resolveAccountIds(client, run.company_id)
+  if (!accounts.ok) return { ok: false, error: accounts.error }
+
+  const total = Number(run.total_amount)
+  if (total <= 0) {
+    return { ok: false, error: `Run ${run.run_number} has total <= 0` }
+  }
+
+  const entryNumber = `PAY-${run.run_number}`
+  const { data: header, error: hErr } = await client
+    .from("erp_gl_journal_entries")
+    .insert({
+      company_id: run.company_id,
+      entry_number: entryNumber,
+      entry_date: run.run_date,
+      description: `הרצת תשלומים ${run.run_number} — ${run.payment_method}`,
+      source_type: "payment",
+      source_ref: run.id,
+      status: "DRAFT",
+    })
+    .select("id")
+    .single<{ id: string }>()
+  if (hErr || !header) {
+    return { ok: false, error: `Failed to create JE header: ${hErr?.message}` }
+  }
+
+  const lineRows = [
+    {
+      company_id: run.company_id,
+      journal_entry_id: header.id,
+      line_no: 1,
+      account_id: accounts.map.SUBCONTRACTOR_AP,
+      debit_amount: total,
+      credit_amount: 0,
+      description: `סגירת AP — ${run.run_number}`,
+    },
+    {
+      company_id: run.company_id,
+      journal_entry_id: header.id,
+      line_no: 2,
+      account_id: accounts.map.BANK_OPERATIONS,
+      debit_amount: 0,
+      credit_amount: total,
+      description: `יציאה מבנק — ${run.run_number}`,
+    },
+  ]
+  const { error: lErr } = await client.from("erp_gl_journal_lines").insert(lineRows)
+  if (lErr) {
+    return { ok: false, error: `Failed to insert JE lines: ${lErr.message}` }
+  }
+
+  const { error: postErr } = await client
+    .from("erp_gl_journal_entries")
+    .update({ status: "POSTED", posted_at: new Date().toISOString() })
+    .eq("id", header.id)
+  if (postErr) {
+    return {
+      ok: false,
+      error: `Failed to post JE (period closed or unbalanced): ${postErr.message}`,
+    }
+  }
+
+  // Stamp the JE id back onto each payment row (best-effort).
+  await client
+    .from("erp_ap_payments")
+    .update({ journal_entry_id: header.id })
+    .eq("company_id", run.company_id)
+    .eq("run_id", run.id)
 
   return { ok: true, journalEntryId: header.id, created: true }
 }

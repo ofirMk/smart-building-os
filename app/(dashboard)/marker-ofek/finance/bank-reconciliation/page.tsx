@@ -13,6 +13,7 @@ import { Landmark, Printer, RefreshCcw } from "lucide-react"
 
 import { cookies } from "next/headers"
 
+import { AutoMatchButton } from "@/components/marker-ofek/finance/bank-reconciliation/auto-match-button"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
@@ -232,6 +233,7 @@ export default async function BankReconciliationWorkspacePage() {
                 </dl>
 
                 <div className="mt-1 flex items-center justify-end gap-2 border-t border-slate-100 pt-2">
+                  <AutoMatchButton reconId={r.id} />
                   <Button
                     type="button"
                     variant="outline"

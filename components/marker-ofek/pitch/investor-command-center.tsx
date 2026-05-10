@@ -56,6 +56,7 @@ import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 import {
+  DEMO_AP_PAYMENT_RUN_ID,
   DEMO_BANK_RECONCILIATION_ID,
   DEMO_PURCHASE_ORDER_ID,
   DEMO_SUBCONTRACTOR_BILL_ID,
@@ -212,6 +213,23 @@ export function InvestorCommandCenter({
           >
             <Landmark className="size-4" aria-hidden />
             דוח התאמת בנק (PDF)
+          </Button>
+          {/* Demo: print the seeded AP Payment Run report (Sprint A.2 — MASAV) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            data-demo-link="payment-run-print"
+            render={
+              <a
+                href={`/print/payment-runs/${DEMO_AP_PAYMENT_RUN_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <Coins className="size-4" aria-hidden />
+            קובץ מס&quot;ב + דוח תשלום (PDF)
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>

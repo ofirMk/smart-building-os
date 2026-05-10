@@ -1172,3 +1172,11 @@ export const DEMO_PURCHASE_ORDER_ID =
  */
 export const DEMO_BANK_RECONCILIATION_ID =
   "e0000000-0000-4000-8000-888888888888"
+
+/**
+ * UUID דמו של הרצת התשלומים המוצגת (Sprint A.2). יציב עבור כפתור המצגת
+ * "📄 קובץ מס"ב + דוח תשלום (PDF)" ב-CEO Command Center.
+ * Run number: PR-2026-11-01, סה"כ ₪504,718, 3 תשלומים → 3 שורות בנק 11/2026.
+ */
+export const DEMO_AP_PAYMENT_RUN_ID =
+  "b2000000-0000-4000-8000-bbbbbbbbbbbb"

@@ -23,6 +23,7 @@ import { PURCHASE_ORDERS_IMPORTER } from "./entities/purchase-orders"
 import { SUBCONTRACTOR_BILLS_IMPORTER } from "./entities/subcontractor-bills"
 import { SUBCONTRACTOR_CONTRACTS_IMPORTER } from "./entities/subcontractor-contracts"
 import { SUPPLIERS_IMPORTER } from "./entities/suppliers"
+import { VENDOR_INVOICES_IMPORTER } from "./entities/vendor-invoices"
 import type { ImporterEntityKind, ImporterSpec } from "./types"
 
 const REGISTRY = new Map<ImporterEntityKind, ImporterSpec<unknown>>()
@@ -59,6 +60,9 @@ register(SUBCONTRACTOR_BILLS_IMPORTER) // -> contracts + boq_lines (waterfall va
 
 /* Layer 6 — bank reconciliation (independent surface, references erp_bank_accounts): */
 register(BANK_STATEMENTS_IMPORTER) // -> bank_accounts (statement = bank_account × period)
+
+/* Layer 6 — AP invoices (independent surface, references suppliers): */
+register(VENDOR_INVOICES_IMPORTER) // -> suppliers (vendor invoice = supplier × invoice_number)
 
 export function getRegisteredEntities(): {
   kind: ImporterEntityKind
