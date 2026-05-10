@@ -56,6 +56,7 @@ export async function markerOfekPasswordLogin(
     return { ok: false, error: "יש למלא אימייל וסיסמה" }
   }
 
+  let next: string
   try {
     const supabase = await createSupabaseServerAuthClient()
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -73,8 +74,7 @@ export async function markerOfekPasswordLogin(
       }
     }
 
-    const next = await resolvePostMarkerOfekLoginPath(supabase)
-    redirect(next)
+    next = await resolvePostMarkerOfekLoginPath(supabase)
   } catch (error) {
     const message =
       error instanceof Error && error.message
@@ -82,6 +82,8 @@ export async function markerOfekPasswordLogin(
         : "אירעה שגיאה בהזדהות. נסו שוב מאוחר יותר."
     return { ok: false, error: message }
   }
+  // `redirect` throws NEXT_REDIRECT — must be outside try/catch (Next.js 16 docs).
+  redirect(next)
 }
 
 export async function markerOfekSignUp(
@@ -101,6 +103,7 @@ export async function markerOfekSignUp(
     return { ok: false, error: "אימות הסיסמה אינו תואם" }
   }
 
+  let next: string | null = null
   try {
     const supabase = await createSupabaseServerAuthClient()
     const { data, error } = await supabase.auth.signUp({
@@ -123,11 +126,10 @@ export async function markerOfekSignUp(
     }
 
     if (data.user && data.session?.access_token) {
-      const next = await resolvePostMarkerOfekLoginPath(supabase)
-      redirect(next)
+      next = await resolvePostMarkerOfekLoginPath(supabase)
+    } else {
+      return { ok: false, error: "לא ניתן להשלים את ההרשמה" }
     }
-
-    return { ok: false, error: "לא ניתן להשלים את ההרשמה" }
   } catch (error) {
     const message =
       error instanceof Error && error.message
@@ -135,4 +137,6 @@ export async function markerOfekSignUp(
         : "אירעה שגיאה בהזדהות. נסו שוב מאוחר יותר."
     return { ok: false, error: message }
   }
+  // `redirect` throws NEXT_REDIRECT — must be outside try/catch (Next.js 16 docs).
+  redirect(next)
 }
