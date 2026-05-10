@@ -142,6 +142,37 @@ export async function resolveSubcontractorContractIds(
 }
 
 /**
+ * Resolve `po_number → { id, project_id }`. Returns `project_id` alongside
+ * the UUID because PO lines require the parent PO's project (FK).
+ */
+export async function resolvePurchaseOrderIds(
+  client: SupabaseClient,
+  companyId: string,
+  poNumbers: readonly string[],
+): Promise<Map<string, { id: string; project_id: string }>> {
+  const unique = [...new Set(poNumbers.filter((n) => n))]
+  if (unique.length === 0) return new Map()
+
+  const { data, error } = await client
+    .from("erp_purchase_orders")
+    .select("id,po_number,project_id")
+    .eq("company_id", companyId)
+    .in("po_number", unique)
+
+  if (error) throw new Error(`שגיאה בטעינת הזמנות רכש: ${error.message}`)
+
+  const map = new Map<string, { id: string; project_id: string }>()
+  for (const row of (data ?? []) as {
+    id: string
+    po_number: string
+    project_id: string
+  }[]) {
+    map.set(row.po_number, { id: row.id, project_id: row.project_id })
+  }
+  return map
+}
+
+/**
  * Compose a row-level error for a missing lookup target. Use this from
  * within `spec.upsert` when a referenced natural key doesn't resolve.
  */

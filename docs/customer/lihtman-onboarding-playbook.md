@@ -196,10 +196,13 @@ on conflict (user_id, company_id) do update
 | 6 | `ORDERS` (POs פתוחים) | `public.erp_purchase_orders` | ✅ Sprint 1 / Step 2 (header) |
 | 7 | `ACCOUNTS` (חשבונות) | `public.erp_gl_accounts` | ✅ Sprint 1 / Step 4 (היררכי) |
 | 8 | יתרות פתיחה | `public.erp_gl_journal_entries` + `_lines` | ✅ Sprint 1 / Step 4 (auto D/C, balance check) |
+| 9 | שורות BOQ לחוזים | `public.erp_contract_boq_lines` | ✅ Sprint 1 / Step 5 (upsert על `contract_id+line_no`) |
+| 10 | שורות הזמנות רכש | `public.erp_purchase_order_lines` | ✅ Sprint 1 / Step 5 (delete-then-insert לכל PO) |
 
-**Note on lines:** ה-importers של חוזים ו-POs מטפלים רק ב-header. שורות BOQ
-ושורות PO ייובאו בסבבי ייבוא נפרדים ב-Sprint 2 (תלויים ב-importer של resource
-catalog שעדיין לא קיים).
+**Note on lines:**
+- **BOQ**: upsert idempotent לפי `(contract, line_no)` — שורות חדשות נוספות, קיימות מעודכנות, שורות ישנות שלא בקובץ לא נמחקות.
+- **PO lines**: הקובץ הוא מקור האמת לכל PO שמופיע בו — שורות קיימות נמחקות ומוחלפות. POs שאינם בקובץ לא מושפעים.
+- `resource_id` ב-PO lines הוא טקסט חופשי (אין FK לקטלוג). אפשר לעדכן זאת ב-Sprint 2 אם יוחלט לבנות resource catalog.
 
 ### Step 13 — ייצוא Master Suppliers
 - **בעלים:** [Lihtman IT] · **תוצר:** `lihtman-suppliers-export.xlsx`.

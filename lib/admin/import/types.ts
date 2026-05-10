@@ -22,6 +22,8 @@ export type ImporterEntityKind =
   | "subcontractor_contracts"
   | "opening_balances"
   | "subcontractor_bills"
+  | "contract_boq_lines"
+  | "purchase_order_lines"
 
 /** Single column in the source file. Matched against headers via aliases. */
 export type ColumnSpec<TPayload> = {

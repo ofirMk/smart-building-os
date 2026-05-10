@@ -12,10 +12,12 @@
  * bills) — each is a single new file + 1-line registration here.
  */
 import { ACCOUNTS_IMPORTER } from "./entities/accounts"
+import { CONTRACT_BOQ_LINES_IMPORTER } from "./entities/contract-boq-lines"
 import { ITEMS_IMPORTER } from "./entities/items"
 import { OPENING_BALANCES_IMPORTER } from "./entities/opening-balances"
 import { PRODUCT_FAMILIES_IMPORTER } from "./entities/product-families"
 import { PROJECTS_IMPORTER } from "./entities/projects"
+import { PURCHASE_ORDER_LINES_IMPORTER } from "./entities/purchase-order-lines"
 import { PURCHASE_ORDERS_IMPORTER } from "./entities/purchase-orders"
 import { SUBCONTRACTOR_CONTRACTS_IMPORTER } from "./entities/subcontractor-contracts"
 import { SUPPLIERS_IMPORTER } from "./entities/suppliers"
@@ -46,10 +48,13 @@ register(SUBCONTRACTOR_CONTRACTS_IMPORTER) // -> projects + suppliers
 register(PURCHASE_ORDERS_IMPORTER) // -> projects + suppliers
 register(OPENING_BALANCES_IMPORTER) // -> accounts (single journal entry per file)
 
+/* Layer 4 — line-level data referencing Layer-3 headers: */
+register(CONTRACT_BOQ_LINES_IMPORTER) // -> subcontractor_contracts (upsert on line_no)
+register(PURCHASE_ORDER_LINES_IMPORTER) // -> purchase_orders (delete-then-insert per PO)
+
 /*
  * NOT YET REGISTERED (deferred to Sprint 2):
  *   - subcontractor_bills (cumulative math validation needs separate design)
- *   - po_lines / contract_boq_lines  (need resource catalog import first)
  */
 
 export function getRegisteredEntities(): {
