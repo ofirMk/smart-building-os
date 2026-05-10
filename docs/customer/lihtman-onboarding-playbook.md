@@ -182,18 +182,24 @@ on conflict (user_id, company_id) do update
 
 ### Step 12 — מיפוי שדות (Data-Mapping Spec)
 - **בעלים:** [אנחנו] · **תוצר:**
-  `docs/customer/lihtman-data-mapping.md` — טבלה לכל אחת מ-8 הישויות:
+  `docs/customer/lihtman-data-mapping.md` — טבלה לכל אחת מ-8 הישויות.
+- **סטטוס Sprint 1 (10/05/2026):** 6 מתוך 8 ה-importers נבנו ב-Sprint 1 Steps 1-2
+  ופעילים ב-`@app/(dashboard)/admin/import/`. 2 ישויות חסומות בהמתנה לסכימת DB.
 
-| # | Priority Source | Marker-Ofek Target | הערות |
+| # | Priority Source | Marker-Ofek Target | סטטוס Importer |
 |---|---|---|---|
-| 1 | `LOGPART` (פריטים) | `public.erp_md_items` | מיפוי `PARTNAME→item_number`, `PARTDES→description_he`, `UNAME→uom` |
-| 2 | `SUPPLIERS` | `public.erp_md_suppliers` | `SUPNAME→supplier_number`, `SUPDES→legal_name`, `VATNUM→tax_id` |
-| 3 | `ACCOUNTS` (חשבונות) | `public.erp_gl_accounts` | מיפוי לפי 4 ספרות ראשונות → chapter |
-| 4 | `PROJECTS` | `public.erp_proj_projects` | רק status=ACTIVE |
-| 5 | `ORDERS` (POs פתוחים) | `public.erp_purchase_orders` | רק לא-סגורים |
-| 6 | חוזי קבלן משנה (תיק נייר) | `public.erp_subcontractor_contracts` | manual ingestion — לא ב-Priority |
-| 7 | יתרות פתיחה (חשבונות לקוחות/ספקים) | `public.erp_gl_journal_entries` | snapshot ליום ה-cutover |
-| 8 | חשבוניות פתוחות לתשלום | `public.erp_subcontractor_bills` | רק unpaid |
+| 1 | `SUPPLIERS` | `public.erp_md_suppliers` | ✅ Sprint 1 / Step 1 |
+| 2 | (משפחות מוצר — נגזר מ-LOGPART) | `public.erp_md_product_families` | ✅ Sprint 1 / Step 2 |
+| 3 | `LOGPART` (פריטים) | `public.erp_md_items` | ✅ Sprint 1 / Step 2 |
+| 4 | `PROJECTS` | `public.erp_proj_projects` | ✅ Sprint 1 / Step 2 |
+| 5 | חוזי קבלן משנה (תיק נייר) | `public.erp_subcontractor_contracts` | ✅ Sprint 1 / Step 2 (header) |
+| 6 | `ORDERS` (POs פתוחים) | `public.erp_purchase_orders` | ✅ Sprint 1 / Step 2 (header) |
+| 7 | `ACCOUNTS` (חשבונות) | _חסר_: `erp_gl_accounts` | 🚫 Sprint 2 — צריך migration |
+| 8 | יתרות פתיחה | _חסר_: `erp_gl_journal_entries` | 🚫 Sprint 2 — צריך migration |
+
+**Note on lines:** ה-importers של חוזים ו-POs מטפלים רק ב-header. שורות BOQ
+ושורות PO ייובאו בסבבי ייבוא נפרדים ב-Sprint 2 (תלויים ב-importer של resource
+catalog שעדיין לא קיים).
 
 ### Step 13 — ייצוא Master Suppliers
 - **בעלים:** [Lihtman IT] · **תוצר:** `lihtman-suppliers-export.xlsx`.

@@ -14,6 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 export type ImporterEntityKind =
   | "suppliers"
+  | "product_families"
   | "items"
   | "accounts"
   | "projects"
