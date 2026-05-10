@@ -130,19 +130,23 @@ update public.erp_companies
 --     https://supabase.com/dashboard/project/<ref>/auth/users → "Invite user"
 --     (3 הזמנות: Champion, Power user, IT contact)
 
--- 9c. אחרי שהם השלימו signup, מחברים אותם לחברה:
+-- 9c. bootstrap: ה-admin הראשון (אנחנו / IT) מחובר ידנית דרך SQL.
+--     כל שאר המשתמשים מוזמנים דרך ה-UI ב-/admin/users (Sprint 1 Step 6).
 insert into public.erp_user_company_memberships (user_id, company_id, role, is_active)
-values
-  ('<champion-uuid-from-auth.users>',  'marker_ofek', 'admin',   true),
-  ('<power-user-uuid>',                'marker_ofek', 'finance', true),
-  ('<it-contact-uuid>',                'marker_ofek', 'admin',   true)
+values ('<bootstrap-admin-uuid-from-auth.users>', 'marker_ofek', 'admin', true)
 on conflict (user_id, company_id) do update
    set role = excluded.role,
        is_active = excluded.is_active;
 ```
 
-- **תוצר:** 3 שורות ב-`erp_user_company_memberships` עם `is_active = true`.
-- **קריטריון:** כל אחד מה-3 יכול להיכנס ולראות `/marker-ofek/dashboard` ללא 403.
+**אחרי שה-admin הראשון נכנס** — שאר המשתמשים מוזמנים דרך `/admin/users/new`:
+- הזמנה במייל (Supabase `inviteUserByEmail`).
+- בחירת תפקיד: `member` או `admin`.
+- יצירה אוטומטית של membership עם `is_active = true`.
+- עריכת role + השבתה + הסרה זמינים מיידית ברשימה ב-`/admin/users`.
+
+- **תוצר:** N שורות ב-`erp_user_company_memberships` (admin יחיד מוקם ידנית + שאר הצוות דרך ה-UI).
+- **קריטריון:** כל חבר צוות שהוזמן יכול להיכנס ולראות `/marker-ofek/dashboard` ללא 403.
 
 ### Step 10 — משתני סביבה לפרודקשן
 - **תוצר:** `.env.production` (לא ב-git!) מבוסס על `@/.env.example`.
