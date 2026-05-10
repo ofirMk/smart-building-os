@@ -21,6 +21,7 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import {
   Bot,
+  Briefcase,
   Coins,
   FileText,
   ImageIcon,
@@ -58,6 +59,7 @@ import { cn } from "@/lib/utils"
 import {
   DEMO_AP_PAYMENT_RUN_ID,
   DEMO_BANK_RECONCILIATION_ID,
+  DEMO_CONTRACT_PROJECT_ID,
   DEMO_PURCHASE_ORDER_ID,
   DEMO_SUBCONTRACTOR_BILL_ID,
   DEMO_SUBCONTRACTOR_CONTRACT_ID,
@@ -230,6 +232,23 @@ export function InvestorCommandCenter({
           >
             <Coins className="size-4" aria-hidden />
             קובץ מס&quot;ב + דוח תשלום (PDF)
+          </Button>
+          {/* Demo: live Contract Workspace (Sprint A.3) — navigates to interactive demo */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-orange-300 bg-orange-50 text-orange-800 hover:bg-orange-100"
+            data-demo-link="contract-workspace-live"
+            render={
+              <a
+                href={`/marker-ofek/projects/${DEMO_CONTRACT_PROJECT_ID}/contracts/${DEMO_SUBCONTRACTOR_CONTRACT_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <Briefcase className="size-4" aria-hidden />
+            סביבת עבודה — חוזים וחשבונות קבלן
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>

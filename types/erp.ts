@@ -1097,6 +1097,14 @@ export type ErpSubcontractorContractDetail = ErpSubcontractorContract & {
 export const DEMO_SUBCONTRACTOR_CONTRACT_ID =
   "c0700000-0000-4000-8000-cccccccccccc"
 
+/**
+ * UUID דמו של הפרויקט שמכיל את חוזה ההדגמה (פרויקט "גיאה גן יבנה").
+ * נדרש לבניית URL `/marker-ofek/projects/{projectId}/contracts/{contractId}`
+ * עבור כפתור 6 ב-CEO Command Center (Sprint A.3).
+ */
+export const DEMO_CONTRACT_PROJECT_ID =
+  "c0700000-0000-4000-8000-aaaaaaaaaaaa"
+
 // ===========================================================================
 // Subcontractor Partial Bills (חשבונות חלקיים) — מיגרציה 20260819100000
 // ===========================================================================
