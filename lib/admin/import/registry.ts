@@ -11,7 +11,9 @@
  * importers (items, accounts, projects, POs, contracts, opening balances,
  * bills) — each is a single new file + 1-line registration here.
  */
+import { ACCOUNTS_IMPORTER } from "./entities/accounts"
 import { ITEMS_IMPORTER } from "./entities/items"
+import { OPENING_BALANCES_IMPORTER } from "./entities/opening-balances"
 import { PRODUCT_FAMILIES_IMPORTER } from "./entities/product-families"
 import { PROJECTS_IMPORTER } from "./entities/projects"
 import { PURCHASE_ORDERS_IMPORTER } from "./entities/purchase-orders"
@@ -34,6 +36,7 @@ function register<TPayload>(spec: ImporterSpec<TPayload>): void {
 register(SUPPLIERS_IMPORTER)
 register(PRODUCT_FAMILIES_IMPORTER)
 register(PROJECTS_IMPORTER)
+register(ACCOUNTS_IMPORTER) // GL chart of accounts (Sprint 1 / Step 4)
 
 /* Layer 2 — references one Layer-1 entity: */
 register(ITEMS_IMPORTER) // -> product_families
@@ -41,12 +44,11 @@ register(ITEMS_IMPORTER) // -> product_families
 /* Layer 3 — references multiple Layer-1 entities: */
 register(SUBCONTRACTOR_CONTRACTS_IMPORTER) // -> projects + suppliers
 register(PURCHASE_ORDERS_IMPORTER) // -> projects + suppliers
+register(OPENING_BALANCES_IMPORTER) // -> accounts (single journal entry per file)
 
 /*
  * NOT YET REGISTERED (deferred to Sprint 2):
- *   - accounts            (no erp_gl_accounts table — DB schema missing)
- *   - opening_balances    (no erp_gl_journal_entries table — DB schema missing)
- *   - subcontractor_bills (header schema is complex; cumulative math validation)
+ *   - subcontractor_bills (cumulative math validation needs separate design)
  *   - po_lines / contract_boq_lines  (need resource catalog import first)
  */
 

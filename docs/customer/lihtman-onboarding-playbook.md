@@ -194,8 +194,8 @@ on conflict (user_id, company_id) do update
 | 4 | `PROJECTS` | `public.erp_proj_projects` | ✅ Sprint 1 / Step 2 |
 | 5 | חוזי קבלן משנה (תיק נייר) | `public.erp_subcontractor_contracts` | ✅ Sprint 1 / Step 2 (header) |
 | 6 | `ORDERS` (POs פתוחים) | `public.erp_purchase_orders` | ✅ Sprint 1 / Step 2 (header) |
-| 7 | `ACCOUNTS` (חשבונות) | _חסר_: `erp_gl_accounts` | 🚫 Sprint 2 — צריך migration |
-| 8 | יתרות פתיחה | _חסר_: `erp_gl_journal_entries` | 🚫 Sprint 2 — צריך migration |
+| 7 | `ACCOUNTS` (חשבונות) | `public.erp_gl_accounts` | ✅ Sprint 1 / Step 4 (היררכי) |
+| 8 | יתרות פתיחה | `public.erp_gl_journal_entries` + `_lines` | ✅ Sprint 1 / Step 4 (auto D/C, balance check) |
 
 **Note on lines:** ה-importers של חוזים ו-POs מטפלים רק ב-header. שורות BOQ
 ושורות PO ייובאו בסבבי ייבוא נפרדים ב-Sprint 2 (תלויים ב-importer של resource

@@ -89,6 +89,34 @@ export async function resolveProductFamilyIds(
   return map
 }
 
+/** Resolve `account_number → { id, account_type }`. */
+export async function resolveAccountIds(
+  client: SupabaseClient,
+  companyId: string,
+  accountNumbers: readonly string[],
+): Promise<Map<string, { id: string; account_type: string }>> {
+  const unique = [...new Set(accountNumbers.filter((n) => n))]
+  if (unique.length === 0) return new Map()
+
+  const { data, error } = await client
+    .from("erp_gl_accounts")
+    .select("id,account_number,account_type")
+    .eq("company_id", companyId)
+    .in("account_number", unique)
+
+  if (error) throw new Error(`שגיאה בטעינת חשבונות: ${error.message}`)
+
+  const map = new Map<string, { id: string; account_type: string }>()
+  for (const row of (data ?? []) as {
+    id: string
+    account_number: string
+    account_type: string
+  }[]) {
+    map.set(row.account_number, { id: row.id, account_type: row.account_type })
+  }
+  return map
+}
+
 /** Resolve `contract_number → contract_id` (subcontractor contracts). */
 export async function resolveSubcontractorContractIds(
   client: SupabaseClient,
