@@ -23,6 +23,7 @@ import {
   Bot,
   Briefcase,
   Coins,
+  Layers,
   FileText,
   ImageIcon,
   Landmark,
@@ -60,6 +61,7 @@ import {
   DEMO_AP_PAYMENT_RUN_ID,
   DEMO_BANK_RECONCILIATION_ID,
   DEMO_CONTRACT_PROJECT_ID,
+  DEMO_PLANNING_EDITION_ID,
   DEMO_PURCHASE_ORDER_ID,
   DEMO_SUBCONTRACTOR_BILL_ID,
   DEMO_SUBCONTRACTOR_CONTRACT_ID,
@@ -249,6 +251,23 @@ export function InvestorCommandCenter({
           >
             <Briefcase className="size-4" aria-hidden />
             סביבת עבודה — חוזים וחשבונות קבלן
+          </Button>
+          {/* Demo: live Project Planning Workspace (Sprint A.4 — Priority pivot) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"
+            data-demo-link="project-planning-live"
+            render={
+              <a
+                href={`/marker-ofek/projects/${DEMO_CONTRACT_PROJECT_ID}/planning?edition=${DEMO_PLANNING_EDITION_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <Layers className="size-4" aria-hidden />
+            תכנון פרויקט ותמחור (WBS)
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>

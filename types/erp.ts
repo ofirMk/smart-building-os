@@ -1105,6 +1105,14 @@ export const DEMO_SUBCONTRACTOR_CONTRACT_ID =
 export const DEMO_CONTRACT_PROJECT_ID =
   "c0700000-0000-4000-8000-aaaaaaaaaaaa"
 
+/**
+ * UUID דמו של "מהדורת אפס" בפרויקט הדמו (Sprint A.4 — Priority module pivot).
+ * נדרש עבור הכפתור החדש ב-CEO Command Center שמנווט אל מסך תכנון
+ * הפרויקט הפעיל עם המהדורה הנעולה ועץ המוצר של תשתיות בתקרות.
+ */
+export const DEMO_PLANNING_EDITION_ID =
+  "c0700000-0000-4002-8000-000000000000"
+
 // ===========================================================================
 // Subcontractor Partial Bills (חשבונות חלקיים) — מיגרציה 20260819100000
 // ===========================================================================
