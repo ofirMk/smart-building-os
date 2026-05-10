@@ -445,7 +445,7 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
 
       {createFolderOpen && selectedFolder && (
         <Alert>
-          <AlertTitle>תיקייה חדשה תחת "{selectedFolder.name}"</AlertTitle>
+          <AlertTitle>תיקייה חדשה תחת &quot;{selectedFolder.name}&quot;</AlertTitle>
           <AlertDescription className="mt-2 flex flex-wrap items-center gap-2">
             <Input
               value={newFolderName}

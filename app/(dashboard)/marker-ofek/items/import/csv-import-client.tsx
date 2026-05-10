@@ -554,7 +554,7 @@ export function CsvImportClient() {
                         <TableHead>מק״ט</TableHead>
                         <TableHead>תיאור</TableHead>
                         <TableHead>משפחה</TableHead>
-                        <TableHead>יח'</TableHead>
+                        <TableHead>יח&apos;</TableHead>
                         <TableHead>שעור</TableHead>
                         <TableHead>מחיר</TableHead>
                       </TableRow>

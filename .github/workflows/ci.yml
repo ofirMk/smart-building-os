@@ -1,4 +1,6 @@
 # הרצה: שורש המאגר = תיקיית smart-building-os (או העתיקו ל-workflow בשורש מונוריפו והגדירו defaults.run.working-directory)
+# Actions pinned to @v5 (released Q4-2025) — runs on Node 24 internally,
+# resolving the Node 20 deprecation warning that GitHub surfaced for older runners.
 name: CI
 
 on:
@@ -11,9 +13,9 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -27,6 +29,9 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Importer fixtures dry-run
+        run: npm run dry-run:imports
 
       - name: Unit tests
         run: npm run test

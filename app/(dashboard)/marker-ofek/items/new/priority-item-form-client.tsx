@@ -376,7 +376,7 @@ export function PriorityItemFormClient() {
 
       <header className="space-y-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          כרטיס פריט · שלב א'
+          כרטיס פריט · שלב א&apos;
         </p>
         <h1 className="text-2xl font-bold tracking-tight">פריט חדש (מאסטר)</h1>
         <p className="text-sm text-muted-foreground">

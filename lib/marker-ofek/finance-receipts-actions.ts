@@ -37,7 +37,7 @@ export async function fetchOpenInvoicesForReceipt(
   if (iErr) throw new Error(iErr.message)
 
   const ids = ((invs ?? []) as { id: string }[]).map((r) => r.id)
-  let allocBy = new Map<string, number>()
+  const allocBy = new Map<string, number>()
   if (ids.length > 0) {
     const { data: allocRows, error: aErr } = await supabase
       .from("mo_receipt_allocations")

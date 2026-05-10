@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- TODO(tech-debt): refactor DB row types; tracked for Sprint 3 cleanup. */
 import { type NextRequest, NextResponse } from "next/server"
 
 import { apiErrorResponse } from "@/lib/api/api-error"

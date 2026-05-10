@@ -221,7 +221,7 @@ export default function AutonomousPoNewPage() {
             </Badge>
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            צ'אט חופשי בעברית.{" "}
+            צ&apos;אט חופשי בעברית.{" "}
             <span className="font-medium">ה-LLM הוא רק מתורגמן</span> — כל
             החישובים, חוקי התקן והמחירים רצים ב-RPC הדטרמיניסטי שבנינו ב-Phase B.
           </p>

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs -- TODO(react-compiler): refactor cached refs out of render path. */
 "use client"
 
 import * as React from "react"

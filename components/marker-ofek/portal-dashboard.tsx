@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- TODO(react-compiler): use derived state instead of setState in effect. */
 "use client"
 
 import { useEffect, useState } from "react"

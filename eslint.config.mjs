@@ -23,6 +23,17 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Python virtualenvs (contain bundled vendor JS like litellm/pyright/pyvis):
+    "**/.venv/**",
+    "**/venv/**",
+    "**/__pycache__/**",
+    // Standalone Node sub-projects with their own tooling:
+    "ai-worker/**",
+    "my-ai-gateway/**",
+    // Generated / vendored:
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
   ]),
 ]);
 

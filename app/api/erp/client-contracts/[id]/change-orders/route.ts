@@ -31,8 +31,14 @@ function isApproximatelyEqual(left: number, right: number): boolean {
   return Math.abs(left - right) <= EPSILON
 }
 
+type SupabaseClient = Awaited<ReturnType<typeof import("@/lib/supabase/server-auth").createSupabaseServerAuthClient>>
+
+type ChangeOrderDbRow = Record<string, unknown> & {
+  contract_line_id?: string | null
+}
+
 async function verifyInheritanceRules(input: {
-  supabase: any
+  supabase: SupabaseClient
   activeCompanyId: string
   clientContractId: string
   inheritanceRules: {
@@ -88,9 +94,9 @@ export async function GET(
   const rows = loaded.data ?? []
   const contractLineIds = Array.from(
     new Set(
-      rows
-        .map((row: any) => row.contract_line_id as string | null)
-        .filter((value: string | null): value is string => Boolean(value))
+      (rows as ChangeOrderDbRow[])
+        .map((row) => row.contract_line_id ?? null)
+        .filter((value: string | null | undefined): value is string => Boolean(value))
     )
   )
   let lockedSet = new Set<string>()
@@ -103,15 +109,15 @@ export async function GET(
       .neq("erp_client_progress_bills.status", "CANCELLED")
     if (!linked.error) {
       lockedSet = new Set(
-        (linked.data ?? [])
-          .map((row: any) => row.contract_line_id as string | null)
-          .filter((value: string | null): value is string => Boolean(value))
+        ((linked.data ?? []) as ChangeOrderDbRow[])
+          .map((row) => row.contract_line_id ?? null)
+          .filter((value: string | null | undefined): value is string => Boolean(value))
       )
     }
   }
 
   return NextResponse.json({
-    data: rows.map((row: any) =>
+    data: (rows as ChangeOrderDbRow[]).map((row) =>
       mapChangeOrderRow({
         ...row,
         is_locked: row.contract_line_id ? lockedSet.has(row.contract_line_id) : false,

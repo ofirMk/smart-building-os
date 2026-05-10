@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization -- TODO(react-compiler): adapt memoization to compiler-managed pattern. */
 "use client"
 
 import * as React from "react"

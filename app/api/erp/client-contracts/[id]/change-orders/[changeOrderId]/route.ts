@@ -31,8 +31,10 @@ function isApproximatelyEqual(left: number, right: number): boolean {
   return Math.abs(left - right) <= EPSILON
 }
 
+type SupabaseClient = Awaited<ReturnType<typeof import("@/lib/supabase/server-auth").createSupabaseServerAuthClient>>
+
 async function verifyInheritanceRules(input: {
-  supabase: any
+  supabase: SupabaseClient
   activeCompanyId: string
   clientContractId: string
   inheritanceRules: {

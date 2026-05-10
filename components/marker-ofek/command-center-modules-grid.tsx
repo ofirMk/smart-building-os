@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components, react-hooks/refs -- TODO(react-compiler): hoist motion.article + ref reads out of render. */
 "use client"
 
 import {

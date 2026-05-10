@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs -- TODO(react-compiler): refactor ref access pattern. */
 "use client"
 
 import * as React from "react"

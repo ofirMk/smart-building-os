@@ -235,7 +235,7 @@ export function DmsUploadDialog({
     <Dialog open={open} onOpenChange={(v) => !v && !busy && onClose()}>
       <DialogContent dir="rtl" lang="he" className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>העלאת קובץ ל-"{folder.name}"</DialogTitle>
+          <DialogTitle>העלאת קובץ ל-&quot;{folder.name}&quot;</DialogTitle>
           <DialogDescription>
             הקובץ ייסרק אוטומטית ויוסף לרשימה לאחר אישור. גודל מקסימלי: 250MB.
           </DialogDescription>

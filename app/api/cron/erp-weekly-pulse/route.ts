@@ -94,7 +94,9 @@ function getWeeklyPulseManagerNames(): string[] {
     .filter((name) => name.length > 0)
 }
 
-async function resolveWeeklyPulseManagerTargets(supabase: any): Promise<string[]> {
+type SupabaseServiceClient = ReturnType<typeof createSupabaseServiceRoleClient>
+
+async function resolveWeeklyPulseManagerTargets(supabase: SupabaseServiceClient): Promise<string[]> {
   const names = getWeeklyPulseManagerNames()
   const targets = new Set<string>()
   for (const name of names) {

@@ -2348,7 +2348,7 @@ export default function NewPurchaseOrderFromBoqPage() {
                   <SelectValue placeholder="בחרו יחידה" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="מ'">מ'</SelectItem>
+                  <SelectItem value="מ'">מ&apos;</SelectItem>
                   <SelectItem value="ק&quot;ג">ק&quot;ג</SelectItem>
                   <SelectItem value="יחידה">יחידה</SelectItem>
                 </SelectContent>

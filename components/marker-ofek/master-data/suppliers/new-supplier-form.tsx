@@ -177,7 +177,7 @@ export function NewSupplierForm() {
         <div className="flex flex-col gap-0.5">
           <h1 className="text-lg font-semibold tracking-tight">ספק חדש</h1>
           <p className="text-xs text-muted-foreground">
-            תואם Priority SOP LB22000321 — חובה: שם ספק + מס' ספק
+            תואם Priority SOP LB22000321 — חובה: שם ספק + מס&apos; ספק
           </p>
         </div>
         <div className="flex items-center gap-2">

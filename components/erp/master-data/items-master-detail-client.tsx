@@ -255,7 +255,7 @@ export function ItemsMasterDetailClient() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-background/80">
-                  <TableHead className="text-right">מק"ט</TableHead>
+                  <TableHead className="text-right">מק&quot;ט</TableHead>
                   <TableHead className="text-right">תיאור</TableHead>
                   <TableHead className="text-right">יחידת מידה</TableHead>
                   <TableHead className="text-right">מנוהל מלאי</TableHead>

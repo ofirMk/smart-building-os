@@ -645,10 +645,10 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
                       <TableHead className="text-right">פרק</TableHead>
                       <TableHead className="text-right">סעיף</TableHead>
                       <TableHead className="min-w-[320px] text-right">תיאור</TableHead>
-                      <TableHead className="text-right">יח' מידה</TableHead>
+                      <TableHead className="text-right">יח&apos; מידה</TableHead>
                       <TableHead className="text-right">כמות</TableHead>
-                      <TableHead className="text-right">מחיר יח'</TableHead>
-                      <TableHead className="text-right">סה"כ</TableHead>
+                      <TableHead className="text-right">מחיר יח&apos;</TableHead>
+                      <TableHead className="text-right">סה&quot;כ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -886,7 +886,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>מחיר יח'</FormLabel>
+                    <FormLabel>מחיר יח&apos;</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

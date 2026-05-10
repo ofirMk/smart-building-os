@@ -119,7 +119,7 @@ export async function fetchCustomer360(entityId: string): Promise<{
   if (iErr) throw new Error(iErr.message)
 
   const invoiceIds = ((invRows ?? []) as { id: string }[]).map((r) => r.id)
-  let allocByInvoice = new Map<string, number>()
+  const allocByInvoice = new Map<string, number>()
   if (invoiceIds.length > 0) {
     const { data: allocRows, error: aErr } = await supabase
       .from("mo_receipt_allocations")

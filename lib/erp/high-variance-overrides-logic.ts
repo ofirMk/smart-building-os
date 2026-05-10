@@ -9,9 +9,8 @@
 
 import { HIGH_VARIANCE_THRESHOLD, calculatePriceVariance } from "@/lib/erp/pricing-logic"
 
-type SupabaseLike = {
-  from: (table: string) => any
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- loose Supabase shape; chained methods return any.
+type SupabaseLike = { from: (table: string) => any }
 
 export type HighVarianceOverridesInput = {
   supabase: SupabaseLike
@@ -202,7 +201,7 @@ export async function loadHighVarianceOverrides(
     const documentType = classifyDocumentType(row.table_name)
     let documentLabel = documentId.slice(0, 8)
     let supplierName: string | null = null
-    let itemLabel: string | null = readString(payload, "source")
+    const itemLabel: string | null = readString(payload, "source")
 
     if (documentType === "PURCHASE_ORDER") {
       const po = poById.get(documentId)

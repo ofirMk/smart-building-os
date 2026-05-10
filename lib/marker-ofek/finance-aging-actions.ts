@@ -66,8 +66,8 @@ export async function fetchAgingReport(): Promise<{
     ),
   ]
 
-  let termsByEntity = new Map<string, number>()
-  let nameByEntity = new Map<string, string>()
+  const termsByEntity = new Map<string, number>()
+  const nameByEntity = new Map<string, string>()
   if (entityIds.length > 0) {
     const { data: ents, error: eErr } = await supabase
       .from("entities")
@@ -85,7 +85,7 @@ export async function fetchAgingReport(): Promise<{
   }
 
   const invoiceIds = invList.map((i) => i.id)
-  let allocByInvoice = new Map<string, number>()
+  const allocByInvoice = new Map<string, number>()
   if (invoiceIds.length > 0) {
     const { data: allocRows, error: aErr } = await supabase
       .from("mo_receipt_allocations")

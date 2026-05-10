@@ -5,6 +5,9 @@ import {
   sanitizeOptionalString,
 } from "@/lib/erp/master-data-api"
 import type { CreateContractLineInput, ErpContractLine } from "@/types/erp"
+import type { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+
+type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerAuthClient>>
 
 type ContractLineRow = {
   id: string
@@ -47,7 +50,7 @@ async function ensureContract(
   req: NextRequest,
   contractId: string
 ): Promise<
-  | { ok: true; supabase: any; activeCompanyId: string }
+  | { ok: true; supabase: SupabaseClient; activeCompanyId: string }
   | { ok: false; response: NextResponse }
 > {
   const gate = await requireMasterDataApiContext(req)

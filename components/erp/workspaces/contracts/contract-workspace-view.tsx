@@ -567,7 +567,7 @@ export function ContractWorkspaceClient({ contractId }: { contractId: string }) 
                   </DropdownMenu>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-card px-2 py-1 text-xs">
-                  <p className="text-[11px] text-slate-500">סה"כ</p>
+                  <p className="text-[11px] text-slate-500">סה&quot;כ</p>
                   <p className="font-mono">{money(contract.totalAmount)}</p>
                 </div>
                 <FormField

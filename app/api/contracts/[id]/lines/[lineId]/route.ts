@@ -5,7 +5,10 @@ import {
   sanitizeOptionalString,
 } from "@/lib/erp/master-data-api"
 import { recalculateContractTotalAmount } from "@/lib/erp/contracts-api"
+import type { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import type { ErpContractLine, UpdateContractLineInput } from "@/types/erp"
+
+type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerAuthClient>>
 
 type ContractLineRow = {
   id: string
@@ -72,7 +75,7 @@ async function ensureContract(req: NextRequest, contractId: string) {
   return { ok: true as const, supabase, activeCompanyId }
 }
 
-async function loadLine(supabase: any, activeCompanyId: string, contractId: string, lineId: string) {
+async function loadLine(supabase: SupabaseClient, activeCompanyId: string, contractId: string, lineId: string) {
   const { data, error } = await supabase
     .from("erp_contract_lines")
     .select("*")
