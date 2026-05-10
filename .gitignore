@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# …but the root example template SHOULD be committed for new developer onboarding.
+# Anchored to repo root only — never un-ignores files inside node_modules / .venv.
+!/.env.example
+
+# Python virtualenvs (ai-worker bundles its own .venv with thousands of files)
+.venv/
+**/.venv/
 
 # vercel
 .vercel

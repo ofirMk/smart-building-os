@@ -11,6 +11,7 @@ import { TopNavigation } from "@/components/layout/top-navigation"
 import { CompanyContextGate } from "@/components/layout/company-context-gate"
 import { FullscreenToggle } from "@/components/marker-ofek/fullscreen-toggle"
 import { GlobalPitchNavButton } from "@/components/marker-ofek/pitch/global-pitch-nav-button"
+import { IS_DEMO_MODE } from "@/lib/feature-flags"
 import { SaveWorkspaceButton } from "@/components/marker-ofek/workspace/save-workspace-button"
 import { WorkspaceEfficiencyHost } from "@/components/marker-ofek/workspace/workspace-efficiency-host"
 import { WorkspaceScenarioSwitcher } from "@/components/marker-ofek/workspace/workspace-scenario-switcher"
@@ -119,7 +120,7 @@ export function DashboardShell({
             to the executive command-center lobby in one click from any
             screen. Renamed from the previous "חמ"ל משקיעים" demo copy.
           */}
-          <GlobalPitchNavButton />
+          {IS_DEMO_MODE ? <GlobalPitchNavButton /> : null}
           <CommandPaletteHeaderTrigger />
           {isMarkerOfekPath(pathname) ? <WorkspaceParallelSplitControl /> : null}
           {isMarkerOfekPath(pathname) ? <DiamondSidekickToggle /> : null}
