@@ -45,6 +45,10 @@
 | [`ingested-specs/priority-defining-a-part-sop.md`](./ingested-specs/priority-defining-a-part-sop.md) | [Priority SOP LB19000119](https://www.eshbelsaas.co.il/eshbel/primail/library/SOP_Defining%20a%20Part13_H.pdf) | ✅ **נבנה** |
 | [`ingested-specs/lihtman-system-spec-excerpts.md`](./ingested-specs/lihtman-system-spec-excerpts.md) | DOCX של משתמש — איפיון ל"טמן | ✅ **נבנה** |
 | [`ingested-specs/onboarding-master-data-templates.md`](./ingested-specs/onboarding-master-data-templates.md) | 8 תמונות Excel-like של תבניות קליטה | ✅ **נבנה** |
+| [`ingested-specs/priority-opening-supplier-sop.md`](./ingested-specs/priority-opening-supplier-sop.md) | Priority SOP פתיחת ספק (§2) | ✅ **נבנה** |
+| [`ingested-specs/priority-purchase-order-sop.md`](./ingested-specs/priority-purchase-order-sop.md) | Priority SOP הזמנת רכש (§2) | ✅ **נבנה** |
+| [`ingested-specs/medatech-priority-project-module.md`](./ingested-specs/medatech-priority-project-module.md) | DOCX ל"טמן — פרקים §5+§6 (פרויקטים + בקרה תקציבית) | ✅ **נבנה** |
+| [`ingested-specs/medatech-contracts-module.md`](./ingested-specs/medatech-contracts-module.md) | DOCX ל"טמן — פרק §3 (חוזי מזמין/קבלן + קיזוז חו"ג) | ✅ **נבנה (2026-05-11)** |
 
 ### 📑 מדריכים תפעוליים
 
