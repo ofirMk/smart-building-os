@@ -1173,5 +1173,53 @@ read time
 
 ---
 
+## נספח D — DMS Phase C.2: Notifications & Realtime (Sprint 2026-09-15)
+
+> **Status:** ✅ Notifications service + Realtime broadcast + Folder subscriptions + UI wiring הושלמו.
+
+### D.1 מה נמסר
+
+| רכיב | קובץ | תיאור |
+|---|---|---|
+| Recipient Resolver | `lib/marker-ofek/dms/dms-notifications.ts` | מאחד ACL viewers + folder subscribers + linked-entity owners (stub). Dedup + opt-out aware. |
+| Email Composer | אותו קובץ | Subject/body HTML branded לפי `company_profile`, תרגום עברית, CTA חוזר לעמוד המסמך. |
+| Audit Logger | אותו קובץ | כתיבה ל-`dms_audit_log` על כל notification (success/fail) עם `notification_channels_used`. |
+| Server Emitter | `lib/marker-ofek/dms/dms-realtime.ts` | Supabase Realtime channel פר פרויקט (`dms:project:<id>`), fire-and-forget עם error-swallow. |
+| Client Subscriber | `lib/marker-ofek/dms/dms-realtime-client.ts` | React hook `useDmsRealtime` עם cleanup בטוח, filter לפי folder/document. |
+| Shared types | `lib/marker-ofek/dms/dms-realtime-shared.ts` | `DmsRealtimeEvent` union: `version_inserted`, `version_reverted`, `document_deleted`. |
+| Action hooks | `lib/marker-ofek/dms/dms-actions.ts` | `dmsFinalizeUpload` + `dmsRevertToVersion` מפעילים notifications+realtime דרך `sideEffect()` בלי לחסום. |
+| Subscription actions | אותו קובץ | `dmsToggleFolderSubscription`, `dmsListFolderSubscriptions` — RLS-safe, אופטימיסטיים. |
+| Folder Tree UI | `components/marker-ofek/dms/dms-browser.tsx` | Bell toggle פר folder, optimistic state, tooltip עברית, realtime subscription + toast notifications + conditional reload. |
+
+### D.2 מדדי קבלה
+
+- **Latency:** Broadcast מגיע לקליינט < 1.5s מרגע finalize (Supabase Realtime WS).
+- **Fire-and-forget:** כשל email/broadcast לא יפיל את פעולת ה-upload/revert. מקומם מדי לוג ב-audit.
+- **Dedup:** נמען שמופיע גם כ-ACL וגם כ-subscriber מקבל מייל אחד.
+- **Scope:** subscription ברמת folder משפיעה על כל המסמכים בתוך folder (ו-recursive אם `include_descendants=true`).
+
+### D.3 פערים ידועים / Phase C.3
+
+- `linked-entity owners` — כרגע stub. לחבר אל `pbc_subcontractor_contracts`, `erp_purchase_orders` כשה-linking יהיה bidirectional.
+- **Digest mode** — אין עדיין "סיכום יומי" לנמען; כל event = email נפרד. לשקול `notification_digest_mode` ב-`user_preferences`.
+- **In-app notification center** — toast בלבד; אין UI היסטוריה של התרעות. מומלץ כ-Phase C.3 או כחלק ממודול `mo_notifications_center` כלל-מערכתי.
+- **SMS/WhatsApp channel** — ה-channel field קיים אבל רק `email` ממומש.
+
+### D.4 Next module — Phase C.3 Prompt (מוכן להזנק)
+
+> **Mission:** DMS Phase C.3 — Advanced Collaboration: Comments, Mentions, and In-App Notification Center.
+>
+> **Scope:**
+> 1. `dms_document_comments` migration (thread per document+version, mentions JSONB, resolved_at).
+> 2. `@mention` autocomplete UI בתוך comments (resolve מול `mo_users` של החברה).
+> 3. Mention → notification דרך הצינור הקיים (`dms-notifications.ts`).
+> 4. `mo_notifications_center` — טבלה גלובלית, UI bell ב-header, mark-as-read, filter by type.
+> 5. Digest mode ב-user preferences.
+> 6. Wire `linked-entity owners` resolver (contracts, POs).
+>
+> **Definition of Done:** משתמש שעובד על Contract A מקבל in-app bell notification כש-user אחר mentiond אותו ב-comment על version חדש, ויכול לקפוץ ישר ל-doc+version מה-notification.
+
+---
+
 > **End of document.**
 > **Next step:** review session עם founders + first customer; lock MVP boundary; start hiring W1 engineer.

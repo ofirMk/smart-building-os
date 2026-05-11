@@ -16,11 +16,30 @@ import {
   buildDmsStoragePath,
   safeStorageSegment,
 } from "./dms-constants"
+import { sendDocumentEvent } from "./dms-notifications"
+import { emitDmsEvent } from "./dms-realtime"
 import type {
   DmsCapability,
   DmsConfidentialityLevel,
   DmsDocumentKind,
 } from "./dms-types"
+
+/**
+ * Fire-and-forget side effect runner. Schedules `fn` on the event loop so a
+ * Realtime/Notification broadcast cannot delay or fail the awaited server
+ * action result. Errors are logged in non-production only.
+ */
+function sideEffect(label: string, fn: () => Promise<unknown>): void {
+  /** `void` so eslint no-floating-promises is satisfied; the promise is
+   *  intentionally not awaited — errors are swallowed and warned. */
+  void Promise.resolve()
+    .then(fn)
+    .catch((e) => {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(`[dms-actions:${label}] side-effect failed:`, e)
+      }
+    })
+}
 
 type ActionFailure = { ok: false; error: string }
 
@@ -388,14 +407,14 @@ export async function dmsFinalizeUpload(input: {
       .eq("id", verRow.document_id)
     if (setCurrent.error) return { ok: false, error: setCurrent.error.message }
 
-    /** Audit (service-role). */
+    /** Audit (service-role). Also captures folder_id for the realtime hook below. */
     const docCtx = await admin
       .from("dms_documents")
-      .select("company_id, project_id")
+      .select("company_id, project_id, folder_id")
       .eq("id", verRow.document_id)
       .maybeSingle()
     const ctxRow = docCtx.data as
-      | { company_id: string; project_id: string }
+      | { company_id: string; project_id: string; folder_id: string }
       | null
     if (ctxRow) {
       await admin.from("dms_audit_log").insert({
@@ -418,6 +437,30 @@ export async function dmsFinalizeUpload(input: {
       `/marker-ofek/dms/${ctxRow?.project_id ?? ""}`,
       "page"
     )
+
+    /** Fire-and-forget notifications + realtime broadcast. */
+    if (ctxRow) {
+      sideEffect("finalize:notify", () =>
+        sendDocumentEvent({
+          documentId: verRow.document_id,
+          event: "NEW_VERSION",
+          metadata: {
+            versionNumber: verRow.version_number,
+            triggeredByEmail: sess.userEmail,
+          },
+        }),
+      )
+      sideEffect("finalize:realtime", () =>
+        emitDmsEvent(ctxRow.project_id, {
+          type: "version_inserted",
+          documentId: verRow.document_id,
+          folderId: ctxRow.folder_id,
+          versionId: verRow.id,
+          versionNumber: verRow.version_number,
+          triggeredByUserId: sess.userId,
+        }),
+      )
+    }
 
     return { ok: true, documentId: verRow.document_id, versionId: verRow.id }
   } catch (e) {
@@ -756,7 +799,7 @@ export async function dmsRevertToVersion(input: {
     /** Resolve company/project context for the new path + audit. */
     const docCtx = await supabase
       .from("dms_documents")
-      .select("id, company_id, project_id, current_version_id")
+      .select("id, company_id, project_id, folder_id, current_version_id")
       .eq("id", documentId)
       .maybeSingle()
     if (docCtx.error) return { ok: false, error: docCtx.error.message }
@@ -765,6 +808,7 @@ export async function dmsRevertToVersion(input: {
           id: string
           company_id: string
           project_id: string
+          folder_id: string
           current_version_id: string | null
         }
       | null
@@ -904,12 +948,136 @@ export async function dmsRevertToVersion(input: {
 
     revalidatePath(`/marker-ofek/dms/${ctx.project_id}`, "page")
 
+    /** Fire-and-forget notifications + realtime broadcast for revert. */
+    sideEffect("revert:notify", () =>
+      sendDocumentEvent({
+        documentId,
+        event: "REVERTED",
+        metadata: {
+          versionNumber: newVersionRow.version_number,
+          revertedFromVersionNumber: srcRow.version_number,
+          triggeredByEmail: sess.userEmail,
+          changeNote:
+            input.changeNote?.trim() ||
+            `שוחזר מגרסה v${srcRow.version_number}`,
+        },
+      }),
+    )
+    sideEffect("revert:realtime", () =>
+      emitDmsEvent(ctx.project_id, {
+        type: "version_reverted",
+        documentId,
+        folderId: ctx.folder_id,
+        versionId: newVersionRow.id,
+        versionNumber: newVersionRow.version_number,
+        revertedFromVersionNumber: srcRow.version_number,
+        triggeredByUserId: sess.userId,
+      }),
+    )
+
     return {
       ok: true,
       documentId,
       newVersionId: newVersionRow.id,
       newVersionNumber: newVersionRow.version_number,
     }
+  } catch (e) {
+    return { ok: false, error: formatError(e) }
+  }
+}
+
+// =============================================================================
+// Folder subscriptions (D5 — notification opt-in)
+// =============================================================================
+
+export type DmsToggleFolderSubscriptionResult =
+  | { ok: true; subscribed: boolean }
+  | ActionFailure
+
+/**
+ * Toggle the current user's subscription to a folder. Idempotent: subscribing
+ * twice is a no-op, unsubscribing without a row is a no-op. Default scope is
+ * RECURSIVE — the user sees notifications for everything under the folder.
+ */
+export async function dmsToggleFolderSubscription(input: {
+  folderId: string
+  /** When true, ensure subscription exists. When false, ensure it does not. */
+  subscribe: boolean
+}): Promise<DmsToggleFolderSubscriptionResult> {
+  try {
+    const sess = await requireSession()
+    if (!sess.ok) return sess
+    const folderId = input.folderId.trim()
+    if (!folderId) return { ok: false, error: "מזהה תיקייה חסר" }
+
+    const folder = await loadFolderContext(folderId)
+    if (!folder.ok) return folder
+
+    const supabase = await createSupabaseServerAuthClient()
+
+    if (input.subscribe) {
+      const { error } = await supabase
+        .from("dms_folder_subscriptions")
+        .upsert(
+          {
+            company_id: folder.companyId,
+            folder_id: folder.folderId,
+            user_id: sess.userId,
+            scope: "RECURSIVE",
+          },
+          {
+            onConflict: "folder_id,user_id",
+            ignoreDuplicates: true,
+          },
+        )
+      if (error && !/duplicate|unique|conflict/i.test(error.message)) {
+        return { ok: false, error: error.message }
+      }
+      return { ok: true, subscribed: true }
+    } else {
+      const { error } = await supabase
+        .from("dms_folder_subscriptions")
+        .delete()
+        .eq("folder_id", folder.folderId)
+        .eq("user_id", sess.userId)
+      if (error) return { ok: false, error: error.message }
+      return { ok: true, subscribed: false }
+    }
+  } catch (e) {
+    return { ok: false, error: formatError(e) }
+  }
+}
+
+export type DmsListMySubscriptionsResult =
+  | { ok: true; folderIds: string[] }
+  | ActionFailure
+
+/**
+ * Return the set of folder ids the current user is subscribed to within a
+ * given project. Used by the DMS browser to render the bell-toggle state.
+ */
+export async function dmsListMyFolderSubscriptions(input: {
+  projectId: string
+}): Promise<DmsListMySubscriptionsResult> {
+  try {
+    const sess = await requireSession()
+    if (!sess.ok) return sess
+    const projectId = input.projectId.trim()
+    if (!projectId) return { ok: false, error: "מזהה פרוייקט חסר" }
+
+    const supabase = await createSupabaseServerAuthClient()
+    const { data, error } = await supabase
+      .from("dms_folder_subscriptions")
+      .select("folder_id, dms_folders!inner(project_id)")
+      .eq("user_id", sess.userId)
+      .eq("dms_folders.project_id", projectId)
+      .limit(500)
+    if (error) return { ok: false, error: error.message }
+
+    const folderIds = ((data ?? []) as Array<{ folder_id: string }>).map(
+      (r) => r.folder_id,
+    )
+    return { ok: true, folderIds }
   } catch (e) {
     return { ok: false, error: formatError(e) }
   }

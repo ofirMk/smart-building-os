@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { he } from "date-fns/locale"
 import {
+  Bell,
+  BellOff,
   ChevronLeft,
   Download,
   Folder,
@@ -39,7 +41,13 @@ import { DmsVersionHistoryDrawer } from "@/components/marker-ofek/dms/version-hi
 import {
   dmsCreateFolder,
   dmsGetDownloadUrl,
+  dmsListMyFolderSubscriptions,
+  dmsToggleFolderSubscription,
 } from "@/lib/marker-ofek/dms/dms-actions"
+import {
+  subscribeToDmsChannel,
+  type DmsRealtimeEvent,
+} from "@/lib/marker-ofek/dms/dms-realtime-client"
 import type {
   DmsBrowserBootstrap,
   DmsCapability,
@@ -110,8 +118,11 @@ type FolderTreeRowProps = {
   depth: number
   expanded: Set<string>
   selectedId: string | null
+  subscribedIds: Set<string>
+  togglingId: string | null
   onToggle: (id: string) => void
   onSelect: (id: string) => void
+  onToggleSubscription: (id: string, next: boolean) => void
 }
 
 function FolderTreeRow({
@@ -119,47 +130,87 @@ function FolderTreeRow({
   depth,
   expanded,
   selectedId,
+  subscribedIds,
+  togglingId,
   onToggle,
   onSelect,
+  onToggleSubscription,
 }: FolderTreeRowProps) {
   const isExpanded = expanded.has(node.id)
   const isSelected = selectedId === node.id
   const hasChildren = node.children.length > 0
 
+  const isSubscribed = subscribedIds.has(node.id)
+  const isTogglingThis = togglingId === node.id
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          onSelect(node.id)
-          if (hasChildren) onToggle(node.id)
-        }}
+      <div
         className={cn(
-          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-sm transition-colors",
+          "group flex w-full items-center gap-1 rounded-md text-right text-sm transition-colors",
           "hover:bg-accent/60",
           isSelected && "bg-accent text-accent-foreground"
         )}
-        style={{ paddingInlineStart: `${depth * 16 + 8}px` }}
+        style={{ paddingInlineStart: `${depth * 16 + 4}px` }}
       >
-        <ChevronLeft
-          className={cn(
-            "size-3.5 shrink-0 text-muted-foreground transition-transform",
-            isExpanded && "-rotate-90",
-            !hasChildren && "opacity-0"
+        <button
+          type="button"
+          onClick={() => {
+            onSelect(node.id)
+            if (hasChildren) onToggle(node.id)
+          }}
+          className="flex flex-1 items-center gap-2 px-2 py-1.5"
+        >
+          <ChevronLeft
+            className={cn(
+              "size-3.5 shrink-0 text-muted-foreground transition-transform",
+              isExpanded && "-rotate-90",
+              !hasChildren && "opacity-0"
+            )}
+          />
+          {isExpanded && hasChildren ? (
+            <FolderOpen className="size-4 shrink-0 text-amber-500" />
+          ) : (
+            <Folder className="size-4 shrink-0 text-amber-500" />
           )}
-        />
-        {isExpanded && hasChildren ? (
-          <FolderOpen className="size-4 shrink-0 text-amber-500" />
-        ) : (
-          <Folder className="size-4 shrink-0 text-amber-500" />
-        )}
-        <span className="truncate">{node.name}</span>
-        {node.kind === "SYSTEM" && (
-          <Badge variant="secondary" className="ms-auto h-4 px-1 text-[10px]">
-            ברירת מחדל
-          </Badge>
-        )}
-      </button>
+          <span className="truncate">{node.name}</span>
+          {node.kind === "SYSTEM" && (
+            <Badge
+              variant="secondary"
+              className="ms-auto h-4 px-1 text-[10px]"
+            >
+              ברירת מחדל
+            </Badge>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSubscription(node.id, !isSubscribed)
+          }}
+          disabled={isTogglingThis}
+          title={
+            isSubscribed
+              ? "מנוי להתראות — לחץ כדי להסיר"
+              : "היירשום להתראות על עדכונים בתיקייה"
+          }
+          className={cn(
+            "me-1 inline-flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-opacity",
+            "opacity-0 group-hover:opacity-100",
+            isSubscribed && "text-amber-500 opacity-100",
+            isTogglingThis && "opacity-100"
+          )}
+        >
+          {isTogglingThis ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : isSubscribed ? (
+            <Bell className="size-3.5" />
+          ) : (
+            <BellOff className="size-3.5" />
+          )}
+        </button>
+      </div>
       {isExpanded &&
         node.children.map((child) => (
           <FolderTreeRow
@@ -168,8 +219,11 @@ function FolderTreeRow({
             depth={depth + 1}
             expanded={expanded}
             selectedId={selectedId}
+            subscribedIds={subscribedIds}
+            togglingId={togglingId}
             onToggle={onToggle}
             onSelect={onSelect}
+            onToggleSubscription={onToggleSubscription}
           />
         ))}
     </>
@@ -182,7 +236,7 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
     () => buildFolderTree(bootstrap.folders),
     [bootstrap.folders]
   )
-  const [folders, setFolders] = React.useState<DmsFolder[]>(bootstrap.folders)
+  const [folders] = React.useState<DmsFolder[]>(bootstrap.folders)
   const [expanded, setExpanded] = React.useState<Set<string>>(() => {
     /** Auto-expand root folders so the user sees the structure immediately. */
     const s = new Set<string>()
@@ -205,6 +259,12 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
   const [historyDoc, setHistoryDoc] = React.useState<
     { id: string; title: string } | null
   >(null)
+  const [subscribedIds, setSubscribedIds] = React.useState<Set<string>>(
+    new Set()
+  )
+  const [togglingFolderId, setTogglingFolderId] = React.useState<string | null>(
+    null
+  )
 
   const capSet = React.useMemo(
     () => new Set<DmsCapability>(bootstrap.rootCapabilities),
@@ -333,6 +393,94 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
   React.useEffect(() => {
     void reloadDocuments()
   }, [reloadDocuments])
+
+  /** Load the current user's folder subscriptions for the project on mount. */
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await dmsListMyFolderSubscriptions({
+          projectId: bootstrap.project.id,
+        })
+        if (cancelled) return
+        if (res.ok) setSubscribedIds(new Set(res.folderIds))
+      } catch {
+        /* non-fatal — toggle still works */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [bootstrap.project.id])
+
+  /** Realtime subscription — receive broadcast events for this project. */
+  React.useEffect(() => {
+    const unsub = subscribeToDmsChannel(
+      bootstrap.project.id,
+      (event: DmsRealtimeEvent) => {
+        if (event.type === "version_inserted") {
+          toast.info(
+            event.versionNumber
+              ? `עודכה — גרסה v${event.versionNumber} הועלתה לאחד המסמכים`
+              : "עודכה — גרסה חדשה הועלתה"
+          )
+        } else if (event.type === "version_reverted") {
+          toast.info(
+            event.revertedFromVersionNumber
+              ? `עודכה — מסמך שוחזר מ-v${event.revertedFromVersionNumber}`
+              : "עודכה — מסמך שוחזר"
+          )
+        } else if (event.type === "document_deleted") {
+          toast.info("מסמך נמחק מהתיקייה")
+        }
+        /** Reload only when the event hits the folder the user is looking at. */
+        if (event.folderId && event.folderId === selectedFolderId) {
+          void reloadDocuments()
+        }
+      }
+    )
+    return () => {
+      void unsub()
+    }
+  }, [bootstrap.project.id, selectedFolderId, reloadDocuments])
+
+  async function onToggleSubscription(folderId: string, next: boolean) {
+    setTogglingFolderId(folderId)
+    /** Optimistic update — revert on error. */
+    setSubscribedIds((prev) => {
+      const updated = new Set(prev)
+      if (next) updated.add(folderId)
+      else updated.delete(folderId)
+      return updated
+    })
+    try {
+      const res = await dmsToggleFolderSubscription({
+        folderId,
+        subscribe: next,
+      })
+      if (!res.ok) {
+        toast.error(res.error)
+        setSubscribedIds((prev) => {
+          const updated = new Set(prev)
+          if (next) updated.delete(folderId)
+          else updated.add(folderId)
+          return updated
+        })
+        return
+      }
+      toast.success(next ? "נרשמת להתראות" : "המנוי בוטל")
+    } catch (e) {
+      toast.error(formatError(e))
+      setSubscribedIds((prev) => {
+        const updated = new Set(prev)
+        if (next) updated.delete(folderId)
+        else updated.add(folderId)
+        return updated
+      })
+    } finally {
+      setTogglingFolderId(null)
+    }
+  }
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -501,8 +649,11 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
                   depth={0}
                   expanded={expanded}
                   selectedId={selectedFolderId}
+                  subscribedIds={subscribedIds}
+                  togglingId={togglingFolderId}
                   onToggle={toggleExpand}
                   onSelect={setSelectedFolderId}
+                  onToggleSubscription={onToggleSubscription}
                 />
               ))}
             </div>
