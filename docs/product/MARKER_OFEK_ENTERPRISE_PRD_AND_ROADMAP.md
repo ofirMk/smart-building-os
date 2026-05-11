@@ -1070,5 +1070,108 @@ Marker-Ofek נבנית להיות ה-ERP הראשון ש-**AI-native** מקצה 
 
 ---
 
+## נספח B — Phase 2: Dynamic Global System Parameters (Sprint 2026-09-10)
+
+> **Status:** ✅ Migration + Helper + Admin UI + Refactor של hardcode קריטי הושלמו ב-`20260910120000_erp_system_parameters.sql`, `lib/erp/system-parameters.ts`, `app/(dashboard)/marker-ofek/settings/system-parameters/page.tsx`.
+
+### B.1 Rationale & ארכיטקטורת ירידה
+
+עד היום פרמטרים כמו מע"מ (17%), עכבון, תחיליות מספור, ספי AI וכו' היו **קשיחים בקוד** או מפוזרים בין שתי טבלאות (`mo_system_settings` singleton + `company_profile` typed columns). לקוחות בכמה חברות, שינוי דרישות רגולציה (למשל מע"מ עתידי 18%), והוספת פרמטרים תכופה — הצריכו תשתית גמישה.
+
+**Precedence ladder (single source of truth):**
+
+```
+read time
+   │
+   ▼
+1. erp_system_parameters       (per-company, key-value, גמיש)
+   │ (key not found)
+   ▼
+2. company_profile.<column>    (per-company, typed)
+   │ (column null)
+   ▼
+3. mo_system_settings.<column> (global singleton)
+   │ (still null)
+   ▼
+4. Hard-coded fallback         (logged warn, last resort)
+```
+
+### B.2 Schema
+
+טבלה חדשה `public.erp_system_parameters`:
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `company_id` | text | RLS scope (`user_has_company_access`) |
+| `param_key` | text | `^[A-Z][A-Z0-9_]{2,63}$` (UPPER_SNAKE_CASE) |
+| `param_value` | text NULL | |
+| `data_type` | enum `erp_param_data_type` | STRING / NUMBER / PERCENT / BOOLEAN / JSON / EMAIL / URL / DATE / ENUM |
+| `category` | text | `^[a-z][a-z0-9_]{0,31}$` (finance / numbering / branding / banking / ai / cost_control) |
+| `is_secret` | bool | redacted ב-RPC ל-non-admin |
+| `is_system` | bool | seed-managed — UI חוסם hard-delete |
+| `metadata` | jsonb | `{ options[], min, max, regex, group_order, unit }` |
+| audit cols | created/updated_at + by | reuses `public.set_updated_at()` |
+
+**RLS:** SELECT לכל company-member. INSERT/UPDATE/DELETE רק לתפקיד `ADMIN`/`OWNER` ב-`erp_user_company_memberships`. RPC `erp_get_system_parameters(p_company_id)` מספק bulk read עם redaction אוטומטי של secrets ל-non-admins.
+
+**Seed:** 16 פרמטרים פר-חברה, מקובצים ב-6 קטגוריות:
+- **finance**: `DEFAULT_VAT_PCT=17.0`, `DEFAULT_RETENTION_PCT=5.0`, `CURRENCY_CODE=ILS`, `ROUNDING_GRANULARITY=0.01`
+- **numbering**: `INVOICE_NUMBER_PREFIX=INV-`, `PO_NUMBER_PREFIX=PO-`, `PROJECT_CODE_PREFIX=PRJ-`
+- **branding**: `EMAIL_FROM_NAME`, `PDF_HEADER_TAGLINE`
+- **banking**: `MASAV_INSTITUTION_CODE`, `MASAV_SENDER_NAME`
+- **ai**: `AI_AUTOPOST_CONFIDENCE_MIN=0.92`, `AI_THREEWAY_VARIANCE_TOLERANCE_PCT=2.0`
+- **cost_control**: `COST_CONTROL_PERIOD_LOCK_DAYS=5`, `BUDGET_OVERRUN_WARN_PCT=85.0`, `BUDGET_OVERRUN_BLOCK_PCT=100.0` (MedaTech §6.5 alignment)
+
+### B.3 Refactors שבוצעו
+
+| מיקום | לפני | אחרי |
+|---|---|---|
+| `lib/holden-erp/billing-actions.ts:223` | `const VAT_RATE = 0.17` | `await getVatMultiplier(companyId)` עם cache TTL 60s |
+
+### B.4 Refactors דחויים (TODO רשמי)
+
+| מיקום | מה | למה דחוי |
+|---|---|---|
+| `supabase/migrations/20260809100000_ai_procurement_deterministic_engine.sql:731` | RPC SQL פנימי משתמש ב-`* 0.17` קשיח | דורש migration חדש שעוטף RPC לקרוא מ-`erp_system_parameters`. תכנון נדרש (טריגרים על PO totals — אם קוראים DB כל insert זה ביצועי-יקר). מסלול: רפק'ר עצמאי בסשן הבא. |
+| `supabase/migrations/20260812100000_seed_mock_invoices.sql` | seed קבוע 0.17 בשורות דמו | seed בלבד — לא משפיע על נתוני production. השאר לתאימות אחורה לבדיקות. |
+
+---
+
+## נספח C — Competitive Positioning (vs SAP S/4HANA / Priority / Comax)
+
+> **Audience:** מנכ"ל, ועדת השקעות, כל פגישת sales. הסעיף ממסגר איפה אנחנו מצדיקים שאנחנו מציבים סטנדרט גבוה יותר ולא רק "Priority עם UI מודרני".
+
+### C.1 השוואה ברמת מודול (9 פרקי MedaTech)
+
+| # | פרק | SAP S/4HANA | Priority (MedaTech impl) | Comax | **Marker-Ofek (יעד MVP+)** |
+|---|---|---|---|---|---|
+| 1 | **כללי / Setup** | קונפיגורציה מאוד מורכבת, ABAP/Fiori. דורש 6+ חודשי SI. | ינואי setup ב-Priority Express. תפעולי תוך 2-3 חודשים. | Wizard מהיר אבל מודולים שטחיים. | **One-click bootstrap** של 9 ברירת-מחדל folders, חברה חדשה פעילה תוך 5 דקות (`loadDmsBrowserBootstrap`). |
+| 2 | **רכש** | SAP Ariba (כלי נפרד, אינטגרציה מסובכת). | מודול חזק עם purchase requests, 3-way match ידני. | בסיסי. | **AI-native 3-Way Match** — `BUDGET_OVERRUN_BLOCK_PCT` דינמי, `AI_THREEWAY_VARIANCE_TOLERANCE_PCT` קונפיגרבילי, deterministic engine קיים (`20260809100000_ai_procurement_deterministic_engine.sql`). |
+| 3 | **חוזי מזמין/קבלן** | weak. דורש addon (CLM external). | חוזק היסטורי. תיקונים, אמנדמנטים, retention, back-charges. | אין באמת. | **Parity מלאה** + Contract Vault DMS עם versioning (`20260815120000_dms_phase_c1_foundations.sql`). יתרון: D3 revert + audit trail משפטי לפי spec MedaTech. |
+| 4 | **ניהול מלאי** | חזק (MM module). | טוב, חסרון: UI ישן. | בסיסי. | **Out of scope ל-Phase 1.** ארכיטקטורה מוכנה אבל לא ממומש (decision: lean MVP). |
+| 5 | **פרויקטים** | PS module — חזק אבל יקר/מורכב. | פרויקטים + BOQ + ניהול ביצוע. ברירת המחדל בקבלני בנייה IL. | חלש. | **Parity + AI**: WBS, BOQ, plan vs actual (`20260828100000_priority_project_planning.sql`). יתרון: PDF Intelligence Engine מאכלס DMS אוטומטית מהשטח. |
+| 6 | **בקרה תקציבית** | מורכבת — דורש CO + PS. | **הכוח של MedaTech**: 4-מימדי בקרה, snapshots חודשיים, forecast ידני (§6.3, §6.5). | אין באמת. | **Parity + UX מודרני**: `erp_proj_control_*` מימוש לפי §6.2.4-6.5 (`20260903100000_erp_cost_control.sql`). יתרון: ספי warn/block דינמיים פר חברה (`BUDGET_OVERRUN_*_PCT`), AI ניתוח חריגות. |
+| 7 | **מכרזים** | weak בלי addon. | מודול ייעודי — מאפשר tender editions שמזינים קבלן. | חסר. | **Phase 2.** בארכיטקטורה אבל לא ב-MVP. נשען על §5.5 (loading budget plan) ועל מערכת ה-cost control. |
+| 8 | **כספים** | מלא, יקר. | מלא — כולל journal, AR/AP, MASAV. | טוב. | **Parity**: GL, journals, MASAV ZNK (`20260826100000_ap_payments_masav.sql`), bank reconciliation (`20260825110000_bank_reconciliation_schema.sql`). יתרון: VAT/retention דינמיים, MASAV codes ב-`erp_system_parameters`. |
+| 9 | **הסבות / Onboarding** | מנהל פרויקט SI ממומחה, 6-12 חודשים. | wizard + שירותי MedaTech. | self-service מהיר. | **Self-service templates** ב-`docs/ingested-specs/onboarding-master-data-templates.md`. CSV import. יתרון: AI agent שמסווג נתונים שמיובאים. |
+
+### C.2 איך אנחנו "מעבר" — Strategic moat
+
+ארבעה צירים שמייצרים פער מבני, לא רק UX:
+
+1. **AI-native data plane** — לא bolt-on; PDF Intelligence Engine, deterministic 3-way match, AI-classification של uploads — חלק מליבת ה-DB ו-RLS. Priority/SAP מציעים AI כ-addon חיצוני יקר.
+2. **דינמיות בלי SI** — `erp_system_parameters` + `mo_system_settings` + `company_profile` = שינוי VAT/retention/spec עסקי **לא דורש developer**. SAP customization מצריך ABAP. Priority customization מצריך פרוייקט DRC.
+3. **Cloud-first multi-tenant ללא לייסנס per-seat** — SaaS, RLS company-scoped, גמישות תמחור. SAP/Priority נמכרים פר משתמש בעלויות ארבע-ספרתי בחודש.
+4. **Audit-grade מובנה** — `dms_audit_log` immutable, ZIP export עם רשימת version IDs. Priority audit חלש מטבעו. SAP חזק אבל מורכב.
+
+### C.3 מתי **לא** להציע אותנו (היכרות עם המגבלות)
+
+- **ארגון 500+ עובדים, כמה חברות-בנות בכמה מדינות, ERP גלובלי** → SAP. הם פותרים את זה היום.
+- **קבלן עם 30 שנה ב-Priority, רגישות אפס לשינוי, פקידות שלא מסוגלת ללמוד UI חדש** → השאירו אותם ב-Priority עד שדור הבא נכנס.
+- **ארגון שדורש module שלא בנינו עדיין** (למשל מלאי מסיבי, ייצור) → לפני שאנחנו ערוכים, לא לקבל את ה-deal כדי לא להיכנס לתחזוקה כרונית.
+
+---
+
 > **End of document.**
 > **Next step:** review session עם founders + first customer; lock MVP boundary; start hiring W1 engineer.

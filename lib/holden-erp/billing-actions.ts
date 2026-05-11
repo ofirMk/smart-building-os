@@ -11,6 +11,10 @@ import {
   fetchSupplierPartsAction,
   fetchUnitsOfMeasureAction,
 } from "@/lib/holden-erp/master-data-actions"
+import { cookies } from "next/headers"
+
+import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
+import { getVatMultiplier } from "@/lib/erp/system-parameters"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { formatError } from "@/lib/utils"
 import type {
@@ -220,7 +224,16 @@ export async function createTaxInvoiceAction(
   }
 }
 
-const VAT_RATE = 0.17
+/**
+ * Resolve the active company id from the session cookie. Used by helpers below
+ * to fetch dynamic system parameters (VAT %, retention, etc.) that used to be
+ * hard-coded in this file.
+ */
+async function activeCompanyIdFromCookie(): Promise<string | null> {
+  const store = await cookies()
+  const raw = store.get(COMPANY_COOKIE_KEY)?.value
+  return resolveCompanyContext(raw)
+}
 
 function buildFinalInvoiceIdempotencyKey(
   projectId: string | null,
@@ -486,7 +499,21 @@ export async function fetchBillingPrefillFromSourceAction(input: {
       }
       const tb = Number((rep as { total_before_tax: number | null }).total_before_tax)
       const tp = Number((rep as { total_payable: number | null }).total_payable)
-      const sub = Number.isFinite(tb) && tb > 0 ? tb : tp > 0 ? roundMoney(tp / (1 + VAT_RATE)) : 0
+      /**
+       * VAT multiplier is resolved per-company from erp_system_parameters.
+       * If the cookie is missing (rare edge — service-role call without cookie),
+       * the helper falls back to the hard-coded 17% in lib/erp/system-parameters.
+       */
+      const companyIdForVat = await activeCompanyIdFromCookie()
+      const vatMultiplier = companyIdForVat
+        ? await getVatMultiplier(companyIdForVat)
+        : 0.17
+      const sub =
+        Number.isFinite(tb) && tb > 0
+          ? tb
+          : tp > 0
+            ? roundMoney(tp / (1 + vatMultiplier))
+            : 0
       const monthLabel =
         String((rep as { bill_month_label: string | null }).bill_month_label ?? "").trim() ||
         String((rep as { report_month: string }).report_month ?? "")
