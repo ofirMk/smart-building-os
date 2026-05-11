@@ -28,7 +28,7 @@ jobs:
       run: npx playwright install --with-deps
     - name: Run Playwright tests
       run: npx playwright test
-    - uses: actions/upload-artifact@v4 # v5 not yet released for upload-artifact at time of writing — pin v4 explicitly.
+    - uses: actions/upload-artifact@v5 # Node 24 runtime — clears the Node 20 deprecation warning.
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
