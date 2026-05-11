@@ -108,7 +108,7 @@ function MarkerOfekWorkspaceChrome({
               render={<Link href="/marker-ofek/pitch" prefetch />}
             >
               <Rocket className="size-4 shrink-0" aria-hidden />
-              <span className="hidden sm:inline">חמ&quot;ל משקיעים</span>
+              <span className="hidden sm:inline">מנהל המערכת</span>
             </Button>
             <Button
               type="button"
