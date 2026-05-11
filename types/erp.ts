@@ -1114,6 +1114,31 @@ export const DEMO_PLANNING_EDITION_ID =
   "c0700000-0000-4002-8000-000000000000"
 
 // ===========================================================================
+// Sprint A.5 — Cost Control (MedaTech §6)
+// ===========================================================================
+
+/**
+ * מצב תקופת בקרה — תואם ל-erp_proj_control_period_status ב-DB.
+ *  • OPEN      — פתוחה לעדכון צפי/קישורים (עוד לא רץ איסוף)
+ *  • COLLECTED — בוצע איסוף עלויות; snapshot כתוב
+ *  • CLOSED    — סגורה; לקריאה בלבד (MedaTech §6.2.2)
+ */
+export const ERP_PROJ_CONTROL_PERIOD_STATUSES = [
+  "OPEN",
+  "COLLECTED",
+  "CLOSED",
+] as const
+export type ErpProjControlPeriodStatus =
+  (typeof ERP_PROJ_CONTROL_PERIOD_STATUSES)[number]
+
+/**
+ * מזהה תקופת בקרה דמו (04/26) בפרויקט הדמו, נזרע במיגרציה 20260903100000.
+ * נדרש עבור הכפתור השמיני ב-CEO Command Center שמנווט אל מסך בקרת התקציב.
+ */
+export const DEMO_CONTROL_PERIOD_ID =
+  "c0700000-0000-4006-8000-000000000000"
+
+// ===========================================================================
 // Subcontractor Partial Bills (חשבונות חלקיים) — מיגרציה 20260819100000
 // ===========================================================================
 

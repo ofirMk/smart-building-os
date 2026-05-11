@@ -20,6 +20,7 @@ import * as React from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import {
+  BarChart3,
   Bot,
   Briefcase,
   Coins,
@@ -61,6 +62,7 @@ import {
   DEMO_AP_PAYMENT_RUN_ID,
   DEMO_BANK_RECONCILIATION_ID,
   DEMO_CONTRACT_PROJECT_ID,
+  DEMO_CONTROL_PERIOD_ID,
   DEMO_PLANNING_EDITION_ID,
   DEMO_PURCHASE_ORDER_ID,
   DEMO_SUBCONTRACTOR_BILL_ID,
@@ -268,6 +270,23 @@ export function InvestorCommandCenter({
           >
             <Layers className="size-4" aria-hidden />
             תכנון פרויקט ותמחור (WBS)
+          </Button>
+          {/* Demo: live Cost Control Cockpit (Sprint A.5 — MedaTech §6) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100"
+            data-demo-link="cost-control-live"
+            render={
+              <a
+                href={`/marker-ofek/projects/${DEMO_CONTRACT_PROJECT_ID}/cost-control?period=${DEMO_CONTROL_PERIOD_ID}`}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            <BarChart3 className="size-4" aria-hidden />
+            בקרת תקציב — מתוכנן/מתחייב/בוצע
           </Button>
           <CopilotDrawer projectId={projectId} projectName={projectName} />
         </div>
