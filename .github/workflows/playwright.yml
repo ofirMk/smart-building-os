@@ -8,6 +8,15 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    # Dummy Supabase env vars — required so that `npm run dev` (spawned by
+    # Playwright's webServer block) clears the "Missing NEXT_PUBLIC_SUPABASE_URL
+    # or NEXT_PUBLIC_SUPABASE_ANON_KEY" guard and returns proper 401/403
+    # responses to the auth-gated specs instead of crashing with 500.
+    # These are NEVER used for real network calls — Playwright specs are
+    # offline-by-design and assert on Next.js routing/auth-gating behavior.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://dummy-project.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_key"
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-node@v5

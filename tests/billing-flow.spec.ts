@@ -5,7 +5,9 @@ test('Billing PDF Export Flow (Golden Path)', async ({ page }) => {
   await page.goto('http://localhost:3000/marker-ofek/projects');
 
   // 2. Basic assertion to ensure the app is running and the page loaded
-  await expect(page).toHaveTitle(/מרקר אופק/);
+  // Accept either the global app title ("מרקר אופק") or the route-specific
+  // title ("פרויקטים") which is rendered when Projects Hub overrides metadata.
+  await expect(page).toHaveTitle(/(מרקר אופק|פרויקטים)/);
 
   // Note for AI: In future iterations, we will add the exact clicks
   // to navigate to the specific project, update the BOQ, and trigger the PDF.
