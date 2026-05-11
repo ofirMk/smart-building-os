@@ -10,7 +10,8 @@
  *      or via folder ancestor chain (respecting inherits_to_descendants).
  *   b) Folder subscribers — rows in dms_folder_subscriptions where the
  *      folder is the doc's folder (any scope) or any ancestor (scope='RECURSIVE').
- *   c) Linked-entity owners — TODO Phase C.3+ (see resolveLinkedEntityRecipients).
+ *   c) Linked-entity owners — implemented via resolveLinkedEntityOwners()
+ *      (the doc's own project + any PROJECT entity_link → project_assignments).
  *
  * Calling convention: every public function tolerates failure and returns
  * structured results. Callers should treat email send failures as non-fatal
@@ -25,6 +26,7 @@ import {
 } from "@/lib/infrastructure/email-service"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 import { getSystemParameter } from "@/lib/erp/system-parameters"
+import { resolveLinkedEntityOwners } from "./linked-entities-resolver"
 
 // =============================================================================
 // Types
@@ -188,14 +190,14 @@ async function resolveFolderSubscribers(args: {
 }
 
 /**
- * Linked-entity recipients (PROJECT owners, CONTRACT signatories, etc.).
- * Deferred: requires a project membership model that maps PROJECT entity_id
- * to authoritative recipient list. The repo has multiple project_* tables but
- * no single canonical "owner" column. Phase C.3 will introduce a project_roles
- * table and this function will then aggregate cleanly.
+ * Linked-entity recipients — wraps the dedicated resolver module.
+ * See `linked-entities-resolver.ts` for algorithm + future expansion notes.
  */
-async function resolveLinkedEntityRecipients(): Promise<Set<string>> {
-  return new Set()
+async function resolveLinkedEntityRecipients(
+  documentId: string,
+  documentProjectId: string,
+): Promise<Set<string>> {
+  return resolveLinkedEntityOwners(documentId, documentProjectId)
 }
 
 /**
@@ -231,13 +233,14 @@ export async function resolveRecipients(
   const admin = createSupabaseServiceRoleClient()
   const docRes = await admin
     .from("dms_documents")
-    .select("id, folder_id, company_id, deleted_at")
+    .select("id, folder_id, project_id, company_id, deleted_at")
     .eq("id", documentId)
     .maybeSingle()
   if (docRes.error || !docRes.data) return []
   const doc = docRes.data as {
     id: string
     folder_id: string
+    project_id: string
     company_id: string
     deleted_at: string | null
   }
@@ -250,7 +253,7 @@ export async function resolveRecipients(
       folderId: doc.folder_id,
       folderAncestors: ancestors,
     }),
-    resolveLinkedEntityRecipients(),
+    resolveLinkedEntityRecipients(doc.id, doc.project_id),
   ])
 
   /** Build a map keyed by userId with source attribution. */

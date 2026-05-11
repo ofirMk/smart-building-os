@@ -1200,7 +1200,7 @@ read time
 
 ### D.3 פערים ידועים / Phase C.3
 
-- `linked-entity owners` — כרגע stub. לחבר אל `pbc_subcontractor_contracts`, `erp_purchase_orders` כשה-linking יהיה bidirectional.
+- ~~`linked-entity owners` — stub~~ → ✅ **נסגר** ב-2026-05-11 (`lib/marker-ofek/dms/linked-entities-resolver.ts`). הצינור משלב את `dms_entity_links` של `entity_type='PROJECT'` יחד עם `project_assignments` של פרויקט המסמך. הרחבה ל-`CONTRACT`/`PURCHASE_ORDER` תידרש כש-`erp_subcontractor_contracts` יזכה ל-`created_by`/`account_manager_id` (Sprint W2).
 - **Digest mode** — אין עדיין "סיכום יומי" לנמען; כל event = email נפרד. לשקול `notification_digest_mode` ב-`user_preferences`.
 - **In-app notification center** — toast בלבד; אין UI היסטוריה של התרעות. מומלץ כ-Phase C.3 או כחלק ממודול `mo_notifications_center` כלל-מערכתי.
 - **SMS/WhatsApp channel** — ה-channel field קיים אבל רק `email` ממומש.
