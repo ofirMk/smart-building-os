@@ -25,16 +25,32 @@ export type SendTransactionalEmailResult =
   | { ok: true; provider: "resend" | "postmark"; id?: string }
   | { ok: false; error: string; provider?: string }
 
+/**
+ * Read an env var and aggressively sanitize trailing whitespace AND any
+ * literal `\r` / `\n` escape sequences (4-char ASCII pollution that
+ * `vercel env pull` and some dashboard paste-flows leave behind). Without
+ * this, Resend rejects auth with a generic "API key is invalid" because
+ * the Bearer header contains stray bytes.
+ */
+function sanitizeEnv(name: string): string | undefined {
+  const raw = process.env[name]
+  if (raw === undefined) return undefined
+  // Strip real CR/LF and the literal escape sequences \r and \n anywhere
+  // in the value (most often trailing). Keep an inner trim for safety.
+  const cleaned = raw.replace(/\\r|\\n|\r|\n/g, "").trim()
+  return cleaned.length > 0 ? cleaned : undefined
+}
+
 function resolveProvider(): "resend" | "postmark" {
-  const p = process.env.EMAIL_PROVIDER?.trim().toLowerCase()
+  const p = sanitizeEnv("EMAIL_PROVIDER")?.toLowerCase()
   if (p === "postmark") return "postmark"
   if (p === "resend") return "resend"
-  if (process.env.POSTMARK_SERVER_TOKEN?.trim()) return "postmark"
+  if (sanitizeEnv("POSTMARK_SERVER_TOKEN")) return "postmark"
   return "resend"
 }
 
 function defaultSupportEmail(): string {
-  return process.env.SYSTEM_SUPPORT_EMAIL?.trim() || "support@yourbrand.co.il"
+  return sanitizeEnv("SYSTEM_SUPPORT_EMAIL") || "support@yourbrand.co.il"
 }
 
 export function getDefaultSystemSupportEmail(): string {
@@ -42,11 +58,11 @@ export function getDefaultSystemSupportEmail(): string {
 }
 
 async function sendResend(input: SendTransactionalEmailInput): Promise<SendTransactionalEmailResult> {
-  const key = process.env.RESEND_API_KEY?.trim()
+  const key = sanitizeEnv("RESEND_API_KEY")
   if (!key) return { ok: false, error: "חסר RESEND_API_KEY", provider: "resend" }
 
   const from =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
+    sanitizeEnv("RESEND_FROM_EMAIL") ||
     "Diamond System <notifications@yourbrand.co.il>"
 
   const to = Array.isArray(input.to) ? input.to : [input.to]
@@ -83,12 +99,12 @@ async function sendResend(input: SendTransactionalEmailInput): Promise<SendTrans
 }
 
 async function sendPostmark(input: SendTransactionalEmailInput): Promise<SendTransactionalEmailResult> {
-  const token = process.env.POSTMARK_SERVER_TOKEN?.trim()
+  const token = sanitizeEnv("POSTMARK_SERVER_TOKEN")
   if (!token) return { ok: false, error: "חסר POSTMARK_SERVER_TOKEN", provider: "postmark" }
 
   const from =
-    process.env.POSTMARK_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
+    sanitizeEnv("POSTMARK_FROM_EMAIL") ||
+    sanitizeEnv("RESEND_FROM_EMAIL") ||
     "Diamond System <notifications@yourbrand.co.il>"
 
   const to = Array.isArray(input.to) ? input.to.join(",") : input.to
