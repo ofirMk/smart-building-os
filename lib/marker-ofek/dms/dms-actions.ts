@@ -553,3 +553,364 @@ export async function dmsGetDownloadUrl(input: {
     return { ok: false, error: formatError(e) }
   }
 }
+
+// =============================================================================
+// Version history + Revert (D3) — Phase C.2
+// =============================================================================
+
+export type DmsVersionListItem = {
+  id: string
+  versionNumber: number
+  storageBucket: string
+  storagePath: string
+  mimeType: string
+  sizeBytes: number
+  originalFilename: string
+  uploadedBy: string | null
+  uploadedByEmail: string | null
+  uploadedAt: string
+  changeNote: string | null
+  isQuarantined: boolean
+  archivedAt: string | null
+  isCurrent: boolean
+}
+
+export type DmsListVersionsResult =
+  | { ok: true; versions: DmsVersionListItem[]; currentVersionId: string | null }
+  | ActionFailure
+
+export type DmsRevertToVersionResult =
+  | { ok: true; documentId: string; newVersionId: string; newVersionNumber: number }
+  | ActionFailure
+
+/**
+ * List every non-archived version of a document, newest first. RLS already
+ * gates `dms_documents`; `dms_document_versions` inherits via the FK chain
+ * (no independent SELECT policy — see migration §2.2.3).
+ *
+ * The uploader email is resolved through service-role because `auth.users`
+ * is otherwise hidden from authenticated clients.
+ */
+export async function dmsListVersions(input: {
+  documentId: string
+}): Promise<DmsListVersionsResult> {
+  try {
+    const sess = await requireSession()
+    if (!sess.ok) return sess
+    const documentId = input.documentId.trim()
+    if (!documentId) return { ok: false, error: "מזהה מסמך חסר" }
+
+    const supabase = await createSupabaseServerAuthClient()
+
+    /** Validate the user can at least see metadata — RLS will return null otherwise. */
+    const docRes = await supabase
+      .from("dms_documents")
+      .select("id, current_version_id")
+      .eq("id", documentId)
+      .maybeSingle()
+    if (docRes.error) return { ok: false, error: docRes.error.message }
+    const docRow = docRes.data as
+      | { id: string; current_version_id: string | null }
+      | null
+    if (!docRow) return { ok: false, error: "מסמך לא נמצא או חסרה הרשאה" }
+
+    const verRes = await supabase
+      .from("dms_document_versions")
+      .select(
+        "id, version_number, storage_bucket, storage_path, mime_type, size_bytes, original_filename, uploaded_by, uploaded_at, change_note, is_quarantined, archived_at"
+      )
+      .eq("document_id", documentId)
+      .order("version_number", { ascending: false })
+      .limit(200)
+
+    if (verRes.error) return { ok: false, error: verRes.error.message }
+
+    type Row = {
+      id: string
+      version_number: number
+      storage_bucket: string
+      storage_path: string
+      mime_type: string
+      size_bytes: number
+      original_filename: string
+      uploaded_by: string | null
+      uploaded_at: string
+      change_note: string | null
+      is_quarantined: boolean
+      archived_at: string | null
+    }
+    const rows = (verRes.data ?? []) as Row[]
+
+    /** Resolve uploader emails in a single batch via service-role. */
+    const uploaderIds = Array.from(
+      new Set(rows.map((r) => r.uploaded_by).filter((v): v is string => !!v))
+    )
+    const emailById = new Map<string, string>()
+    if (uploaderIds.length > 0) {
+      const admin = createSupabaseServiceRoleClient()
+      for (const uid of uploaderIds) {
+        try {
+          const { data } = await admin.auth.admin.getUserById(uid)
+          if (data?.user?.email) emailById.set(uid, data.user.email)
+        } catch {
+          /* ignore — fall back to id */
+        }
+      }
+    }
+
+    const versions: DmsVersionListItem[] = rows.map((r) => ({
+      id: r.id,
+      versionNumber: r.version_number,
+      storageBucket: r.storage_bucket,
+      storagePath: r.storage_path,
+      mimeType: r.mime_type,
+      sizeBytes: r.size_bytes,
+      originalFilename: r.original_filename,
+      uploadedBy: r.uploaded_by,
+      uploadedByEmail: r.uploaded_by ? emailById.get(r.uploaded_by) ?? null : null,
+      uploadedAt: r.uploaded_at,
+      changeNote: r.change_note,
+      isQuarantined: r.is_quarantined,
+      archivedAt: r.archived_at,
+      isCurrent: r.id === docRow.current_version_id,
+    }))
+
+    return {
+      ok: true,
+      versions,
+      currentVersionId: docRow.current_version_id,
+    }
+  } catch (e) {
+    return { ok: false, error: formatError(e) }
+  }
+}
+
+/**
+ * D3 — Revert a document to a previous version by **copying** that version's
+ * storage object to a new path under the next monotonic version_number, then
+ * pointing `current_version_id` at the new row. This preserves immutability
+ * of every prior version, makes audit trail unambiguous, and avoids any
+ * ambiguity about "which physical file is current?".
+ *
+ * Permissions: caller must hold UPLOAD_VERSION on the document (RLS-checked
+ * during INSERT into `dms_document_versions`). Audit row uses
+ * `action=UPLOAD_VERSION` with `metadata.reverted_from_version` because
+ * the enum has no dedicated REVERT_VERSION value (see migration enum list).
+ */
+export async function dmsRevertToVersion(input: {
+  documentId: string
+  /** The version_id we are reverting **TO** (older). */
+  versionId: string
+  changeNote?: string | null
+}): Promise<DmsRevertToVersionResult> {
+  try {
+    const sess = await requireSession()
+    if (!sess.ok) return sess
+    const documentId = input.documentId.trim()
+    const sourceVersionId = input.versionId.trim()
+    if (!documentId || !sourceVersionId) {
+      return { ok: false, error: "מזהה מסמך/גרסה חסר" }
+    }
+
+    const supabase = await createSupabaseServerAuthClient()
+
+    /** ACL — explicit check via the canonical RPC before we touch storage. */
+    const caps = await supabase.rpc("dms_my_effective_permissions", {
+      p_document_id: documentId,
+    })
+    if (caps.error) return { ok: false, error: caps.error.message }
+    const list = (caps.data ?? []) as DmsCapability[]
+    if (!list.includes("UPLOAD_VERSION")) {
+      return { ok: false, error: "אין הרשאה לשחזר גרסה (חסר UPLOAD_VERSION)" }
+    }
+
+    /** Resolve source version under RLS — also confirms it belongs to this document. */
+    const src = await supabase
+      .from("dms_document_versions")
+      .select(
+        "id, document_id, version_number, storage_bucket, storage_path, mime_type, size_bytes, checksum_sha256, original_filename, is_quarantined"
+      )
+      .eq("id", sourceVersionId)
+      .eq("document_id", documentId)
+      .maybeSingle()
+    if (src.error) return { ok: false, error: src.error.message }
+    const srcRow = src.data as
+      | {
+          id: string
+          document_id: string
+          version_number: number
+          storage_bucket: string
+          storage_path: string
+          mime_type: string
+          size_bytes: number
+          checksum_sha256: string
+          original_filename: string
+          is_quarantined: boolean
+        }
+      | null
+    if (!srcRow) return { ok: false, error: "גרסת מקור לא נמצאה" }
+    if (srcRow.is_quarantined) {
+      return { ok: false, error: "לא ניתן לשחזר מגרסה בהסגר" }
+    }
+
+    /** Resolve company/project context for the new path + audit. */
+    const docCtx = await supabase
+      .from("dms_documents")
+      .select("id, company_id, project_id, current_version_id")
+      .eq("id", documentId)
+      .maybeSingle()
+    if (docCtx.error) return { ok: false, error: docCtx.error.message }
+    const ctx = docCtx.data as
+      | {
+          id: string
+          company_id: string
+          project_id: string
+          current_version_id: string | null
+        }
+      | null
+    if (!ctx) return { ok: false, error: "מסמך לא נמצא" }
+
+    if (ctx.current_version_id === srcRow.id) {
+      return { ok: false, error: "כבר נקודה לגרסה זו — אין מה לשחזר" }
+    }
+
+    /** Compute next version_number with a single retry on race. */
+    async function nextVersionNumber(): Promise<number> {
+      const probe = await supabase
+        .from("dms_document_versions")
+        .select("version_number")
+        .eq("document_id", documentId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const current = (probe.data as { version_number: number } | null)?.version_number ?? 0
+      return current + 1
+    }
+
+    const admin = createSupabaseServiceRoleClient()
+
+    let attempt = 0
+    let newVersionRow: { id: string; version_number: number } | null = null
+    let newStoragePath = ""
+    let copiedTo: { bucket: string; path: string } | null = null
+
+    while (attempt < 2 && !newVersionRow) {
+      attempt += 1
+      const versionNumber = await nextVersionNumber()
+      newStoragePath = buildDmsStoragePath({
+        companyId: ctx.company_id,
+        projectId: ctx.project_id,
+        documentId,
+        versionNumber,
+        originalFilename: srcRow.original_filename,
+      })
+
+      /**
+       * Storage copy — Supabase JS supports `copy(fromPath, toPath)` which is
+       * a server-side blob copy (no bytes through Node). Both paths must be
+       * in the same bucket.
+       */
+      const cp = await admin.storage
+        .from(srcRow.storage_bucket)
+        .copy(srcRow.storage_path, newStoragePath)
+      if (cp.error) {
+        /** If we hit a path collision (very unlikely), retry with a fresh number. */
+        if (/exist|duplicate/i.test(cp.error.message) && attempt < 2) continue
+        return { ok: false, error: `כשל בהעתקת קובץ: ${cp.error.message}` }
+      }
+      copiedTo = { bucket: srcRow.storage_bucket, path: newStoragePath }
+
+      const ins = await supabase
+        .from("dms_document_versions")
+        .insert({
+          document_id: documentId,
+          version_number: versionNumber,
+          storage_bucket: srcRow.storage_bucket,
+          storage_path: newStoragePath,
+          mime_type: srcRow.mime_type,
+          size_bytes: srcRow.size_bytes,
+          checksum_sha256: srcRow.checksum_sha256,
+          original_filename: srcRow.original_filename,
+          uploaded_by: sess.userId,
+          change_note:
+            input.changeNote?.trim() ||
+            `שוחזר מגרסה v${srcRow.version_number}`,
+          /**
+           * The copied blob is identical to a previously cleared version;
+           * skip quarantine so the user sees it immediately.
+           */
+          is_quarantined: false,
+        })
+        .select("id, version_number")
+        .single()
+
+      if (!ins.error) {
+        newVersionRow = ins.data as { id: string; version_number: number }
+      } else if (/duplicate|unique/i.test(ins.error.message) && attempt < 2) {
+        /** Race lost — clean up the orphan blob and retry. */
+        try {
+          await admin.storage.from(srcRow.storage_bucket).remove([newStoragePath])
+        } catch {
+          /* swallow */
+        }
+        copiedTo = null
+        continue
+      } else {
+        /** Unrecoverable DB error — clean up the copied blob. */
+        if (copiedTo) {
+          try {
+            await admin.storage.from(copiedTo.bucket).remove([copiedTo.path])
+          } catch {
+            /* swallow */
+          }
+        }
+        return { ok: false, error: ins.error.message }
+      }
+    }
+
+    if (!newVersionRow) {
+      return { ok: false, error: "לא ניתן ליצור גרסה משוחזרת — נסה שוב" }
+    }
+
+    /** Point current_version_id at the new row. RLS allows because UPLOAD_VERSION holds. */
+    const setCurrent = await supabase
+      .from("dms_documents")
+      .update({ current_version_id: newVersionRow.id })
+      .eq("id", documentId)
+    if (setCurrent.error) {
+      return { ok: false, error: setCurrent.error.message }
+    }
+
+    /** Audit — UPLOAD_VERSION with explicit revert metadata (no REVERT_VERSION enum value). */
+    await admin.from("dms_audit_log").insert({
+      company_id: ctx.company_id,
+      project_id: ctx.project_id,
+      actor_type: "USER",
+      actor_id: sess.userId,
+      action: "UPLOAD_VERSION",
+      target_type: "VERSION",
+      target_id: newVersionRow.id,
+      result: "SUCCESS",
+      metadata: {
+        revert: true,
+        reverted_from_version_id: srcRow.id,
+        reverted_from_version_number: srcRow.version_number,
+        new_version_number: newVersionRow.version_number,
+        change_note:
+          input.changeNote?.trim() ||
+          `שוחזר מגרסה v${srcRow.version_number}`,
+      },
+    })
+
+    revalidatePath(`/marker-ofek/dms/${ctx.project_id}`, "page")
+
+    return {
+      ok: true,
+      documentId,
+      newVersionId: newVersionRow.id,
+      newVersionNumber: newVersionRow.version_number,
+    }
+  } catch (e) {
+    return { ok: false, error: formatError(e) }
+  }
+}

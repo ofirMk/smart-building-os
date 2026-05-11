@@ -11,6 +11,7 @@ import {
   Folder,
   FolderOpen,
   FolderPlus,
+  History,
   Loader2,
   RefreshCw,
   Shield,
@@ -34,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { DmsUploadDialog } from "@/components/marker-ofek/dms/upload-dialog"
+import { DmsVersionHistoryDrawer } from "@/components/marker-ofek/dms/version-history-drawer"
 import {
   dmsCreateFolder,
   dmsGetDownloadUrl,
@@ -200,6 +202,9 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
   const [createFolderOpen, setCreateFolderOpen] = React.useState(false)
   const [newFolderName, setNewFolderName] = React.useState("")
   const [creatingFolder, setCreatingFolder] = React.useState(false)
+  const [historyDoc, setHistoryDoc] = React.useState<
+    { id: string; title: string } | null
+  >(null)
 
   const capSet = React.useMemo(
     () => new Set<DmsCapability>(bootstrap.rootCapabilities),
@@ -606,15 +611,28 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
                           })}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!canDownload || !v || quarantined}
-                            onClick={() => v && onDownload(v.id)}
-                          >
-                            <Download className="size-3.5" />
-                            הורדה
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={!canDownload || !v || quarantined}
+                              onClick={() => v && onDownload(v.id)}
+                            >
+                              <Download className="size-3.5" />
+                              הורדה
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                setHistoryDoc({ id: doc.id, title: doc.title })
+                              }
+                              title="היסטוריית גרסאות"
+                            >
+                              <History className="size-3.5" />
+                              גרסאות
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -636,6 +654,17 @@ export function DmsBrowser({ bootstrap }: { bootstrap: DmsBrowserBootstrap }) {
           }}
         />
       )}
+
+      <DmsVersionHistoryDrawer
+        open={historyDoc !== null}
+        onClose={() => setHistoryDoc(null)}
+        documentId={historyDoc?.id ?? null}
+        documentTitle={historyDoc?.title ?? ""}
+        capabilities={bootstrap.rootCapabilities}
+        onRevertSuccess={() => {
+          void reloadDocuments()
+        }}
+      />
     </div>
   )
 }
