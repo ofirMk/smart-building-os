@@ -32,6 +32,17 @@ type NavItem = {
   columns?: MegaColumn[]
 }
 
+/**
+ * Demo project UUID used for module deep-links that require a project context
+ * (e.g. WBS Planning, Cost Control Cockpit). Mirrors the same constant in
+ * `app/(dashboard)/marker-ofek/pitch/page.tsx` so investor walkthroughs always
+ * land on a real, seeded project. If you change this, update both places.
+ *
+ * Transparent Navigation Rule: every heavy module we build must be reachable
+ * from this nav. No URL-only modules.
+ */
+const DEMO_PROJECT_ID = "8599ee46-50a7-4a5e-b219-e853ff093cc6"
+
 /* ─────────────────────────────────────────────────────────────────
  * מקור-אמת יחיד למבנה התפריט — ניתן לעדכון פשוט בעתיד.
  * ───────────────────────────────────────────────────────────────── */
@@ -55,23 +66,84 @@ const NAV_ITEMS: NavItem[] = [
       {
         title: "חוזים וחשבונות",
         href: "/marker-ofek/contracts-engine",
-        links: [],
+        links: [
+          { label: "מנוע חוזים W2 (MedaTech)", href: "/marker-ofek/contracts-engine" },
+          { label: "מאגר חוזים", href: "/marker-ofek/contracts" },
+          { label: "חוזה חדש", href: "/marker-ofek/contracts/new" },
+        ],
       },
       {
         title: "פרויקטים",
         href: "/marker-ofek/projects",
         links: [
+          { label: "כל הפרויקטים", href: "/marker-ofek/projects" },
+          {
+            label: "תכנון WBS (Sprint A.4)",
+            href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/planning`,
+          },
           { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
         ],
       },
-      { title: "בקרה תקציבית", links: [] },
+      {
+        title: "בקרה תקציבית",
+        href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control`,
+        links: [
+          {
+            label: "Cockpit פרויקט (Sprint A.5)",
+            href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control`,
+          },
+          { label: "בקרת תקציב כללית", href: "/marker-ofek/finance/budget-control" },
+        ],
+      },
       { title: "שינויי דיירים", links: [] },
       { title: "בדק", links: [] },
     ],
   },
   { key: "building-management", label: "ניהול מבנים" },
   { key: "trade", label: "סחר" },
-  { key: "finance", label: "כספים" },
+  {
+    key: "finance",
+    label: "כספים",
+    columns: [
+      {
+        title: "תשלומים",
+        href: "/marker-ofek/finance/payments",
+        links: [
+          { label: "ריצת תשלומים (AP)", href: "/marker-ofek/finance/payments/runs" },
+          { label: 'מס"ב (MASAV)', href: "/marker-ofek/finance/payments/masav" },
+          { label: "דרישות תשלום", href: "/marker-ofek/finance/payment-demands" },
+          { label: "סקירת תשלומים", href: "/marker-ofek/finance/payments" },
+        ],
+      },
+      {
+        title: "התאמות בנקאיות",
+        href: "/marker-ofek/finance/bank-reconciliation",
+        links: [
+          { label: "Bank Reconciliation", href: "/marker-ofek/finance/bank-reconciliation" },
+          { label: "קליטת דפי בנק", href: "/marker-ofek/finance/bank-statements/new" },
+          { label: "התאמות (legacy)", href: "/marker-ofek/finance/reconciliations" },
+        ],
+      },
+      {
+        title: "חיובים ולקוחות",
+        href: "/marker-ofek/finance/billing",
+        links: [
+          { label: "חיובי לקוחות", href: "/marker-ofek/finance/billing" },
+          { label: "חשבונות חלקיים", href: "/marker-ofek/finance/partials" },
+          { label: "מאגר לקוחות", href: "/marker-ofek/finance/customers" },
+        ],
+      },
+      {
+        title: "דוחות פיננסיים",
+        links: [
+          { label: "תזרים מזומנים", href: "/marker-ofek/finance/cash-flow" },
+          { label: "רווח והפסד", href: "/marker-ofek/finance/pnl" },
+          { label: 'דוח מע"מ', href: "/marker-ofek/finance/vat-report" },
+          { label: "Aging", href: "/marker-ofek/finance/reports/aging" },
+        ],
+      },
+    ],
+  },
   { key: "office", label: "משרד" },
 ]
 
