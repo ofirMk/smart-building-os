@@ -190,6 +190,17 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   if (!user && isProtectedPath(pathname)) {
+    // API routes must return a JSON 401 (not a 302/307 redirect to /login),
+    // so that fetch-based callers and Playwright tests see the auth failure
+    // directly instead of following the redirect to an HTML login page.
+    if (pathname.startsWith("/api/")) {
+      const jsonResponse = NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      )
+      applyCookies(supabaseResponse, jsonResponse)
+      return jsonResponse
+    }
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = defaultLoginPathForRequest(request)
     redirectUrl.search = ""

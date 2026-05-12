@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Body | null
   const text = typeof body?.text === "string" ? body.text : ""
   if (!text.trim()) {
-    return NextResponse.json({ ok: false, error: "Missing text" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Missing or empty text" },
+      { status: 400 },
+    )
   }
 
   if (body?.dryRun) {
