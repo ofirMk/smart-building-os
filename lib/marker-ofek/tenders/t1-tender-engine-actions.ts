@@ -170,6 +170,76 @@ export async function openRfqsFromBoqAction(input: {
 }
 
 // ---------------------------------------------------------------------------
+// 4. Award winning quote to a contract object (§7.3.5 + §2.1.2) — Sprint T3
+// ---------------------------------------------------------------------------
+
+export type AwardQuoteKind =
+  | "subcontractor_contract"
+  | "blanket_purchase_order"
+  | "vendor_price_list"
+  | "ad_hoc"
+
+export type AwardQuoteToContractResult =
+  | {
+      ok: true
+      created: boolean
+      kind: AwardQuoteKind
+      targetId: string | null
+      targetNumber: string | null
+      linesCreated: number
+      contractType: RfqContractType | null
+      totalAmount: number
+      reason: string | null
+    }
+  | { ok: false; error: string }
+
+export async function awardQuoteToContractAction(input: {
+  quoteId: string
+}): Promise<AwardQuoteToContractResult> {
+  try {
+    if (!input.quoteId) return { ok: false, error: "quoteId is required" }
+    const supabase = await createSupabaseServerAuthClient()
+    const { data, error } = await supabase.rpc("erp_award_quote_to_contract", {
+      p_quote_id: input.quoteId,
+    })
+    if (error) return { ok: false, error: error.message ?? "RPC failed" }
+    const row = data as {
+      created: boolean
+      kind: AwardQuoteKind
+      target_id?: string | null
+      target_number?: string | null
+      lines_created?: number
+      contract_type?: RfqContractType
+      total_amount?: number
+      reason?: string
+    } | null
+    if (!row) return { ok: false, error: "RPC returned no payload" }
+    revalidateTenderPaths()
+    revalidatePath("/marker-ofek/contracts")
+    revalidatePath("/marker-ofek/contracts-engine")
+    revalidatePath("/marker-ofek/finance/contracts")
+    revalidatePath("/marker-ofek/procurement/blanket-purchase-orders")
+    revalidatePath("/marker-ofek/procurement/price-lists")
+    return {
+      ok: true,
+      created: Boolean(row.created),
+      kind: row.kind,
+      targetId: row.target_id ?? null,
+      targetNumber: row.target_number ?? null,
+      linesCreated: Number(row.lines_created ?? 0),
+      contractType: row.contract_type ?? null,
+      totalAmount: Number(row.total_amount ?? 0),
+      reason: row.reason ?? null,
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 3. Clone RFQ to supplier (§7.3.2 G2)
 // ---------------------------------------------------------------------------
 

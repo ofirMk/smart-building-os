@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 
 import { ChangeOrderTimeline } from "@/components/marker-ofek/contracts-engine/change-order-timeline"
+import { ClientBillWaterfallCard } from "@/components/marker-ofek/contracts-engine/client-bill-waterfall-card"
 import { DualPaneBillEditor } from "@/components/marker-ofek/contracts-engine/dual-pane-bill-editor"
 import { WaterfallCanvas } from "@/components/marker-ofek/contracts-engine/waterfall-canvas"
 import {
@@ -35,6 +36,7 @@ import type {
   BillEntryMode,
   PricingMethod,
 } from "@/lib/marker-ofek/contracts/w2-engine-types"
+import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -113,6 +115,27 @@ export default async function ContractsEnginePage() {
     liveBillId ? loadBillLinesForApproval(liveBillId) : Promise.resolve([]),
   ])
   const billEntryMode: BillEntryMode = "DETAILED"
+
+  /**
+   * Sprint T3 — best-effort load of the latest client (owner) progress bill,
+   * so the Owner-side waterfall card can be rendered alongside the
+   * subcontractor canvas. Any DB outage falls back to null without breaking
+   * the rest of the page.
+   */
+  const liveClientBillId: string | null = await (async () => {
+    try {
+      const supabase = await createSupabaseServerAuthClient()
+      const { data } = await supabase
+        .from("erp_client_progress_bills")
+        .select("id")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      return (data as { id: string } | null)?.id ?? null
+    } catch {
+      return null
+    }
+  })()
 
   return (
     <div className="bg-background text-foreground" dir="rtl">
@@ -289,6 +312,13 @@ export default async function ContractsEnginePage() {
               entryMode={billEntryMode}
               lines={billLines}
             />
+          </section>
+        ) : null}
+
+        {/* ============ Sprint T3: Owner-side Waterfall Card ============= */}
+        {liveClientBillId ? (
+          <section className="mt-8">
+            <ClientBillWaterfallCard billId={liveClientBillId} />
           </section>
         ) : null}
 
