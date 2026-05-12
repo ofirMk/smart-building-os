@@ -24,9 +24,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { useOrganizationBranding } from "@/components/organization-branding-context"
 import { cn } from "@/lib/utils"
-import { Building2, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 
 const ils = new Intl.NumberFormat("he-IL", {
   style: "currency",
@@ -174,7 +173,6 @@ function ActualVsPlannedBar({
 }
 
 export function ManagementDashboardClient() {
-  const branding = useOrganizationBranding()
   const [chartReady, setChartReady] = React.useState(false)
 
   React.useEffect(() => {
@@ -188,40 +186,13 @@ export function ManagementDashboardClient() {
       initial="hidden"
       animate="show"
     >
-      <motion.header
-        variants={motionItem}
-        className="pharmacy-hero-card rounded-xl border border-slate-100 bg-card p-6 shadow-sm md:p-8 dark:border-slate-800 dark:bg-slate-950"
-      >
-        <div className="flex flex-wrap items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-card shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            {branding.brandLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={branding.brandLogoUrl}
-                alt=""
-                className="size-full object-contain p-1.5"
-              />
-            ) : (
-              <Building2 className="size-6 text-indigo-900 dark:text-indigo-200" aria-hidden />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-700 dark:text-indigo-300">
-              {branding.organizationName}
-            </p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-indigo-950 md:text-3xl dark:text-slate-50">
-              לוח ניהול בכיר — Holden Group
-            </h1>
-            <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-              {branding.slogan}
-            </p>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              תמונת מצב מרוכזת לניהול: דופק פיננסי, בריאות פרויקטים, סיכונים
-              מזוהים ב-AI, ותזרים מול הכרה בהכנסה — בגירסת V1.0.
-            </p>
-          </div>
-        </div>
-      </motion.header>
+      {/*
+       * UI Hotfix (2026-05-12): Removed redundant white sub-header hero card.
+       * The top-nav logo + organization name are already rendered by
+       * `components/layout/top-navigation.tsx`; a second card below the nav
+       * created a z-index/overlap regression that obscured the KPI pulse row
+       * ("חריגות תקציב", "רווחיות גולמית"). Ref: emergency UI hotfix directive.
+       */}
 
       {/* 1. The Pulse */}
       <motion.section variants={motionItem} className="space-y-3">

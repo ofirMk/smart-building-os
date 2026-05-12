@@ -24,7 +24,7 @@ import { ChevronDown, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type MegaLink = { label: string; href?: string }
-type MegaColumn = { title: string; links: MegaLink[] }
+type MegaColumn = { title: string; href?: string; links: MegaLink[] }
 type NavItem = {
   key: string
   label: string
@@ -52,9 +52,14 @@ const NAV_ITEMS: NavItem[] = [
         ],
       },
       { title: "מכרזים", links: [] },
-      { title: "חוזים וחשבונות", links: [] },
+      {
+        title: "חוזים וחשבונות",
+        href: "/marker-ofek/contracts-engine",
+        links: [],
+      },
       {
         title: "פרויקטים",
+        href: "/marker-ofek/projects",
         links: [
           { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
         ],
@@ -320,21 +325,34 @@ function MegaColumnView({
   onNavigate: () => void
 }) {
   const hasAnyLink = column.links.some((l) => !!l.href)
+  const titleHasHref = !!column.href
+  /** Title is a direct link to the module when column.href is provided. */
+  const titleClass = cn(
+    "text-[11px] font-semibold uppercase tracking-[0.12em]",
+    titleHasHref
+      ? "cursor-pointer text-foreground transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+      : hasAnyLink
+        ? "text-foreground"
+        : "text-muted-foreground/75"
+  )
   return (
     <div className="flex flex-col gap-2">
-      <h3
-        className={cn(
-          "text-[11px] font-semibold uppercase tracking-[0.12em]",
-          hasAnyLink ? "text-foreground" : "text-muted-foreground/75"
-        )}
-      >
-        {column.title}
-      </h3>
-      {column.links.length === 0 ? (
+      {titleHasHref ? (
+        <Link
+          href={column.href!}
+          onClick={onNavigate}
+          className={titleClass}
+        >
+          {column.title}
+        </Link>
+      ) : (
+        <h3 className={titleClass}>{column.title}</h3>
+      )}
+      {column.links.length === 0 && !titleHasHref ? (
         <p className="text-[11px] leading-relaxed text-muted-foreground/70">
           בהקמה
         </p>
-      ) : (
+      ) : column.links.length === 0 ? null : (
         <ul className="flex flex-col gap-0.5">
           {column.links.map((link) => {
             const active = !!link.href && currentPath === link.href
