@@ -71,3 +71,6 @@ desktop.ini
 # transient local upload/cache artifacts (can contain generated CSS snapshots)
 /.tmp.driveupload/
 .env*.local
+
+# Temporary DOCX ingest workspace
+.tmp-docx-extract/
