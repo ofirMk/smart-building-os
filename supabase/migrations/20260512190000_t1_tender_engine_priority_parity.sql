@@ -178,6 +178,18 @@ declare
   v_company text;
   v_companies text[];
 begin
+  -- Guard: erp_system_parameters is created by a later migration
+  -- (20260910120000_erp_system_parameters.sql). When this migration runs
+  -- before that one (fresh DB / out-of-order push), skip the seed — a
+  -- post-system-parameters migration re-runs this seed.
+  if not exists (
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'erp_system_parameters'
+  ) then
+    return;
+  end if;
+
   select array_agg(id) into v_companies from public.erp_companies;
   if v_companies is null then
     return;

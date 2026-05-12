@@ -27,6 +27,40 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
+-- 0. Inline enum bootstrap — `erp_back_charge_type` and `erp_back_charge_status`
+--    are normally created by the Aug 2026 contract-amendments migration. If
+--    this T5 migration runs before that one (out-of-order push), bootstrap
+--    the enums here so subsequent column types resolve. The downstream
+--    migration guards each `create type` with `if not exists`, so it safely
+--    no-ops when later applied.
+-- ----------------------------------------------------------------------------
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'erp_back_charge_type') then
+    create type public.erp_back_charge_type as enum (
+      'MATERIAL_ISSUED',
+      'EQUIPMENT_RENTAL',
+      'REWORK',
+      'DELAY_PENALTY',
+      'UTILITY',
+      'SAFETY',
+      'CLEANUP',
+      'OTHER'
+    );
+  end if;
+  if not exists (select 1 from pg_type where typname = 'erp_back_charge_status') then
+    create type public.erp_back_charge_status as enum (
+      'PENDING',
+      'APPROVED',
+      'DEDUCTED',
+      'DISPUTED',
+      'WAIVED',
+      'CANCELLED'
+    );
+  end if;
+end $$;
+
+-- ----------------------------------------------------------------------------
 -- 1. erp_owner_back_charges — owner-side mirror of erp_back_charges
 -- ----------------------------------------------------------------------------
 create table if not exists public.erp_owner_back_charges (
@@ -87,30 +121,39 @@ grant all on public.erp_owner_back_charges to service_role;
 
 -- ----------------------------------------------------------------------------
 -- 2. erp_contract_raw_material_offsets.client_bill_id — owner-side binding
+--    Guarded: the parent table is created by the Sept 2026 W2 foundation
+--    migration. If we run before it, skip — a deferred migration
+--    (20260913100000) re-applies the column + FK + index after the table
+--    exists.
 -- ----------------------------------------------------------------------------
-alter table public.erp_contract_raw_material_offsets
-  add column if not exists client_bill_id uuid null;
-
 do $$
 begin
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'erp_raw_material_offsets_client_bill_fk'
+  if exists (
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'erp_contract_raw_material_offsets'
   ) then
-    alter table public.erp_contract_raw_material_offsets
-      add constraint erp_raw_material_offsets_client_bill_fk
-      foreign key (company_id, client_bill_id)
-      references public.erp_client_progress_bills (company_id, id)
-      on delete set null;
+    execute 'alter table public.erp_contract_raw_material_offsets
+             add column if not exists client_bill_id uuid null';
+
+    if not exists (
+      select 1 from pg_constraint
+      where conname = 'erp_raw_material_offsets_client_bill_fk'
+    ) then
+      execute 'alter table public.erp_contract_raw_material_offsets
+               add constraint erp_raw_material_offsets_client_bill_fk
+               foreign key (company_id, client_bill_id)
+               references public.erp_client_progress_bills (company_id, id)
+               on delete set null';
+    end if;
+
+    execute 'create index if not exists erp_raw_material_offsets_client_bill_idx
+             on public.erp_contract_raw_material_offsets (company_id, client_bill_id)
+             where client_bill_id is not null';
+
+    execute $cmt$comment on column public.erp_contract_raw_material_offsets.client_bill_id is 'MedaTech §3.3 owner-side — when a raw-material offset row is attached to an OWNER bill (rather than the subcontractor bill on `bill_id`), the T2 waterfall (`erp_compute_client_bill_waterfall`) will pick it up via this column.'$cmt$;
   end if;
 end $$;
-
-create index if not exists erp_raw_material_offsets_client_bill_idx
-  on public.erp_contract_raw_material_offsets (company_id, client_bill_id)
-  where client_bill_id is not null;
-
-comment on column public.erp_contract_raw_material_offsets.client_bill_id is
-  'MedaTech §3.3 owner-side — when a raw-material offset row is attached to an OWNER bill (rather than the subcontractor bill on `bill_id`), the T2 waterfall (`erp_compute_client_bill_waterfall`) will pick it up via this column.';
 
 -- ----------------------------------------------------------------------------
 -- 3. RPC erp_apply_owner_back_charge_to_bill

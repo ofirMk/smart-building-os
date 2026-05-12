@@ -128,7 +128,17 @@ alter table public.erp_client_contract_lines
 
 do $$
 begin
-  if not exists (
+  -- Guard against the future cost-control migration not yet applied.
+  -- When erp_proj_control_subchapters / erp_proj_control_resources do not
+  -- exist yet (e.g. on a fresh DB where this migration runs before the
+  -- Sept 2026 cost-control migration), the columns are still created
+  -- above as plain uuids and the FK is left dangling — it will be added
+  -- by a later guard in the cost-control migration itself.
+  if exists (
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'erp_proj_control_subchapters'
+  ) and not exists (
     select 1
     from pg_constraint
     where conname = 'erp_client_contract_lines_control_subchapter_fk'
@@ -140,7 +150,11 @@ begin
       on delete set null;
   end if;
 
-  if not exists (
+  if exists (
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'erp_proj_control_resources'
+  ) and not exists (
     select 1
     from pg_constraint
     where conname = 'erp_client_contract_lines_control_resource_fk'

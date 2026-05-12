@@ -26,6 +26,25 @@
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
+-- 0. Inline enum bootstrap — `erp_advance_recovery_method` is normally
+--    created by the Sept 2026 W2 foundation migration. If this T2 migration
+--    runs first (out-of-order push), bootstrap the enum here so subsequent
+--    column types resolve. The downstream W2 migration uses
+--    `create type ... if not exists` semantics (do-block guard) so it will
+--    safely no-op when it later sees the type already present.
+-- ----------------------------------------------------------------------------
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'erp_advance_recovery_method') then
+    create type public.erp_advance_recovery_method as enum (
+      'PROPORTIONAL',
+      'FIXED_AMOUNT',
+      'FIXED_PCT'
+    );
+  end if;
+end $$;
+
+-- ----------------------------------------------------------------------------
 -- 1. erp_client_contracts — waterfall config columns
 -- ----------------------------------------------------------------------------
 alter table public.erp_client_contracts

@@ -123,7 +123,7 @@ create policy erp_system_parameters_insert
       where m.user_id = auth.uid()
         and m.company_id = erp_system_parameters.company_id
         and m.role in ('ADMIN', 'OWNER')
-        and m.deleted_at is null
+        and m.is_active = true
     )
   );
 
@@ -139,7 +139,7 @@ create policy erp_system_parameters_update
       where m.user_id = auth.uid()
         and m.company_id = erp_system_parameters.company_id
         and m.role in ('ADMIN', 'OWNER')
-        and m.deleted_at is null
+        and m.is_active = true
     )
   )
   with check (
@@ -159,7 +159,7 @@ create policy erp_system_parameters_delete
       where m.user_id = auth.uid()
         and m.company_id = erp_system_parameters.company_id
         and m.role in ('ADMIN', 'OWNER')
-        and m.deleted_at is null
+        and m.is_active = true
     )
   );
 
@@ -196,7 +196,7 @@ begin
     where m.user_id = auth.uid()
       and m.company_id = p_company_id
       and m.role in ('ADMIN', 'OWNER')
-      and m.deleted_at is null
+      and m.is_active = true
   ) into v_is_admin;
 
   return query

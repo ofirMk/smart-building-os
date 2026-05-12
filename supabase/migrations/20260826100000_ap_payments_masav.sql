@@ -231,13 +231,17 @@ begin
   end if;
 
   -- 6.1 Suppliers (with bank fields)
+  -- NOTE: payment_terms/tax_id/vat_code/supplier_type are NOT NULL with no
+  -- defaults (20260626133000_erp_master_data_contract_alignment.sql), so we
+  -- must provide explicit values; placeholders are fine for demo seed data.
   insert into public.erp_md_suppliers (
     id, company_id, supplier_number, name, supplier_kind,
+    payment_terms, tax_id, vat_code, supplier_type,
     bank_code, bank_branch, bank_account_number
   ) values
-    (v_sup1_id, v_company_id, 'SUP-2001', 'לייטמן חברה לבניין בע"מ', 'subcontractor', '12', '345', '880011223'),
-    (v_sup2_id, v_company_id, 'SUP-2002', 'ש.שיש בע"מ', 'subcontractor', '12', '467', '770088990'),
-    (v_sup3_id, v_company_id, 'SUP-2003', 'הנדסת קונסטרוקציה ש.כהן בע"מ', 'subcontractor', '20', '812', '660044556')
+    (v_sup1_id, v_company_id, 'SUP-2001', 'לייטמן חברה לבניין בע"מ', 'subcontractor', 'SHOTEF_30', '511111101', 'STANDARD_17', 'STANDARD', '12', '345', '880011223'),
+    (v_sup2_id, v_company_id, 'SUP-2002', 'ש.שיש בע"מ',                'subcontractor', 'SHOTEF_30', '511111102', 'STANDARD_17', 'STANDARD', '12', '467', '770088990'),
+    (v_sup3_id, v_company_id, 'SUP-2003', 'הנדסת קונסטרוקציה ש.כהן בע"מ', 'subcontractor', 'SHOTEF_30', '511111103', 'STANDARD_17', 'STANDARD', '20', '812', '660044556')
   on conflict (id) do update
     set bank_code           = excluded.bank_code,
         bank_branch         = excluded.bank_branch,

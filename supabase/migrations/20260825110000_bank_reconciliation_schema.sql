@@ -109,6 +109,7 @@ create table if not exists public.erp_bank_statement_lines (
   updated_at          timestamptz not null default now(),
   constraint erp_bank_statement_lines_amount_positive check (amount >= 0),
   constraint erp_bank_statement_lines_line_no_positive check (line_no > 0),
+  constraint erp_bank_statement_lines_company_id_uq unique (company_id, id),
   constraint erp_bank_statement_lines_company_statement_fk
     foreign key (company_id, statement_id)
     references public.erp_bank_statements (company_id, id)
@@ -118,6 +119,21 @@ create table if not exists public.erp_bank_statement_lines (
     references public.erp_gl_journal_entries (company_id, id)
     on delete set null
 );
+
+-- Idempotent guarantee of the (company_id, id) composite unique on existing
+-- DBs where this migration's SQL was previously applied via the SQL Editor
+-- before the constraint was added inline. Required so downstream FK
+-- references (e.g. erp_ap_payments.bank_statement_line_id) can resolve.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'erp_bank_statement_lines_company_id_uq'
+  ) then
+    alter table public.erp_bank_statement_lines
+      add constraint erp_bank_statement_lines_company_id_uq unique (company_id, id);
+  end if;
+end $$;
 
 create unique index if not exists erp_bank_statement_lines_statement_lineno_uq
   on public.erp_bank_statement_lines (statement_id, line_no);
