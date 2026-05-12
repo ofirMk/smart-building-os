@@ -144,7 +144,35 @@ const NAV_ITEMS: NavItem[] = [
       },
     ],
   },
-  { key: "office", label: "משרד" },
+  {
+    key: "office",
+    label: "משרד",
+    columns: [
+      {
+        title: "ניהול",
+        href: "/marker-ofek/settings",
+        links: [
+          { label: "הגדרות חברה", href: "/marker-ofek/settings" },
+          { label: "פרמטרים גלובליים (System Parameters)", href: "/marker-ofek/settings/system-parameters" },
+          { label: "כללי מערכת (legacy)", href: "/marker-ofek/settings/system-rules" },
+        ],
+      },
+      {
+        title: "ניהול מסמכים",
+        href: "/marker-ofek/dms",
+        links: [
+          { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
+        ],
+      },
+      {
+        title: "Admin",
+        links: [
+          { label: "Demo (Investor Pitch)", href: "/marker-ofek/pitch" },
+          { label: "מרכז פיקוד", href: "/marker-ofek/command-center" },
+        ],
+      },
+    ],
+  },
 ]
 
 type TopNavigationProps = {

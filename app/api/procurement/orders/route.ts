@@ -26,6 +26,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { requireProcurementApiContext } from "@/lib/erp/procurement-api"
+import { getVatMultiplier } from "@/lib/erp/system-parameters"
 import {
   computeLineDeviation,
   getCompanyPricingSettings,
@@ -281,7 +282,12 @@ const createOrderSchema = z.object({
   }
 )
 
-const VAT_RATE = 0.17
+/**
+ * Hardcoded fallback only — actual rate resolved from system parameter
+ * DEFAULT_VAT_PCT per company at request time. Migrated as part of the
+ * Sprint W2 Stage 4 System Parameters resolver migration.
+ */
+const VAT_RATE_FALLBACK = 0.17
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100
@@ -451,7 +457,13 @@ export async function POST(req: NextRequest) {
   const totalAmountNet = round2(
     input.lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
   )
-  const vatAmount = round2(totalAmountNet * VAT_RATE)
+  let vatMultiplier: number
+  try {
+    vatMultiplier = await getVatMultiplier(activeCompanyId)
+  } catch {
+    vatMultiplier = VAT_RATE_FALLBACK
+  }
+  const vatAmount = round2(totalAmountNet * vatMultiplier)
   const totalAmountGross = round2(totalAmountNet + vatAmount)
 
   // ─────────────────────────────────────────────────────────────────────

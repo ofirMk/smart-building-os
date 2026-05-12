@@ -38,6 +38,7 @@ import { z } from "zod"
 
 import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { postSubcontractorBillToGL } from "@/lib/erp/gl-posting"
+import { getSystemParameterNumber } from "@/lib/erp/system-parameters"
 import { formatError } from "@/lib/format-error"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
@@ -169,7 +170,15 @@ export async function recomputeBillTotals(
         .reduce((s, b) => s + Number(b.amount), 0),
     )
     const amountToPay = round2(cumulativeNet - previousBilled - backChargesTotal)
-    const vatPct = Number(bill.vat_pct ?? 17)
+    /**
+     * VAT precedence: per-bill override (bill.vat_pct) → system parameter
+     * DEFAULT_VAT_PCT → hardcoded 17. Migrated from hardcoded 17 fallback as
+     * part of the System Parameters resolver migration (Sprint W2 Stage 4).
+     */
+    const vatPct =
+      bill.vat_pct != null
+        ? Number(bill.vat_pct)
+        : await getSystemParameterNumber(companyId, "DEFAULT_VAT_PCT")
     const vatAmount = round2((amountToPay * vatPct) / 100)
     const grandTotal = round2(amountToPay + vatAmount)
 
