@@ -1,3 +1,12 @@
+CRITICAL ARCHITECTURE RULES - ZERO REGRESSION POLICY:
+1. NEVER delete, rename, or alter existing UI pages (page.tsx/layout.tsx) or their directories without explicit user permission.
+2. The /pitch, /projects, and /contracts-engine routes are STRICTLY PROTECTED. Do not 'clean them up' during backend or unrelated frontend tasks.
+3. Development must be strictly ADDITIVE.
+
+Gate Before Push: run `npx playwright test tests/critical-routes-protection.spec.ts` and confirm green. Restore from git if red.
+
+---
+
 Rule 1: ZERO SCROLLING at shell level.
 - App shells in dashboard routes must use `h-[calc(100dvh-4rem)]` (or equivalent) and `overflow-hidden`.
 - Only inner panes/lists/tables/forms may scroll.
