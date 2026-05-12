@@ -27,10 +27,20 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 import { approveBillAction } from "@/lib/marker-ofek/contracts/w2-engine-actions"
+import { approveClientBillAction } from "@/lib/marker-ofek/contracts/t4-client-bill-approval"
 import type {
   BillEntryMode,
   BillLineForApproval,
 } from "@/lib/marker-ofek/contracts/w2-engine-types"
+
+/**
+ * Sprint T4 — the editor now supports both subcontractor and owner bills.
+ * `mode="subcontractor"` (default, backward-compatible) dispatches to
+ * `approveBillAction`. `mode="client"` dispatches to
+ * `approveClientBillAction` which writes onto `erp_client_progress_bill_lines`
+ * and re-runs `erp_compute_client_bill_waterfall` (T2) in the same call.
+ */
+export type DualPaneBillMode = "subcontractor" | "client"
 
 const ils = new Intl.NumberFormat("he-IL", {
   style: "currency",
@@ -49,6 +59,11 @@ type Props = {
   lines: BillLineForApproval[]
   /** Current cumulative_executed for AGGREGATE mode. */
   aggregateCurrent?: number
+  /**
+   * Sprint T4 — which approval pipeline to invoke on submit. Defaults to
+   * "subcontractor" for backward compatibility.
+   */
+  mode?: DualPaneBillMode
 }
 
 export function DualPaneBillEditor({
@@ -56,6 +71,7 @@ export function DualPaneBillEditor({
   entryMode,
   lines,
   aggregateCurrent,
+  mode = "subcontractor",
 }: Props) {
   const initialApproved = React.useMemo(() => {
     const map: Record<string, string> = {}
@@ -128,7 +144,10 @@ export function DualPaneBillEditor({
           }))
 
     startTransition(async () => {
-      const res = await approveBillAction({ billId, lines: payload })
+      const res =
+        mode === "client"
+          ? await approveClientBillAction({ billId, lines: payload })
+          : await approveBillAction({ billId, lines: payload })
       if (res.ok) {
         setFeedback({
           tone: "ok",

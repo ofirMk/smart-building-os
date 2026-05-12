@@ -36,6 +36,7 @@ import type {
   BillEntryMode,
   PricingMethod,
 } from "@/lib/marker-ofek/contracts/w2-engine-types"
+import { loadClientBillLinesForApproval } from "@/lib/marker-ofek/contracts/t4-client-bill-approval"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { cn } from "@/lib/utils"
 
@@ -136,6 +137,11 @@ export default async function ContractsEnginePage() {
       return null
     }
   })()
+
+  /** Sprint T4 — load owner-side bill lines for the dual-pane approval grid. */
+  const clientBillLines = liveClientBillId
+    ? await loadClientBillLinesForApproval(liveClientBillId)
+    : []
 
   return (
     <div className="bg-background text-foreground" dir="rtl">
@@ -311,6 +317,18 @@ export default async function ContractsEnginePage() {
               billId={liveBillId}
               entryMode={billEntryMode}
               lines={billLines}
+            />
+          </section>
+        ) : null}
+
+        {/* ====== Sprint T4: Owner-side Dual-Pane Bill Approval ====== */}
+        {liveClientBillId && clientBillLines.length > 0 ? (
+          <section className="mt-8">
+            <DualPaneBillEditor
+              billId={liveClientBillId}
+              entryMode="DETAILED"
+              lines={clientBillLines}
+              mode="client"
             />
           </section>
         ) : null}
