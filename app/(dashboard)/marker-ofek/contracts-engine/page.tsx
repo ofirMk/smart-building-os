@@ -23,9 +23,18 @@ import {
   Workflow,
 } from "lucide-react"
 
+import { ChangeOrderTimeline } from "@/components/marker-ofek/contracts-engine/change-order-timeline"
+import { DualPaneBillEditor } from "@/components/marker-ofek/contracts-engine/dual-pane-bill-editor"
 import { WaterfallCanvas } from "@/components/marker-ofek/contracts-engine/waterfall-canvas"
-import { loadContractsEngineSnapshot } from "@/lib/marker-ofek/contracts/w2-engine-server"
-import type { PricingMethod } from "@/lib/marker-ofek/contracts/w2-engine-types"
+import {
+  loadBillLinesForApproval,
+  loadChangeOrderTimeline,
+  loadContractsEngineSnapshot,
+} from "@/lib/marker-ofek/contracts/w2-engine-server"
+import type {
+  BillEntryMode,
+  PricingMethod,
+} from "@/lib/marker-ofek/contracts/w2-engine-types"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -96,6 +105,15 @@ export default async function ContractsEnginePage() {
     ? "live"
     : "illustrative"
 
+  /** Phase 2 — additional loaders for change-order timeline + dual-pane editor. */
+  const sampleContractId = snapshot.sampleContract?.contractId ?? null
+  const liveBillId = snapshot.liveWaterfall?.bill_id ?? null
+  const [amendments, billLines] = await Promise.all([
+    sampleContractId ? loadChangeOrderTimeline(sampleContractId) : Promise.resolve([]),
+    liveBillId ? loadBillLinesForApproval(liveBillId) : Promise.resolve([]),
+  ])
+  const billEntryMode: BillEntryMode = "DETAILED"
+
   return (
     <div className="bg-background text-foreground" dir="rtl">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -103,7 +121,7 @@ export default async function ContractsEnginePage() {
         <div className="flex flex-col gap-2 border-b border-border pb-6">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
             <Sparkles className="size-4 text-emerald-500" />
-            Sprint W2 · MedaTech Contracts Engine · Phase 1
+            Sprint W2 · MedaTech Contracts Engine · Phase 2
           </div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             מנוע החוזים והחשבונות החלקיים
@@ -121,10 +139,13 @@ export default async function ContractsEnginePage() {
               ← חזרה לחמ&quot;ל
             </Link>
             <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              Phase 1 · Foundations
+              Phase 1 · Foundations ✓
+            </span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+              Phase 2 · Change-orders + Approval RPCs ✓
             </span>
             <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-              Phase 2 · Change-orders + Approval RPCs (Sprint Next)
+              Phase 3 · Owner-side mirror (Sprint Next)
             </span>
           </div>
         </div>
@@ -254,6 +275,24 @@ export default async function ContractsEnginePage() {
           </p>
         </section>
 
+        {/* ============ Phase 2: Change-Order Timeline + Form ============ */}
+        {sampleContractId ? (
+          <section className="mt-8">
+            <ChangeOrderTimeline contractId={sampleContractId} amendments={amendments} />
+          </section>
+        ) : null}
+
+        {/* ================ Phase 2: Dual-Pane Bill Editor ================ */}
+        {liveBillId && billLines.length > 0 ? (
+          <section className="mt-8">
+            <DualPaneBillEditor
+              billId={liveBillId}
+              entryMode={billEntryMode}
+              lines={billLines}
+            />
+          </section>
+        ) : null}
+
         {/* ============== Architectural decisions ledger ============== */}
         <section className="mt-8 rounded-3xl border border-border bg-gradient-to-br from-emerald-50/40 via-card to-card p-6 shadow-sm dark:from-emerald-950/20">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
@@ -290,24 +329,25 @@ export default async function ContractsEnginePage() {
         {/* ====================== Footer / next ===================== */}
         <section className="mt-8 rounded-3xl border border-dashed border-border bg-card/40 p-6">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">
-            Sprint Next · Phase 2
+            Sprint Next · Phase 3 (Owner-side mirror)
           </div>
-          <h2 className="mt-2 text-lg font-semibold">הצעדים הבאים</h2>
+          <h2 className="mt-2 text-lg font-semibold">מה כבר שוחרר ומה לפנינו</h2>
           <ul className="mt-3 list-disc space-y-1.5 pe-5 text-sm text-muted-foreground marker:text-emerald-500">
             <li>
-              RPC <code className="font-mono">erp_create_change_order</code> — הוראות שינוי
-              (שורה חדשה / שינוי כמות / שינוי מחיר) עם immutability מובטח.
+              <strong className="text-emerald-700">✓ Phase 1</strong> — Foundation: enums,
+              חוזי קבלן, מפל חשבונות חלקיים, קיזוז חו&quot;ג, 3 פרמטרי מערכת.
             </li>
             <li>
-              RPC <code className="font-mono">erp_update_bill_by_approved</code> — מצב dual
-              ledger (submitted/approved) למזמין.
+              <strong className="text-emerald-700">✓ Phase 2</strong> — RPCs{" "}
+              <code className="font-mono">erp_create_change_order</code>,{" "}
+              <code className="font-mono">erp_update_bill_by_approved</code>, טריגר אוטו-קיזוז
+              מחשבונית ספק, ו-UI לציר זמן + dual-pane.
             </li>
             <li>
-              טריגר אוטו-אכלוס של <code className="font-mono">erp_contract_raw_material_offsets</code>{" "}
-              כאשר RAW_MATERIAL_OFFSET_TRIGGER_STAGE = VENDOR_INVOICE.
-            </li>
-            <li>
-              UI לעריכת חוזה + מסך חשבון חלקי dual-pane (submitted ↔ approved).
+              <strong className="text-amber-700">→ Phase 3</strong> — מירור צד מזמין
+              (<code className="font-mono">erp_client_contracts</code> +{" "}
+              <code className="font-mono">erp_client_bills</code>) עם RPC{" "}
+              <code className="font-mono">erp_compute_client_bill_waterfall</code>.
             </li>
           </ul>
         </section>

@@ -13,7 +13,15 @@ import "server-only"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service-role"
 
-import type { PricingMethod, WaterfallSummary } from "./w2-engine-types"
+import type {
+  AmendmentStatus,
+  BillLineForApproval,
+  ChangeOrderCategory,
+  ChangeOrderKind,
+  ChangeOrderRow,
+  PricingMethod,
+  WaterfallSummary,
+} from "./w2-engine-types"
 
 export type EngineSampleContract = {
   contractId: string
@@ -220,5 +228,102 @@ export async function recomputeBillWaterfall(
     return data as unknown as WaterfallSummary
   } catch {
     return null
+  }
+}
+
+/**
+ * §3.2.1.1 — Load the change-order timeline for a given subcontractor contract.
+ * Returns an ordered list of amendments (newest first). Best-effort — DB
+ * outage returns an empty list to keep the UI rendering.
+ */
+export async function loadChangeOrderTimeline(
+  contractId: string,
+): Promise<ChangeOrderRow[]> {
+  try {
+    const supabase = await createSupabaseServerAuthClient()
+    type AmendmentRow = {
+      id: string
+      amendment_number: number
+      change_order_kind: ChangeOrderKind | null
+      status: AmendmentStatus
+      description: string
+      value_delta: number | null
+      category: ChangeOrderCategory | null
+      references_boq_line_id: string | null
+      qty_delta: number | null
+      price_delta: number | null
+      requires_approval: boolean | null
+      created_at: string
+      approved_at: string | null
+    }
+    const { data, error } = await supabase
+      .from("erp_contract_amendments")
+      .select(
+        "id, amendment_number, change_order_kind, status, description, value_delta, category, references_boq_line_id, qty_delta, price_delta, requires_approval, created_at, approved_at",
+      )
+      .eq("contract_id", contractId)
+      .order("amendment_number", { ascending: false })
+    if (error || !data) return []
+    return (data as AmendmentRow[]).map((row) => ({
+      id: row.id,
+      amendmentNumber: row.amendment_number,
+      kind: row.change_order_kind,
+      status: row.status,
+      description: row.description,
+      valueDelta: Number(row.value_delta ?? 0),
+      category: row.category,
+      referencesBoqLineId: row.references_boq_line_id,
+      qtyDelta: row.qty_delta == null ? null : Number(row.qty_delta),
+      priceDelta: row.price_delta == null ? null : Number(row.price_delta),
+      requiresApproval: Boolean(row.requires_approval),
+      createdAt: row.created_at,
+      approvedAt: row.approved_at,
+    }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * §3.2.2.1 — Load the bill lines needed by the dual-pane (submitted vs
+ * approved) editor. Joins BOQ for line number + description.
+ */
+export async function loadBillLinesForApproval(
+  billId: string,
+): Promise<BillLineForApproval[]> {
+  try {
+    const admin = createSupabaseServiceRoleClient()
+    type Row = {
+      id: string
+      boq_line_id: string
+      submitted_qty: number | null
+      submitted_amount: number | null
+      approved_qty: number | null
+      approved_amount: number | null
+      cumulative_amount: number | null
+      erp_contract_boq_lines: { line_no: number | null; description: string | null } | null
+    }
+    const { data, error } = await admin
+      .from("erp_subcontractor_bill_lines")
+      .select(
+        "id, boq_line_id, submitted_qty, submitted_amount, approved_qty, approved_amount, cumulative_amount, erp_contract_boq_lines!inner(line_no, description)",
+      )
+      .eq("bill_id", billId)
+    if (error || !data) return []
+    return (data as unknown as Row[]).map((row) => ({
+      id: row.id,
+      boqLineId: row.boq_line_id,
+      boqLineNo: row.erp_contract_boq_lines?.line_no ?? null,
+      boqDescription: row.erp_contract_boq_lines?.description ?? null,
+      submittedQty: row.submitted_qty == null ? null : Number(row.submitted_qty),
+      submittedAmount:
+        row.submitted_amount == null ? null : Number(row.submitted_amount),
+      approvedQty: row.approved_qty == null ? null : Number(row.approved_qty),
+      approvedAmount:
+        row.approved_amount == null ? null : Number(row.approved_amount),
+      cumulativeAmount: Number(row.cumulative_amount ?? 0),
+    }))
+  } catch {
+    return []
   }
 }

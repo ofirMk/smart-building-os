@@ -11,6 +11,53 @@
 
 export type PricingMethod = "BOQ" | "LUMP_SUM" | "COST_PLUS"
 
+/** §3.2.1.1 — Three change-order kinds enforced by the spec. */
+export type ChangeOrderKind = "NEW_LINE" | "QTY_DELTA" | "PRICE_DELTA"
+
+/** §3.2.1.1 — Category for NEW_LINE change orders. */
+export type ChangeOrderCategory = "EXCEPTION" | "ADDITIONAL_WORKS"
+
+/** Status of an amendment / change order. Mirrors `erp_amendment_status` enum. */
+export type AmendmentStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
+
+/** A change-order row as surfaced by the timeline UI. */
+export type ChangeOrderRow = {
+  id: string
+  amendmentNumber: number
+  kind: ChangeOrderKind | null
+  status: AmendmentStatus
+  description: string
+  valueDelta: number
+  category: ChangeOrderCategory | null
+  referencesBoqLineId: string | null
+  qtyDelta: number | null
+  priceDelta: number | null
+  requiresApproval: boolean
+  createdAt: string
+  approvedAt: string | null
+}
+
+/** Per-line approval payload for `erp_update_bill_by_approved`. */
+export type BillLineApprovalPayload = {
+  bill_line_id: string
+  approved_qty?: number | null
+  approved_amount: number
+}
+
+/** Bill line surfaced to the dual-pane editor. */
+export type BillLineForApproval = {
+  id: string
+  boqLineId: string
+  boqLineNo: number | null
+  boqDescription: string | null
+  submittedQty: number | null
+  submittedAmount: number | null
+  approvedQty: number | null
+  approvedAmount: number | null
+  cumulativeAmount: number
+}
+
+
 export type AdvanceRecoveryMethod =
   | "PROPORTIONAL"
   | "FIXED_AMOUNT"
