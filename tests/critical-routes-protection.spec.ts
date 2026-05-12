@@ -25,6 +25,10 @@ const PROTECTED_ROUTES = [
   "/marker-ofek/pitch",
   "/marker-ofek/projects",
   "/marker-ofek/contracts-engine",
+  // Sprint T6 — Finance closing loop (added 2026-05-12).
+  "/marker-ofek/finance/cashflow",
+  "/marker-ofek/finance/aging",
+  "/marker-ofek/finance/receipts",
 ] as const
 
 const NOT_FOUND_MARKERS = [
