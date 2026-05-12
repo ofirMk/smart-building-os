@@ -22,6 +22,7 @@ import {
   BarChart3,
   Bot,
   Coins,
+  FileSignature,
   GanttChartSquare,
   Gauge,
   HardHat,
@@ -101,6 +102,17 @@ function buildTiles(projectId: string): LobbyTile[] {
     accent: "from-fuchsia-500/30 via-violet-500/15 to-indigo-500/20",
     highlight: "$70/פרויקט · ₪2,500/מנוי · Pay-per-Use AI",
     span: "tall",
+  },
+  {
+    href: "/marker-ofek/contracts-engine",
+    eyebrow: "📜 MedaTech Engine",
+    title: "מנוע חוזים וחשבונות",
+    subtitle: "Sprint W2 · Priority Parity",
+    description:
+      "מימוש מלא של פרק 3 באפיון מידעטק (ל\"טמן 2016): חוזי מזמין/קבלן, מפל חישוב חשבונות חלקיים, קיזוז חומר גלם, ופרמטרי מערכת דינמיים.",
+    icon: <FileSignature className="size-7" />,
+    accent: "from-emerald-500/25 via-teal-500/10 to-cyan-500/20",
+    highlight: "3 שיטות תמחור · §3.3 קיזוז חו\"ג · RPC waterfall",
   },
   ]
 }
