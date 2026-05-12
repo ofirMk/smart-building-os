@@ -38,9 +38,9 @@ import type {
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "מנוע חוזים MedaTech · Marker Ofek",
+  title: "מנוע חוזים וחשבונות קבלן (Smart Billing)",
   description:
-    "Sprint W2 — מימוש מלא של פרק 3 באיפיון מידעטק: חוזי מזמין/קבלן, מפל חישוב חשבונות חלקיים, קיזוז חומר גלם, ופרמטרי מערכת דינמיים.",
+    "ניהול מחזור החיים הפיננסי קצה-לקצה: חוזי מזמין וקבלני משנה, אוטומציית מפל תשלומים וקיזוזים, עכבונות, ושליטה בזמן אמת.",
 }
 
 function formatCurrency(value: number): string {
@@ -59,41 +59,41 @@ function pricingMethodLabel(method: PricingMethod): string {
 }
 
 const PRICING_METHODS: Array<{ id: PricingMethod; description: string }> = [
-  { id: "BOQ", description: "מדידה לפי סעיפים · § 3.1" },
-  { id: "LUMP_SUM", description: "אבני דרך לתשלום · § 3.1" },
-  { id: "COST_PLUS", description: "עלות + מקדם רווח · § 3.1" },
+  { id: "BOQ", description: "מדידה לפי סעיפים" },
+  { id: "LUMP_SUM", description: "תשלום לפי אבני דרך" },
+  { id: "COST_PLUS", description: "עלות + מקדם רווח" },
 ]
 
-const ARCH_DECISIONS = [
+const PLATFORM_DIFFERENTIATORS = [
   {
     icon: <GitBranch className="size-4" />,
-    title: "טבלאות נפרדות למזמין / קבלן",
-    body: "RLS נקי ומחזורי-חיים שונים. שיתוף טיפוסים ב-TypeScript בלבד.",
-    ref: "Q1",
+    title: "הפרדה מלאה בין צד מזמין לצד קבלן",
+    body: "שני ספרי חשבונות עצמאיים — הרשאות גישה מופרדות לכל צד, עם מדיניות פיננסית עצמאית.",
+    ref: "01",
   },
   {
     icon: <BadgeCheck className="size-4" />,
-    title: "אישור הוראת שינוי = system parameter",
-    body: "CONTRACT_CHANGE_ORDER_REQUIRES_APPROVAL — דיפולט false (פאריטי ל\"טמן).",
-    ref: "Q2",
+    title: "תהליך אישור הוראות שינוי מוגדר לפי חברה",
+    body: "כל ארגון בוחר: אישור מיידי של הוראות שינוי (מסלול מהיר) או חיוב אישור פורמלי (בקרה הדוקה).",
+    ref: "02",
   },
   {
     icon: <Workflow className="size-4" />,
-    title: "Trigger stage לקיזוז חו\"ג — דינמי",
-    body: "PO / GRN / Invoice. דיפולט VENDOR_INVOICE, ניתן להעבירל-PO/GRN פר חברה.",
-    ref: "Q3",
+    title: "קיזוז חומרי גלם אוטומטי — בכל שלב בשרשרת הרכש",
+    body: "המערכת מזהה חומרי גלם הנרכשים עבור הקבלן ומקזזת אוטומטית מהחשבון הבא — בכל שלב לפי הגדרת החברה.",
+    ref: "03",
   },
   {
     icon: <Layers className="size-4" />,
-    title: "מצב AGGREGATE חוסם detailed approved",
-    body: "כשהוגש מרוכז — האישור גם מרוכז. נאכף ברמת RPC ב-Phase 2.",
-    ref: "Q4",
+    title: "שני אופני הגשת חשבון: שורה-בשורה או סכום כולל",
+    body: "הקבלן בוחר שיטת הגשה — מפורט או מרוכז — והמערכת אוכפת עקביות מתאימה וחוסמת ערבוב בין השיטות.",
+    ref: "04",
   },
   {
     icon: <CircleDollarSign className="size-4" />,
-    title: "Multi-currency דחוי ל-MVP+1",
-    body: "ILS בלבד כעת. הצמדה נשמרת ב-JSONB לתמיכה עתידית בסל מטבעות.",
-    ref: "Q5",
+    title: "מוכן לרב-מטבעיות (Multi-Currency Ready)",
+    body: "שקל חדש כמטבע ראשי בארץ, עם ארכיטקטורה שתומך בסל מטבעות להרחבה גלובלית עתידית.",
+    ref: "05",
   },
 ]
 
@@ -121,31 +121,31 @@ export default async function ContractsEnginePage() {
         <div className="flex flex-col gap-2 border-b border-border pb-6">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
             <Sparkles className="size-4 text-emerald-500" />
-            Sprint W2 · MedaTech Contracts Engine · Phase 2
+            Smart Billing · מנוע חוזים וחשבונות
           </div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             מנוע החוזים והחשבונות החלקיים
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
-            המסך הזה מציג בזמן אמת את המנוע שמיישם את פרק 3 באיפיון מידעטק (ל&quot;טמן 2016) —
-            חוזי מזמין וקבלן, מפל חישוב חשבונות חלקיים, קיזוז חומר גלם, ופרמטרי מערכת
-            דינמיים. מטרה: <strong>Tier-1 parity ל-Priority/SAP — בלי SI של 6 חודשים.</strong>
+            ניהול מחזור החיים הפיננסי של חוזי הפרויקט — מחתימת החוזה ועד התשלום האחרון.
+            אוטומציה מוחלטת של מפל תשלומים וקיזוזים — עכבונות, ביטוח, הצמדה, החזר מקדמה, קיזוז חומרי גלם —
+            כולם במנוע אחד <strong>בלי תלות בשיטת תמחור או בכלי עזר חיצוניים.</strong>
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-2 text-xs text-muted-foreground">
             <Link
               href="/marker-ofek/pitch"
               className="rounded-full border border-border bg-card px-3 py-1 transition hover:border-emerald-300"
             >
-              ← חזרה לחמ&quot;ל
+              ← חזרה למרכז הפיקוד
             </Link>
             <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              Phase 1 · Foundations ✓
+              אוטומציית קיזוזים
             </span>
             <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              Phase 2 · Change-orders + Approval RPCs ✓
+              מערכת מפל כספים
             </span>
-            <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-              Phase 3 · Owner-side mirror (Sprint Next)
+            <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+              הגנה מתקציב חורג
             </span>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default async function ContractsEnginePage() {
           <div className="lg:col-span-2 rounded-3xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
               <FileSignature className="size-4" />
-              חוזה לדוגמה (RLS-resolved)
+              חוזה פעיל
             </div>
             <div className="mt-3 flex flex-wrap items-baseline gap-3">
               <h2 className="text-xl font-semibold">
@@ -194,7 +194,7 @@ export default async function ContractsEnginePage() {
 
             <div className="mt-5">
               <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                שיטות תמחור נתמכות (§3.1)
+                שיטות תמחור נתמכות
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {PRICING_METHODS.map((m) => {
@@ -228,11 +228,11 @@ export default async function ContractsEnginePage() {
               פרמטרי מערכת פעילים
             </div>
             <h2 className="mt-3 text-lg font-semibold">
-              דינמיים פר חברה — לא בקוד
+              מדיניות פיננסית לפי חברה — ניתנת לעדכון בזמן אמת
             </h2>
             <p className="mt-2 text-xs text-muted-foreground">
-              קוראים מ-<code className="font-mono">erp_system_parameters</code>. אדמין יכול
-              לעדכן ערך — והמנוע מסתגל מיד בלי deploy.
+              כללי החישוב והאישור משתנים בין ארגונים. כל הגדרה ניתנת לעדכון על ידי
+              מנהל מערכת — והמנוע מיישם מיידית, ללא הפסקת פעילות.
             </p>
             <dl className="mt-5 space-y-4">
               <ParamRow
@@ -269,9 +269,8 @@ export default async function ContractsEnginePage() {
         <section className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-sm">
           <WaterfallCanvas summary={waterfall} variant={variant} />
           <p className="mt-4 text-xs text-muted-foreground">
-            מחושב ע&quot;י <code className="font-mono">erp_compute_subcontractor_bill_waterfall(p_bill_id)</code>{" "}
-            — idempotent, SECURITY DEFINER, מתעדכן בכל שמירה. סדר המפל מבוסס פרק
-            §3.2.2 (חישוב התייקרות מצטברת) ו-§3.3 (קיזוז חומר גלם).
+            חישוב אוטומטי ועקבי בכל שמירה — בטוח למניעת כפל חישוב ומושתת מהקונסיסטנטיות הנהלית.
+            סדר המפל כולל הצמדה, עכבונות, ביטוח, החזר מקדמה, וקיזוז חומרי גלם.
           </p>
         </section>
 
@@ -294,17 +293,17 @@ export default async function ContractsEnginePage() {
         ) : null}
 
         {/* ============== Architectural decisions ledger ============== */}
-        <section className="mt-8 rounded-3xl border border-border bg-gradient-to-br from-emerald-50/40 via-card to-card p-6 shadow-sm dark:from-emerald-950/20">
+        <section className="mt-8 rounded-3xl border border-gradient-to-br from-emerald-50/40 via-card to-card p-6 shadow-sm dark:from-emerald-950/20">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-            <Sparkles className="size-4 text-emerald-500" />5 החלטות
-            ארכיטקטוניות (God Mode)
+            <Sparkles className="size-4 text-emerald-500" />
+            הבידולים של המערכת
           </div>
           <h2 className="mt-2 text-lg font-semibold">
-            5 השאלות הפתוחות מהאיפיון — נסגרו אוטונומית לפי Best Practices של ERP
-            ברמת Tier-1
+            חמישה יתרונות בלתי מתפשרים שממקמים את המערכת כתשתית עסקית עוצמתית —
+            לא עוד פתרון שדורש שנות הטמעה.
           </h2>
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {ARCH_DECISIONS.map((d) => (
+            {PLATFORM_DIFFERENTIATORS.map((d) => (
               <div
                 key={d.ref}
                 className="rounded-2xl border border-border bg-card p-4 shadow-sm"
@@ -329,25 +328,25 @@ export default async function ContractsEnginePage() {
         {/* ====================== Footer / next ===================== */}
         <section className="mt-8 rounded-3xl border border-dashed border-border bg-card/40 p-6">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">
-            Sprint Next · Phase 3 (Owner-side mirror)
+            מה מוכן במערכת
           </div>
-          <h2 className="mt-2 text-lg font-semibold">מה כבר שוחרר ומה לפנינו</h2>
+          <h2 className="mt-2 text-lg font-semibold">יכולות זמינות במנוע החוזים</h2>
           <ul className="mt-3 list-disc space-y-1.5 pe-5 text-sm text-muted-foreground marker:text-emerald-500">
             <li>
-              <strong className="text-emerald-700">✓ Phase 1</strong> — Foundation: enums,
-              חוזי קבלן, מפל חשבונות חלקיים, קיזוז חו&quot;ג, 3 פרמטרי מערכת.
+              <strong className="text-emerald-700">ניהול חוזי קבלני משנה</strong> — מחתימת
+              ההסכם ועד התשלום הסופי, כולל מפל חשבונות חלקיים, קיזוז חומרי גלם, עכבונות והצמדה.
             </li>
             <li>
-              <strong className="text-emerald-700">✓ Phase 2</strong> — RPCs{" "}
-              <code className="font-mono">erp_create_change_order</code>,{" "}
-              <code className="font-mono">erp_update_bill_by_approved</code>, טריגר אוטו-קיזוז
-              מחשבונית ספק, ו-UI לציר זמן + dual-pane.
+              <strong className="text-emerald-700">הוראות שינוי עם מסלול אישור חכם</strong> —
+              כל שינוי עובר תהליך אישור המוגדר לפי מדיניות הארגון, עם הגנה אוטומטית על ההסכם המקורי.
             </li>
             <li>
-              <strong className="text-amber-700">→ Phase 3</strong> — מירור צד מזמין
-              (<code className="font-mono">erp_client_contracts</code> +{" "}
-              <code className="font-mono">erp_client_bills</code>) עם RPC{" "}
-              <code className="font-mono">erp_compute_client_bill_waterfall</code>.
+              <strong className="text-emerald-700">חשבון מוגש מול חשבון מאושר</strong> —
+              שני טורים נפרדים המציגים את טענת הקבלן מול האישור הפנימי, למעקב תקציבי מדויק.
+            </li>
+            <li>
+              <strong className="text-amber-700">הרחבה מתוכננת: חיובי לקוחות מסונכרנים</strong> —
+              התאמה מלאה בין חיובי מזמינים לתשלומי קבלנים, לשקיפות מלאה של מחזור החיים הפיננסי.
             </li>
           </ul>
         </section>

@@ -67,7 +67,7 @@ const NAV_ITEMS: NavItem[] = [
         title: "חוזים וחשבונות",
         href: "/marker-ofek/contracts-engine",
         links: [
-          { label: "מנוע חוזים W2 (MedaTech)", href: "/marker-ofek/contracts-engine" },
+          { label: "מנוע חוזים וחשבונות (Smart Billing)", href: "/marker-ofek/contracts-engine" },
           { label: "מאגר חוזים", href: "/marker-ofek/contracts" },
           { label: "חוזה חדש", href: "/marker-ofek/contracts/new" },
         ],
@@ -78,7 +78,7 @@ const NAV_ITEMS: NavItem[] = [
         links: [
           { label: "כל הפרויקטים", href: "/marker-ofek/projects" },
           {
-            label: "תכנון WBS (Sprint A.4)",
+            label: "תכנון WBS",
             href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/planning`,
           },
           { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
@@ -89,7 +89,7 @@ const NAV_ITEMS: NavItem[] = [
         href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control`,
         links: [
           {
-            label: "Cockpit פרויקט (Sprint A.5)",
+            label: "קוקפיט פרויקט",
             href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control`,
           },
           { label: "בקרת תקציב כללית", href: "/marker-ofek/finance/budget-control" },

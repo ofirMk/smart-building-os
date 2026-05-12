@@ -116,7 +116,7 @@ export function WaterfallCanvas({
               : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
           )}
         >
-          {variant === "live" ? "נתוני אמת מה-RPC" : "תרשים המחשה"}
+          {variant === "live" ? "נתונים חיים" : "תרשים המחשה"}
         </span>
       </div>
       <div className="grid gap-2.5">
