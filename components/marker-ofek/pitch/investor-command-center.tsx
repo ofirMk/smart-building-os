@@ -33,6 +33,7 @@ import {
   Paperclip,
   Printer,
   ReceiptText,
+  ScrollText,
   Send,
   ShoppingCart,
   Sparkles,
@@ -41,6 +42,8 @@ import {
   Wallet,
   X,
 } from "lucide-react"
+
+import { ContextualPrintButton } from "@/components/marker-ofek/print/contextual-print-button"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -59,13 +62,9 @@ import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { getSpeechRecognitionConstructor } from "@/lib/speech-recognition"
 import { cn } from "@/lib/utils"
 import {
-  DEMO_AP_PAYMENT_RUN_ID,
-  DEMO_BANK_RECONCILIATION_ID,
   DEMO_CONTRACT_PROJECT_ID,
   DEMO_CONTROL_PERIOD_ID,
   DEMO_PLANNING_EDITION_ID,
-  DEMO_PURCHASE_ORDER_ID,
-  DEMO_SUBCONTRACTOR_BILL_ID,
   DEMO_SUBCONTRACTOR_CONTRACT_ID,
 } from "@/types/erp"
 
@@ -152,91 +151,56 @@ export function InvestorCommandCenter({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Demo: print the seeded subcontractor contract (one-click for pitch) */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
-            data-demo-link="subcontractor-contract-print"
-            render={
-              <a
-                href={`/print/contracts/${DEMO_SUBCONTRACTOR_CONTRACT_ID}`}
-                target="_blank"
-                rel="noreferrer"
-              />
-            }
-          >
-            <Printer className="size-4" aria-hidden />
-            חוזה קבלן משנה (PDF)
-          </Button>
-          {/* Demo: print the seeded subcontractor partial bill (cumulative + waterfall) */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-            data-demo-link="subcontractor-bill-print"
-            render={
-              <a
-                href={`/print/bills/${DEMO_SUBCONTRACTOR_BILL_ID}`}
-                target="_blank"
-                rel="noreferrer"
-              />
-            }
-          >
-            <ReceiptText className="size-4" aria-hidden />
-            חשבון קבלן מצטבר (PDF)
-          </Button>
-          {/* Demo: print the seeded Purchase Order (change-order on top of the contract) */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
-            data-demo-link="purchase-order-print"
-            render={
-              <a
-                href={`/print/purchase-orders/${DEMO_PURCHASE_ORDER_ID}`}
-                target="_blank"
-                rel="noreferrer"
-              />
-            }
-          >
-            <ShoppingCart className="size-4" aria-hidden />
-            הזמנת רכש (PDF)
-          </Button>
-          {/* Demo: print the seeded bank reconciliation report (Sprint A.1 — Financial Closure) */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-indigo-300 bg-indigo-50 text-indigo-800 hover:bg-indigo-100"
-            data-demo-link="bank-reconciliation-print"
-            render={
-              <a
-                href={`/print/bank-reconciliations/${DEMO_BANK_RECONCILIATION_ID}`}
-                target="_blank"
-                rel="noreferrer"
-              />
-            }
-          >
-            <Landmark className="size-4" aria-hidden />
-            דוח התאמת בנק (PDF)
-          </Button>
-          {/* Demo: print the seeded AP Payment Run report (Sprint A.2 — MASAV) */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-            data-demo-link="payment-run-print"
-            render={
-              <a
-                href={`/print/payment-runs/${DEMO_AP_PAYMENT_RUN_ID}`}
-                target="_blank"
-                rel="noreferrer"
-              />
-            }
-          >
-            <Coins className="size-4" aria-hidden />
-            קובץ מס&quot;ב + דוח תשלום (PDF)
-          </Button>
+          {/* CEO / investor one-click PDFs. All five buttons now auto-resolve
+              the **latest real record** of each kind via the server action
+              `fetchLatestPrintTargetAction` — with a graceful fallback to the
+              pre-seeded demo UUID when the DB is empty (protected by the
+              iron-dome / zero-regression policy: NEVER break these buttons). */}
+
+          <ContextualPrintButton
+            kind="contracts"
+            label="חוזה קבלן משנה (PDF)"
+            className="border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+            icon={<ScrollText className="size-4" aria-hidden />}
+            dataTestId="pitch-print:contracts"
+          />
+          <ContextualPrintButton
+            kind="bills"
+            label="חשבון קבלן משנה (PDF)"
+            className="border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            icon={<ReceiptText className="size-4" aria-hidden />}
+            dataTestId="pitch-print:bills"
+          />
+          {/* NEW — Client Progress Bill (חשבון חלקי למזמין). Added as part of
+              the contextual-PDF distribution sprint (T-contextual-pdf). */}
+          <ContextualPrintButton
+            kind="client-bills"
+            label="חשבון חלקי למזמין (PDF)"
+            className="border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100"
+            icon={<FileText className="size-4" aria-hidden />}
+            dataTestId="pitch-print:client-bills"
+          />
+          <ContextualPrintButton
+            kind="purchase-orders"
+            label="הזמנת רכש (PDF)"
+            className="border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
+            icon={<ShoppingCart className="size-4" aria-hidden />}
+            dataTestId="pitch-print:purchase-orders"
+          />
+          <ContextualPrintButton
+            kind="bank-reconciliations"
+            label="דוח התאמת בנק (PDF)"
+            className="border-indigo-300 bg-indigo-50 text-indigo-800 hover:bg-indigo-100"
+            icon={<Landmark className="size-4" aria-hidden />}
+            dataTestId="pitch-print:bank-reconciliations"
+          />
+          <ContextualPrintButton
+            kind="payment-runs"
+            label='קובץ מס"ב + תשלום (PDF)'
+            className="border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            icon={<Coins className="size-4" aria-hidden />}
+            dataTestId="pitch-print:payment-runs"
+          />
           {/* Demo: live Contract Workspace (Sprint A.3) — navigates to interactive demo */}
           <Button
             variant="outline"

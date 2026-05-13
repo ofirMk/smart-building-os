@@ -29,6 +29,13 @@ const PROTECTED_ROUTES = [
   "/marker-ofek/finance/cashflow",
   "/marker-ofek/finance/aging",
   "/marker-ofek/finance/receipts",
+  // Contextual-PDF distribution — live operational print routes (added 2026-05-13).
+  // The tripwire uses a seed UUID; the page renders even if the row is missing
+  // (shows "החשבון לא נמצא"), so the registration check is valid either way.
+  "/print/client-bills/00000000-0000-0000-0000-000000000000",
+  "/print/bills/00000000-0000-0000-0000-000000000000",
+  "/print/contracts/00000000-0000-0000-0000-000000000000",
+  "/print/purchase-orders/00000000-0000-0000-0000-000000000000",
 ] as const
 
 const NOT_FOUND_MARKERS = [
