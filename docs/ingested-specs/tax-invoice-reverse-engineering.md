@@ -3,7 +3,8 @@
 > **Sources ingested (May 2026):**
 >
 > - `Sales Invoice Script-H.pdf` — Priority's official Hebrew tutorial script for sales-invoice creation (2 pages, ~5,500 chars).
-> - `SI186000071 - הדפסת חשבונית מרכזת.pdf` — actual printed Priority tax invoice (Lightman Ltd., 13/08/2018, NIS 123,142.50). Used as the **target visual reference** for our printed invoice.
+> - `SI186000071 - הדפסת חשבונית מרכזת.pdf` — actual printed Priority tax invoice (Lightman Ltd. → פורמה, 13/08/2018, NIS 123,142.50). Single-line, used as the **base visual reference**.
+> - `Z3417500450.mht` — second printed sample (ארכה בע"מ → לייטמן מערכות חשמל בע"מ, 31/01/2017, NIS 4,515.00). **43 lines from 12 distinct source delivery notes** — the canonical "חשבונית מס מרכזת" reference. Used to extend §2 and refine T7a/T7b. See §A.
 >
 > **Goal:** reverse-engineer the Priority workflow + the printed layout, benchmark against SAP S/4HANA SD-Billing, audit our current state, map every Israeli Tax Authority (רשות המסים) requirement to a concrete gap, and ship a phased delivery plan.
 
@@ -435,3 +436,99 @@ Total estimated effort: **~3,200 LOC** across **5 migrations** + 12 server actio
 5. **Storage retention** — 7 years (VAT §22) or 10 (Income Tax §130)? Default I'd use is **10 years + 6 months** to satisfy both.
 
 > When you give the green light I'll start with **T7a** (DDL + status triggers + server actions) — that one is the longest single piece of work and unblocks every other phase.
+
+---
+
+## §A. Appendix — `Z3417500450` (ארכה בע"מ) findings + plan refinements
+
+### A.1 Why this sample matters
+
+`SI186000071` was a **single-line** invoice. `Z3417500450` is a **43-line consolidated tax invoice** drawing from **12 distinct source delivery notes** (K-prefix) and **3 source orders** (Z-prefix). It exposes the hardest part of the printed-invoice spec: the consolidation pattern. **17 new data points** were extracted that were not visible in `SI186000071`.
+
+### A.2 17 new data points (and their effect on T7a / T7b)
+
+| # | Field / Pattern | Where it appears in Z3417500450 | Effect on plan |
+| --- | --- | --- | --- |
+| A1 | Document kind = "חשבונית מס מרכזת" | Title line | T7a: confirms `CONSOLIDATED_INVOICE` enum value; **header text must change accordingly** (T7b). |
+| A2 | `תעודה` per line (source-doc number with prefix code) | `K5117600303`, `Z5117500313`, … on every line | T7a — **add `source_doc_number text` + `source_doc_kind text` to `erp_tax_invoice_lines`**. This is the spine of consolidation. |
+| A3 | `לידי:` (attention-to) | "לידי: אופיר דיין - בעלים" | T7a — add `attention_to text` to header. |
+| A4 | Header-level `כתובת למשלוח` distinct from buyer's billing address | "לבונטין 26 ת"א" | T7a — add `ship_to_address text` to header. |
+| A5 | `ספק משהב"ט` (Ministry of Defense supplier number) | "ספק משהב"ט: 83080215" | T7a — add `mod_supplier_number text` to **`erp_companies`** (vendor-side master, not invoice). |
+| A6 | Three distinct timestamps | `תאריך חשבונית: 31/01/17`, `תאריך הדפסה: 05/02/17`, `שעת הדפסה: 14:27` | T7a — already had `issue_date` + `printed_at_first`; **add explicit `print_date date` + `print_time time` columns** so the printed doc can show the print stamp even on reprints (legal: print stamp differs from issue stamp). |
+| A7 | Per-line `הנחה` % column | "60.00%", "65.00%", … | T7a — add `discount_pct numeric(5,2)` + `discount_amount numeric(18,2)` to `erp_tax_invoice_lines`. |
+| A8 | Document-level `הנחה כללית` | "הנחה כללית (0.00%): 0.03" | T7a — add `global_discount_pct numeric(5,2)` + `global_discount_amount numeric(18,2)` + `subtotal_after_discount numeric(18,2)` to header. |
+| A9 | `מס. לקוח` (vendor's internal customer code) | "מס. לקוח: 5300371" | T7a — add `customer_internal_code text` to `erp_md_customers` (master). Print as-is. |
+| A10 | Sales agent **name** printed (not just id) | "סוכן: שלמה ריקה" | T7a — `agent_id uuid` on header + denormalized `agent_name_at_issue text` (snapshotted at close). |
+| A11 | `שיקים נא לרשום ל...` payee-name string | "שיקים נא לרשום לארכה בע"מ" | T7a — add `payee_check_name text` to `erp_companies` (defaults to `name`, override allowed). |
+| A12 | Retention-of-title legal clause | "הסחורה הנ"ל תישאר בבעלות החברה עד לתשלום המלא בפועל" | T7a — add `retention_of_title_clause text` to `erp_companies` (configurable, optional). |
+| A13 | `מנהל פעיל` field | "מנהל פעיל: אבי גרימברג" | T7a — add `active_manager_name text` to `erp_companies`. |
+| A14 | Negative qty / negative line total (returns inside a consolidated invoice) | Lines 18, 37, 38, 39: "10.00- יח'", "1,138.50-" | **Validation change:** drop the `>= 0` check on `unit_price` + `quantity` — accept signed numbers. Keep `>= 0` only on document-level `grand_total` (a fully-credited invoice should be a `CREDIT_MEMO`, not an invoice with negative grand-total). |
+| A15 | Full sign-off block (4 lines) | name / email / phone / branch | T7a — `erp_companies.signatories` JSONB shape extended: `[{name, email, phone, role, branch}]`. |
+| A16 | `ט.ל.ח` legal disclaimer | bottom line | T7a — `erp_companies.legal_disclaimer text default 'ט.ל.ח'`. |
+| A17 | Per-line unit label printed inline | "20.00 יח'", "300.00 מטר", "100.00 יח'" | T7a — add `unit_label text` to `erp_tax_invoice_lines` (snapshot from item master at draft creation; editable on draft). |
+
+### A.3 Layout adjustments for T7b (PDF renderer)
+
+Two structural changes vs the §5.2 plan:
+
+1. **Line table column count grows from 8 to 9** — insert a `תעודה` column between `מק"ט` and the description. The Lightman sample doesn't show this column because it's a non-consolidated invoice; the column should **render dynamically** (only visible when `kind = 'CONSOLIDATED_INVOICE'` OR when at least one line has a non-null `source_doc_number`).
+
+2. **Per-line discount column** — when any line has `discount_pct > 0`, render a `הנחה` column. Otherwise hide.
+
+3. **Totals block grows from 3 rows to 5 rows** when discounts present:
+   ```
+   מחיר כולל            3,859.00
+   הנחה כללית (0.00%)       0.03
+   מחיר אחרי הנחה       3,858.97
+   מע"מ (17.00%)          656.03
+   סה"כ מחיר            4,515.00 שח
+   ```
+   When no discounts: collapse to the simpler 3-row layout (subtotal / VAT / total) as in `SI186000071`.
+
+4. **Header date triple** — render all three dates when distinct:
+   ```
+   תאריך חשבונית   31/01/17
+   תאריך הדפסה     05/02/17
+   שעת הדפסה       14:27
+   ```
+   When `print_date = issue_date` → collapse to two rows (the Lightman pattern).
+
+### A.4 Updated T7a column inventory (final)
+
+`erp_tax_invoices` adds vs §5.1: `attention_to`, `ship_to_address`, `print_date`, `print_time`, `global_discount_pct`, `global_discount_amount`, `subtotal_after_discount`, `agent_id`, `agent_name_at_issue`. Total: **9 new columns** beyond §5.1.
+
+`erp_tax_invoice_lines` adds vs §5.1: `source_doc_number`, `source_doc_kind`, `discount_pct`, `discount_amount`, `unit_label`. Total: **5 new columns**.
+
+`erp_companies` adds (master): `mod_supplier_number`, `payee_check_name`, `retention_of_title_clause`, `active_manager_name`, `legal_disclaimer`, `signatories` (JSONB shape spec). Total: **6 new columns**.
+
+`erp_md_customers` adds: `customer_internal_code`. Total: **1 new column**.
+
+**LOC budget revision:** T7a grows from ~600 LOC to ~**800 LOC** (still inside one migration). T7b grows from ~700 to ~**900 LOC** (extra column + dynamic visibility logic). Total roadmap: ~3,200 → **~3,600 LOC**. Sprint count unchanged (3 sprints).
+
+### A.5 New consolidation feature (implicit in `Z3417500450`)
+
+The sample reveals a workflow Priority's script section "סגירת חשבוניות מס" gestures at but doesn't fully describe: **batch consolidation** of multiple delivery notes (תעודות משלוח) into one tax invoice.
+
+Add to **T7a** a server action:
+
+```ts
+createConsolidatedTaxInvoiceAction({
+  customerId,
+  sourceDocIds: string[],       // delivery notes (K-prefix) and/or orders (Z-prefix)
+  globalDiscountPct?: number,
+})
+```
+
+Implementation: pull lines from every source doc, snapshot description/qty/unit_price/source_doc_number into `erp_tax_invoice_lines`, set header `kind = 'CONSOLIDATED_INVOICE'`. Closes Priority workflow parity for consolidated invoices.
+
+### A.6 Decision impact on the 5 open questions from §7
+
+| § | Question | Z3417500450 evidence |
+| --- | --- | --- |
+| §7.1 | Series prefix policy | **Per-kind, per-company.** Sample uses `Z` for the consolidated invoice while delivery notes use `K`. Suggested seed: `TI` חשבונית מס, `MR` חשבונית מס מרכזת, `CR` זיכוי, `RC` קבלה, `DN` תעודת משלוח. |
+| §7.2 | `internal_doc_number` semantics | **Repurpose** — drop this field (it was speculative based on `מס׳ 3038` in Lightman). Replace with **`customer_internal_code` on `erp_md_customers`** (`מס. לקוח: 5300371`) — clearly a vendor-side customer code, not a contract reference. |
+| §7.3 | Signatories shape | **Confirmed:** `[{name, email, phone, role, branch}]`. Z3417500450 has all five. |
+| §7.4 | Threshold seed | unchanged (no new evidence) |
+| §7.5 | Retention | unchanged (no new evidence) |
+
+> **Net verdict:** the second sample materially refines the schema (`+15` columns) and unlocks two open decisions. Plan is now **complete enough to start T7a**. Awaiting your confirmation on §7.1, §7.4, §7.5 to lock the migration.
