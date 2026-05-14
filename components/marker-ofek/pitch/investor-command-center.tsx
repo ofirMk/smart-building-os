@@ -44,6 +44,7 @@ import {
 } from "lucide-react"
 
 import { ContextualPrintButton } from "@/components/marker-ofek/print/contextual-print-button"
+import { InvestorFinancialCockpitWidget } from "@/components/marker-ofek/pitch/investor-financial-cockpit-widget"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -344,6 +345,11 @@ export function InvestorCommandCenter({
             </li>
           ))}
         </ol>
+      </div>
+
+      {/* Sprint T8 — Live Financial Cockpit (collapsible widget, real Supabase data) */}
+      <div className="relative mt-6">
+        <InvestorFinancialCockpitWidget />
       </div>
     </section>
   )

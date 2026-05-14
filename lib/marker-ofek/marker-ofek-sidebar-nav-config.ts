@@ -361,6 +361,12 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
         icon: LayoutDashboard,
       },
       {
+        // Sprint T8 — Executive Cash-Flow & Financial Cockpit (live AR/AP + cash flow)
+        title: "🎯 דשבורד כספים",
+        href: "/marker-ofek/finance/dashboard",
+        icon: Gauge,
+      },
+      {
         title: "חשבוניות מס",
         href: "/marker-ofek/finance",
         icon: Receipt,

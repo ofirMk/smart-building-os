@@ -43,6 +43,8 @@ const PROTECTED_ROUTES = [
   "/print/tax-invoices/00000000-0000-0000-0000-000000000000",
   // Sprint T7c — Finance settings admin page (added 2026-05-14).
   "/marker-ofek/admin/finance-settings",
+  // Sprint T8 — Executive Cash-Flow & Financial Cockpit (added 2026-05-14).
+  "/marker-ofek/finance/dashboard",
 ] as const
 
 const NOT_FOUND_MARKERS = [
