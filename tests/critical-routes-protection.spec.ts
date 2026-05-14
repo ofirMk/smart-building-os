@@ -41,6 +41,8 @@ const PROTECTED_ROUTES = [
   "/marker-ofek/finance/tax-invoices/new",
   "/marker-ofek/finance/tax-invoices/00000000-0000-0000-0000-000000000000",
   "/print/tax-invoices/00000000-0000-0000-0000-000000000000",
+  // Sprint T7c — Finance settings admin page (added 2026-05-14).
+  "/marker-ofek/admin/finance-settings",
 ] as const
 
 const NOT_FOUND_MARKERS = [

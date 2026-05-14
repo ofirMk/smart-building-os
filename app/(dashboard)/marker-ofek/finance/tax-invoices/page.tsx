@@ -9,7 +9,7 @@
 
 import Link from "next/link"
 import { cookies } from "next/headers"
-import { FileText, Plus, ReceiptText } from "lucide-react"
+import { FileText, Plus, Printer, ReceiptText, Settings } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -137,6 +137,17 @@ export default async function TaxInvoicesIndexPage({
             label="פתח חשבונית אחרונה"
             className="border-indigo-300 bg-white text-indigo-800 hover:bg-indigo-50"
           />
+          {/* T7c — Admin shortcut to finance settings (threshold / signatories / logo). */}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            render={<Link href="/marker-ofek/admin/finance-settings" />}
+          >
+            <Settings className="size-4" aria-hidden />
+            הגדרות כספים
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -260,6 +271,10 @@ export default async function TaxInvoicesIndexPage({
                 <th className="px-3 py-2 text-center">סטטוס</th>
                 <th className="px-3 py-2 text-center">תשלום</th>
                 <th className="px-3 py-2 text-center">הקצאה</th>
+                {/* T7c — print-count column for the audit trail. */}
+                <th className="px-3 py-2 text-center" title="מספר הדפסות">
+                  הדפסות
+                </th>
                 <th className="px-3 py-2 text-center">פעולות</th>
               </tr>
             </thead>
@@ -314,15 +329,49 @@ export default async function TaxInvoicesIndexPage({
                     <td className="px-3 py-2 text-center font-mono text-[10px] text-slate-700">
                       {r.allocationNumber ?? "—"}
                     </td>
+                    {/* T7c — Print-count cell: shows count + a small "מקור/העתק"
+                        hint so the audit trail is visible at a glance. */}
+                    <td className="px-3 py-2 text-center font-mono text-[10px]">
+                      {r.printCount > 0 ? (
+                        <span
+                          className="inline-flex items-center gap-1"
+                          title={
+                            r.printCount === 1
+                              ? "הודפס פעם אחת כמקור"
+                              : `הודפס ${r.printCount} פעמים (מקור + ${r.printCount - 1} העתקים)`
+                          }
+                        >
+                          <Printer className="size-3 text-emerald-700" aria-hidden />
+                          <span className="font-bold tabular-nums text-emerald-800">
+                            {r.printCount}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-center gap-1">
                         {canPrint ? (
+                          // T7c — Button label flips to "הדפס מחדש" once the
+                          // invoice has been printed at least once. The print
+                          // page itself records the event on load and stamps
+                          // the document as "העתק" automatically.
                           <ContextualPrintButton
                             kind="tax-invoices"
                             id={r.id}
-                            label="PDF"
+                            label={r.printCount > 0 ? "הדפס מחדש" : "PDF"}
                             size="sm"
-                            className="h-7 px-2 text-[10px]"
+                            className={
+                              r.printCount > 0
+                                ? "h-7 gap-1 border-emerald-300 bg-emerald-50 px-2 text-[10px] text-emerald-800 hover:bg-emerald-100"
+                                : "h-7 px-2 text-[10px]"
+                            }
+                            icon={
+                              r.printCount > 0 ? (
+                                <Printer className="size-3" aria-hidden />
+                              ) : undefined
+                            }
                           />
                         ) : null}
                       </div>

@@ -13,6 +13,8 @@ import { TaxInvoiceShowClient } from "@/components/marker-ofek/finance/tax-invoi
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { fetchTaxInvoiceAction } from "@/lib/marker-ofek/finance/t7-tax-invoice-actions"
+import { listReceiptsForTaxInvoiceAction } from "@/lib/marker-ofek/finance/t7c-allocation-actions"
+import { ALLOCATION_REQUIRED_ABOVE_NIS } from "@/lib/finance/israel-tax-api"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
 export const dynamic = "force-dynamic"
@@ -73,10 +75,19 @@ export default async function TaxInvoiceShowPage({
       ).data ?? [])
     : []
 
+  // T7c — load the collection-tab receipts allocated to this invoice. If the
+  // migration is not yet applied, the action soft-fails to an empty list.
+  const receiptsRes = await listReceiptsForTaxInvoiceAction(id)
+  const receipts = receiptsRes.ok ? receiptsRes.rows : []
+  const receiptsTotal = receiptsRes.ok ? receiptsRes.totalAllocated : 0
+
   return (
     <TaxInvoiceShowClient
       header={fetched.header}
       lines={fetched.lines}
+      itaThresholdNis={ALLOCATION_REQUIRED_ABOVE_NIS}
+      receipts={receipts}
+      receiptsTotal={receiptsTotal}
       printEvents={(printEvents ?? []).map((e) => ({
         id: String(e.id),
         printedAt: String(e.printed_at),

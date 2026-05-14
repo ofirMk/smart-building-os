@@ -754,6 +754,9 @@ export interface TaxInvoiceListRow {
   paidAmount: number
   paymentStatus: string
   allocationNumber: string | null
+  /** T7c — added so the index can render the "מס׳ הדפסות" column and
+   * decide whether the ״הדפס מחדש״ button should be enabled. */
+  printCount: number
 }
 
 export async function listTaxInvoicesAction(
@@ -768,7 +771,8 @@ export async function listTaxInvoicesAction(
     .from("erp_tax_invoices")
     .select(
       `id, invoice_number_label, customer_name_at_issue, kind, status,
-       issue_date, grand_total, paid_amount, payment_status, allocation_number`,
+       issue_date, grand_total, paid_amount, payment_status, allocation_number,
+       print_count`,
     )
     .eq("company_id", companyId)
     .order("issue_date", { ascending: false })
@@ -787,6 +791,7 @@ export async function listTaxInvoicesAction(
     paidAmount: Number(r.paid_amount) || 0,
     paymentStatus: String(r.payment_status ?? "UNPAID"),
     allocationNumber: (r.allocation_number as string | null) ?? null,
+    printCount: Number(r.print_count) || 0,
   }))
 
   return { ok: true, rows }

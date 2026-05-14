@@ -21,10 +21,13 @@ import Link from "next/link"
 import {
   AlertTriangle,
   ArrowLeft,
+  Banknote,
   BookOpenCheck,
   CheckCircle2,
+  HandCoins,
   Loader2,
   ReceiptText,
+  Send,
   Ban,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -43,6 +46,14 @@ import type {
   TaxInvoiceKind,
   TaxInvoiceStatus,
 } from "@/lib/marker-ofek/finance/t7-tax-invoice-actions"
+// T7c — allocation + receipt-collection actions live in a sibling Server-
+// Actions module so the original T7a/b code stays untouched.
+import {
+  recordTaxInvoiceReceiptAction,
+  requestItaAllocationSimulationAction,
+  submitItaAllocationAction,
+  type InvoiceReceiptRow,
+} from "@/lib/marker-ofek/finance/t7c-allocation-actions"
 
 const ILS = new Intl.NumberFormat("he-IL", {
   style: "currency",
@@ -111,14 +122,25 @@ export function TaxInvoiceShowClient({
   lines,
   printEvents,
   journalEntry,
+  itaThresholdNis,
+  receipts,
+  receiptsTotal,
 }: {
   header: FetchedTaxInvoiceHeader
   lines: FetchedTaxInvoiceLine[]
   printEvents: PrintEvent[]
   journalEntry: JournalEntry | null
+  /** T7c — threshold in NIS above which the ITA allocation gate engages. */
+  itaThresholdNis: number
+  /** T7c — receipts already allocated against this invoice. */
+  receipts: InvoiceReceiptRow[]
+  /** T7c — sum of all allocations (UI guard so we don't over-allocate). */
+  receiptsTotal: number
 }) {
   const router = useRouter()
-  const [tab, setTab] = React.useState<"lines" | "prints" | "gl">("lines")
+  const [tab, setTab] = React.useState<
+    "lines" | "prints" | "gl" | "collection"
+  >("lines")
   const [busy, setBusy] = React.useState<"close" | "cancel" | null>(null)
   const [cancelReason, setCancelReason] = React.useState("")
   const [cancelOpen, setCancelOpen] = React.useState(false)
@@ -242,6 +264,15 @@ export function TaxInvoiceShowClient({
         </div>
       </header>
 
+      {/* T7c — ITA Allocation panel (only when PENDING_ALLOCATION). */}
+      {header.status === "PENDING_ALLOCATION" ? (
+        <ItaAllocationPanel
+          invoiceId={header.id}
+          grandTotal={header.grandTotal}
+          thresholdNis={itaThresholdNis}
+        />
+      ) : null}
+
       {/* Cancel confirmation panel */}
       {cancelOpen ? (
         <Card className="border-red-300 bg-red-50 p-4 text-sm text-red-900">
@@ -335,14 +366,30 @@ export function TaxInvoiceShowClient({
         <TabButton active={tab === "gl"} onClick={() => setTab("gl")}>
           תנועת יומן
         </TabButton>
+        {/* T7c — Collection tab. Shown for any non-draft invoice, so the AR
+            team can record + audit customer payments inline. */}
+        <TabButton
+          active={tab === "collection"}
+          onClick={() => setTab("collection")}
+        >
+          גבייה ({receipts.length})
+        </TabButton>
       </div>
 
       {tab === "lines" ? (
         <LinesTab lines={lines} />
       ) : tab === "prints" ? (
         <PrintsTab events={printEvents} printCount={header.printCount} />
-      ) : (
+      ) : tab === "gl" ? (
         <GlTab entry={journalEntry} />
+      ) : (
+        <CollectionTab
+          invoiceId={header.id}
+          invoiceStatus={header.status}
+          grandTotal={header.grandTotal}
+          paidAmount={Math.max(header.paidAmount, receiptsTotal)}
+          receipts={receipts}
+        />
       )}
 
       {header.digitalSignatureSha256 ? (
@@ -568,6 +615,385 @@ function GlTab({ entry }: { entry: JournalEntry | null }) {
           </tfoot>
         </table>
       </div>
+    </div>
+  )
+}
+
+// ===========================================================================
+// T7c — ITA Allocation panel
+// ===========================================================================
+
+function ItaAllocationPanel({
+  invoiceId,
+  grandTotal,
+  thresholdNis,
+}: {
+  invoiceId: string
+  grandTotal: number
+  thresholdNis: number
+}) {
+  const router = useRouter()
+  const [manualNumber, setManualNumber] = React.useState("")
+  const [busy, setBusy] = React.useState<"simulate" | "submit" | null>(null)
+
+  async function handleSimulate() {
+    setBusy("simulate")
+    try {
+      const res = await requestItaAllocationSimulationAction(invoiceId)
+      if (!res.ok) {
+        toast.error("יצירת מספר ההקצאה נכשלה", { description: res.error })
+        return
+      }
+      toast.success(`התקבל מספר הקצאה ${res.allocationNumber}`, {
+        description: `החשבונית נסגרה: ${res.invoiceNumberLabel ?? "—"}`,
+      })
+      router.refresh()
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function handleSubmit() {
+    const trimmed = manualNumber.trim()
+    if (!/^\d{12}$/.test(trimmed)) {
+      toast.error("יש להזין בדיוק 12 ספרות")
+      return
+    }
+    setBusy("submit")
+    try {
+      const res = await submitItaAllocationAction({
+        invoiceId,
+        allocationNumber: trimmed,
+      })
+      if (!res.ok) {
+        toast.error("שמירת מספר ההקצאה נכשלה", { description: res.error })
+        return
+      }
+      toast.success(`החשבונית נסגרה · ${res.invoiceNumberLabel}`)
+      router.refresh()
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <Card className="border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden />
+        <div className="flex-1 space-y-3">
+          <div>
+            <p className="font-bold">דרושה הקצאה ממערכת רשות המסים</p>
+            <p className="text-xs">
+              סך החשבונית{" "}
+              <span className="font-mono font-bold">{ILS.format(grandTotal)}</span>{" "}
+              חורג מסף ה-ITA (
+              <span className="font-mono">{ILS.format(thresholdNis)}</span>),
+              ולכן חובה להזין מספר הקצאה מ-״מקוון״ לפני שניתן לסגור את החשבונית
+              ולהדפיס אותה כמסמך מקור. ניתן לדמות בקשת מספר אקראי לבדיקת הזרימה,
+              או להזין מספר אמיתי שהתקבל מרשות המסים.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3">
+            <Button
+              type="button"
+              size="sm"
+              className="gap-2 bg-amber-600 text-white hover:bg-amber-700"
+              onClick={handleSimulate}
+              disabled={busy !== null}
+            >
+              {busy === "simulate" ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Send className="size-4" aria-hidden />
+              )}
+              בקש מספר הקצאה (סימולציה)
+            </Button>
+
+            <div className="flex items-end gap-2">
+              <label className="flex flex-col gap-1 text-[11px]">
+                <span className="font-semibold">מספר הקצאה ידני</span>
+                <input
+                  inputMode="numeric"
+                  pattern="\d{12}"
+                  maxLength={12}
+                  placeholder="123456789012"
+                  value={manualNumber}
+                  onChange={(e) =>
+                    setManualNumber(e.target.value.replace(/\D/g, "").slice(0, 12))
+                  }
+                  className="w-44 rounded-md border border-amber-300 bg-white px-2 py-1.5 text-sm font-mono tracking-wider text-amber-900"
+                />
+              </label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="gap-2 border-amber-400 text-amber-900 hover:bg-amber-100"
+                onClick={handleSubmit}
+                disabled={busy !== null || manualNumber.length !== 12}
+              >
+                {busy === "submit" ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <CheckCircle2 className="size-4" aria-hidden />
+                )}
+                שמור והשלם סגירה
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+// ===========================================================================
+// T7c — Collection tab
+// ===========================================================================
+
+const RECEIPT_METHOD_LABEL: Record<string, string> = {
+  BANK_TRANSFER: "העברה בנקאית",
+  CHECK: "צ׳ק",
+  CASH: "מזומן",
+  CREDIT_CARD: "אשראי",
+  OTHER: "אחר",
+}
+
+function CollectionTab({
+  invoiceId,
+  invoiceStatus,
+  grandTotal,
+  paidAmount,
+  receipts,
+}: {
+  invoiceId: string
+  invoiceStatus: TaxInvoiceStatus
+  grandTotal: number
+  paidAmount: number
+  receipts: InvoiceReceiptRow[]
+}) {
+  const router = useRouter()
+  const canCollect =
+    invoiceStatus === "CLOSED" ||
+    invoiceStatus === "PRINTED_ORIGINAL" ||
+    invoiceStatus === "REPRINTED"
+  const openAmount = Math.max(0, Math.round((grandTotal - paidAmount) * 100) / 100)
+
+  const [composerOpen, setComposerOpen] = React.useState(false)
+  const [receiptDate, setReceiptDate] = React.useState(
+    () => new Date().toISOString().slice(0, 10),
+  )
+  const [amount, setAmount] = React.useState<string>(
+    openAmount > 0 ? String(openAmount) : "",
+  )
+  const [method, setMethod] = React.useState<
+    "BANK_TRANSFER" | "CHECK" | "CASH" | "CREDIT_CARD" | "OTHER"
+  >("BANK_TRANSFER")
+  const [reference, setReference] = React.useState("")
+  const [notes, setNotes] = React.useState("")
+  const [busy, setBusy] = React.useState(false)
+
+  async function handleSave() {
+    const amt = Number(amount)
+    if (!Number.isFinite(amt) || amt <= 0) {
+      toast.error("סכום הקבלה חייב להיות חיובי")
+      return
+    }
+    if (amt > openAmount + 0.01) {
+      toast.error("הסכום עולה על היתרה הפתוחה")
+      return
+    }
+    setBusy(true)
+    try {
+      const res = await recordTaxInvoiceReceiptAction({
+        invoiceId,
+        receiptDate,
+        amount: amt,
+        method,
+        reference: reference.trim() || undefined,
+        notes: notes.trim() || undefined,
+      })
+      if (!res.ok) {
+        toast.error("רישום הקבלה נכשל", { description: res.error })
+        return
+      }
+      toast.success("הקבלה נרשמה והוקצתה לחשבונית")
+      setComposerOpen(false)
+      setAmount("")
+      setReference("")
+      setNotes("")
+      router.refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Status strip */}
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+        <div className="flex items-center gap-2">
+          <Banknote className="size-5 text-emerald-700" aria-hidden />
+          <div>
+            <p className="text-[11px] uppercase text-muted-foreground">יתרה לתשלום</p>
+            <p className="font-mono text-lg font-bold tabular-nums">
+              {ILS.format(openAmount)}
+            </p>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          שולם:{" "}
+          <span className="font-mono font-semibold">
+            {ILS.format(paidAmount)}
+          </span>{" "}
+          מתוך{" "}
+          <span className="font-mono font-semibold">
+            {ILS.format(grandTotal)}
+          </span>
+        </div>
+        {canCollect && openAmount > 0.009 ? (
+          <Button
+            type="button"
+            size="sm"
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => setComposerOpen((v) => !v)}
+          >
+            <HandCoins className="size-4" aria-hidden />
+            {composerOpen ? "סגור טופס" : "+ הוסף קבלה לחשבונית זו"}
+          </Button>
+        ) : null}
+      </Card>
+
+      {/* Inline receipt composer */}
+      {composerOpen ? (
+        <Card className="space-y-3 border-emerald-200 bg-emerald-50/40 p-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="font-semibold text-muted-foreground">תאריך קבלה</span>
+              <input
+                type="date"
+                value={receiptDate}
+                onChange={(e) => setReceiptDate(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm font-mono"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="font-semibold text-muted-foreground">סכום</span>
+              <input
+                type="number"
+                step={0.01}
+                min={0.01}
+                max={openAmount}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm font-mono"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="font-semibold text-muted-foreground">אמצעי תשלום</span>
+              <select
+                value={method}
+                onChange={(e) =>
+                  setMethod(e.target.value as typeof method)
+                }
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+              >
+                <option value="BANK_TRANSFER">העברה בנקאית</option>
+                <option value="CHECK">צ׳ק</option>
+                <option value="CASH">מזומן</option>
+                <option value="CREDIT_CARD">אשראי</option>
+                <option value="OTHER">אחר</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs sm:col-span-2">
+              <span className="font-semibold text-muted-foreground">
+                אסמכתא / מס׳ צ׳ק
+              </span>
+              <input
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm font-mono"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="font-semibold text-muted-foreground">הערות</span>
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+              />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setComposerOpen(false)}
+              disabled={busy}
+            >
+              ביטול
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              onClick={handleSave}
+              disabled={busy}
+            >
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <CheckCircle2 className="size-4" aria-hidden />
+              )}
+              שמור קבלה
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
+      {/* Existing receipts table */}
+      {receipts.length === 0 ? (
+        <Card className="p-5 text-center text-sm text-muted-foreground">
+          לא נרשמו קבלות לחשבונית זו עדיין.
+        </Card>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full border-collapse text-xs">
+            <thead className="bg-slate-50 text-[10px] uppercase text-slate-600">
+              <tr>
+                <th className="px-2 py-2 text-start">מס׳ קבלה</th>
+                <th className="px-2 py-2 text-center">תאריך</th>
+                <th className="px-2 py-2 text-start">אמצעי</th>
+                <th className="px-2 py-2 text-start">אסמכתא</th>
+                <th className="px-2 py-2 text-end">סכום שהוקצה</th>
+              </tr>
+            </thead>
+            <tbody>
+              {receipts.map((r) => (
+                <tr key={r.receiptId} className="border-t border-border">
+                  <td className="px-2 py-1.5 font-mono text-[11px] font-semibold">
+                    {r.receiptNumber}
+                  </td>
+                  <td className="px-2 py-1.5 text-center font-mono text-[10px]">
+                    {dateFmt.format(new Date(r.receiptDate))}
+                  </td>
+                  <td className="px-2 py-1.5 text-[11px]">
+                    {RECEIPT_METHOD_LABEL[r.method] ?? r.method}
+                  </td>
+                  <td className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
+                    {r.reference ?? "—"}
+                  </td>
+                  <td className="px-2 py-1.5 text-end font-mono tabular-nums font-semibold text-emerald-800">
+                    {ILS.format(r.allocatedAmount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
