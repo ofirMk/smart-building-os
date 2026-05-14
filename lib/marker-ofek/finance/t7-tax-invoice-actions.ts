@@ -10,11 +10,16 @@
  * Reference design: docs/ingested-specs/tax-invoice-reverse-engineering.md §5 + §A.
  */
 
-import { createHash } from "crypto"
 import { revalidatePath } from "next/cache"
 
 import { canonicalInvoiceHash } from "@/lib/finance/israel-tax-api"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+// Pure sync helpers live in a sibling non-server module so they can also be
+// imported by client components (live composer preview). Re-exporting them
+// from this Server-Actions file is forbidden by Next.js (every export must
+// be an async function), so consumers must import directly from
+// `./t7-tax-invoice-helpers`.
+import { computeTaxInvoiceTotals } from "./t7-tax-invoice-helpers"
 
 // ----------------------------------------------------------------------------
 // Types
@@ -106,14 +111,6 @@ export type CancelTaxInvoiceResult =
 // Helpers
 // ----------------------------------------------------------------------------
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100
-}
-
-function round4(n: number): number {
-  return Math.round(n * 10000) / 10000
-}
-
 async function requireAuth() {
   const supabase = await createSupabaseServerAuthClient()
   const { data, error } = await supabase.auth.getUser()
@@ -123,55 +120,16 @@ async function requireAuth() {
   return { supabase, user: data.user, error: null as null }
 }
 
-/**
- * Compute per-line and document-level numbers given the line inputs +
- * header-level globalDiscountPct and vatRatePct. Pure — deterministic and
- * easy to unit-test.
- */
-export function computeTaxInvoiceTotals(args: {
-  lines: Array<Pick<TaxInvoiceLineInput, "quantity" | "unitPriceExcl" | "discountPct">>
-  vatRatePct: number
-  globalDiscountPct: number
-}): {
-  subtotalAmount: number
-  globalDiscountAmount: number
-  subtotalAfterDiscount: number
-  vatAmount: number
-  grandTotal: number
-  perLine: Array<{
-    discountAmount: number
-    lineTotalExcl: number
-    lineTotalIncl: number
-    unitPriceIncl: number
-  }>
-} {
-  const perLine = args.lines.map((ln) => {
-    const gross = round2(ln.quantity * ln.unitPriceExcl)
-    const discountPct = Math.min(Math.max(ln.discountPct ?? 0, 0), 100)
-    const discountAmount = round2((gross * discountPct) / 100)
-    const lineTotalExcl = round2(gross - discountAmount)
-    const unitPriceIncl = round4(ln.unitPriceExcl * (1 + args.vatRatePct / 100))
-    const lineTotalIncl = round2(lineTotalExcl * (1 + args.vatRatePct / 100))
-    return { discountAmount, lineTotalExcl, lineTotalIncl, unitPriceIncl }
-  })
-
-  const subtotalAmount = round2(perLine.reduce((s, l) => s + l.lineTotalExcl, 0))
-  const globalPct = Math.min(Math.max(args.globalDiscountPct || 0, 0), 100)
-  const globalDiscountAmount = round2((subtotalAmount * globalPct) / 100)
-  const subtotalAfterDiscount = round2(subtotalAmount - globalDiscountAmount)
-  const vatAmount = round2((subtotalAfterDiscount * args.vatRatePct) / 100)
-  const grandTotal = round2(subtotalAfterDiscount + vatAmount)
-
-  return {
-    subtotalAmount,
-    globalDiscountAmount,
-    subtotalAfterDiscount,
-    vatAmount,
-    grandTotal,
-    perLine,
-  }
-}
-
+// `computeTaxInvoiceTotals` lives in `./t7-tax-invoice-helpers` (pure sync
+// helper; Server-Actions files cannot export non-async functions). It is
+// imported above and used internally below.
+//
+// Stub kept for reference of the result shape:
+// {
+//    subtotalAmount: number
+//    globalDiscountAmount: number
+//    subtotalAfterDiscount: number
+//    vatAmount: number
 // ----------------------------------------------------------------------------
 // 1. createTaxInvoiceDraftAction — header + lines + totals
 // ----------------------------------------------------------------------------
@@ -835,9 +793,8 @@ export async function listTaxInvoicesAction(
 }
 
 // ----------------------------------------------------------------------------
-// 8. Compatibility re-export — integrity hash helper available to UI layer
+// 8. Compatibility note: `sha256Hex` lives in `./t7-tax-invoice-helpers` and
+//    is imported at the top of this file. Server-Actions modules cannot
+//    export non-async functions, so UI callers must import it directly from
+//    the helpers module (`@/lib/marker-ofek/finance/t7-tax-invoice-helpers`).
 // ----------------------------------------------------------------------------
-
-export function sha256Hex(input: string): string {
-  return createHash("sha256").update(input, "utf8").digest("hex")
-}

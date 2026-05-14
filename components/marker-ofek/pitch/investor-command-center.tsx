@@ -171,6 +171,16 @@ export function InvestorCommandCenter({
             icon={<ReceiptText className="size-4" aria-hidden />}
             dataTestId="pitch-print:bills"
           />
+          {/* NEW (T7b) — Tax Invoice (חשבונית מס) with visual parity to
+              Z3417500450. Latest-resolved mode: opens the most recently
+              issued invoice, or a blank demo doc if none exists. */}
+          <ContextualPrintButton
+            kind="tax-invoices"
+            label="חשבונית מס (PDF)"
+            className="border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 hover:bg-fuchsia-100"
+            icon={<ReceiptText className="size-4" aria-hidden />}
+            dataTestId="pitch-print:tax-invoices"
+          />
           {/* NEW — Client Progress Bill (חשבון חלקי למזמין). Added as part of
               the contextual-PDF distribution sprint (T-contextual-pdf). */}
           <ContextualPrintButton

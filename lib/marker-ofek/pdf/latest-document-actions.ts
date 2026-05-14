@@ -29,9 +29,10 @@ export type PrintDocumentKind =
   | "contracts"
   | "purchase-orders"
   | "bills" // subcontractor partial bill
-  | "client-bills" // client (owner) partial bill — NEW (T-contextual-pdf)
+  | "client-bills" // client (owner) partial bill
   | "bank-reconciliations"
   | "payment-runs"
+  | "tax-invoices" // חשבונית מס — canonical T7 entity
 
 export type ResolvedPrintTarget = {
   /** The `/print/<kind>/<id>` URL the caller should open. */
@@ -57,6 +58,9 @@ const MOCK_FALLBACK_ID: Record<PrintDocumentKind, string> = {
   "client-bills": DEMO_SUBCONTRACTOR_BILL_ID,
   "bank-reconciliations": DEMO_BANK_RECONCILIATION_ID,
   "payment-runs": DEMO_AP_PAYMENT_RUN_ID,
+  // No dedicated tax-invoice seed yet — fall back to a zero UUID so the
+  // print template renders "לא נמצאה" gracefully in an empty tenant.
+  "tax-invoices": "00000000-0000-0000-0000-000000000000",
 }
 
 /**
@@ -70,6 +74,7 @@ const KIND_LABEL_HE: Record<PrintDocumentKind, string> = {
   "client-bills": "חשבון חלקי למזמין",
   "bank-reconciliations": "דוח התאמת בנק",
   "payment-runs": "דוח מסב + תשלומים",
+  "tax-invoices": "חשבונית מס",
 }
 
 // ---------------------------------------------------------------------------
@@ -119,6 +124,12 @@ const TABLE_LOOKUP: Record<PrintDocumentKind, LatestLookup> = {
     idCol: "id",
     orderCol: "created_at",
     labelCol: "run_number",
+  },
+  "tax-invoices": {
+    table: "erp_tax_invoices",
+    idCol: "id",
+    orderCol: "issue_date",
+    labelCol: "invoice_number_label",
   },
 }
 

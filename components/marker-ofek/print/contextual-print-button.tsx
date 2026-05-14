@@ -53,6 +53,7 @@ const DEFAULT_LABEL: Record<PrintDocumentKind, string> = {
   "client-bills": "הדפס חשבון חלקי למזמין",
   "bank-reconciliations": "הדפס דוח התאמת בנק",
   "payment-runs": "הדפס דוח תשלומים",
+  "tax-invoices": "הדפס חשבונית מס",
 }
 
 export function ContextualPrintButton({

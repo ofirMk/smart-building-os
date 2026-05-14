@@ -36,6 +36,11 @@ const PROTECTED_ROUTES = [
   "/print/bills/00000000-0000-0000-0000-000000000000",
   "/print/contracts/00000000-0000-0000-0000-000000000000",
   "/print/purchase-orders/00000000-0000-0000-0000-000000000000",
+  // Sprint T7b — Tax-invoice management + printable PDF (added 2026-05-13).
+  "/marker-ofek/finance/tax-invoices",
+  "/marker-ofek/finance/tax-invoices/new",
+  "/marker-ofek/finance/tax-invoices/00000000-0000-0000-0000-000000000000",
+  "/print/tax-invoices/00000000-0000-0000-0000-000000000000",
 ] as const
 
 const NOT_FOUND_MARKERS = [
