@@ -8,7 +8,11 @@ import {
 } from "@/lib/marker-ofek/gantt-actions"
 import { formatError } from "@/lib/utils"
 
-export const markerGanttQuickEditSchema = z
+// NOTE: Next.js 16 forbids non-async exports from "use server" modules.
+// Schema is consumed only inside `patchMarkerGanttTaskAction` below, so the
+// `export` keyword was dropped. The inferred type was unused externally and
+// removed entirely.
+const markerGanttQuickEditSchema = z
   .object({
     projectId: z.string().uuid("מזהה פרויקט לא תקין"),
     taskId: z.string().uuid("מזהה משימה לא תקין"),
@@ -27,8 +31,6 @@ export const markerGanttQuickEditSchema = z
     message: "תאריך ההתחלה חייב להיות לפני או ביום הסיום",
     path: ["endDate"],
   })
-
-export type MarkerGanttQuickEditInput = z.infer<typeof markerGanttQuickEditSchema>
 
 export async function patchMarkerGanttTaskAction(
   raw: unknown

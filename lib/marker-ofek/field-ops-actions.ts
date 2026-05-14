@@ -13,15 +13,17 @@ const checklistItemSchema = z.object({
   signed_at: z.string().nullable().optional(),
 })
 
-export const floorHandoverUpsertSchema = z.object({
+// NOTE: Next.js 16 forbids non-async exports from "use server" modules.
+// This schema + its inferred type are consumed only within this file, so we
+// drop the `export` keyword. External consumers must call the action itself
+// (it owns the validation) rather than re-validating client-side.
+const floorHandoverUpsertSchema = z.object({
   projectId: z.string().uuid(),
   buildingLabel: z.string().trim().min(1, "שם בניין חובה"),
   floorLabel: z.string().trim().min(1, "שם קומה חובה"),
   checklist: z.array(checklistItemSchema).min(1),
   readyForDrywall: z.boolean(),
 })
-
-export type FloorHandoverUpsertInput = z.infer<typeof floorHandoverUpsertSchema>
 
 const snagCreateSchema = z.object({
   projectId: z.string().uuid(),
