@@ -21,6 +21,7 @@ import { ArrowLeft, Settings } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { DemoDataSeederWidget } from "@/components/marker-ofek/admin/demo-data-seeder-widget"
 import { FinanceSettingsClient } from "@/components/marker-ofek/admin/finance-settings-client"
 import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { ALLOCATION_REQUIRED_ABOVE_NIS } from "@/lib/finance/israel-tax-api"
@@ -73,6 +74,9 @@ export default async function FinanceSettingsPage() {
         companyId={companyId}
         defaultThresholdNis={ALLOCATION_REQUIRED_ABOVE_NIS}
       />
+
+      {/* Sprint T9a — Executive Demo Data Seeder (additive, marker-protected) */}
+      <DemoDataSeederWidget companyId={companyId} />
     </div>
   )
 }
