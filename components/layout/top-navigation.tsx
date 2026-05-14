@@ -135,11 +135,24 @@ const NAV_ITEMS: NavItem[] = [
       },
       {
         title: "דוחות פיננסיים",
+        href: "/marker-ofek/finance/dashboard",
         links: [
+          { label: "🎯 דשבורד כספים (T8)", href: "/marker-ofek/finance/dashboard" },
           { label: "תזרים מזומנים", href: "/marker-ofek/finance/cash-flow" },
           { label: "רווח והפסד", href: "/marker-ofek/finance/pnl" },
           { label: 'דוח מע"מ', href: "/marker-ofek/finance/vat-report" },
           { label: "Aging", href: "/marker-ofek/finance/reports/aging" },
+        ],
+      },
+      {
+        // Sprint T7b/T7c/T9a — חשבוניות מס, תקבולים, הגדרות והזרקת דמו.
+        title: "ניהול AR והגדרות",
+        href: "/marker-ofek/finance/tax-invoices",
+        links: [
+          { label: "חשבוניות מס", href: "/marker-ofek/finance/tax-invoices" },
+          { label: "חשבונית מס חדשה", href: "/marker-ofek/finance/tax-invoices/new" },
+          { label: "תקבולים", href: "/marker-ofek/finance/receipts" },
+          { label: "הגדרות כספים (Admin)", href: "/marker-ofek/admin/finance-settings" },
         ],
       },
     ],
@@ -169,6 +182,7 @@ const NAV_ITEMS: NavItem[] = [
         links: [
           { label: "Demo (Investor Pitch)", href: "/marker-ofek/pitch" },
           { label: "מרכז פיקוד", href: "/marker-ofek/command-center" },
+          { label: "הגדרות כספים", href: "/marker-ofek/admin/finance-settings" },
         ],
       },
     ],
