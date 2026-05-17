@@ -17,6 +17,7 @@ import { cookies } from "next/headers"
 import { ArrowRightCircle, Briefcase } from "lucide-react"
 
 import { ContractWorkspaceTabs } from "@/components/marker-ofek/contracts/contract-workspace-tabs"
+import { ContextualPrintButton } from "@/components/marker-ofek/print/contextual-print-button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
@@ -283,6 +284,25 @@ export default async function ContractWorkspacePage({
         <ArrowRightCircle className="size-3.5" aria-hidden />
         חזרה לרשימת החוזים
       </Link>
+
+      {/* Sprint T9b — Contextual PDF toolbar.
+          Surfaces PDF buttons bound to the live records on this approval
+          screen so users print the actual contract / latest subcontractor
+          bill (not seed UUIDs). */}
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-end gap-2 border-b border-border bg-background/80 px-1 py-2 backdrop-blur print:hidden">
+        <ContextualPrintButton
+          kind="contracts"
+          id={contractId}
+          label="הדפס חוזה (PDF)"
+        />
+        {latestBill ? (
+          <ContextualPrintButton
+            kind="bills"
+            id={latestBill.id}
+            label={`הדפס חשבון קבלן #${latestBill.bill_number} (PDF)`}
+          />
+        ) : null}
+      </div>
 
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex items-start gap-3">
