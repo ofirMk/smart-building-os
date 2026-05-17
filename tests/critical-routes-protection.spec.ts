@@ -45,6 +45,9 @@ const PROTECTED_ROUTES = [
   "/marker-ofek/admin/finance-settings",
   // Sprint T8 — Executive Cash-Flow & Financial Cockpit (added 2026-05-14).
   "/marker-ofek/finance/dashboard",
+  // Sprint P1 — Project Onboarding Wizard + preserved legacy flow (added 2026-05-17).
+  "/marker-ofek/projects/new",
+  "/marker-ofek/projects/legacy-setup",
 ] as const
 
 const NOT_FOUND_MARKERS = [

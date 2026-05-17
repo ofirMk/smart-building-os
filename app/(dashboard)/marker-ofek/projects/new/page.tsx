@@ -1,31 +1,39 @@
 import type { Metadata } from "next"
-import { Suspense } from "react"
+import Link from "next/link"
 
-import { ProjectSetupWorkspace } from "@/components/marker-ofek/projects/project-setup-workspace"
+import { OnboardingWizard } from "@/components/marker-ofek/projects/onboarding/onboarding-wizard"
 
+/**
+ * Sprint P1 — Project Onboarding Wizard.
+ *
+ * 3-step wizard that writes to the real Supabase tables on every step:
+ *   1. erp_proj_projects + projects (legacy mirror, same UUID)
+ *   2. erp_client_contracts (linked via FK to step 1)
+ *   3. activates both rows and navigates to /marker-ofek/projects/[id].
+ *
+ * The legacy Phase-8.3 ProjectSetupWorkspace flow is preserved at
+ * `/marker-ofek/projects/legacy-setup` per the zero-regression rule.
+ */
 export const metadata: Metadata = {
-  title: "הקמת פרויקט / מכרז",
+  title: "הקמת פרויקט חדש",
   description:
-    "Phase 8.3 — מסך מאוחד: פרטי פרויקט + טיוטת הצעת מחיר ראשונית (BoQ)",
+    "Sprint P1 — אשף Multi-step עם כתיבה חיה ל-Supabase: מנהלה, חוזה מסחרי, השקה.",
 }
 
-function ProjectSetupFallback() {
-  return (
-    <div
-      className="flex min-h-[min(420px,50vh)] items-center justify-center bg-card text-sm text-slate-500"
-      dir="rtl"
-    >
-      טוען הקמת פרויקט…
-    </div>
-  )
-}
+export const dynamic = "force-dynamic"
 
 export default function NewMarkerOfekProjectPage() {
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
-      <Suspense fallback={<ProjectSetupFallback />}>
-        <ProjectSetupWorkspace />
-      </Suspense>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <OnboardingWizard />
+      <div dir="rtl" className="mx-auto mt-4 mb-8 w-full max-w-5xl px-4 text-xs text-muted-foreground">
+        <Link
+          href="/marker-ofek/projects/legacy-setup"
+          className="underline-offset-4 hover:underline"
+        >
+          זקוק לזרימת ה-OCR/BoQ הישנה? עבור ל-Legacy Setup
+        </Link>
+      </div>
     </div>
   )
 }

@@ -78,15 +78,19 @@ export default async function MarkerOfekProjectsDashboardPage() {
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
+            {/* Sprint P1 — green CTA into the new 3-step Onboarding Wizard.
+                The wizard writes to erp_proj_projects + erp_client_contracts
+                in real-time via server actions; no mock data is used. */}
             <Link
               href="/marker-ofek/projects/new"
+              data-testid="projects:new-wizard-cta"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "gap-2 bg-violet-600 text-white hover:bg-violet-500"
+                "gap-2 bg-emerald-600 text-white shadow-md hover:bg-emerald-500"
               )}
             >
               <Plus className="size-4" aria-hidden />
-              הקמת פרויקט חדש
+              פרויקט חדש +
             </Link>
           </div>
         </div>
