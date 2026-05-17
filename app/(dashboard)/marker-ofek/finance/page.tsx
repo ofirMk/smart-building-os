@@ -13,6 +13,7 @@ import {
 
 import { buttonVariants } from "@/components/ui/button-variants"
 import { FinanceInvestorHero } from "@/components/marker-ofek/pitch/finance-investor-hero"
+import { T6GodModeCockpit } from "@/components/marker-ofek/finance/t6-godmode-cockpit"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import {
   Table,
@@ -141,6 +142,8 @@ export default function MarkerOfekFinancePage() {
       </Link>
 
       <FinanceInvestorHero />
+
+      <T6GodModeCockpit companyId="marker_ofek" />
 
       <header className="pharmacy-hero-card p-6 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
