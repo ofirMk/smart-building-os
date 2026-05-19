@@ -48,6 +48,8 @@ const PROTECTED_ROUTES = [
   // Sprint P1 — Project Onboarding Wizard + preserved legacy flow (added 2026-05-17).
   "/marker-ofek/projects/new",
   "/marker-ofek/projects/legacy-setup",
+  // Sprint T10 — Multi-Project Executive Portfolio Cockpit (added 2026-05-19).
+  "/marker-ofek/portfolio",
 ] as const
 
 const NOT_FOUND_MARKERS = [

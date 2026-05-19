@@ -47,6 +47,13 @@ const DEMO_PROJECT_ID = "8599ee46-50a7-4a5e-b219-e853ff093cc6"
  * מקור-אמת יחיד למבנה התפריט — ניתן לעדכון פשוט בעתיד.
  * ───────────────────────────────────────────────────────────────── */
 const NAV_ITEMS: NavItem[] = [
+  {
+    // Sprint T10 — Executive Portfolio Command Center. Pinned as the very
+    // first nav item so CEOs / investors land on the God-View immediately.
+    key: "portfolio",
+    label: "פורטפוליו",
+    href: "/marker-ofek/portfolio",
+  },
   { key: "entrepreneurship", label: "יזמות" },
   { key: "planning", label: "תכנון" },
   {
@@ -182,6 +189,7 @@ const NAV_ITEMS: NavItem[] = [
         links: [
           { label: "Demo (Investor Pitch)", href: "/marker-ofek/pitch" },
           { label: "מרכז פיקוד", href: "/marker-ofek/command-center" },
+          { label: "פורטפוליו פרויקטים (CEO View)", href: "/marker-ofek/portfolio" },
           { label: "הגדרות כספים", href: "/marker-ofek/admin/finance-settings" },
         ],
       },
