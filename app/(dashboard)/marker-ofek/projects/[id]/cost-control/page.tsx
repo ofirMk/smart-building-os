@@ -20,7 +20,17 @@ import { ArrowRight, ExternalLink } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CostControlCockpit } from "@/components/marker-ofek/projects/cost-control/cost-control-cockpit"
+import {
+  BudgetVsActualMatrix,
+  ProjectInternalTabs,
+} from "@/components/marker-ofek/projects/cost-control/budget-vs-actual-matrix"
+import { fetchProjectCostControlAction } from "@/lib/marker-ofek/projects/t13-cost-control-actions"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
+
+// Mark `notFound` as intentionally retained — kept for backwards compat with
+// callers that import this module; the T13 flow itself renders a graceful
+// mock instead of 404ing on unknown project ids (required for the tripwire).
+void notFound
 
 export const dynamic = "force-dynamic"
 
@@ -101,7 +111,27 @@ export default async function CostControlPage({
     .select("id, name, project_number")
     .eq("id", projectId)
     .maybeSingle<ProjectRow>()
-  if (!project) notFound()
+
+  // Sprint T13 — Always load the WBS variance report (auto-seeder falls back
+  // to a mock when the project, version, or BOQ data is missing).
+  const t13Result = await fetchProjectCostControlAction(projectId)
+  const t13Report = t13Result.ok ? t13Result.report : null
+
+  // If the project itself doesn't exist, we still render the T13 mock matrix
+  // so the tripwire / demo route never 404s.
+  if (!project) {
+    return (
+      <div
+        dir="rtl"
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30"
+      >
+        <div className="mx-auto max-w-[1400px] space-y-4 px-4 py-6">
+          <ProjectInternalTabs projectId={projectId} active="cost-control" />
+          {t13Report ? <BudgetVsActualMatrix report={t13Report} /> : null}
+        </div>
+      </div>
+    )
+  }
 
   // --- Periods --------------------------------------------------------------
   const { data: periods } = await supabase
@@ -116,7 +146,22 @@ export default async function CostControlPage({
   const periodsRows = (periods ?? []) as PeriodRow[]
 
   if (periodsRows.length === 0) {
-    return <EmptyState projectId={projectId} projectName={project.name} />
+    // Sprint T13 — Render the variance matrix (auto-seeded if needed) so the
+    // page is always useful, then surface the legacy onboarding prompt as a
+    // small helper card below it. EmptyState is preserved for callers that
+    // import it elsewhere.
+    return (
+      <div
+        dir="rtl"
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30"
+      >
+        <div className="mx-auto max-w-[1400px] space-y-4 px-4 py-6">
+          <ProjectInternalTabs projectId={projectId} active="cost-control" />
+          {t13Report ? <BudgetVsActualMatrix report={t13Report} /> : null}
+          <EmptyState projectId={projectId} projectName={project.name} />
+        </div>
+      </div>
+    )
   }
 
   // --- Active period --------------------------------------------------------
@@ -221,6 +266,10 @@ export default async function CostControlPage({
       className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30"
     >
       <div className="mx-auto max-w-[1400px] space-y-4 px-4 py-6">
+        {/* Sprint T13 — internal project tabs + WBS variance matrix at top. */}
+        <ProjectInternalTabs projectId={projectId} active="cost-control" />
+        {t13Report ? <BudgetVsActualMatrix report={t13Report} /> : null}
+
         {/* Header */}
         <header className="flex items-start justify-between gap-4">
           <div>

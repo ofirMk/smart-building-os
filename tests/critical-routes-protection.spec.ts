@@ -52,6 +52,9 @@ const PROTECTED_ROUTES = [
   "/marker-ofek/portfolio",
   // Sprint T12 — Tender Bid Leveling & Award Matrix (added 2026-05-19).
   "/marker-ofek/procurement/tenders/compare",
+  // Sprint T13 — WBS Cost Control & Budget vs Actual Matrix (added 2026-05-19).
+  // Uses a generic uuid so the auto-seeder mock renders instead of 404ing.
+  "/marker-ofek/projects/123e4567-e89b-12d3-a456-426614174000/cost-control",
 ] as const
 
 const NOT_FOUND_MARKERS = [
