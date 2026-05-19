@@ -50,6 +50,8 @@ const PROTECTED_ROUTES = [
   "/marker-ofek/projects/legacy-setup",
   // Sprint T10 — Multi-Project Executive Portfolio Cockpit (added 2026-05-19).
   "/marker-ofek/portfolio",
+  // Sprint T12 — Tender Bid Leveling & Award Matrix (added 2026-05-19).
+  "/marker-ofek/procurement/tenders/compare",
 ] as const
 
 const NOT_FOUND_MARKERS = [

@@ -69,7 +69,17 @@ const NAV_ITEMS: NavItem[] = [
           { label: "ספקים", href: "/marker-ofek/procurement/suppliers" },
         ],
       },
-      { title: "מכרזים", links: [] },
+      {
+        title: "מכרזים",
+        href: "/marker-ofek/procurement/tenders/compare",
+        links: [
+          {
+            // Sprint T12 — Tender Bid Leveling & Award Matrix.
+            label: "השוואת הצעות (Bid Leveling)",
+            href: "/marker-ofek/procurement/tenders/compare",
+          },
+        ],
+      },
       {
         title: "חוזים וחשבונות",
         href: "/marker-ofek/contracts-engine",
