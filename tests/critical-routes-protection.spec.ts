@@ -55,6 +55,10 @@ const PROTECTED_ROUTES = [
   // Sprint T13 — WBS Cost Control & Budget vs Actual Matrix (added 2026-05-19).
   // Uses a generic uuid so the auto-seeder mock renders instead of 404ing.
   "/marker-ofek/projects/123e4567-e89b-12d3-a456-426614174000/cost-control",
+  // Sprint T14 — Public Vendor Magic-Link Bidding Portal (added 2026-05-19).
+  // Anonymous-accessible. Uses the canonical demo token to render the seeded
+  // "Aluminum Works" RFQ envelope.
+  "/vendor/rfq/123e4567-e89b-12d3-a456-426614174000",
 ] as const
 
 const NOT_FOUND_MARKERS = [
