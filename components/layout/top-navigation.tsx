@@ -21,6 +21,7 @@ import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ChevronDown, Sparkles } from "lucide-react"
 
+import { CommandPaletteSearchTrigger } from "@/components/layout/command-palette"
 import { cn } from "@/lib/utils"
 
 type MegaLink = { label: string; href?: string }
@@ -407,6 +408,9 @@ export function TopNavigation({
         </nav>
 
         {/* ─── Actions slot (שמאל ב-RTL) ─── */}
+        {/* Sprint T16 — Command Palette fake-search trigger (⌘/Ctrl+K). */}
+        <CommandPaletteSearchTrigger className="hidden w-56 md:inline-flex lg:w-64" />
+
         {/* Sprint T15 — Holden AI Copilot launch button. Pinned to the
             actions-slot end of the nav so it's discoverable from any screen. */}
         <Link
