@@ -407,6 +407,29 @@ export function TopNavigation({
         </nav>
 
         {/* ─── Actions slot (שמאל ב-RTL) ─── */}
+        {/* Sprint T15 — Holden AI Copilot launch button. Pinned to the
+            actions-slot end of the nav so it's discoverable from any screen. */}
+        <Link
+          href="/marker-ofek/holden"
+          aria-label="פתח את Holden AI Copilot"
+          className={cn(
+            "group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[13px] font-semibold",
+            "bg-gradient-to-l from-violet-600 via-indigo-600 to-indigo-700 text-white shadow-sm ring-1 ring-violet-500/30",
+            "transition-all hover:from-violet-700 hover:via-indigo-700 hover:to-indigo-800 hover:shadow-md",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
+            pathname?.startsWith("/marker-ofek/holden") && "ring-2 ring-violet-300",
+          )}
+        >
+          <Sparkles
+            className="size-4 transition-transform duration-500 group-hover:rotate-12"
+            aria-hidden
+          />
+          <span>Holden AI</span>
+          <span className="ms-0.5 hidden rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider sm:inline">
+            New
+          </span>
+        </Link>
+
         {children ? (
           <div className="flex shrink-0 items-center gap-1">{children}</div>
         ) : null}

@@ -59,6 +59,8 @@ const PROTECTED_ROUTES = [
   // Anonymous-accessible. Uses the canonical demo token to render the seeded
   // "Aluminum Works" RFQ envelope.
   "/vendor/rfq/123e4567-e89b-12d3-a456-426614174000",
+  // Sprint T15 — Holden AI Copilot (added 2026-05-20).
+  "/marker-ofek/holden",
 ] as const
 
 const NOT_FOUND_MARKERS = [
