@@ -9,6 +9,10 @@ export const metadata: Metadata = {
 /**
  * Monetization Showcase — 3-tier business model deck for the live investor pitch.
  *
+ * Sprint T17 (2026-05-26) — relocated from `app/(dashboard)/marker-ofek/pitch/monetization/`
+ * to `app/(public)/marker-ofek/pitch/monetization/` so the deck is reachable
+ * without a logged-in session. URL unchanged.
+ *
  * Tier 1 (PLG): Field Access — $70 / project · 145 active projects (mock).
  * Tier 2 (SaaS): Company OS — from ₪2,500 / month · 24 enterprises (mock).
  * Tier 3 (Pay-per-Use): AI Credits Engine — exponential MRR via engineering tokens.
