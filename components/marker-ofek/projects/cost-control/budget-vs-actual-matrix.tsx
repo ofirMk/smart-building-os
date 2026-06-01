@@ -503,7 +503,7 @@ export function ProjectInternalTabs({
   active,
 }: {
   projectId: string
-  active: "overview" | "contracts" | "cost-control"
+  active: "overview" | "contracts" | "cost-control" | "variations"
 }) {
   const tabs: Array<{ key: typeof active; label: string; href: string }> = [
     {
@@ -520,6 +520,12 @@ export function ProjectInternalTabs({
       key: "cost-control",
       label: "בקרת תקציב",
       href: `/marker-ofek/projects/${projectId}/cost-control`,
+    },
+    {
+      // T13 — חריגים (Variations) cockpit + AI booklet generator
+      key: "variations",
+      label: "חריגים",
+      href: `/marker-ofek/projects/${projectId}/variations`,
     },
   ]
   return (
