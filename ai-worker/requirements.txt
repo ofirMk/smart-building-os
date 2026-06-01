@@ -12,3 +12,6 @@ crewai-tools==0.17.0
 # Gemini LLM ל-CrewAI (דרך litellm ש-CrewAI מתממשבו)
 litellm==1.55.10
 google-generativeai==0.8.3
+
+# T12 — Variations AI Booklet (PDF merging)
+PyMuPDF==1.24.14

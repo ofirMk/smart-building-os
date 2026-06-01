@@ -19,7 +19,13 @@ from fastapi.responses import JSONResponse
 
 from config import settings
 from hmac_utils import sign_payload, verify_bearer
-from models import DispatchJobRequest, JobResultDone, JobResultFailed
+from models import (
+    DispatchJobRequest,
+    JobResultDone,
+    JobResultFailed,
+    VariationBookletRequest,
+    VariationBookletResponse,
+)
 
 # ── Logging ──────────────────────────────────────────────────
 
@@ -198,6 +204,52 @@ async def _run_gantt_risk(job: DispatchJobRequest) -> None:
 async def health_check() -> dict[str, str]:
     """Cloud Run health check — חייב להחזיר 200 תוך 5 שניות."""
     return {"status": "ok", "service": "ai-worker"}
+
+
+@app.post(
+    "/ai/variations/generate-booklet",
+    response_model=VariationBookletResponse,
+    tags=["variations"],
+    dependencies=[Depends(require_bearer)],
+)
+async def generate_variation_booklet_route(
+    payload: VariationBookletRequest,
+) -> VariationBookletResponse:
+    """
+    T12 — מחולל חוברת חריג: RAG (pgvector) → LLM (Gemini) → PyMuPDF merge
+    → Storage upload → UPDATE contract_variation_orders → audit log (R6).
+
+    סינכרוני (לא BackgroundTask) — הצרכן (Next.js) מצפה לקבל את ה-pdf_url
+    בתשובה כדי להציג למשתמש מיד. עיבוד טיפוסי: 8-25 שניות.
+    """
+    # import דחוי — מאפשר להריץ את ה-worker (handshake/gantt) גם בלי
+    # PyMuPDF מותקן, ולגלות חוסר אך ורק בעת הפעלת ה-endpoint.
+    try:
+        from crews.variations import generate_variation_booklet
+    except ImportError as exc:
+        log.exception("T12 booklet deps missing: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "T12 booklet generator unavailable — "
+                "ensure PyMuPDF is installed (pip install -r requirements.txt)."
+            ),
+        ) from exc
+
+    log.info(
+        "[t12] dispatch variation=%s company=%s project=%s",
+        payload.variation_id,
+        payload.company_id,
+        payload.project_id,
+    )
+    try:
+        return await generate_variation_booklet(payload)
+    except Exception as exc:  # noqa: BLE001 — לוכדים הכול כדי למנוע התרסקות ה-worker
+        log.exception("[t12] booklet generation failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Variation booklet generation failed: {exc!s}",
+        ) from exc
 
 
 @app.post(

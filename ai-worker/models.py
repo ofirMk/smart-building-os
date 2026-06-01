@@ -61,3 +61,47 @@ class GanttRiskAnalysisResult(BaseModel):
     project_health_score: float = Field(ge=0, le=100)
     executive_summary_he: str
     top_recommendation: str | None = None
+
+
+# ── T12: Variations AI Booklet ────────────────────────────────
+
+class VariationBookletRequest(BaseModel):
+    """
+    Payload ל-POST /ai/variations/generate-booklet.
+    R1 — company_id חובה מסוג text (לא uuid) — תואם ל-erp_companies(id).
+    """
+
+    variation_id: UUID4 = Field(
+        ...,
+        description="מזהה השורה ב-contract_variation_orders שתעודכן",
+    )
+    company_id: str = Field(
+        ...,
+        min_length=1,
+        description="R1 tenant isolation — מצביע על erp_companies(id). text, NOT uuid.",
+    )
+    project_id: UUID4 = Field(
+        ...,
+        description="פרויקט החריג — משמש ל-RAG scoping ול-audit log.",
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        description="תיאור החריג מהשטח. input ל-RAG וגם ל-LLM.",
+    )
+    attached_pdf_urls: list[str] = Field(
+        default_factory=list,
+        description="URLs של תוכניות שטח מ-Supabase Storage. מוטמעים אחרי דף השער.",
+    )
+
+
+class VariationBookletResponse(BaseModel):
+    """תוצאה מוחזרת ל-Next.js / Frontend."""
+
+    ok: bool = True
+    variation_id: UUID4
+    pdf_url: str
+    ai_justification_text: str
+    rag_matches_count: int = Field(ge=0)
+    pages_merged: int = Field(ge=1)
+    elapsed_seconds: float
