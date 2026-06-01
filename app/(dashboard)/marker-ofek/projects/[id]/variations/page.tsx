@@ -37,7 +37,7 @@ export default async function VariationsPage({ params }: { params: Params }) {
   const { data: rows, error } = await supabase
     .from("contract_variation_orders")
     .select(
-      "id, vo_number, title, description, status, pdf_url, ai_justification_text, booklet_generated_at, created_at",
+      "id, vo_number, title, description, status, pdf_url, ai_justification_text, booklet_generated_at, created_at, approved_amount, contract_id, linked_partial_account_id",
     )
     .eq("project_id", projectId)
     .order("vo_number", { ascending: false })

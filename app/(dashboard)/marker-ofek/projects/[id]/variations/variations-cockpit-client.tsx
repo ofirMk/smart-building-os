@@ -16,9 +16,11 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
+  CheckCircle2,
   ExternalLink,
   FilePlus2,
   Loader2,
+  Lock,
   Sparkles,
 } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -49,6 +51,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
 import {
+  approveVariationPricing,
   createVariationDraft,
   triggerAiBookletGeneration,
 } from "./actions"
@@ -67,6 +70,10 @@ export type VariationRow = {
   ai_justification_text: string | null
   booklet_generated_at: string | null
   created_at: string
+  // T14 — financial bridge fields
+  approved_amount: number | string | null
+  contract_id: string | null
+  linked_partial_account_id: string | null
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,6 +95,27 @@ const draftSchema = z.object({
 })
 
 type DraftFormValues = z.infer<typeof draftSchema>
+
+// T14 — Approve & Pricing form (Zod v4 — `message` only).
+const approveSchema = z.object({
+  approvedAmount: z
+    .number({ message: "סכום חובה" })
+    .positive({ message: "הסכום חייב להיות חיובי" })
+    .max(1e11, { message: "הסכום גבוה מדי" }),
+  contractId: z
+    .string({ message: "חוזה חובה" })
+    .regex(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      { message: "מזהה חוזה חייב להיות UUID חוקי" },
+    ),
+})
+type ApproveFormValues = z.infer<typeof approveSchema>
+
+const CURRENCY_FORMATTER = new Intl.NumberFormat("he-IL", {
+  style: "currency",
+  currency: "ILS",
+  maximumFractionDigits: 0,
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status badge tone
@@ -142,6 +170,9 @@ export function VariationsCockpitClient({
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = React.useState(false)
   const [generatingId, setGeneratingId] = React.useState<string | null>(null)
+  // T14 — PM approval state
+  const [approveTarget, setApproveTarget] =
+    React.useState<VariationRow | null>(null)
 
   const form = useForm<DraftFormValues>({
     resolver: zodResolver(draftSchema),
@@ -150,6 +181,38 @@ export function VariationsCockpitClient({
       description: "",
       attachedPdfUrlsText: "",
     },
+  })
+
+  // T14 — Approve form. נפתח חדש פר חריג; defaultValues מתאפסים בכל פתיחה.
+  const approveForm = useForm<ApproveFormValues>({
+    resolver: zodResolver(approveSchema),
+    defaultValues: { approvedAmount: 0, contractId: "" },
+  })
+
+  const onApproveSubmit = approveForm.handleSubmit(async (values) => {
+    if (!approveTarget) return
+    const t = toast.loading(`מאשר חריג #${approveTarget.vo_number}...`)
+    try {
+      const res = await approveVariationPricing({
+        variationId: approveTarget.id,
+        approvedAmount: values.approvedAmount,
+        contractId: values.contractId,
+      })
+      if (!res.ok) {
+        toast.error(res.error, { id: t, duration: 7000 })
+        return
+      }
+      toast.success(
+        `חריג #${res.data.voNumber} אושר — ${CURRENCY_FORMATTER.format(res.data.approvedAmount)} (Holden Books יוכל למשוך)`,
+        { id: t, duration: 5000 },
+      )
+      approveForm.reset()
+      setApproveTarget(null)
+      router.refresh()
+    } catch (exc) {
+      const msg = exc instanceof Error ? exc.message : String(exc)
+      toast.error(`כשל באישור: ${msg}`, { id: t, duration: 7000 })
+    }
   })
 
   const onCreateSubmit = form.handleSubmit(async (values) => {
@@ -253,7 +316,14 @@ export function VariationsCockpitClient({
               initialRows.map((row) => {
                 const isGenerating = generatingId === row.id
                 const isDraft = row.status === "draft"
+                const isSubmitted = row.status === "submitted"
+                const isApproved = row.status === "approved"
+                const isLocked = !!row.linked_partial_account_id
                 const hasBooklet = !!row.pdf_url
+                const approvedAmount =
+                  row.approved_amount != null
+                    ? Number(row.approved_amount)
+                    : null
                 return (
                   <TableRow key={row.id} className="align-top">
                     <TableCell className="font-mono text-sm text-slate-700">
@@ -268,9 +338,22 @@ export function VariationsCockpitClient({
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge className={cn("font-semibold", statusTone(row.status))}>
-                        {statusLabel(row.status)}
-                      </Badge>
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge className={cn("font-semibold", statusTone(row.status))}>
+                          {statusLabel(row.status)}
+                        </Badge>
+                        {approvedAmount != null ? (
+                          <span className="font-mono text-[10px] tabular-nums text-emerald-700">
+                            {CURRENCY_FORMATTER.format(approvedAmount)}
+                          </span>
+                        ) : null}
+                        {isLocked ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                            <Lock className="size-2.5" aria-hidden />
+                            נעול לחשבון חלקי
+                          </span>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs text-slate-500">
                       {dateFormatter.format(new Date(row.created_at))}
@@ -315,6 +398,31 @@ export function VariationsCockpitClient({
                             <ExternalLink className="size-3.5" aria-hidden />
                             צפה בחוברת
                           </Button>
+                        ) : null}
+                        {/* T14 — PM Approval. רק אחרי שיש חוברת AI (submitted). */}
+                        {isSubmitted ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="default"
+                            className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                            onClick={() => {
+                              approveForm.reset({
+                                approvedAmount: 0,
+                                contractId: row.contract_id ?? "",
+                              })
+                              setApproveTarget(row)
+                            }}
+                          >
+                            <CheckCircle2 className="size-3.5" aria-hidden />
+                            אשר ותמחר
+                          </Button>
+                        ) : null}
+                        {isApproved && !isLocked ? (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-800">
+                            <CheckCircle2 className="size-3" aria-hidden />
+                            ממתין למשיכה לחשבון חלקי
+                          </span>
                         ) : null}
                       </div>
                     </TableCell>
@@ -412,6 +520,131 @@ export function VariationsCockpitClient({
               </Button>
             </SheetFooter>
           </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* ─── T14 — Approve & Pricing Sheet ─────────────────── */}
+      <Sheet
+        open={!!approveTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setApproveTarget(null)
+            approveForm.reset()
+          }
+        }}
+      >
+        <SheetContent
+          side="left"
+          className="w-[min(34rem,100vw)] sm:max-w-lg"
+          dir="rtl"
+        >
+          <SheetHeader>
+            <SheetTitle>
+              אישור ותמחור — חריג #{approveTarget?.vo_number ?? "—"}
+            </SheetTitle>
+            <SheetDescription>
+              הסכום והחוזה ייכנסו לדוחות הפיננסיים מיד אחרי האישור.
+              לאחר נעילה לחשבון חלקי — לא ניתן יותר לערוך (חוק zero
+              double-billing).
+            </SheetDescription>
+          </SheetHeader>
+
+          {approveTarget ? (
+            <form onSubmit={onApproveSubmit} className="mt-4 space-y-4 px-4 pb-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                <div className="font-semibold text-slate-800">
+                  {approveTarget.title}
+                </div>
+                <div className="mt-1 line-clamp-3 text-slate-600">
+                  {approveTarget.description ?? "—"}
+                </div>
+                {approveTarget.pdf_url ? (
+                  <a
+                    href={approveTarget.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-indigo-700 hover:underline"
+                  >
+                    <ExternalLink className="size-3" aria-hidden />
+                    פתח חוברת AI ברקע
+                  </a>
+                ) : null}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="t14-amount" className="text-sm font-semibold">
+                  סכום מאושר (₪) <span className="text-rose-600">*</span>
+                </Label>
+                <Input
+                  id="t14-amount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0.01}
+                  placeholder="לדוגמה: 38500"
+                  {...approveForm.register("approvedAmount", {
+                    valueAsNumber: true,
+                  })}
+                />
+                {approveForm.formState.errors.approvedAmount?.message ? (
+                  <p className="text-xs text-rose-600">
+                    {approveForm.formState.errors.approvedAmount.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="t14-contract" className="text-sm font-semibold">
+                  מזהה חוזה (UUID) <span className="text-rose-600">*</span>
+                </Label>
+                <Input
+                  id="t14-contract"
+                  type="text"
+                  dir="ltr"
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  className="font-mono"
+                  {...approveForm.register("contractId")}
+                />
+                <p className="text-[11px] text-slate-500">
+                  כתבו את מזהה החוזה שאליו החריג שייך. בעתיד יוחלף ב-Combobox
+                  של חוזי הפרויקט. ה-Action יוודא שייכות לאותו פרויקט.
+                </p>
+                {approveForm.formState.errors.contractId?.message ? (
+                  <p className="text-xs text-rose-600">
+                    {approveForm.formState.errors.contractId.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <SheetFooter className="flex-row justify-end gap-2 px-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setApproveTarget(null)}
+                  disabled={approveForm.formState.isSubmitting}
+                >
+                  ביטול
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={approveForm.formState.isSubmitting}
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {approveForm.formState.isSubmitting ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                      מאשר...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="size-3.5" aria-hidden />
+                      אשר ותמחר
+                    </>
+                  )}
+                </Button>
+              </SheetFooter>
+            </form>
+          ) : null}
         </SheetContent>
       </Sheet>
     </section>
