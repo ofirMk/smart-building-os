@@ -23,7 +23,7 @@ import {
   Lock,
   Sparkles,
 } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -31,6 +31,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Sheet,
   SheetContent,
@@ -59,6 +66,13 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // Row contract (matches the page's Supabase SELECT)
 // ─────────────────────────────────────────────────────────────────────────────
+
+// T14 — אופציה ל-Select ה-"תמחר ואשר". נטען מ-page.tsx (RSC).
+export type ContractOption = {
+  id: string
+  title: string
+  status: string | null
+}
 
 export type VariationRow = {
   id: string
@@ -97,17 +111,19 @@ const draftSchema = z.object({
 type DraftFormValues = z.infer<typeof draftSchema>
 
 // T14 — Approve & Pricing form (Zod v4 — `message` only).
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 const approveSchema = z.object({
+  // הסכום המאושר — מוליד (Hard Gate — מתאים לדרישה approvedAmount > 0).
   approvedAmount: z
     .number({ message: "סכום חובה" })
     .positive({ message: "הסכום חייב להיות חיובי" })
     .max(1e11, { message: "הסכום גבוה מדי" }),
+  // חוזה משוייך (Hard Gate — סגירת הרפיית מ-T13: contract_id חובה באישור).
   contractId: z
     .string({ message: "חוזה חובה" })
-    .regex(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-      { message: "מזהה חוזה חייב להיות UUID חוקי" },
-    ),
+    .regex(UUID_REGEX, { message: "חובה לבחור חוזה מהרשימה" }),
 })
 type ApproveFormValues = z.infer<typeof approveSchema>
 
@@ -163,9 +179,11 @@ const dateFormatter = new Intl.DateTimeFormat("he-IL", {
 export function VariationsCockpitClient({
   projectId,
   initialRows,
+  contracts,
 }: {
   projectId: string
   initialRows: VariationRow[]
+  contracts: ContractOption[]
 }) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = React.useState(false)
@@ -415,7 +433,7 @@ export function VariationsCockpitClient({
                             }}
                           >
                             <CheckCircle2 className="size-3.5" aria-hidden />
-                            אשר ותמחר
+                            תמחר ואשר
                           </Button>
                         ) : null}
                         {isApproved && !isLocked ? (
@@ -595,20 +613,53 @@ export function VariationsCockpitClient({
 
               <div className="space-y-1.5">
                 <Label htmlFor="t14-contract" className="text-sm font-semibold">
-                  מזהה חוזה (UUID) <span className="text-rose-600">*</span>
+                  חוזה משוייך <span className="text-rose-600">*</span>
                 </Label>
-                <Input
-                  id="t14-contract"
-                  type="text"
-                  dir="ltr"
-                  placeholder="00000000-0000-0000-0000-000000000000"
-                  className="font-mono"
-                  {...approveForm.register("contractId")}
-                />
-                <p className="text-[11px] text-slate-500">
-                  כתבו את מזהה החוזה שאליו החריג שייך. בעתיד יוחלף ב-Combobox
-                  של חוזי הפרויקט. ה-Action יוודא שייכות לאותו פרויקט.
-                </p>
+                {contracts.length === 0 ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900">
+                    אין חוזים פעילים בפרויקט. צרו חוזה תחילה במסך{" "}
+                    <a
+                      href={`/marker-ofek/projects/${projectId}/contracts`}
+                      className="font-semibold text-amber-950 underline hover:text-amber-700"
+                    >
+                      חוזים
+                    </a>
+                    , ולאחר מכן חזרו לאשר את החריג.
+                  </div>
+                ) : (
+                  <Controller
+                    control={approveForm.control}
+                    name="contractId"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || undefined}
+                        onValueChange={(v) => field.onChange(v ?? "")}
+                      >
+                        <SelectTrigger
+                          id="t14-contract"
+                          className="w-full"
+                          aria-label="בחירת חוזה לאישור החריג"
+                        >
+                          <SelectValue placeholder="בחרו חוזה מהרשימה" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {contracts.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              <div className="flex flex-col items-start text-right">
+                                <span className="font-medium">{c.title}</span>
+                                {c.status ? (
+                                  <span className="text-[10px] text-slate-500">
+                                    {c.status}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                )}
                 {approveForm.formState.errors.contractId?.message ? (
                   <p className="text-xs text-rose-600">
                     {approveForm.formState.errors.contractId.message}
@@ -627,8 +678,15 @@ export function VariationsCockpitClient({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={approveForm.formState.isSubmitting}
+                  disabled={
+                    approveForm.formState.isSubmitting || contracts.length === 0
+                  }
                   className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  title={
+                    contracts.length === 0
+                      ? "אין חוזים פעילים — צרו חוזה תחילה"
+                      : undefined
+                  }
                 >
                   {approveForm.formState.isSubmitting ? (
                     <>

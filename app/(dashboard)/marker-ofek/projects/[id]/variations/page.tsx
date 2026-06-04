@@ -17,7 +17,11 @@ import { ArrowRight } from "lucide-react"
 import { ProjectInternalTabs } from "@/components/marker-ofek/projects/cost-control/budget-vs-actual-matrix"
 import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 
-import { VariationsCockpitClient, type VariationRow } from "./variations-cockpit-client"
+import {
+  VariationsCockpitClient,
+  type ContractOption,
+  type VariationRow,
+} from "./variations-cockpit-client"
 
 export const dynamic = "force-dynamic"
 
@@ -45,6 +49,22 @@ export default async function VariationsPage({ params }: { params: Params }) {
 
   const variations: VariationRow[] = rows ?? []
   const loadErrorMessage = error?.message ?? null
+
+  // T14 — חוזי הפרויקט עבור ה-Select בטופס "תמחר ואשר".
+  // RLS מטפל ב-tenant isolation. is_deleted=false כדי לא להציג ארכיון.
+  const { data: contractRows } = await supabase
+    .from("contracts")
+    .select("id, title, status")
+    .eq("project_id", projectId)
+    .eq("is_deleted", false)
+    .order("created_at", { ascending: false })
+    .returns<Array<{ id: string; title: string | null; status: string | null }>>()
+
+  const contracts: ContractOption[] = (contractRows ?? []).map((c) => ({
+    id: c.id,
+    title: c.title?.trim() || `חוזה ${c.id.slice(0, 8)}`,
+    status: c.status,
+  }))
 
   return (
     <div
@@ -90,7 +110,11 @@ export default async function VariationsPage({ params }: { params: Params }) {
           </div>
         ) : null}
 
-        <VariationsCockpitClient projectId={projectId} initialRows={variations} />
+        <VariationsCockpitClient
+          projectId={projectId}
+          initialRows={variations}
+          contracts={contracts}
+        />
       </div>
     </div>
   )

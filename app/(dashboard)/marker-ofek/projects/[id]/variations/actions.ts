@@ -10,9 +10,9 @@
  * Actions:
  *   1. createVariationDraft        — INSERT contract_variation_orders (status='draft')
  *   2. triggerAiBookletGeneration  — POST to ai-worker /ai/variations/generate-booklet
- *   3. approveVariationPricing     — T14: PM approval + pricing + contract assignment
- *   4. getPendingApprovedVariations — T14: pull queue for billing (linked IS NULL)
- *   5. lockVariationToAccount      — T14: bind variation to a partial_account (no double-billing)
+ *   3. approveVariationPricing      — T14: PM approval + pricing + contract assignment (hard gate)
+ *   4. getPendingBillingVariations  — T14: strict pull queue (status='approved' AND contract_id=? AND linked IS NULL)
+ *   5. lockVariationToAccount       — T14: bind variation to a partial_account (no double-billing)
  */
 
 import { revalidatePath } from "next/cache"
@@ -473,7 +473,7 @@ export async function approveVariationPricing(
 // T14.2 — Billing Pull infrastructure
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type PendingApprovedVariation = {
+export type PendingBillingVariation = {
   id: string
   voNumber: number
   title: string
@@ -486,43 +486,53 @@ export type PendingApprovedVariation = {
 }
 
 /**
- * T14.2.a — Pull queue ל-Billing.
+ * T14.2.a — Strict Billing Pull queue.
  *
- * חוק עליון (Zero Double-Billing):
- *   שולף רק חריגים בסטטוס 'approved' עם linked_partial_account_id IS NULL.
- *   חריג שכבר ננעל לחשבון חלקי — לא יחזור ב-pull queue, גם אם יבוטל
- *   החשבון (במקרה כזה צריך RPC נפרד לשחרור — לא חלק מ-T14).
+ * חוק עליון (Zero Double-Billing): שלושת תנאים מצטברים בלבד:
+ *   1. status = 'approved'
+ *   2. contract_id = {contractId}                  ← חובה מ-T14 החדש
+ *   3. linked_partial_account_id IS NULL
+ *
+ * חריג שכבר ננעל לחשבון חלקי — לא יחזור ל-pull queue, גם אם יבוטל
+ * החשבון (לשחרור מתוכנן RPC נפרד — לא חלק מ-T14).
  *
  * R1 — סינון נוסף ב-company_id (defence in depth מעל ל-RLS).
  */
-export async function getPendingApprovedVariations(
+export async function getPendingBillingVariations(
   projectId: string,
-  contractId?: string | null,
-): Promise<ActionResult<PendingApprovedVariation[]>> {
+  contractId: string,
+): Promise<ActionResult<PendingBillingVariation[]>> {
   try {
-    if (!projectId?.trim()) return { ok: false, error: "חסר מזהה פרויקט" }
-    if (!UUID_RE.test(projectId)) return { ok: false, error: "מזהה פרויקט לא תקין" }
+    const projectIdTrim = projectId?.trim() ?? ""
+    const contractIdTrim = contractId?.trim() ?? ""
+
+    if (!projectIdTrim) return { ok: false, error: "חסר מזהה פרויקט" }
+    if (!UUID_RE.test(projectIdTrim)) {
+      return { ok: false, error: "מזהה פרויקט לא תקין" }
+    }
+    // T14 Hard Gate: contractId מעתה חובה — המשיכה ההגיתית
+    // לתיקון הרפיית ה-NOT NULL מ-T13.
+    if (!contractIdTrim) {
+      return { ok: false, error: "חובה לספק contract_id — משיכת בילינג דורשת הקשר לחוזה ספציפי" }
+    }
+    if (!UUID_RE.test(contractIdTrim)) {
+      return { ok: false, error: "מזהה חוזה לא תקין" }
+    }
 
     const supabase = await createSupabaseServerAuthClient()
     const companyId = await resolveActiveCompanyId() // R1
 
-    let query = supabase
+    const query = supabase
       .from("contract_variation_orders")
       .select(
         "id, vo_number, title, description, approved_amount, contract_id, project_id, pdf_url, approved_at",
       )
-      .eq("project_id", projectId)
-      .eq("company_id", companyId) // R1
+      .eq("project_id", projectIdTrim)
+      .eq("company_id", companyId)         // R1
+      .eq("contract_id", contractIdTrim)   // T14 Hard Gate — משיכת דורשת חוזה
       .eq("status", "approved")
       .is("linked_partial_account_id", null) // ZERO DOUBLE-BILLING
       .order("vo_number", { ascending: true })
-
-    if (contractId?.trim()) {
-      if (!UUID_RE.test(contractId.trim())) {
-        return { ok: false, error: "מזהה חוזה לא תקין" }
-      }
-      query = query.eq("contract_id", contractId.trim())
-    }
 
     const { data: rows, error } = await query.returns<
       Array<{
@@ -542,7 +552,7 @@ export async function getPendingApprovedVariations(
       return { ok: false, error: `שליפת חריגים למשיכה נכשלה: ${error.message}` }
     }
 
-    const mapped: PendingApprovedVariation[] = (rows ?? []).map((r) => ({
+    const mapped: PendingBillingVariation[] = (rows ?? []).map((r) => ({
       id: r.id,
       voNumber: r.vo_number,
       title: r.title,
@@ -557,7 +567,7 @@ export async function getPendingApprovedVariations(
     return { ok: true, data: mapped }
   } catch (exc) {
     const msg = exc instanceof Error ? exc.message : String(exc)
-    console.error("[t14.getPendingApprovedVariations]", msg)
+    console.error("[t14.getPendingBillingVariations]", msg)
     return { ok: false, error: msg }
   }
 }
