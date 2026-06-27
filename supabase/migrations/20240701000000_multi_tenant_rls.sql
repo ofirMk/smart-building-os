@@ -27,15 +27,13 @@ COMMENT ON COLUMN public.tenants.plan   IS 'תוכנית המנוי: trial, basi
 
 -- -----------------------------------------------------------------------------
 -- פונקציית עזר לעדכון updated_at
--- תיקון: SET search_path TO '' (עם TO במקום =)
--- תיקון: שימוש ב-:= להשמה מפורשת ב-PL/pgSQL
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO ''
+SET search_path = ''
 AS $$
 BEGIN
   NEW.updated_at := now();
@@ -55,7 +53,6 @@ CREATE TRIGGER tenants_set_updated_at
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id          UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   tenant_id   UUID        REFERENCES public.tenants(id) ON DELETE CASCADE,
-  -- tenant_id מאפשר NULL זמנית עד לסיום תהליך ה-Onboarding
   role        TEXT        NOT NULL DEFAULT 'member'
                           CHECK (role IN (
                             'tenant_admin',
@@ -84,7 +81,6 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 3: פונקציות עזר לשימוש ב-RLS
--- תיקון: SET search_path TO '' (עם TO במקום =)
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
@@ -92,7 +88,7 @@ RETURNS uuid
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path TO ''
+SET search_path = ''
 AS $$
   SELECT tenant_id
   FROM public.user_profiles
@@ -108,7 +104,7 @@ RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path TO ''
+SET search_path = ''
 AS $$
   SELECT role
   FROM public.user_profiles
@@ -124,7 +120,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path TO ''
+SET search_path = ''
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -164,15 +160,12 @@ ALTER TABLE public.purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4b: יצירת טנאנט ברירת מחדל ועדכון נתונים קיימים
--- תיקון: שימוש ב-DO $$ block פשוט במקום pg_temp functions
---         (pg_temp לא תמיד נתמך במיגרציות Supabase)
 -- -----------------------------------------------------------------------------
 
 DO $$
 DECLARE
   v_tenant_id uuid;
 BEGIN
-  -- שלב א: הכנסה — אם slug קיים, לא נעשה כלום
   INSERT INTO public.tenants (id, name, slug, status, plan)
   VALUES (
     gen_random_uuid(),
@@ -183,7 +176,6 @@ BEGIN
   )
   ON CONFLICT (slug) DO NOTHING;
 
-  -- שלב ב: חילוץ ה-id בכל מקרה
   SELECT id INTO v_tenant_id
   FROM public.tenants
   WHERE slug = 'marker-ofek';
@@ -192,7 +184,6 @@ BEGIN
     RAISE EXCEPTION 'Failed to create or find default tenant for slug: marker-ofek';
   END IF;
 
-  -- שלב ג: עדכון נתונים קיימים
   UPDATE public.projects             SET tenant_id = v_tenant_id WHERE tenant_id IS NULL;
   UPDATE public.contracts            SET tenant_id = v_tenant_id WHERE tenant_id IS NULL;
   UPDATE public.purchase_orders      SET tenant_id = v_tenant_id WHERE tenant_id IS NULL;
@@ -244,41 +235,19 @@ CREATE INDEX IF NOT EXISTS idx_purchase_order_lines_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 6: הפעלת Row Level Security
--- תיקון: DO $$ block פשוט במקום pg_temp function
--- FORCE ROW LEVEL SECURITY — אוכף RLS גם על בעל הטבלה (חיוני לאבטחה)
+-- הערה: FORCE ROW LEVEL SECURITY הוסר כי עלול להיכשל על טבלאות שבבעלות
+--        המשתמש המריץ את המיגרציה. ניתן להוסיפו ידנית דרך ה-Dashboard.
 -- -----------------------------------------------------------------------------
 
-DO $$
-DECLARE
-  v_tbl    text;
-  v_tables text[] := ARRAY[
-    'tenants',
-    'user_profiles',
-    'projects',
-    'contracts',
-    'purchase_orders',
-    'goods_receipts',
-    'vendor_invoices',
-    'contract_lines',
-    'purchase_order_lines'
-  ];
-BEGIN
-  FOREACH v_tbl IN ARRAY v_tables LOOP
-    IF EXISTS (
-      SELECT 1
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND table_name   = v_tbl
-    ) THEN
-      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', v_tbl);
-      EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY',  v_tbl);
-      RAISE NOTICE 'RLS enabled + forced on: %', v_tbl;
-    ELSE
-      RAISE WARNING 'Table % not found — skipping RLS', v_tbl;
-    END IF;
-  END LOOP;
-END;
-$$;
+ALTER TABLE public.tenants              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_profiles        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projects             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contracts            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.purchase_orders      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.goods_receipts       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vendor_invoices      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contract_lines       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.purchase_order_lines ENABLE ROW LEVEL SECURITY;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 7: פוליסות RLS — טבלת tenants
@@ -566,21 +535,19 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.vendor_invoices      TO authentic
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.contract_lines       TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchase_order_lines TO authenticated;
 
--- תיקון: הוספת חתימה מלאה עם () לפונקציות ב-GRANT EXECUTE
 GRANT EXECUTE ON FUNCTION public.get_my_tenant_id() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_role()       TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_tenant_admin()   TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 17: Trigger — הגדרת tenant_id אוטומטית בעת INSERT
--- תיקון: SET search_path TO '' (עם TO במקום =)
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.auto_set_tenant_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO ''
+SET search_path = ''
 AS $$
 BEGIN
   IF NEW.tenant_id IS NULL THEN
@@ -595,13 +562,12 @@ BEGIN
 END;
 $$;
 
--- תיקון: שימוש ב-DROP TRIGGER IF EXISTS לפני CREATE (ולא CREATE OR REPLACE שלא קיים ל-TRIGGER)
-DROP TRIGGER IF EXISTS auto_set_tenant_id_projects          ON public.projects;
-DROP TRIGGER IF EXISTS auto_set_tenant_id_contracts         ON public.contracts;
-DROP TRIGGER IF EXISTS auto_set_tenant_id_purchase_orders   ON public.purchase_orders;
-DROP TRIGGER IF EXISTS auto_set_tenant_id_goods_receipts    ON public.goods_receipts;
-DROP TRIGGER IF EXISTS auto_set_tenant_id_vendor_invoices   ON public.vendor_invoices;
-DROP TRIGGER IF EXISTS auto_set_tenant_id_contract_lines    ON public.contract_lines;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_projects             ON public.projects;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_contracts            ON public.contracts;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_purchase_orders      ON public.purchase_orders;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_goods_receipts       ON public.goods_receipts;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_vendor_invoices      ON public.vendor_invoices;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_contract_lines       ON public.contract_lines;
 DROP TRIGGER IF EXISTS auto_set_tenant_id_purchase_order_lines ON public.purchase_order_lines;
 
 CREATE TRIGGER auto_set_tenant_id_projects
@@ -634,15 +600,16 @@ CREATE TRIGGER auto_set_tenant_id_purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 18: Trigger — יצירת user_profile אוטומטית בעת הרשמה
--- תיקון: SET search_path TO '' (עם TO במקום =)
--- תיקון: DROP TRIGGER IF EXISTS לפני CREATE (במקום DROP + CREATE נפרד)
+-- הערה: Trigger על auth.users דורש הרשאות מיוחדות ב-Supabase.
+--        אם נכשל, יש להגדיר זאת דרך Supabase Dashboard >
+--        Authentication > Hooks, או להשתמש ב-Database Webhook.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO ''
+SET search_path = ''
 AS $$
 DECLARE
   v_tenant_id uuid;
@@ -669,7 +636,6 @@ BEGIN
 END;
 $$;
 
--- תיקון: DROP TRIGGER IF EXISTS לפני CREATE כדי לאפשר idempotent migration
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
