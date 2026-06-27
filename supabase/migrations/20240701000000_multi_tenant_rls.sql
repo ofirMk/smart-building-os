@@ -27,14 +27,16 @@ COMMENT ON COLUMN public.tenants.plan   IS 'תוכנית המנוי: trial, basi
 
 -- -----------------------------------------------------------------------------
 -- פונקציית עזר לעדכון updated_at
--- תיקון: search_path = public, auth במקום '' — נדרש כדי ש-auth.uid() יעבוד
+-- תיקון סופי: search_path = '' (ריק) — הדרך הבטוחה ביותר לפי תיעוד Supabase.
+--             auth.uid() נקרא עם שם מלא ולכן לא צריך את auth ב-search_path.
+--             הוספת auth ל-search_path גורמת לאזהרת אבטחה ב-linter.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = ''
 AS $$
 BEGIN
   NEW.updated_at := now();
@@ -82,7 +84,8 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 3: פונקציות עזר לשימוש ב-RLS
--- תיקון: search_path = public, auth — נדרש כדי ש-auth.uid() יהיה נגיש
+-- תיקון סופי: search_path = '' — auth.uid() נקרא עם schema מלא ולכן עובד
+--             גם ללא auth ב-search_path. זהו הפורמט המאושר ע"י Supabase.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
@@ -90,7 +93,7 @@ RETURNS uuid
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = ''
 AS $$
   SELECT tenant_id
   FROM public.user_profiles
@@ -106,7 +109,7 @@ RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = ''
 AS $$
   SELECT role
   FROM public.user_profiles
@@ -122,7 +125,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = ''
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -162,7 +165,6 @@ ALTER TABLE public.purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4b: יצירת טנאנט ברירת מחדל ועדכון נתונים קיימים
--- תיקון: הוספת LANGUAGE plpgsql מפורש ל-DO block
 -- -----------------------------------------------------------------------------
 
 DO $migration$
@@ -239,7 +241,6 @@ CREATE INDEX IF NOT EXISTS idx_purchase_order_lines_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 6: הפעלת Row Level Security
--- תיקון: הפעלת RLS לפני יצירת הפוליסות (סדר נכון)
 -- -----------------------------------------------------------------------------
 
 ALTER TABLE public.tenants              ENABLE ROW LEVEL SECURITY;
@@ -254,8 +255,6 @@ ALTER TABLE public.purchase_order_lines ENABLE ROW LEVEL SECURITY;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 7: פוליסות RLS — טבלת tenants
--- תיקון: שימוש ב-(SELECT public.get_my_tenant_id()) לביצועים טובים יותר
---         (מונע קריאה חוזרת לפונקציה עבור כל שורה)
 -- -----------------------------------------------------------------------------
 
 DROP POLICY IF EXISTS "tenants_select_own"         ON public.tenants;
@@ -304,11 +303,11 @@ CREATE POLICY "user_profiles_update_admin_or_self"
   ON public.user_profiles FOR UPDATE
   USING (
     tenant_id = (SELECT public.get_my_tenant_id())
-    AND (id = auth.uid() OR (SELECT public.is_tenant_admin()))
+    AND (id = (SELECT auth.uid()) OR (SELECT public.is_tenant_admin()))
   )
   WITH CHECK (
     tenant_id = (SELECT public.get_my_tenant_id())
-    AND (id = auth.uid() OR (SELECT public.is_tenant_admin()))
+    AND (id = (SELECT auth.uid()) OR (SELECT public.is_tenant_admin()))
   );
 
 CREATE POLICY "user_profiles_delete_admin"
@@ -316,7 +315,7 @@ CREATE POLICY "user_profiles_delete_admin"
   USING (
     tenant_id = (SELECT public.get_my_tenant_id())
     AND (SELECT public.is_tenant_admin())
-    AND id <> auth.uid()
+    AND id <> (SELECT auth.uid())
   );
 
 -- -----------------------------------------------------------------------------
@@ -540,6 +539,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.vendor_invoices      TO authentic
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.contract_lines       TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchase_order_lines TO authenticated;
 
+-- תיקון: חתימה מלאה עם טיפוסי החזרה לפי דרישת PostgreSQL
 GRANT EXECUTE ON FUNCTION public.get_my_tenant_id() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_role()       TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_tenant_admin()   TO authenticated;
@@ -552,7 +552,7 @@ CREATE OR REPLACE FUNCTION public.auto_set_tenant_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = ''
 AS $$
 BEGIN
   IF NEW.tenant_id IS NULL THEN
@@ -604,17 +604,20 @@ CREATE TRIGGER auto_set_tenant_id_purchase_order_lines
   FOR EACH ROW EXECUTE FUNCTION public.auto_set_tenant_id();
 
 -- -----------------------------------------------------------------------------
--- SECTION 18: Trigger — יצירת user_profile אוטומטית בעת הרשמה
--- הערה: Trigger על auth.users דורש הרשאות מיוחדות ב-Supabase.
---        אם נכשל, יש להגדיר זאת דרך Supabase Dashboard >
---        Authentication > Hooks, או להשתמש ב-Database Webhook.
+-- SECTION 18: פונקציית יצירת user_profile אוטומטית בעת הרשמה
+-- -----------------------------------------------------------------------------
+-- הערה חשובה: ב-Supabase אין אפשרות להגדיר trigger על auth.users
+--             ישירות במיגרציה ללא הרשאות מיוחדות.
+--             יש להגדיר את הפונקציה הזו כ-Auth Hook דרך:
+--             Supabase Dashboard > Authentication > Hooks > "After user created"
+--             ולהצביע על הפונקציה: public.handle_new_auth_user
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = ''
 AS $$
 DECLARE
   v_tenant_id uuid;
@@ -641,6 +644,8 @@ BEGIN
 END;
 $$;
 
+-- הערה: השורות הבאות עלולות להיכשל בסביבות Supabase מסוימות ללא הרשאות מיוחדות.
+--        אם נכשל — הסר את שתי השורות הבאות והגדר את ה-Hook דרך ה-Dashboard.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
