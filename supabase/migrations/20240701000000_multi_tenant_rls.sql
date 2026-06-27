@@ -27,13 +27,14 @@ COMMENT ON COLUMN public.tenants.plan   IS 'תוכנית המנוי: trial, basi
 
 -- -----------------------------------------------------------------------------
 -- פונקציית עזר לעדכון updated_at
+-- תיקון: search_path = public, auth במקום '' — נדרש כדי ש-auth.uid() יעבוד
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth
 AS $$
 BEGIN
   NEW.updated_at := now();
@@ -81,6 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 3: פונקציות עזר לשימוש ב-RLS
+-- תיקון: search_path = public, auth — נדרש כדי ש-auth.uid() יהיה נגיש
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
@@ -88,7 +90,7 @@ RETURNS uuid
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth
 AS $$
   SELECT tenant_id
   FROM public.user_profiles
@@ -104,7 +106,7 @@ RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth
 AS $$
   SELECT role
   FROM public.user_profiles
@@ -120,7 +122,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -160,9 +162,10 @@ ALTER TABLE public.purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4b: יצירת טנאנט ברירת מחדל ועדכון נתונים קיימים
+-- תיקון: הוספת LANGUAGE plpgsql מפורש ל-DO block
 -- -----------------------------------------------------------------------------
 
-DO $$
+DO $migration$
 DECLARE
   v_tenant_id uuid;
 BEGIN
@@ -194,7 +197,8 @@ BEGIN
 
   RAISE NOTICE 'Default tenant seeded with id: %', v_tenant_id;
 END;
-$$;
+$migration$
+LANGUAGE plpgsql;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4c: אכיפת NOT NULL לאחר מילוי הנתונים
@@ -235,8 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_purchase_order_lines_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 6: הפעלת Row Level Security
--- הערה: FORCE ROW LEVEL SECURITY הוסר כי עלול להיכשל על טבלאות שבבעלות
---        המשתמש המריץ את המיגרציה. ניתן להוסיפו ידנית דרך ה-Dashboard.
+-- תיקון: הפעלת RLS לפני יצירת הפוליסות (סדר נכון)
 -- -----------------------------------------------------------------------------
 
 ALTER TABLE public.tenants              ENABLE ROW LEVEL SECURITY;
@@ -251,6 +254,8 @@ ALTER TABLE public.purchase_order_lines ENABLE ROW LEVEL SECURITY;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 7: פוליסות RLS — טבלת tenants
+-- תיקון: שימוש ב-(SELECT public.get_my_tenant_id()) לביצועים טובים יותר
+--         (מונע קריאה חוזרת לפונקציה עבור כל שורה)
 -- -----------------------------------------------------------------------------
 
 DROP POLICY IF EXISTS "tenants_select_own"         ON public.tenants;
@@ -260,20 +265,20 @@ DROP POLICY IF EXISTS "tenants_delete_super_admin" ON public.tenants;
 
 CREATE POLICY "tenants_select_own"
   ON public.tenants FOR SELECT
-  USING (id = public.get_my_tenant_id());
+  USING (id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "tenants_insert_super_admin"
   ON public.tenants FOR INSERT
-  WITH CHECK (public.get_my_role() = 'super_admin');
+  WITH CHECK ((SELECT public.get_my_role()) = 'super_admin');
 
 CREATE POLICY "tenants_update_super_admin"
   ON public.tenants FOR UPDATE
-  USING     (public.get_my_role() = 'super_admin')
-  WITH CHECK (public.get_my_role() = 'super_admin');
+  USING     ((SELECT public.get_my_role()) = 'super_admin')
+  WITH CHECK ((SELECT public.get_my_role()) = 'super_admin');
 
 CREATE POLICY "tenants_delete_super_admin"
   ON public.tenants FOR DELETE
-  USING (public.get_my_role() = 'super_admin');
+  USING ((SELECT public.get_my_role()) = 'super_admin');
 
 -- -----------------------------------------------------------------------------
 -- SECTION 8: פוליסות RLS — טבלת user_profiles
@@ -286,31 +291,31 @@ DROP POLICY IF EXISTS "user_profiles_delete_admin"         ON public.user_profil
 
 CREATE POLICY "user_profiles_select_same_tenant"
   ON public.user_profiles FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "user_profiles_insert_admin"
   ON public.user_profiles FOR INSERT
   WITH CHECK (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
   );
 
 CREATE POLICY "user_profiles_update_admin_or_self"
   ON public.user_profiles FOR UPDATE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND (id = auth.uid() OR public.is_tenant_admin())
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (id = auth.uid() OR (SELECT public.is_tenant_admin()))
   )
   WITH CHECK (
-    tenant_id = public.get_my_tenant_id()
-    AND (id = auth.uid() OR public.is_tenant_admin())
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (id = auth.uid() OR (SELECT public.is_tenant_admin()))
   );
 
 CREATE POLICY "user_profiles_delete_admin"
   ON public.user_profiles FOR DELETE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
     AND id <> auth.uid()
   );
 
@@ -325,22 +330,22 @@ DROP POLICY IF EXISTS "projects_delete_admin_only" ON public.projects;
 
 CREATE POLICY "projects_select_own_tenant"
   ON public.projects FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "projects_insert_own_tenant"
   ON public.projects FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "projects_update_own_tenant"
   ON public.projects FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "projects_delete_admin_only"
   ON public.projects FOR DELETE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
   );
 
 -- -----------------------------------------------------------------------------
@@ -354,22 +359,22 @@ DROP POLICY IF EXISTS "contracts_delete_admin_only" ON public.contracts;
 
 CREATE POLICY "contracts_select_own_tenant"
   ON public.contracts FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "contracts_insert_own_tenant"
   ON public.contracts FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "contracts_update_own_tenant"
   ON public.contracts FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "contracts_delete_admin_only"
   ON public.contracts FOR DELETE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
   );
 
 -- -----------------------------------------------------------------------------
@@ -383,22 +388,22 @@ DROP POLICY IF EXISTS "purchase_orders_delete_admin_only" ON public.purchase_ord
 
 CREATE POLICY "purchase_orders_select_own_tenant"
   ON public.purchase_orders FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "purchase_orders_insert_own_tenant"
   ON public.purchase_orders FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "purchase_orders_update_own_tenant"
   ON public.purchase_orders FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "purchase_orders_delete_admin_only"
   ON public.purchase_orders FOR DELETE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
   );
 
 -- -----------------------------------------------------------------------------
@@ -412,22 +417,22 @@ DROP POLICY IF EXISTS "goods_receipts_delete_admin_only" ON public.goods_receipt
 
 CREATE POLICY "goods_receipts_select_own_tenant"
   ON public.goods_receipts FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "goods_receipts_insert_own_tenant"
   ON public.goods_receipts FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "goods_receipts_update_own_tenant"
   ON public.goods_receipts FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "goods_receipts_delete_admin_only"
   ON public.goods_receipts FOR DELETE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
   );
 
 -- -----------------------------------------------------------------------------
@@ -441,22 +446,22 @@ DROP POLICY IF EXISTS "vendor_invoices_delete_admin_only" ON public.vendor_invoi
 
 CREATE POLICY "vendor_invoices_select_own_tenant"
   ON public.vendor_invoices FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "vendor_invoices_insert_own_tenant"
   ON public.vendor_invoices FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "vendor_invoices_update_own_tenant"
   ON public.vendor_invoices FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "vendor_invoices_delete_admin_only"
   ON public.vendor_invoices FOR DELETE
   USING (
-    tenant_id = public.get_my_tenant_id()
-    AND public.is_tenant_admin()
+    tenant_id = (SELECT public.get_my_tenant_id())
+    AND (SELECT public.is_tenant_admin())
   );
 
 -- -----------------------------------------------------------------------------
@@ -470,20 +475,20 @@ DROP POLICY IF EXISTS "contract_lines_delete_own_tenant" ON public.contract_line
 
 CREATE POLICY "contract_lines_select_own_tenant"
   ON public.contract_lines FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "contract_lines_insert_own_tenant"
   ON public.contract_lines FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "contract_lines_update_own_tenant"
   ON public.contract_lines FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "contract_lines_delete_own_tenant"
   ON public.contract_lines FOR DELETE
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 -- -----------------------------------------------------------------------------
 -- SECTION 15: פוליסות RLS — טבלת purchase_order_lines
@@ -496,20 +501,20 @@ DROP POLICY IF EXISTS "purchase_order_lines_delete_own_tenant" ON public.purchas
 
 CREATE POLICY "purchase_order_lines_select_own_tenant"
   ON public.purchase_order_lines FOR SELECT
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "purchase_order_lines_insert_own_tenant"
   ON public.purchase_order_lines FOR INSERT
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "purchase_order_lines_update_own_tenant"
   ON public.purchase_order_lines FOR UPDATE
-  USING     (tenant_id = public.get_my_tenant_id())
-  WITH CHECK (tenant_id = public.get_my_tenant_id());
+  USING     (tenant_id = (SELECT public.get_my_tenant_id()))
+  WITH CHECK (tenant_id = (SELECT public.get_my_tenant_id()));
 
 CREATE POLICY "purchase_order_lines_delete_own_tenant"
   ON public.purchase_order_lines FOR DELETE
-  USING (tenant_id = public.get_my_tenant_id());
+  USING (tenant_id = (SELECT public.get_my_tenant_id()));
 
 -- -----------------------------------------------------------------------------
 -- SECTION 16: הגדרת הרשאות — ביטול anon, מתן הרשאות ל-authenticated
@@ -547,7 +552,7 @@ CREATE OR REPLACE FUNCTION public.auto_set_tenant_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth
 AS $$
 BEGIN
   IF NEW.tenant_id IS NULL THEN
@@ -609,7 +614,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth
 AS $$
 DECLARE
   v_tenant_id uuid;
