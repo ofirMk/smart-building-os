@@ -20,21 +20,22 @@ CREATE TABLE IF NOT EXISTS public.tenants (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE  public.tenants            IS 'כל שורה מייצגת לקוח/חברה אחת במערכת ה-SaaS';
-COMMENT ON COLUMN public.tenants.slug       IS 'מזהה ייחודי ידידותי לשימוש ב-URL, לדוגמה: marker-ofek';
-COMMENT ON COLUMN public.tenants.status     IS 'מצב הטנאנט: active, suspended, cancelled, trial';
-COMMENT ON COLUMN public.tenants.plan       IS 'תוכנית המנוי: trial, basic, pro, enterprise';
+COMMENT ON TABLE  public.tenants        IS 'כל שורה מייצגת לקוח/חברה אחת במערכת ה-SaaS';
+COMMENT ON COLUMN public.tenants.slug   IS 'מזהה ייחודי ידידותי לשימוש ב-URL, לדוגמה: marker-ofek';
+COMMENT ON COLUMN public.tenants.status IS 'מצב הטנאנט: active, suspended, cancelled, trial';
+COMMENT ON COLUMN public.tenants.plan   IS 'תוכנית המנוי: trial, basic, pro, enterprise';
 
 -- -----------------------------------------------------------------------------
 -- פונקציית עזר לעדכון updated_at
--- תיקון: search_path = '' (ריק) לאבטחה מקסימלית + שימוש בשמות מלאים בתוך הפונקציה
+-- תיקון: SET search_path TO '' (עם TO במקום =)
 -- תיקון: שימוש ב-:= להשמה מפורשת ב-PL/pgSQL
 -- -----------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO ''
 AS $$
 BEGIN
   NEW.updated_at := now();
@@ -69,9 +70,9 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE  public.user_profiles            IS 'פרופיל משתמש המקשר בין auth.users לטנאנט ולתפקיד';
-COMMENT ON COLUMN public.user_profiles.role       IS 'תפקיד המשתמש בתוך הטנאנט שלו';
-COMMENT ON COLUMN public.user_profiles.tenant_id  IS 'NULL מותר זמנית עד לסיום תהליך ה-Onboarding';
+COMMENT ON TABLE  public.user_profiles           IS 'פרופיל משתמש המקשר בין auth.users לטנאנט ולתפקיד';
+COMMENT ON COLUMN public.user_profiles.role      IS 'תפקיד המשתמש בתוך הטנאנט שלו';
+COMMENT ON COLUMN public.user_profiles.tenant_id IS 'NULL מותר זמנית עד לסיום תהליך ה-Onboarding';
 
 CREATE TRIGGER user_profiles_set_updated_at
   BEFORE UPDATE ON public.user_profiles
@@ -83,8 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 3: פונקציות עזר לשימוש ב-RLS
--- תיקון: search_path = '' (ריק) + שמות מלאים בתוך הפונקציות
--- תיקון: הסרת גרשיים מ-search_path
+-- תיקון: SET search_path TO '' (עם TO במקום =)
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
@@ -92,7 +92,7 @@ RETURNS uuid
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO ''
 AS $$
   SELECT tenant_id
   FROM public.user_profiles
@@ -108,7 +108,7 @@ RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO ''
 AS $$
   SELECT role
   FROM public.user_profiles
@@ -124,7 +124,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO ''
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -164,14 +164,11 @@ ALTER TABLE public.purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4b: יצירת טנאנט ברירת מחדל ועדכון נתונים קיימים
--- תיקון: הפרדת INSERT ו-SELECT נפרד (ללא RETURNING אחרי ON CONFLICT DO NOTHING)
--- תיקון: המרת DO block לפונקציה זמנית למניעת בעיות linter עם DO blocks מורכבים
+-- תיקון: שימוש ב-DO $$ block פשוט במקום pg_temp functions
+--         (pg_temp לא תמיד נתמך במיגרציות Supabase)
 -- -----------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_temp.seed_default_tenant()
-RETURNS void
-LANGUAGE plpgsql
-AS $$
+DO $$
 DECLARE
   v_tenant_id uuid;
 BEGIN
@@ -207,8 +204,6 @@ BEGIN
   RAISE NOTICE 'Default tenant seeded with id: %', v_tenant_id;
 END;
 $$;
-
-SELECT pg_temp.seed_default_tenant();
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4c: אכיפת NOT NULL לאחר מילוי הנתונים
@@ -249,16 +244,13 @@ CREATE INDEX IF NOT EXISTS idx_purchase_order_lines_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 6: הפעלת Row Level Security
--- תיקון: פונקציה זמנית במקום DO block מורכב — קריא יותר ומטופל טוב יותר ע"י linter
+-- תיקון: DO $$ block פשוט במקום pg_temp function
 -- FORCE ROW LEVEL SECURITY — אוכף RLS גם על בעל הטבלה (חיוני לאבטחה)
 -- -----------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_temp.enable_rls_on_tables()
-RETURNS void
-LANGUAGE plpgsql
-AS $$
+DO $$
 DECLARE
-  v_tbl  text;
+  v_tbl    text;
   v_tables text[] := ARRAY[
     'tenants',
     'user_profiles',
@@ -288,16 +280,14 @@ BEGIN
 END;
 $$;
 
-SELECT pg_temp.enable_rls_on_tables();
-
 -- -----------------------------------------------------------------------------
 -- SECTION 7: פוליסות RLS — טבלת tenants
 -- -----------------------------------------------------------------------------
 
-DROP POLICY IF EXISTS "tenants_select_own"          ON public.tenants;
-DROP POLICY IF EXISTS "tenants_insert_super_admin"  ON public.tenants;
-DROP POLICY IF EXISTS "tenants_update_super_admin"  ON public.tenants;
-DROP POLICY IF EXISTS "tenants_delete_super_admin"  ON public.tenants;
+DROP POLICY IF EXISTS "tenants_select_own"         ON public.tenants;
+DROP POLICY IF EXISTS "tenants_insert_super_admin" ON public.tenants;
+DROP POLICY IF EXISTS "tenants_update_super_admin" ON public.tenants;
+DROP POLICY IF EXISTS "tenants_delete_super_admin" ON public.tenants;
 
 CREATE POLICY "tenants_select_own"
   ON public.tenants FOR SELECT
@@ -320,10 +310,10 @@ CREATE POLICY "tenants_delete_super_admin"
 -- SECTION 8: פוליסות RLS — טבלת user_profiles
 -- -----------------------------------------------------------------------------
 
-DROP POLICY IF EXISTS "user_profiles_select_same_tenant"      ON public.user_profiles;
-DROP POLICY IF EXISTS "user_profiles_insert_admin"            ON public.user_profiles;
-DROP POLICY IF EXISTS "user_profiles_update_admin_or_self"    ON public.user_profiles;
-DROP POLICY IF EXISTS "user_profiles_delete_admin"            ON public.user_profiles;
+DROP POLICY IF EXISTS "user_profiles_select_same_tenant"   ON public.user_profiles;
+DROP POLICY IF EXISTS "user_profiles_insert_admin"         ON public.user_profiles;
+DROP POLICY IF EXISTS "user_profiles_update_admin_or_self" ON public.user_profiles;
+DROP POLICY IF EXISTS "user_profiles_delete_admin"         ON public.user_profiles;
 
 CREATE POLICY "user_profiles_select_same_tenant"
   ON public.user_profiles FOR SELECT
@@ -576,20 +566,21 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.vendor_invoices      TO authentic
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.contract_lines       TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchase_order_lines TO authenticated;
 
+-- תיקון: הוספת חתימה מלאה עם () לפונקציות ב-GRANT EXECUTE
 GRANT EXECUTE ON FUNCTION public.get_my_tenant_id() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_role()       TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_tenant_admin()   TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 17: Trigger — הגדרת tenant_id אוטומטית בעת INSERT
--- תיקון: search_path = '' + שמות מלאים + := להשמה
+-- תיקון: SET search_path TO '' (עם TO במקום =)
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.auto_set_tenant_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO ''
 AS $$
 BEGIN
   IF NEW.tenant_id IS NULL THEN
@@ -603,6 +594,15 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- תיקון: שימוש ב-DROP TRIGGER IF EXISTS לפני CREATE (ולא CREATE OR REPLACE שלא קיים ל-TRIGGER)
+DROP TRIGGER IF EXISTS auto_set_tenant_id_projects          ON public.projects;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_contracts         ON public.contracts;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_purchase_orders   ON public.purchase_orders;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_goods_receipts    ON public.goods_receipts;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_vendor_invoices   ON public.vendor_invoices;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_contract_lines    ON public.contract_lines;
+DROP TRIGGER IF EXISTS auto_set_tenant_id_purchase_order_lines ON public.purchase_order_lines;
 
 CREATE TRIGGER auto_set_tenant_id_projects
   BEFORE INSERT ON public.projects
@@ -634,14 +634,15 @@ CREATE TRIGGER auto_set_tenant_id_purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 18: Trigger — יצירת user_profile אוטומטית בעת הרשמה
--- תיקון: search_path = '' + שמות מלאים + := להשמה + וידוא role תקין
+-- תיקון: SET search_path TO '' (עם TO במקום =)
+-- תיקון: DROP TRIGGER IF EXISTS לפני CREATE (במקום DROP + CREATE נפרד)
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path TO ''
 AS $$
 DECLARE
   v_tenant_id uuid;
@@ -668,20 +669,11 @@ BEGIN
 END;
 $$;
 
+-- תיקון: DROP TRIGGER IF EXISTS לפני CREATE כדי לאפשר idempotent migration
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
-
--- -----------------------------------------------------------------------------
--- SECTION 19: תיעוד פוליסות
--- -----------------------------------------------------------------------------
-
-COMMENT ON POLICY "projects_select_own_tenant"       ON public.projects       IS 'משתמש רואה רק פרויקטים של הטנאנט שלו';
-COMMENT ON POLICY "contracts_select_own_tenant"      ON public.contracts      IS 'משתמש רואה רק חוזים של הטנאנט שלו';
-COMMENT ON POLICY "purchase_orders_select_own_tenant" ON public.purchase_orders IS 'משתמש רואה רק הזמנות רכש של הטנאנט שלו';
-COMMENT ON POLICY "goods_receipts_select_own_tenant" ON public.goods_receipts IS 'משתמש רואה רק תעודות משלוח של הטנאנט שלו';
-COMMENT ON POLICY "vendor_invoices_select_own_tenant" ON public.vendor_invoices IS 'משתמש רואה רק חשבוניות ספקים של הטנאנט שלו';
 
 -- =============================================================================
 -- סוף Migration
