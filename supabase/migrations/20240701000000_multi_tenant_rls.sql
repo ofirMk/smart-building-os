@@ -25,10 +25,14 @@ COMMENT ON COLUMN public.tenants.slug IS 'מזהה ייחודי ידידותי �
 COMMENT ON COLUMN public.tenants.status IS 'מצב הטנאנט: active, suspended, cancelled, trial';
 COMMENT ON COLUMN public.tenants.plan IS 'תוכנית המנוי: trial, basic, pro, enterprise';
 
--- Trigger לעדכון אוטומטי של updated_at
+-- -----------------------------------------------------------------------------
+-- תיקון #1: הוספת SET search_path לפונקציית plpgsql לאבטחה
+-- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   NEW.updated_at = now();
@@ -47,14 +51,16 @@ CREATE TRIGGER tenants_set_updated_at
 
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id          UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  tenant_id   UUID        NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id   UUID        REFERENCES public.tenants(id) ON DELETE CASCADE,
+  -- הערה: tenant_id מאפשר NULL זמנית כדי לתמוך ב-Trigger של auth.users
+  -- שמוסיף את המשתמש לפני שהטנאנט נקבע בתהליך ה-Onboarding
   role        TEXT        NOT NULL DEFAULT 'member'
                           CHECK (role IN (
-                            'tenant_admin',   -- מנהל החברה
-                            'member',         -- עובד רגיל
-                            'billing_manager',-- מנהל כספים
-                            'read_only',      -- צפייה בלבד
-                            'super_admin'     -- צוות ה-SaaS בלבד
+                            'tenant_admin',    -- מנהל החברה
+                            'member',          -- עובד רגיל
+                            'billing_manager', -- מנהל כספים
+                            'read_only',       -- צפייה בלבד
+                            'super_admin'      -- צוות ה-SaaS בלבד
                           )),
   full_name   TEXT,
   email       TEXT,
@@ -64,6 +70,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
 
 COMMENT ON TABLE public.user_profiles IS 'פרופיל משתמש המקשר בין auth.users לטנאנט ולתפקיד';
 COMMENT ON COLUMN public.user_profiles.role IS 'תפקיד המשתמש בתוך הטנאנט שלו';
+COMMENT ON COLUMN public.user_profiles.tenant_id IS 'NULL מותר זמנית עד לסיום תהליך ה-Onboarding';
 
 CREATE TRIGGER user_profiles_set_updated_at
   BEFORE UPDATE ON public.user_profiles
@@ -75,20 +82,19 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_tenant_id
   ON public.user_profiles(tenant_id);
 
 -- -----------------------------------------------------------------------------
--- SECTION 3: פונקציית עזר — חילוץ tenant_id של המשתמש המחובר
+-- SECTION 3: פונקציות עזר
 -- -----------------------------------------------------------------------------
--- פונקציה זו תשמש את כל פוליסות ה-RLS.
--- היא מחזירה את ה-tenant_id של המשתמש הנוכחי מתוך טבלת user_profiles.
--- SECURITY DEFINER מאפשר לה לרוץ עם הרשאות המגדיר (לא המשתמש),
--- כדי לקרוא מ-user_profiles גם כשה-RLS על אותה טבלה פעיל.
+-- תיקון #2: התחביר הנכון ל-SET search_path בפונקציות sql הוא כ-option
+-- נפרד בשורה עצמאית לפני AS $$ — זהו התחביר התקני של PostgreSQL.
 -- -----------------------------------------------------------------------------
 
+-- פונקציה: חילוץ tenant_id של המשתמש המחובר
 CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
 RETURNS UUID
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path TO 'public'
 AS $$
   SELECT tenant_id
   FROM public.user_profiles
@@ -99,13 +105,13 @@ $$;
 COMMENT ON FUNCTION public.get_my_tenant_id() IS
   'מחזירה את tenant_id של המשתמש המחובר כרגע. משמשת את פוליסות ה-RLS.';
 
--- פונקציית עזר לבדיקת תפקיד המשתמש
+-- פונקציה: בדיקת תפקיד המשתמש
 CREATE OR REPLACE FUNCTION public.get_my_role()
 RETURNS TEXT
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path TO 'public'
 AS $$
   SELECT role
   FROM public.user_profiles
@@ -116,13 +122,13 @@ $$;
 COMMENT ON FUNCTION public.get_my_role() IS
   'מחזירה את התפקיד של המשתמש המחובר כרגע.';
 
--- פונקציית עזר — האם המשתמש הוא tenant_admin או super_admin?
+-- פונקציה: האם המשתמש הוא tenant_admin או super_admin?
 CREATE OR REPLACE FUNCTION public.is_tenant_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path TO 'public'
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -131,6 +137,9 @@ AS $$
       AND role IN ('tenant_admin', 'super_admin')
   );
 $$;
+
+COMMENT ON FUNCTION public.is_tenant_admin() IS
+  'מחזירה TRUE אם המשתמש המחובר הוא tenant_admin או super_admin.';
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4: הוספת עמודת tenant_id לטבלאות הליבה
@@ -165,15 +174,15 @@ ALTER TABLE public.purchase_order_lines
 -- -----------------------------------------------------------------------------
 -- SECTION 4b: יצירת טנאנט ברירת מחדל לנתונים קיימים (Marker Ofek)
 -- -----------------------------------------------------------------------------
--- חשוב: בסביבת production יש להחליף את הערכים הבאים בערכים אמיתיים.
--- הבלוק DO מאפשר לנו להשתמש ב-PL/pgSQL בתוך migration.
+-- תיקון #3: הפרדת INSERT ו-SELECT כדי לעקוף את הבעיה של
+-- ON CONFLICT DO NOTHING + RETURNING שלא מחזיר שורה כשיש conflict.
 -- -----------------------------------------------------------------------------
 
 DO $$
 DECLARE
   v_default_tenant_id UUID;
 BEGIN
-  -- יצירת טנאנט ברירת מחדל עבור הנתונים הקיימים
+  -- שלב א: ניסיון הכנסה — אם ה-slug כבר קיים, לא נעשה כלום
   INSERT INTO public.tenants (id, name, slug, status, plan)
   VALUES (
     gen_random_uuid(),
@@ -182,23 +191,24 @@ BEGIN
     'active',
     'enterprise'
   )
-  ON CONFLICT (slug) DO NOTHING
-  RETURNING id INTO v_default_tenant_id;
+  ON CONFLICT (slug) DO NOTHING;
 
-  -- אם הטנאנט כבר קיים, נחלץ את ה-id שלו
+  -- שלב ב: חילוץ ה-id בכל מקרה (בין אם הוכנס עכשיו ובין אם היה קיים)
+  SELECT id INTO v_default_tenant_id
+  FROM public.tenants
+  WHERE slug = 'marker-ofek';
+
   IF v_default_tenant_id IS NULL THEN
-    SELECT id INTO v_default_tenant_id
-    FROM public.tenants
-    WHERE slug = 'marker-ofek';
+    RAISE EXCEPTION 'Failed to create or find default tenant for slug: marker-ofek';
   END IF;
 
-  -- עדכון כל הנתונים הקיימים עם ה-tenant_id של Marker Ofek
-  UPDATE public.projects        SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
-  UPDATE public.contracts       SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
-  UPDATE public.purchase_orders SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
-  UPDATE public.goods_receipts  SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
-  UPDATE public.vendor_invoices SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
-  UPDATE public.contract_lines  SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
+  -- שלב ג: עדכון כל הנתונים הקיימים עם ה-tenant_id של Marker Ofek
+  UPDATE public.projects             SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
+  UPDATE public.contracts            SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
+  UPDATE public.purchase_orders      SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
+  UPDATE public.goods_receipts       SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
+  UPDATE public.vendor_invoices      SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
+  UPDATE public.contract_lines       SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
   UPDATE public.purchase_order_lines SET tenant_id = v_default_tenant_id WHERE tenant_id IS NULL;
 
   RAISE NOTICE 'Default tenant created/found with id: %', v_default_tenant_id;
@@ -245,16 +255,41 @@ CREATE INDEX IF NOT EXISTS idx_purchase_order_lines_tenant_id
 -- -----------------------------------------------------------------------------
 -- SECTION 6: הפעלת Row Level Security על כל הטבלאות
 -- -----------------------------------------------------------------------------
+-- תיקון #4: שימוש ב-DO block כדי להפעיל RLS רק על טבלאות קיימות,
+-- ולמנוע שגיאה אם טבלה לא קיימת בסביבה מסוימת.
+-- -----------------------------------------------------------------------------
 
-ALTER TABLE public.tenants              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_profiles        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.projects             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contracts            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.purchase_orders      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.goods_receipts       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vendor_invoices      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contract_lines       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.purchase_order_lines ENABLE ROW LEVEL SECURITY;
+DO $$
+DECLARE
+  tbl TEXT;
+  tables_to_secure TEXT[] := ARRAY[
+    'tenants',
+    'user_profiles',
+    'projects',
+    'contracts',
+    'purchase_orders',
+    'goods_receipts',
+    'vendor_invoices',
+    'contract_lines',
+    'purchase_order_lines'
+  ];
+BEGIN
+  FOREACH tbl IN ARRAY tables_to_secure LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name = tbl
+    ) THEN
+      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
+      EXECUTE format('ALTER TABLE public.%I FORCE ROW LEVEL SECURITY', tbl);
+      RAISE NOTICE 'RLS enabled on table: %', tbl;
+    ELSE
+      RAISE WARNING 'Table % does not exist, skipping RLS activation', tbl;
+    END IF;
+  END LOOP;
+END;
+$$;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 7: פוליסות RLS — טבלת tenants
@@ -330,7 +365,7 @@ CREATE POLICY "user_profiles_delete_admin"
   USING (
     tenant_id = public.get_my_tenant_id()
     AND public.is_tenant_admin()
-    AND id != auth.uid()  -- מנהל לא יכול למחוק את עצמו
+    AND id <> auth.uid()  -- מנהל לא יכול למחוק את עצמו
   );
 
 -- -----------------------------------------------------------------------------
@@ -555,11 +590,11 @@ CREATE POLICY "purchase_order_lines_delete_own_tenant"
 -- SECTION 16: הגדרת Service Role Bypass
 -- -----------------------------------------------------------------------------
 -- ה-service_role של Supabase עוקף RLS באופן אוטומטי.
--- אנו מוסיפים פוליסת bypass מפורשת ל-anon role כדי לחסום גישה ישירה.
+-- אנו מבטלים גישת anon לטבלאות הרגישות ומעניקים הרשאות ל-authenticated בלבד.
 -- הערה: ה-service_role key חייב להישמר בצד השרת בלבד (env variables).
 -- -----------------------------------------------------------------------------
 
--- ביטול גישת anon לטבלאות הרגישות (ברירת מחדל של Supabase נותנת גישה ל-anon)
+-- ביטול גישת anon לטבלאות הרגישות
 REVOKE ALL ON public.tenants              FROM anon;
 REVOKE ALL ON public.user_profiles        FROM anon;
 REVOKE ALL ON public.projects             FROM anon;
@@ -582,9 +617,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.contract_lines       TO authentic
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchase_order_lines TO authenticated;
 
 -- הרשאות על הפונקציות
-GRANT EXECUTE ON FUNCTION public.get_my_tenant_id()  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_my_role()        TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_tenant_admin()    TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_my_tenant_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_my_role()       TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_tenant_admin()   TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 17: Trigger אוטומטי — הגדרת tenant_id בעת INSERT
@@ -647,7 +682,7 @@ CREATE TRIGGER auto_set_tenant_id_purchase_order_lines
 -- SECTION 18: Trigger אוטומטי — יצירת user_profile בעת הרשמה
 -- -----------------------------------------------------------------------------
 -- כאשר משתמש חדש נרשם ב-Supabase Auth, נוצר אוטומטית פרופיל בסיסי.
--- הטנאנט יוגדר בשלב ה-Onboarding.
+-- הטנאנט יוגדר בשלב ה-Onboarding (tenant_id יכול להיות NULL זמנית).
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
@@ -656,16 +691,26 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_tenant_id UUID;
+  v_role      TEXT;
 BEGIN
-  -- יצירת פרופיל בסיסי — tenant_id יוגדר בתהליך ה-Onboarding
-  -- לכן אנו מאפשרים NULL זמנית (הטבלה תעודכן לאחר מכן)
+  -- חילוץ tenant_id ו-role מה-metadata (אם קיימים)
+  v_tenant_id := (NEW.raw_user_meta_data->>'tenant_id')::UUID;
+  v_role      := COALESCE(NEW.raw_user_meta_data->>'role', 'member');
+
+  -- וידוא שה-role תקין
+  IF v_role NOT IN ('tenant_admin', 'member', 'billing_manager', 'read_only', 'super_admin') THEN
+    v_role := 'member';
+  END IF;
+
   INSERT INTO public.user_profiles (id, email, full_name, tenant_id, role)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    (NEW.raw_user_meta_data->>'tenant_id')::UUID,  -- מגיע מה-metadata בעת הרשמה
-    COALESCE(NEW.raw_user_meta_data->>'role', 'member')
+    v_tenant_id,  -- יכול להיות NULL — יוגדר בתהליך ה-Onboarding
+    v_role
   )
   ON CONFLICT (id) DO NOTHING;
 
@@ -683,11 +728,11 @@ CREATE TRIGGER on_auth_user_created
 -- SECTION 19: תיעוד סיכום
 -- -----------------------------------------------------------------------------
 
-COMMENT ON POLICY "projects_select_own_tenant"    ON public.projects IS 'משתמש רואה רק פרויקטים של הטנאנט שלו';
-COMMENT ON POLICY "contracts_select_own_tenant"   ON public.contracts IS 'משתמש רואה רק חוזים של הטנאנט שלו';
-COMMENT ON POLICY "purchase_orders_select_own_tenant" ON public.purchase_orders IS 'משתמש רואה רק הזמנות רכש של הטנאנט שלו';
-COMMENT ON POLICY "goods_receipts_select_own_tenant"  ON public.goods_receipts IS 'משתמש רואה רק תעודות משלוח של הטנאנט שלו';
-COMMENT ON POLICY "vendor_invoices_select_own_tenant" ON public.vendor_invoices IS 'משתמש רואה רק חשבוניות ספקים של הטנאנט שלו';
+COMMENT ON POLICY "projects_select_own_tenant"        ON public.projects        IS 'משתמש רואה רק פרויקטים של הטנאנט שלו';
+COMMENT ON POLICY "contracts_select_own_tenant"        ON public.contracts        IS 'משתמש רואה רק חוזים של הטנאנט שלו';
+COMMENT ON POLICY "purchase_orders_select_own_tenant"  ON public.purchase_orders  IS 'משתמש רואה רק הזמנות רכש של הטנאנט שלו';
+COMMENT ON POLICY "goods_receipts_select_own_tenant"   ON public.goods_receipts   IS 'משתמש רואה רק תעודות משלוח של הטנאנט שלו';
+COMMENT ON POLICY "vendor_invoices_select_own_tenant"  ON public.vendor_invoices  IS 'משתמש רואה רק חשבוניות ספקים של הטנאנט שלו';
 
 -- =============================================================================
 -- סוף Migration
