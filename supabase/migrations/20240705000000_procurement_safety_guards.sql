@@ -8,7 +8,6 @@
 -- P0-01: CHECK constraints על purchase_order_lines
 -- quantity חייב להיות גדול מ-0
 -- unit_price חייב להיות גדול או שווה ל-0
--- תיקון: הסרת COMMENT ON CONSTRAINT — לא נתמך ב-PostgreSQL
 -- -----------------------------------------------------------------------------
 
 ALTER TABLE public.purchase_order_lines
@@ -23,13 +22,15 @@ ALTER TABLE public.purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- P0-02: מניעת UPDATE/DELETE על purchase_orders בסטטוס ISSUED או CLOSED
--- תיקון: פישוט הלוגיקה — הגדרת מפורשת של מעברי סטטוס מותרים
--- תיקון: מיזוג עם P0-03 (ביטול עם GR) לפונקציה אחת מסודרת
+-- ואכיפת מעברי סטטוס חוקיים בלבד
+-- תיקון: החזרת OLD ב-DELETE (לא NEW) + SECURITY DEFINER + search_path
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_po_immutable_statuses()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 BEGIN
   -- -----------------------------------------------------------------------
@@ -42,16 +43,25 @@ BEGIN
         OLD.status, OLD.id
         USING ERRCODE = 'P0002';
     END IF;
+    -- תיקון: ב-DELETE חייבים להחזיר OLD ולא NEW
     RETURN OLD;
   END IF;
 
   -- -----------------------------------------------------------------------
-  -- טיפול ב-UPDATE
+  -- טיפול ב-UPDATE — אכיפת State Machine
   -- -----------------------------------------------------------------------
   IF TG_OP = 'UPDATE' THEN
 
-    -- הגדרת מעברי סטטוס מותרים במפורש
-    -- מ-ISSUED: מותר לעבור ל-PARTIALLY_RECEIVED, FULLY_RECEIVED, CLOSED בלבד
+    -- מ-CLOSED: אין שום מעבר מותר
+    IF OLD.status = 'CLOSED' THEN
+      RAISE EXCEPTION
+        'P0-02: לא ניתן לשנות הזמנת רכש סגורה (CLOSED). מזהה הזמנה: %',
+        OLD.id
+        USING ERRCODE = 'P0002';
+    END IF;
+
+    -- מ-ISSUED: מותר רק ל-PARTIALLY_RECEIVED, FULLY_RECEIVED, CLOSED
+    -- הערה: CANCELLED מ-ISSUED נחסם כאן — יש לבטל רק לפני הנפקה
     IF OLD.status = 'ISSUED' THEN
       IF NEW.status NOT IN ('PARTIALLY_RECEIVED', 'FULLY_RECEIVED', 'CLOSED') THEN
         RAISE EXCEPTION
@@ -62,15 +72,7 @@ BEGIN
       RETURN NEW;
     END IF;
 
-    -- מ-CLOSED: אין מעבר מותר כלל
-    IF OLD.status = 'CLOSED' THEN
-      RAISE EXCEPTION
-        'P0-02: לא ניתן לשנות הזמנת רכש סגורה (CLOSED). מזהה הזמנה: %',
-        OLD.id
-        USING ERRCODE = 'P0002';
-    END IF;
-
-    -- מ-PARTIALLY_RECEIVED: מותר לעבור ל-FULLY_RECEIVED או CLOSED בלבד
+    -- מ-PARTIALLY_RECEIVED: מותר רק ל-FULLY_RECEIVED, CLOSED
     IF OLD.status = 'PARTIALLY_RECEIVED' THEN
       IF NEW.status NOT IN ('FULLY_RECEIVED', 'CLOSED') THEN
         RAISE EXCEPTION
@@ -81,7 +83,7 @@ BEGIN
       RETURN NEW;
     END IF;
 
-    -- מ-FULLY_RECEIVED: מותר לעבור ל-CLOSED בלבד
+    -- מ-FULLY_RECEIVED: מותר רק ל-CLOSED
     IF OLD.status = 'FULLY_RECEIVED' THEN
       IF NEW.status != 'CLOSED' THEN
         RAISE EXCEPTION
@@ -94,6 +96,7 @@ BEGIN
 
   END IF;
 
+  -- ברירת מחדל: אפשר את הפעולה (DRAFT, PENDING_APPROVAL, APPROVED, CANCELLED)
   RETURN NEW;
 END;
 $$;
@@ -110,12 +113,16 @@ CREATE TRIGGER trg_guard_po_immutable_statuses
 
 -- -----------------------------------------------------------------------------
 -- P0-03: מניעת ביטול PO (CANCELLED) כאשר קיים GR מקושר
--- תיקון: trigger נפרד ומוגדר בבירור, ללא כפילות עם P0-02
+-- הערה: trigger זה רץ לפני fn_guard_po_immutable_statuses בגלל סדר יצירה,
+--       אך שניהם BEFORE UPDATE — PostgreSQL מריץ triggers לפי סדר אלפביתי
+--       של שמם. trg_guard_po_cancel_with_gr רץ לפני trg_guard_po_immutable_statuses.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_po_cancel_with_gr()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
   v_gr_count INTEGER;
@@ -153,13 +160,15 @@ CREATE TRIGGER trg_guard_po_cancel_with_gr
 
 -- -----------------------------------------------------------------------------
 -- P0-04: מניעת GR בכמות חריגה מעל הכמות שנותרה להזמנה
--- תיקון: הוספת LIMIT 1 לשאילתת הסטטוס למניעת שגיאת "more than one row"
--- תיקון: הפרדת שאילתת הסטטוס משאילתת הכמות לבהירות ובטיחות
+-- תיקון: הוספת בדיקת NULL על purchase_order_line_id
+-- תיקון: SECURITY DEFINER + search_path
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_gr_quantity_overflow()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
   v_ordered_qty      NUMERIC;
@@ -170,7 +179,14 @@ DECLARE
 BEGIN
   v_po_line_id := NEW.purchase_order_line_id;
 
-  -- תיקון: שאילתה נפרדת לסטטוס עם LIMIT 1 למניעת שגיאת ריבוי שורות
+  -- תיקון: בדיקת NULL על purchase_order_line_id לפני כל שאילתה
+  IF v_po_line_id IS NULL THEN
+    RAISE EXCEPTION
+      'P0-04: purchase_order_line_id הוא שדה חובה בתעודת משלוח'
+      USING ERRCODE = 'P0004';
+  END IF;
+
+  -- שאילתה לסטטוס ה-PO עם LIMIT 1 למניעת שגיאת ריבוי שורות
   SELECT po.status
   INTO v_po_status
   FROM public.purchase_orders po
@@ -199,7 +215,8 @@ BEGIN
   FROM public.purchase_order_lines pol
   WHERE pol.id = v_po_line_id;
 
-  -- חישוב הכמות שכבר התקבלה (לא כולל השורה הנוכחית ב-UPDATE)
+  -- חישוב הכמות שכבר התקבלה
+  -- ב-UPDATE: מחסירים את הערך הנוכחי של אותה שורה כדי לא לספור אותה פעמיים
   SELECT COALESCE(SUM(gr.received_quantity), 0)
   INTO v_already_received
   FROM public.goods_receipts gr
@@ -208,6 +225,7 @@ BEGIN
 
   v_remaining_qty := v_ordered_qty - v_already_received;
 
+  -- בדיקת כמות חיובית
   IF NEW.received_quantity <= 0 THEN
     RAISE EXCEPTION
       'P0-04: כמות הקבלה חייבת להיות גדולה מ-0. התקבל: %',
@@ -215,6 +233,7 @@ BEGIN
       USING ERRCODE = 'P0004';
   END IF;
 
+  -- בדיקת חריגה מהכמות שנותרה
   IF NEW.received_quantity > v_remaining_qty THEN
     RAISE EXCEPTION
       'P0-04: כמות הקבלה (%) חורגת מהכמות שנותרה להזמנה (%). הוזמן: %, התקבל עד כה: %',
@@ -238,11 +257,14 @@ CREATE TRIGGER trg_guard_gr_quantity_overflow
 
 -- -----------------------------------------------------------------------------
 -- P0-05: מניעת מחיקת שורת PO שכבר קושרה לתעודת משלוח (GR)
+-- תיקון: SECURITY DEFINER + search_path
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_pol_delete_with_gr()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
   v_gr_count INTEGER;
@@ -275,20 +297,23 @@ CREATE TRIGGER trg_guard_pol_delete_with_gr
 
 -- -----------------------------------------------------------------------------
 -- P0-06: מניעת שמירת PO ללא שורות (לפחות שורה אחת)
--- תיקון: פיצול SELECT INTO לשני משתנים נפרדים למניעת שגיאת GROUP BY
---        (SELECT INTO עם GROUP BY עלול להחזיר מספר שורות)
+-- BEFORE DELETE — סופרים שורות שנותרות לאחר המחיקה (מחסירים את השורה הנמחקת)
+-- תיקון: SECURITY DEFINER + search_path
+-- תיקון: לוגיקת הספירה מפורשת ובטוחה
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_po_min_one_line()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
   v_line_count INTEGER;
   v_po_status  TEXT;
   v_po_exists  BOOLEAN;
 BEGIN
-  -- בדיקה האם ה-PO עדיין קיים
+  -- בדיקה האם ה-PO עדיין קיים (לא נמחק בעצמו)
   SELECT EXISTS (
     SELECT 1
     FROM public.purchase_orders po
@@ -300,21 +325,25 @@ BEGIN
     RETURN OLD;
   END IF;
 
-  -- חילוץ סטטוס ה-PO בנפרד
+  -- חילוץ סטטוס ה-PO
   SELECT po.status
   INTO v_po_status
   FROM public.purchase_orders po
   WHERE po.id = OLD.purchase_order_id;
 
-  -- ספירת השורות שנותרו לאחר המחיקה
+  -- בדיקה רלוונטית רק לסטטוסים פעילים
+  IF v_po_status NOT IN ('DRAFT', 'PENDING_APPROVAL', 'APPROVED') THEN
+    RETURN OLD;
+  END IF;
+
+  -- ספירת השורות שיישארו לאחר המחיקה (לא כולל השורה הנמחקת)
   SELECT COUNT(*)
   INTO v_line_count
   FROM public.purchase_order_lines pol
   WHERE pol.purchase_order_id = OLD.purchase_order_id
     AND pol.id != OLD.id;
 
-  -- PO בסטטוסים פעילים חייב להכיל לפחות שורה אחת
-  IF v_line_count = 0 AND v_po_status IN ('DRAFT', 'PENDING_APPROVAL', 'APPROVED') THEN
+  IF v_line_count = 0 THEN
     RAISE EXCEPTION
       'P0-06: לא ניתן למחוק את כל שורות הזמנת הרכש %. הזמנה חייבת להכיל לפחות שורה אחת.',
       OLD.purchase_order_id
@@ -328,7 +357,6 @@ $$;
 COMMENT ON FUNCTION public.fn_guard_po_min_one_line() IS
   'P0-06: מונע מחיקת כל שורות הזמנת הרכש — חייבת להישאר לפחות שורה אחת';
 
--- תיקון: שינוי מ-AFTER ל-BEFORE DELETE כדי שנוכל לספור נכון לפני המחיקה
 DROP TRIGGER IF EXISTS trg_guard_po_min_one_line ON public.purchase_order_lines;
 
 CREATE TRIGGER trg_guard_po_min_one_line
@@ -355,7 +383,7 @@ CREATE INDEX IF NOT EXISTS idx_purchase_order_lines_po_id
 -- P0-01: CHECK quantity > 0 ו-unit_price >= 0 על purchase_order_lines
 -- P0-02: TRIGGER מניעת UPDATE/DELETE על PO בסטטוס ISSUED/CLOSED + מעברי סטטוס חוקיים
 -- P0-03: TRIGGER מניעת CANCELLED על PO עם GR מקושר
--- P0-04: TRIGGER מניעת GR בכמות חריגה + בדיקת סטטוס PO
+-- P0-04: TRIGGER מניעת GR בכמות חריגה + בדיקת NULL + בדיקת סטטוס PO
 -- P0-05: TRIGGER מניעת מחיקת שורת PO עם GR מקושר
 -- P0-06: TRIGGER מניעת מחיקת כל שורות PO (מינימום שורה אחת)
 -- =============================================================================
