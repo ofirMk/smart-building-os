@@ -23,14 +23,13 @@ ALTER TABLE public.purchase_order_lines
 -- -----------------------------------------------------------------------------
 -- P0-02: מניעת UPDATE/DELETE על purchase_orders בסטטוס ISSUED או CLOSED
 -- ואכיפת מעברי סטטוס חוקיים בלבד
--- תיקון: החזרת OLD ב-DELETE (לא NEW) + SECURITY DEFINER + search_path
+-- תיקון: הסרת SECURITY DEFINER מפונקציות trigger — triggers רצים עם
+--        הרשאות בעל הטבלה ממילא. SECURITY DEFINER מיותר וגורם לאזהרות.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_po_immutable_statuses()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 BEGIN
   -- -----------------------------------------------------------------------
@@ -43,7 +42,6 @@ BEGIN
         OLD.status, OLD.id
         USING ERRCODE = 'P0002';
     END IF;
-    -- תיקון: ב-DELETE חייבים להחזיר OLD ולא NEW
     RETURN OLD;
   END IF;
 
@@ -61,7 +59,6 @@ BEGIN
     END IF;
 
     -- מ-ISSUED: מותר רק ל-PARTIALLY_RECEIVED, FULLY_RECEIVED, CLOSED
-    -- הערה: CANCELLED מ-ISSUED נחסם כאן — יש לבטל רק לפני הנפקה
     IF OLD.status = 'ISSUED' THEN
       IF NEW.status NOT IN ('PARTIALLY_RECEIVED', 'FULLY_RECEIVED', 'CLOSED') THEN
         RAISE EXCEPTION
@@ -113,21 +110,17 @@ CREATE TRIGGER trg_guard_po_immutable_statuses
 
 -- -----------------------------------------------------------------------------
 -- P0-03: מניעת ביטול PO (CANCELLED) כאשר קיים GR מקושר
--- הערה: trigger זה רץ לפני fn_guard_po_immutable_statuses בגלל סדר יצירה,
---       אך שניהם BEFORE UPDATE — PostgreSQL מריץ triggers לפי סדר אלפביתי
---       של שמם. trg_guard_po_cancel_with_gr רץ לפני trg_guard_po_immutable_statuses.
+-- הערה: PostgreSQL מריץ BEFORE triggers לפי סדר אלפביתי של שמם.
+--       trg_guard_po_cancel_with_gr רץ לפני trg_guard_po_immutable_statuses.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_po_cancel_with_gr()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 DECLARE
   v_gr_count INTEGER;
 BEGIN
-  -- רלוונטי רק כאשר הסטטוס החדש הוא CANCELLED והישן אינו CANCELLED
   IF NEW.status = 'CANCELLED' AND OLD.status != 'CANCELLED' THEN
 
     SELECT COUNT(*)
@@ -160,15 +153,11 @@ CREATE TRIGGER trg_guard_po_cancel_with_gr
 
 -- -----------------------------------------------------------------------------
 -- P0-04: מניעת GR בכמות חריגה מעל הכמות שנותרה להזמנה
--- תיקון: הוספת בדיקת NULL על purchase_order_line_id
--- תיקון: SECURITY DEFINER + search_path
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_gr_quantity_overflow()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 DECLARE
   v_ordered_qty      NUMERIC;
@@ -179,14 +168,12 @@ DECLARE
 BEGIN
   v_po_line_id := NEW.purchase_order_line_id;
 
-  -- תיקון: בדיקת NULL על purchase_order_line_id לפני כל שאילתה
   IF v_po_line_id IS NULL THEN
     RAISE EXCEPTION
       'P0-04: purchase_order_line_id הוא שדה חובה בתעודת משלוח'
       USING ERRCODE = 'P0004';
   END IF;
 
-  -- שאילתה לסטטוס ה-PO עם LIMIT 1 למניעת שגיאת ריבוי שורות
   SELECT po.status
   INTO v_po_status
   FROM public.purchase_orders po
@@ -209,14 +196,11 @@ BEGIN
       USING ERRCODE = 'P0004';
   END IF;
 
-  -- חילוץ הכמות שהוזמנה בשורה
   SELECT pol.quantity
   INTO v_ordered_qty
   FROM public.purchase_order_lines pol
   WHERE pol.id = v_po_line_id;
 
-  -- חישוב הכמות שכבר התקבלה
-  -- ב-UPDATE: מחסירים את הערך הנוכחי של אותה שורה כדי לא לספור אותה פעמיים
   SELECT COALESCE(SUM(gr.received_quantity), 0)
   INTO v_already_received
   FROM public.goods_receipts gr
@@ -225,7 +209,6 @@ BEGIN
 
   v_remaining_qty := v_ordered_qty - v_already_received;
 
-  -- בדיקת כמות חיובית
   IF NEW.received_quantity <= 0 THEN
     RAISE EXCEPTION
       'P0-04: כמות הקבלה חייבת להיות גדולה מ-0. התקבל: %',
@@ -233,7 +216,6 @@ BEGIN
       USING ERRCODE = 'P0004';
   END IF;
 
-  -- בדיקת חריגה מהכמות שנותרה
   IF NEW.received_quantity > v_remaining_qty THEN
     RAISE EXCEPTION
       'P0-04: כמות הקבלה (%) חורגת מהכמות שנותרה להזמנה (%). הוזמן: %, התקבל עד כה: %',
@@ -257,14 +239,11 @@ CREATE TRIGGER trg_guard_gr_quantity_overflow
 
 -- -----------------------------------------------------------------------------
 -- P0-05: מניעת מחיקת שורת PO שכבר קושרה לתעודת משלוח (GR)
--- תיקון: SECURITY DEFINER + search_path
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_pol_delete_with_gr()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 DECLARE
   v_gr_count INTEGER;
@@ -297,46 +276,37 @@ CREATE TRIGGER trg_guard_pol_delete_with_gr
 
 -- -----------------------------------------------------------------------------
 -- P0-06: מניעת שמירת PO ללא שורות (לפחות שורה אחת)
--- BEFORE DELETE — סופרים שורות שנותרות לאחר המחיקה (מחסירים את השורה הנמחקת)
--- תיקון: SECURITY DEFINER + search_path
--- תיקון: לוגיקת הספירה מפורשת ובטוחה
+-- BEFORE DELETE — סופרים שורות שנותרות לאחר המחיקה
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.fn_guard_po_min_one_line()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 DECLARE
   v_line_count INTEGER;
   v_po_status  TEXT;
   v_po_exists  BOOLEAN;
 BEGIN
-  -- בדיקה האם ה-PO עדיין קיים (לא נמחק בעצמו)
   SELECT EXISTS (
     SELECT 1
     FROM public.purchase_orders po
     WHERE po.id = OLD.purchase_order_id
   ) INTO v_po_exists;
 
-  -- אם ה-PO נמחק גם הוא — אין צורך בבדיקה
   IF NOT v_po_exists THEN
     RETURN OLD;
   END IF;
 
-  -- חילוץ סטטוס ה-PO
   SELECT po.status
   INTO v_po_status
   FROM public.purchase_orders po
   WHERE po.id = OLD.purchase_order_id;
 
-  -- בדיקה רלוונטית רק לסטטוסים פעילים
   IF v_po_status NOT IN ('DRAFT', 'PENDING_APPROVAL', 'APPROVED') THEN
     RETURN OLD;
   END IF;
 
-  -- ספירת השורות שיישארו לאחר המחיקה (לא כולל השורה הנמחקת)
   SELECT COUNT(*)
   INTO v_line_count
   FROM public.purchase_order_lines pol
