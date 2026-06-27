@@ -27,16 +27,13 @@ COMMENT ON COLUMN public.tenants.plan   IS 'תוכנית המנוי: trial, basi
 
 -- -----------------------------------------------------------------------------
 -- פונקציית עזר לעדכון updated_at
--- תיקון סופי: search_path = '' (ריק) — הדרך הבטוחה ביותר לפי תיעוד Supabase.
---             auth.uid() נקרא עם שם מלא ולכן לא צריך את auth ב-search_path.
---             הוספת auth ל-search_path גורמת לאזהרת אבטחה ב-linter.
+-- תיקון: הסרת SECURITY DEFINER — פונקציה זו אינה זקוקה לה.
+--        SECURITY INVOKER (ברירת מחדל) בטוח יותר כאן.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 BEGIN
   NEW.updated_at := now();
@@ -84,8 +81,9 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_tenant_id
 
 -- -----------------------------------------------------------------------------
 -- SECTION 3: פונקציות עזר לשימוש ב-RLS
--- תיקון סופי: search_path = '' — auth.uid() נקרא עם schema מלא ולכן עובד
---             גם ללא auth ב-search_path. זהו הפורמט המאושר ע"י Supabase.
+-- תיקון: SECURITY DEFINER נשמר רק כאן כי הפונקציות צריכות לקרוא
+--        מ-user_profiles גם כשה-RLS פעיל על אותה טבלה.
+--        search_path = '' (ריק) + שמות מלאים לכל אובייקט.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
@@ -165,9 +163,11 @@ ALTER TABLE public.purchase_order_lines
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4b: יצירת טנאנט ברירת מחדל ועדכון נתונים קיימים
+-- תיקון: DO $$ ... $$ ללא LANGUAGE בסוף — זהו התחביר התקני הנכון.
+--        LANGUAGE plpgsql הוא ברירת המחדל ל-DO blocks.
 -- -----------------------------------------------------------------------------
 
-DO $migration$
+DO $$
 DECLARE
   v_tenant_id uuid;
 BEGIN
@@ -199,8 +199,7 @@ BEGIN
 
   RAISE NOTICE 'Default tenant seeded with id: %', v_tenant_id;
 END;
-$migration$
-LANGUAGE plpgsql;
+$$;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4c: אכיפת NOT NULL לאחר מילוי הנתונים
@@ -517,42 +516,47 @@ CREATE POLICY "purchase_order_lines_delete_own_tenant"
 
 -- -----------------------------------------------------------------------------
 -- SECTION 16: הגדרת הרשאות — ביטול anon, מתן הרשאות ל-authenticated
+-- תיקון: עטיפת REVOKE/GRANT ב-DO block עם בדיקת קיום טבלה
+--        למניעת שגיאה אם טבלה לא קיימת בסביבה מסוימת
 -- -----------------------------------------------------------------------------
 
-REVOKE ALL ON public.tenants              FROM anon;
-REVOKE ALL ON public.user_profiles        FROM anon;
-REVOKE ALL ON public.projects             FROM anon;
-REVOKE ALL ON public.contracts            FROM anon;
-REVOKE ALL ON public.purchase_orders      FROM anon;
-REVOKE ALL ON public.goods_receipts       FROM anon;
-REVOKE ALL ON public.vendor_invoices      FROM anon;
-REVOKE ALL ON public.contract_lines       FROM anon;
-REVOKE ALL ON public.purchase_order_lines FROM anon;
+DO $$
+DECLARE
+  v_tbl  text;
+  v_tbls text[] := ARRAY[
+    'tenants', 'user_profiles', 'projects', 'contracts',
+    'purchase_orders', 'goods_receipts', 'vendor_invoices',
+    'contract_lines', 'purchase_order_lines'
+  ];
+BEGIN
+  FOREACH v_tbl IN ARRAY v_tbls LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = v_tbl
+    ) THEN
+      EXECUTE format('REVOKE ALL ON public.%I FROM anon', v_tbl);
+      EXECUTE format(
+        'GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated',
+        v_tbl
+      );
+    END IF;
+  END LOOP;
+END;
+$$;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.tenants              TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_profiles        TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.projects             TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.contracts            TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchase_orders      TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.goods_receipts       TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.vendor_invoices      TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.contract_lines       TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchase_order_lines TO authenticated;
-
--- תיקון: חתימה מלאה עם טיפוסי החזרה לפי דרישת PostgreSQL
 GRANT EXECUTE ON FUNCTION public.get_my_tenant_id() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_role()       TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_tenant_admin()   TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 17: Trigger — הגדרת tenant_id אוטומטית בעת INSERT
+-- תיקון: הסרת SECURITY DEFINER — הפונקציה רצה בהקשר של המשתמש המכניס,
+--        ולכן get_my_tenant_id() תחזיר את ה-tenant_id הנכון אוטומטית.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.auto_set_tenant_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 BEGIN
   IF NEW.tenant_id IS NULL THEN
@@ -606,11 +610,14 @@ CREATE TRIGGER auto_set_tenant_id_purchase_order_lines
 -- -----------------------------------------------------------------------------
 -- SECTION 18: פונקציית יצירת user_profile אוטומטית בעת הרשמה
 -- -----------------------------------------------------------------------------
--- הערה חשובה: ב-Supabase אין אפשרות להגדיר trigger על auth.users
---             ישירות במיגרציה ללא הרשאות מיוחדות.
---             יש להגדיר את הפונקציה הזו כ-Auth Hook דרך:
---             Supabase Dashboard > Authentication > Hooks > "After user created"
---             ולהצביע על הפונקציה: public.handle_new_auth_user
+-- הערה חשובה: ב-Supabase, trigger על auth.users דורש הרשאות מיוחדות.
+--
+-- אפשרות א (מומלצת): הגדר Auth Hook דרך:
+--   Supabase Dashboard > Authentication > Hooks > "After user created"
+--   ובחר את הפונקציה: public.handle_new_auth_user
+--
+-- אפשרות ב: הפעל את שתי השורות האחרונות בקובץ זה ידנית
+--   דרך Supabase SQL Editor עם הרשאות מנהל.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
@@ -644,8 +651,11 @@ BEGIN
 END;
 $$;
 
--- הערה: השורות הבאות עלולות להיכשל בסביבות Supabase מסוימות ללא הרשאות מיוחדות.
---        אם נכשל — הסר את שתי השורות הבאות והגדר את ה-Hook דרך ה-Dashboard.
+-- -----------------------------------------------------------------------------
+-- הגדרת ה-Trigger על auth.users
+-- אם שורות אלו נכשלות — הסר אותן והגדר Auth Hook דרך ה-Dashboard.
+-- -----------------------------------------------------------------------------
+
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
