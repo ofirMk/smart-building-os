@@ -1,0 +1,85 @@
+
+---
+
+### 1.3 ולידציות חסרות — רשימה מלאה
+
+#### ברמת שורת PO (purchase_order_lines)
+- [ ] quantity גדול מ-0 — חובה
+- [ ] unit_price גדול או שווה ל-0 — חובה (מחיר 0 מותר רק עם אישור מפורש)
+- [ ] quantity — מספר שלם בלבד לפריטים ספירים
+- [ ] delivery_date גדול או שווה ל-order_date — תאריך אספקה לא יכול להיות בעבר
+- [ ] שינוי כמות לאחר GR חלקי — חייב להיות גדול או שווה ל-received_quantity
+
+#### ברמת כותרת PO (purchase_orders)
+- [ ] לפחות שורה אחת — חובה לפני שמירה
+- [ ] supplier_id — חובה
+- [ ] currency — חובה, חייב להתאים לספק
+- [ ] סכום כולל גדול מ-0
+- [ ] מניעת כפילות: אותו ספק + אותו פריט + אותו תאריך (אזהרה, לא חסימה)
+
+#### ברמת GR (goods_receipts)
+- [ ] received_quantity קטן או שווה ל-(ordered_quantity פחות previously_received_quantity)
+- [ ] PO חייב להיות בסטטוס ISSUED לפני רישום GR
+- [ ] תאריך קבלה לא יכול להיות לפני תאריך ה-PO
+
+#### ברמת חשבונית ספק (vendor_invoices)
+- [ ] סכום חשבונית לא יכול לחרוג מ-110% מסכום ה-PO (tolerance)
+- [ ] חייב להיות GR מאושר לפני אישור חשבונית (3-Way Match)
+- [ ] מספר חשבונית ספק — ייחודי לכל ספק (מניעת כפילות)
+
+---
+
+## חלק ב — ביקורת ארכיטקטורה ותקני ERP
+
+### 2.1 פערי ניהול מצב (State Management)
+
+#### בעיות קריטיות
+
+**א. אין Single Source of Truth לסטטוס PO**
+
+בעיה נוכחית:
+- סטטוס PO מחושב בצד לקוח מתוך שדות שונים
+- אין State Machine מוגדר
+- ניתן להגיע לסטטוסים בלתי חוקיים
+
+תקן SAP/Priority:
+- DRAFT מעבר ל-PENDING_APPROVAL מעבר ל-APPROVED מעבר ל-ISSUED
+- מעבר ל-PARTIALLY_RECEIVED מעבר ל-FULLY_RECEIVED מעבר ל-CLOSED
+- כל מעבר מוגדר עם תנאים ופעולות
+
+**ב. Server Actions ללא Optimistic UI**
+
+בעיה נוכחית:
+- כל פעולה (שמירה, עדכון, מחיקה) חוסמת את ה-UI
+- אין rollback במקרה של שגיאה
+- חוויית משתמש איטית ומתסכלת
+
+תקן מסחרי:
+- Optimistic updates עם rollback אוטומטי
+- Toast notifications לכל פעולה
+- Background sync
+
+**ג. אין Cache Invalidation מסודר**
+
+בעיה נוכחית:
+- לאחר יצירת GR, רשימת ה-PO לא מתעדכנת אוטומטית
+- המשתמש צריך לרענן ידנית
+- נתונים מיושנים מוצגים
+
+תקן מסחרי:
+- revalidatePath/revalidateTag אחרי כל mutation
+- Real-time updates דרך Supabase Realtime
+
+### 2.2 פערי מבנה קומפוננטים
+
+#### קומפוננטים שחייבים להיות Dumb (Pure/Presentational)
+
+| קומפוננט נוכחי | בעיה | פתרון |
+|----------------|------|--------|
+| PurchaseOrderForm | מכיל לוגיקת עסקים, API calls, וולידציה | פיצול ל-PurchaseOrderFormUI ו-usePurchaseOrderForm hook |
+| GoodsReceiptWorkspace | מכיל state מקומי + server calls + UI | פיצול ל-Container ו-Presentational |
+| PoOfficialPdf | מכיל חישובי מחיר בתוך קומפוננט UI | העברת חישובים ל-utility functions |
+| ProcurementTable | מכיל פילטרים, מיון, ו-fetch בתוך קומפוננט אחד | פיצול ל-useTableData hook ו-DataTable דמב |
+
+#### קומפוננטים גנריים שחסרים לחלוטין
+
