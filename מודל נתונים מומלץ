@@ -1,0 +1,5 @@
+tenants (id, name, slug, plan, status, created_at)
+  └── users (id, tenant_id, role, email)
+  └── projects (id, tenant_id, ...)
+  └── contracts (id, tenant_id, ...)
+  └── subscriptions (id, tenant_id, stripe_subscription_id, plan, status)

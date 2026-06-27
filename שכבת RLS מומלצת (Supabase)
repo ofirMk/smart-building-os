@@ -1,0 +1,3 @@
+-- דוגמה לפוליסת RLS
+CREATE POLICY "tenant_isolation" ON projects
+  USING (tenant_id = (SELECT tenant_id FROM users WHERE id = auth.uid()));

@@ -1,0 +1,1 @@
+middleware.ts → extract tenant_id from JWT → inject into all requests
