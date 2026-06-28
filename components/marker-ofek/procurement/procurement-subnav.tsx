@@ -7,6 +7,7 @@ import {
   Car,
   ClipboardList,
   LayoutGrid,
+  BarChart2,
   Warehouse,
 } from "lucide-react"
 
@@ -24,6 +25,7 @@ const LINKS: {
   { href: PROCUREMENT_ROUTES.inventory, label: "ניהול מלאי", Icon: Warehouse },
   { href: PROCUREMENT_ROUTES.catalog, label: "קטלוג פריטים", Icon: LayoutGrid },
   { href: PROCUREMENT_ROUTES.assets, label: "נכסי חברה", Icon: Car },
+  { href: PROCUREMENT_ROUTES.reports, label: "דוחות", Icon: BarChart2 },
 ]
 
 function pathMatchesPillar(pathname: string, href: string): boolean {

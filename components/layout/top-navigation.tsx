@@ -55,8 +55,64 @@ const NAV_ITEMS: NavItem[] = [
     label: "פורטפוליו",
     href: "/marker-ofek/portfolio",
   },
-  { key: "entrepreneurship", label: "יזמות" },
-  { key: "planning", label: "תכנון" },
+  { key: "entrepreneurship", label: "יזמות",
+    columns: [
+      {
+        title: "קדם ביצוע",
+        href: "/marker-ofek/pre-construction",
+        links: [
+          { label: "קליטת חומרי מכרז (AI)", href: "/marker-ofek/pre-construction/tender-intake" },
+          { label: "כתב כמויות ותמחור", href: "/marker-ofek/pre-construction/tender-pricing" },
+          { label: "מרכז מכרזים", href: "/marker-ofek/tenders" },
+          { label: "תמחור פרויקטים", href: "/marker-ofek/tenders/pricing" },
+          { label: "כתבי כמויות", href: "/marker-ofek/tenders/boq" },
+          { label: "השוואת הצעות", href: "/marker-ofek/tenders/comparison" },
+        ],
+      },
+      {
+        title: "ניהול שותפים",
+        links: [
+          { label: "פורטפוליו פרויקטים", href: "/marker-ofek/portfolio" },
+          { label: "כספים שותפים", href: "/marker-ofek/partner-finance" },
+          { label: "ניהול ישויות", href: "/marker-ofek/entities" },
+        ],
+      },
+    ],
+  },
+  { key: "planning", label: "תכנון",
+    columns: [
+      {
+        title: "תכנון פרויקטים",
+        href: "/marker-ofek/projects",
+        links: [
+          { label: "כל הפרויקטים", href: "/marker-ofek/projects" },
+          { label: "פרויקט חדש", href: "/marker-ofek/projects/new" },
+          { label: "לו\"ז וביצוע (גאנט)", href: "/marker-ofek/execution/gantt" },
+          { label: "יומני עבודה", href: "/marker-ofek/execution/daily-logs" },
+          { label: "תוכניות ו-Takeoff", href: "/marker-ofek/execution/plans" },
+          { label: "לו\"ז ומשאבים", href: "/marker-ofek/execution/resources" },
+        ],
+      },
+      {
+        title: "בקרת תקציב",
+        href: "/marker-ofek/finance/budget-control",
+        links: [
+          { label: "בקרה תקציבית", href: "/marker-ofek/finance/budget-control" },
+          { label: "דשבורד תקציב", href: "/marker-ofek/budget" },
+          { label: "בקרת תקציב פרויקטים", href: "/marker-ofek/projects-budget-control" },
+          { label: "WBS מבנה", href: "/marker-ofek/tenders/wbs" },
+        ],
+      },
+      {
+        title: "ניהול מסמכים",
+        href: "/marker-ofek/dms",
+        links: [
+          { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
+          { label: "לוח שנה ותזמון", href: "/marker-ofek/schedule" },
+        ],
+      },
+    ],
+  },
   {
     key: "construction",
     label: "בנייה",
@@ -68,6 +124,20 @@ const NAV_ITEMS: NavItem[] = [
           { label: "קטלוג פריטים", href: "/marker-ofek/procurement/catalog" },
           { label: "הזמנות רכש", href: "/marker-ofek/procurement/orders" },
           { label: "ספקים", href: "/marker-ofek/procurement/suppliers" },
+          { label: "תיבת אישורים", href: "/marker-ofek/procurement/approvals" },
+          { label: "קבלת סחורה", href: "/marker-ofek/procurement/goods-receipt/new" },
+          { label: "חשבוניות ספק (AP)", href: "/marker-ofek/procurement/invoices/new" },
+          { label: "מהנדס רכש AI 🤖", href: "/marker-ofek/procurement/autonomous-po/new" },
+        ],
+      },
+      {
+        title: "דוחות רכש",
+        href: "/marker-ofek/procurement/reports/kpi",
+        links: [
+          { label: "לוח מדדי KPI", href: "/marker-ofek/procurement/reports/kpi" },
+          { label: "ניתוח הוצאות", href: "/marker-ofek/procurement/reports/spend" },
+          { label: "גיל הזמנות", href: "/marker-ofek/procurement/reports/aging" },
+          { label: "סטיות מחיר", href: "/marker-ofek/procurement/reports/variance" },
         ],
       },
       {
@@ -117,8 +187,51 @@ const NAV_ITEMS: NavItem[] = [
       { title: "בדק", links: [] },
     ],
   },
-  { key: "building-management", label: "ניהול מבנים" },
-  { key: "trade", label: "סחר" },
+  { key: "building-management", label: "ניהול מבנים",
+    columns: [
+      {
+        title: "נכסים ומבנים",
+        links: [
+          { label: "ניהול אנרגיה (EV)", href: "/ev-management" },
+          { label: "דיירים", href: "/tenants" },
+          { label: "תחזוקה", href: "/maintenance" },
+          { label: "תקריות", href: "/tickets" },
+          { label: "Holden ERP", href: "/marker-ofek/holden-erp" },
+        ],
+      },
+      {
+        title: "ביצוע שטח",
+        links: [
+          { label: "ביצוע שטח", href: "/marker-ofek/field-execution" },
+          { label: "מסירת קומות", href: `/marker-ofek/execution/field/floor-handover/${DEMO_PROJECT_ID}` },
+          { label: "ביקורת ליקויים", href: `/marker-ofek/execution/field/snags/${DEMO_PROJECT_ID}` },
+          { label: "בדיקות QA", href: "/marker-ofek/execution/defects" },
+          { label: "מסירה (Handover)", href: "/marker-ofek/handover" },
+        ],
+      },
+    ],
+  },
+  { key: "trade", label: "סחר",
+    columns: [
+      {
+        title: "שרשרת אספקה",
+        links: [
+          { label: "ספקים (Supply Chain)", href: "/marker-ofek/supply-chain/suppliers" },
+          { label: "AI ייבוא חשבוניות", href: "/marker-ofek/procurement/ai-import" },
+          { label: "הקצאה ממתינה", href: "/marker-ofek/procurement/ai-import/pending-allocation" },
+          { label: "ספרי חנות", href: "/marker-ofek/procurement/warehouse-outgoing" },
+        ],
+      },
+      {
+        title: "פיקוח ועמידות",
+        links: [
+          { label: "בדיקות וצ'קליסטים", href: "/marker-ofek/execution/checklists" },
+          { label: "ניהול נוכחות", href: "/marker-ofek/execution/attendance" },
+          { label: "דיווחי התקדמות", href: "/marker-ofek/execution/progress-reports" },
+        ],
+      },
+    ],
+  },
   {
     key: "finance",
     label: "כספים",
@@ -322,9 +435,12 @@ export function TopNavigation({
         </Link>
 
         {/* ─── פריטי ניווט (זורמים שמאלה ב-RTL) ─── */}
+        {/* overflow-hidden prevents nav items from visually overflowing into the
+            actions cluster (search bar) when the actions take up more horizontal
+            space and the nav is squeezed into a narrower flex-allocated slot. */}
         <nav
           aria-label="ניווט ראשי"
-          className="flex min-w-0 flex-1 items-center gap-0.5"
+          className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden"
         >
           {NAV_ITEMS.map((item) => {
             const hasMenu = !!item.columns && item.columns.length > 0
@@ -407,36 +523,39 @@ export function TopNavigation({
           })}
         </nav>
 
-        {/* ─── Actions slot (שמאל ב-RTL) ─── */}
-        {/* Sprint T16 — Command Palette fake-search trigger (⌘/Ctrl+K). */}
-        <CommandPaletteSearchTrigger className="hidden w-56 md:inline-flex lg:w-64" />
+        {/* ─── Actions cluster: search + Holden AI + children slot (שמאל ב-RTL) ─── */}
+        {/* Wrapped in shrink-0 so the nav's flex-1 never pushes this cluster away. */}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Sprint T16 — Command Palette fake-search trigger (⌘/Ctrl+K).
+              max-w constrains width so it shrinks elegantly on smaller screens. */}
+          <CommandPaletteSearchTrigger className="hidden max-w-[13rem] md:inline-flex lg:max-w-[15rem] xl:max-w-xs" />
 
-        {/* Sprint T15 — Holden AI Copilot launch button. Pinned to the
-            actions-slot end of the nav so it's discoverable from any screen. */}
-        <Link
-          href="/marker-ofek/holden"
-          aria-label="פתח את Holden AI Copilot"
-          className={cn(
-            "group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[13px] font-semibold",
-            "bg-gradient-to-l from-violet-600 via-indigo-600 to-indigo-700 text-white shadow-sm ring-1 ring-violet-500/30",
-            "transition-all hover:from-violet-700 hover:via-indigo-700 hover:to-indigo-800 hover:shadow-md",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
-            pathname?.startsWith("/marker-ofek/holden") && "ring-2 ring-violet-300",
-          )}
-        >
-          <Sparkles
-            className="size-4 transition-transform duration-500 group-hover:rotate-12"
-            aria-hidden
-          />
-          <span>Holden AI</span>
-          <span className="ms-0.5 hidden rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider sm:inline">
-            New
-          </span>
-        </Link>
+          {/* Sprint T15 — Holden AI Copilot launch button. */}
+          <Link
+            href="/marker-ofek/holden"
+            aria-label="פתח את Holden AI Copilot"
+            className={cn(
+              "group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[13px] font-semibold",
+              "bg-gradient-to-l from-violet-600 via-indigo-600 to-indigo-700 text-white shadow-sm ring-1 ring-violet-500/30",
+              "transition-all hover:from-violet-700 hover:via-indigo-700 hover:to-indigo-800 hover:shadow-md",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
+              pathname?.startsWith("/marker-ofek/holden") && "ring-2 ring-violet-300",
+            )}
+          >
+            <Sparkles
+              className="size-4 transition-transform duration-500 group-hover:rotate-12"
+              aria-hidden
+            />
+            <span>Holden AI</span>
+            <span className="ms-0.5 hidden rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider sm:inline">
+              New
+            </span>
+          </Link>
 
-        {children ? (
-          <div className="flex shrink-0 items-center gap-1">{children}</div>
-        ) : null}
+          {children ? (
+            <div className="flex shrink-0 items-center gap-1">{children}</div>
+          ) : null}
+        </div>
       </div>
 
       {/* ─── Mega-Menu Panel ─── */}
