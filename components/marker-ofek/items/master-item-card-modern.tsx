@@ -603,7 +603,7 @@ export function MasterItemCardModern({
             },
           ]}
           initialTabId="general"
-          defaultMasterSize={38}
+          defaultMasterSize={50}
         />
       </form>
     </FormProvider>
