@@ -61,10 +61,10 @@ function MarkerOfekWorkspaceChrome({
         dir="rtl"
         transition={{ type: "spring", stiffness: 400, damping: 38 }}
       >
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+        <div className="flex w-full items-center justify-between gap-2 overflow-hidden">
           <nav
             aria-label="כרטיסיות אחרונות"
-            className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden"
           >
             <span className="me-1 hidden text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
               אחרונים
