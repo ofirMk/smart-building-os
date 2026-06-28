@@ -383,7 +383,7 @@ export function MasterItemCardModern({
             <div dir="rtl" className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
               {topSlot}
               {/* Page header — same style as items-catalog-scaffold */}
-              <header className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+              <header className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
                 <div className="flex flex-col gap-2">
                   {!hideBackLink ? (
                     <Link
@@ -409,7 +409,7 @@ export function MasterItemCardModern({
                       <p className="text-xs font-medium text-muted-foreground">
                         מאסטר SKU
                       </p>
-                      <h1 className="font-mono text-2xl font-bold tracking-tight">
+                      <h1 className="font-mono text-2xl font-semibold tracking-tight">
                         {item.sku}
                       </h1>
                       <p className="text-sm leading-relaxed text-foreground">
@@ -436,7 +436,7 @@ export function MasterItemCardModern({
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 self-start">
+                <div className="flex items-center gap-2">
                   <Button
                     type="submit"
                     disabled={!isDirty || saving}
