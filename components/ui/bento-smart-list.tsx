@@ -4,6 +4,7 @@ import * as React from "react"
 import { FileDown, FileSpreadsheet, Loader2, Rows2, Rows3 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Table,
   TableBody,
@@ -40,6 +41,10 @@ type BentoSmartListProps<TItem> = {
   onRowDoubleClick?: (item: TItem) => void
   selectedRowKey?: string | null
   rowActions?: (item: TItem) => React.ReactNode
+  /** Phase 4 — Optional multi-row checkbox selection */
+  selectable?: boolean
+  selectedKeys?: ReadonlySet<string>
+  onSelectionChange?: (keys: Set<string>) => void
 }
 
 export function BentoSmartList<TItem>({
@@ -52,7 +57,31 @@ export function BentoSmartList<TItem>({
   onRowDoubleClick,
   selectedRowKey,
   rowActions,
+  selectable,
+  selectedKeys,
+  onSelectionChange,
 }: BentoSmartListProps<TItem>) {
+  const allKeys = React.useMemo(() => items.map(rowKey), [items, rowKey])
+  const allSelected = selectable && allKeys.length > 0 && allKeys.every((k) => selectedKeys?.has(k))
+  const someSelected = selectable && !allSelected && allKeys.some((k) => selectedKeys?.has(k))
+
+  function toggleAll() {
+    if (!onSelectionChange) return
+    if (allSelected) {
+      onSelectionChange(new Set())
+    } else {
+      onSelectionChange(new Set(allKeys))
+    }
+  }
+
+  function toggleRow(key: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!onSelectionChange) return
+    const next = new Set(selectedKeys ?? [])
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    onSelectionChange(next)
+  }
   const denseCellClass = density === "compact" ? "py-1.5 text-xs" : "py-2 text-sm"
   const denseHeadClass = density === "compact" ? "h-8 text-[10px]" : "h-10 text-xs"
 
@@ -61,6 +90,16 @@ export function BentoSmartList<TItem>({
       <Table>
         <TableHeader>
           <TableRow className="bg-background hover:bg-background">
+            {selectable ? (
+              <TableHead className={cn("w-10 text-center", denseHeadClass)}>
+                <Checkbox
+                  checked={allSelected ? true : false}
+                  onCheckedChange={toggleAll}
+                  aria-label="בחר הכל"
+                  className="mx-auto"
+                />
+              </TableHead>
+            ) : null}
             {columns.map((column) => (
               <TableHead key={column.key} className={cn("text-right", denseHeadClass, column.className)}>
                 {column.title}
@@ -73,7 +112,7 @@ export function BentoSmartList<TItem>({
           {items.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={columns.length + (rowActions ? 1 : 0)}
+                colSpan={columns.length + (rowActions ? 1 : 0) + (selectable ? 1 : 0)}
                 className="h-20 text-center text-xs text-muted-foreground"
               >
                 {emptyState ?? "אין נתונים להצגה"}
@@ -83,6 +122,7 @@ export function BentoSmartList<TItem>({
             items.map((item) => {
               const key = rowKey(item)
               const selected = selectedRowKey === key
+              const checkedForBulk = selectable && (selectedKeys?.has(key) ?? false)
               return (
                 <TableRow
                   key={key}
@@ -94,11 +134,23 @@ export function BentoSmartList<TItem>({
                   className={cn(
                     "group/list-row transition-colors",
                     (onRowClick || onRowDoubleClick) && "cursor-pointer",
-                    selected
-                      ? "bg-accent/80 hover:bg-accent"
-                      : "hover:bg-muted/70"
+                    checkedForBulk
+                      ? "bg-primary/5 hover:bg-primary/8"
+                      : selected
+                        ? "bg-accent/80 hover:bg-accent"
+                        : "hover:bg-muted/70"
                   )}
                 >
+                  {selectable ? (
+                    <TableCell className={cn("w-10 text-center", denseCellClass)}>
+                      <Checkbox
+                        checked={checkedForBulk}
+                        onClick={(e) => toggleRow(key, e)}
+                        aria-label={`בחר שורה`}
+                        className="mx-auto"
+                      />
+                    </TableCell>
+                  ) : null}
                   {columns.map((column) => (
                     <TableCell key={column.key} className={cn(denseCellClass, column.className)}>
                       {column.render(item)}

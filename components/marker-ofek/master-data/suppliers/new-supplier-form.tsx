@@ -17,13 +17,21 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { ArrowRight, Loader2, Save } from "lucide-react"
+import { ArrowRight, BookOpen, Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -98,6 +106,11 @@ export function NewSupplierForm() {
   const router = useRouter()
   const [submitting, setSubmitting] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("identity")
+  const [coaDialog, setCoaDialog] = React.useState<{ open: boolean; code: string; pendingValues: FormOutput | null }>({
+    open: false,
+    code: "",
+    pendingValues: null,
+  })
 
   const form = useForm<FormInput, undefined, FormOutput>({
     resolver: zodResolver(formSchema),
@@ -126,6 +139,14 @@ export function NewSupplierForm() {
   })
 
   const onSubmit = form.handleSubmit(async (values) => {
+    // Priority parity #3: הצג דיאלוג אישור לפני שמירה
+    setCoaDialog({ open: true, code: values.supplierNum, pendingValues: values })
+  })
+
+  async function handleConfirmCoa() {
+    const values = coaDialog.pendingValues
+    if (!values) return
+    setCoaDialog((p) => ({ ...p, open: false }))
     setSubmitting(true)
     try {
       const payload = {
@@ -168,10 +189,53 @@ export function NewSupplierForm() {
       )
       setSubmitting(false)
     }
-  })
+  }
 
   return (
-    <form onSubmit={onSubmit} dir="rtl" className="flex flex-col gap-4 p-4">
+    <>
+      {/* ── Priority #3: CoA Confirmation Dialog ──────────── */}
+      <Dialog
+        open={coaDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setCoaDialog((p) => ({ ...p, open: false }))
+        }}
+      >
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="size-4 text-blue-600" aria-hidden />
+              פתיחת חשבון ספק
+            </DialogTitle>
+            <DialogDescription>
+              יפתח חשבון{" "}
+              <span className="font-semibold text-foreground">{coaDialog.code}</span>{" "}
+              שיקושר לספק בתרשים החשבונות (AP).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button
+              onClick={handleConfirmCoa}
+              disabled={submitting}
+              size="sm"
+            >
+              {submitting ? (
+                <Loader2 className="ml-1 size-3.5 animate-spin" aria-hidden />
+              ) : null}
+              אישור
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCoaDialog((p) => ({ ...p, open: false }))}
+              disabled={submitting}
+            >
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <form onSubmit={onSubmit} dir="rtl" className="flex flex-col gap-4 p-4">
       {/* ── Header ────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5">
@@ -424,6 +488,7 @@ export function NewSupplierForm() {
         </TabsContent>
       </Tabs>
     </form>
+    </>
   )
 }
 

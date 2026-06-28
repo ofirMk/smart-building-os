@@ -45,6 +45,7 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import {
   Card,
   CardContent,
@@ -762,9 +763,27 @@ function ReceiveLinesTable({
                       הושלם
                     </Badge>
                   ) : (
-                    <span className="font-semibold text-emerald-800">
-                      {numberFormatter.format(line.remainingQty)}
-                    </span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-semibold text-emerald-800">
+                        {numberFormatter.format(line.remainingQty)}
+                      </span>
+                      <Progress
+                        value={
+                          line.orderedQty > 0
+                            ? Math.min(100, (line.receivedQty / line.orderedQty) * 100)
+                            : 0
+                        }
+                        className={cn(
+                          "h-1.5 w-16",
+                          line.receivedQty === 0
+                            ? "[&>div]:bg-rose-400"
+                            : line.receivedQty < line.orderedQty
+                              ? "[&>div]:bg-amber-400"
+                              : "[&>div]:bg-emerald-500",
+                        )}
+                        aria-label={`${Math.round((line.receivedQty / Math.max(1, line.orderedQty)) * 100)}% נקלט`}
+                      />
+                    </div>
                   )}
                 </TableCell>
                 <TableCell>

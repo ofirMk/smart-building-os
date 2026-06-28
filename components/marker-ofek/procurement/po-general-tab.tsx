@@ -43,6 +43,16 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -113,6 +123,28 @@ export type PoGeneralTabData = {
   affectsPlanning: boolean
   closedAt: string | null
   closedBy: string | null
+  // "אישורים ומעקב ביצוע" — Priority parity
+  isPrinted: boolean
+  isUnlockedForChanges: boolean
+  isPartiallyClosed: boolean
+  isPurchasingOnly: boolean
+  supplierAuthLevelOverride: number | null
+  approversListCode: string | null
+  /** החותם הבא — Priority: NEXTSIGNER */
+  nextSignerName: string | null
+  // extended header fields — Priority parity
+  poTypeCode: string | null
+  deliveryMethodCode: string | null
+  branchCode: string | null
+  forUserName: string | null
+  centralizedDemandRef: string | null
+  quoteRef: string | null
+  blanketOrderRef: string | null
+  customerOrderRef: string | null
+  serviceCallRef: string | null
+  importExportFileType: string | null
+  importExportFileRef: string | null
+  locationTracking: string | null
   supplier: {
     id: string
     name: string
@@ -345,6 +377,13 @@ export function PoGeneralTab({
   const [mode, setMode] = React.useState<"view" | "edit">("view")
   const [form, setForm] = React.useState<FormState>(() => formFromData(data))
   const [saving, setSaving] = React.useState(false)
+  const [confirmDiscard, setConfirmDiscard] = React.useState(false)
+
+  // isDirty — compare current form against original data.
+  const isDirty = React.useMemo(() => {
+    if (mode !== "edit") return false
+    return JSON.stringify(form) !== JSON.stringify(formFromData(data))
+  }, [form, data, mode])
 
   // כאשר ה-data השתנתה (refetch אחרי save מוצלח, או navigation) —
   // נאפס את הטופס. מונע סטטוס stale אחרי Save.
@@ -385,6 +424,16 @@ export function PoGeneralTab({
   }, [loadLookups])
 
   const cancelEdit = React.useCallback(() => {
+    if (isDirty) {
+      setConfirmDiscard(true)
+      return
+    }
+    setMode("view")
+    setForm(formFromData(data))
+  }, [data, isDirty])
+
+  const discardAndCancel = React.useCallback(() => {
+    setConfirmDiscard(false)
     setMode("view")
     setForm(formFromData(data))
   }, [data])
@@ -432,6 +481,27 @@ export function PoGeneralTab({
 
   return (
     <div className="space-y-3">
+      {/* Dirty-form guard — confirm discard unsaved changes */}
+      <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>בטל שינויים?</AlertDialogTitle>
+            <AlertDialogDescription>
+              בוצעו שינויים שטרם נשמרו. האם לבטל את העריכה ולאבד את השינויים?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>המשך עריכה</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={discardAndCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              בטל שינויים
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Edit toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/20 px-3 py-2">
         <div className="flex items-center gap-2 text-xs">
@@ -803,8 +873,139 @@ export function PoGeneralTab({
                   }
                 />
               ) : null}
+              {/* אישורים ומעקב ביצוע — Priority parity flags */}
+              {(data.isPrinted ||
+                data.isUnlockedForChanges ||
+                data.isPartiallyClosed ||
+                data.isPurchasingOnly ||
+                data.supplierAuthLevelOverride != null ||
+                data.approversListCode ||
+                data.nextSignerName) ? (
+                <>
+                  <Separator className="col-span-full my-1" />
+                  {data.nextSignerName ? (
+                    <DLRow
+                      label="החותם הבא"
+                      value={
+                        <span className="font-medium text-amber-700">{data.nextSignerName}</span>
+                      }
+                    />
+                  ) : null}
+                  {data.approversListCode ? (
+                    <DLRow
+                      label="רשימת מאשרים"
+                      value={
+                        <span className="font-mono text-xs">{data.approversListCode}</span>
+                      }
+                    />
+                  ) : null}
+                  {data.supplierAuthLevelOverride != null ? (
+                    <DLRow
+                      label="דרגת הרשאה לספק"
+                      value={<span className="tabular-nums">{data.supplierAuthLevelOverride}</span>}
+                    />
+                  ) : null}
+                  <DLRow
+                    label="הודפסה"
+                    value={
+                      data.isPrinted ? (
+                        <Badge variant="outline" className="border-blue-400/40 bg-blue-50 text-blue-700">הודפסה</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">לא</span>
+                      )
+                    }
+                  />
+                  <DLRow
+                    label="מנותקת לשינוי"
+                    value={
+                      data.isUnlockedForChanges ? (
+                        <Badge variant="outline" className="border-amber-400/40 bg-amber-50 text-amber-700">מנותקת</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">לא</span>
+                      )
+                    }
+                  />
+                  <DLRow
+                    label="סגורה חלקית"
+                    value={
+                      data.isPartiallyClosed ? (
+                        <Badge variant="outline" className="border-orange-400/40 bg-orange-50 text-orange-700">סגורה חלקית</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">לא</span>
+                      )
+                    }
+                  />
+                  <DLRow
+                    label="לקנין בלבד"
+                    value={
+                      data.isPurchasingOnly ? (
+                        <Badge variant="outline" className="border-violet-400/40 bg-violet-50 text-violet-700">לקנין בלבד</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">לא</span>
+                      )
+                    }
+                  />
+                </>
+              ) : null}
             </dl>
           </InfoCard>
+
+          {/* --------------------------------------------------------- */}
+          {/* פרטי הזמנה נוספים — Priority parity                        */}
+          {/* --------------------------------------------------------- */}
+          {(data.poTypeCode ||
+            data.deliveryMethodCode ||
+            data.branchCode ||
+            data.forUserName ||
+            data.locationTracking ||
+            data.centralizedDemandRef ||
+            data.quoteRef ||
+            data.blanketOrderRef ||
+            data.customerOrderRef ||
+            data.serviceCallRef ||
+            data.importExportFileType ||
+            data.importExportFileRef) ? (
+            <InfoCard title="פרטי הזמנה נוספים" icon={<ClipboardList className="size-4" />}>
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                {data.poTypeCode ? (
+                  <DLRow label="סוג הזמנה" value={<span className="font-mono text-xs">{data.poTypeCode}</span>} />
+                ) : null}
+                {data.deliveryMethodCode ? (
+                  <DLRow label="אופן משלוח" value={data.deliveryMethodCode} />
+                ) : null}
+                {data.branchCode ? (
+                  <DLRow label="סניף" value={<span className="font-mono text-xs">{data.branchCode}</span>} />
+                ) : null}
+                {data.forUserName ? (
+                  <DLRow label="עבור משתמש" value={data.forUserName} />
+                ) : null}
+                {data.locationTracking ? (
+                  <DLRow label="איתור" value={<span className="font-mono text-xs">{data.locationTracking}</span>} />
+                ) : null}
+                {data.centralizedDemandRef ? (
+                  <DLRow label="דרישה מרוכזת" value={<span className="font-mono text-xs">{data.centralizedDemandRef}</span>} />
+                ) : null}
+                {data.quoteRef ? (
+                  <DLRow label="הצעת מחיר" value={<span className="font-mono text-xs">{data.quoteRef}</span>} />
+                ) : null}
+                {data.blanketOrderRef ? (
+                  <DLRow label="הזמנת מסגרת" value={<span className="font-mono text-xs">{data.blanketOrderRef}</span>} />
+                ) : null}
+                {data.customerOrderRef ? (
+                  <DLRow label="הזמנת לקוח" value={<span className="font-mono text-xs">{data.customerOrderRef}</span>} />
+                ) : null}
+                {data.serviceCallRef ? (
+                  <DLRow label="קריאת שרות" value={<span className="font-mono text-xs">{data.serviceCallRef}</span>} />
+                ) : null}
+                {data.importExportFileType ? (
+                  <DLRow label="סוג תיק יבוא/יצוא" value={<span className="font-mono text-xs">{data.importExportFileType}</span>} />
+                ) : null}
+                {data.importExportFileRef ? (
+                  <DLRow label="תיק יבוא/יצוא" value={<span className="font-mono text-xs">{data.importExportFileRef}</span>} />
+                ) : null}
+              </dl>
+            </InfoCard>
+          ) : null}
 
           {/* --------------------------------------------------------- */}
           {/* כתובת משלוח (he)                                           */}

@@ -29,9 +29,7 @@ alter table public.contract_variation_orders
   references public.partial_accounts (id) on delete set null;
 
 comment on column public.contract_variation_orders.linked_partial_account_id is
-  'T14: כאשר חריג נמשך לחשבון חלקי — נעול לחשבון זה. ' ||
-  'הנהלת החשבונות שולפת רק חריגים עם linked_partial_account_id IS NULL ' ||
-  '(חוק zero double-billing).';
+  'T14: כאשר חריג נמשך לחשבון חלקי — נעול לחשבון זה. הנהלת החשבונות שולפת רק חריגים עם linked_partial_account_id IS NULL (חוק zero double-billing).';
 
 create index if not exists contract_variation_orders_linked_partial_idx
   on public.contract_variation_orders (linked_partial_account_id)

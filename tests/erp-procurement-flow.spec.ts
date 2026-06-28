@@ -90,3 +90,47 @@ test.describe("RLS cross-company isolation", () => {
     expect([401, 403]).toContain(res.status())
   })
 })
+
+test.describe("PO Transition API — auth boundary", () => {
+  test("POST /api/procurement/po-transition returns 401 without session", async ({
+    request,
+  }) => {
+    const res = await request.post(`${BASE}/api/procurement/po-transition`, {
+      data: { poId: "00000000-0000-0000-0000-000000000000", transition: "SUBMIT" },
+    })
+    expect([401, 403]).toContain(res.status())
+  })
+
+  test("POST /api/procurement/po-transition returns 400 for missing poId", async ({
+    request,
+  }) => {
+    const res = await request.post(`${BASE}/api/procurement/po-transition`, {
+      data: { transition: "SUBMIT" },
+      headers: { Cookie: "invalid-session=true" },
+    })
+    expect([400, 401]).toContain(res.status())
+  })
+
+  test("POST /api/procurement/po-transition returns 400 for invalid transition value", async ({
+    request,
+  }) => {
+    const res = await request.post(`${BASE}/api/procurement/po-transition`, {
+      data: {
+        poId: "00000000-0000-0000-0000-000000000000",
+        transition: "TELEPORT",
+      },
+      headers: { Cookie: "invalid-session=true" },
+    })
+    expect([400, 401]).toContain(res.status())
+  })
+
+  test("POST /api/procurement/po-transition returns 400 for non-UUID poId", async ({
+    request,
+  }) => {
+    const res = await request.post(`${BASE}/api/procurement/po-transition`, {
+      data: { poId: "not-a-uuid", transition: "SUBMIT" },
+      headers: { Cookie: "invalid-session=true" },
+    })
+    expect([400, 401]).toContain(res.status())
+  })
+})

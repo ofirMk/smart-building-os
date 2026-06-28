@@ -27,6 +27,7 @@ import {
   ClipboardList,
   FileSignature,
   FileStack,
+  GitMerge,
   History,
   Loader2,
   PackageSearch,
@@ -62,6 +63,9 @@ import { PoGeneralTab } from "@/components/marker-ofek/procurement/po-general-ta
 import { PoStatusBadge } from "@/components/marker-ofek/procurement/po-status-badge"
 import { PoSubmitButton } from "@/components/marker-ofek/procurement/po-submit-button"
 import { PoLineEditDialog } from "@/components/marker-ofek/procurement/po-line-edit-dialog"
+import { PoAddLineDialog } from "@/components/marker-ofek/procurement/po-add-line-dialog"
+import { ItemSuppliersSheet } from "@/components/marker-ofek/procurement/item-suppliers-sheet"
+import { PoThreeWayMatchTab } from "@/components/marker-ofek/procurement/po-three-way-match-tab"
 import { readActiveCompanyIdFromCookie } from "@/lib/company-context"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
@@ -113,6 +117,8 @@ type ProcurementOrderDetailLineDto = {
   uom: string | null
   supplierSku: string | null
   supplierSkuDescription: string | null
+  // מחר"ל — Priority parity
+  listPrice: number | null
 }
 
 type ProcurementOrderDetailDto = {
@@ -150,6 +156,27 @@ type ProcurementOrderDetailDto = {
   affectsPlanning: boolean
   closedAt: string | null
   closedBy: string | null
+  // "אישורים ומעקב ביצוע" — Priority parity
+  isPrinted: boolean
+  isUnlockedForChanges: boolean
+  isPartiallyClosed: boolean
+  isPurchasingOnly: boolean
+  supplierAuthLevelOverride: number | null
+  approversListCode: string | null
+  nextSignerName: string | null
+  // extended header fields — Priority parity
+  poTypeCode: string | null
+  deliveryMethodCode: string | null
+  branchCode: string | null
+  forUserName: string | null
+  centralizedDemandRef: string | null
+  quoteRef: string | null
+  blanketOrderRef: string | null
+  customerOrderRef: string | null
+  serviceCallRef: string | null
+  importExportFileType: string | null
+  importExportFileRef: string | null
+  locationTracking: string | null
   supplier: {
     id: string
     name: string
@@ -350,6 +377,10 @@ export default function ProcurementOrderDetailPage() {
             <History className="size-4" aria-hidden />
             היסטוריה
           </TabsTrigger>
+          <TabsTrigger value="match" className="gap-1.5">
+            <GitMerge className="size-4" aria-hidden />
+            התאמה 3-כיוונית
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent
@@ -367,7 +398,8 @@ export default function ProcurementOrderDetailPage() {
             poId={data.id}
             lines={data.lines}
             currency={data.currency}
-            canEdit={data.status === "DRAFT"}
+            canEdit={data.status === "DRAFT" || data.status === "REOPENED"}
+            supplierId={data.supplier?.id ?? null}
             onChanged={refetch}
           />
         </TabsContent>
@@ -419,6 +451,13 @@ export default function ProcurementOrderDetailPage() {
           className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
         >
           <PoHistoryTab poId={data.id} />
+        </TabsContent>
+
+        <TabsContent
+          value="match"
+          className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
+        >
+          <PoThreeWayMatchTab poId={data.id} />
         </TabsContent>
       </Tabs>
     </div>
@@ -500,7 +539,7 @@ function PageHeader({
             חזרה לרשימה
           </Button>
         </div>
-        <PoActionsMount data={data} onSent={onSent} />
+        <PoActionsMount data={data} onSent={onSent} onTransition={onSent} />
       </div>
     </header>
   )
@@ -514,9 +553,11 @@ function PageHeader({
 function PoActionsMount({
   data,
   onSent,
+  onTransition,
 }: {
   data: ProcurementOrderDetailDto
   onSent: () => void
+  onTransition: () => void
 }) {
   const [lastSentAt, setLastSentAt] = React.useState<string | null>(null)
 
@@ -572,6 +613,7 @@ function PoActionsMount({
         onSent()
         reloadLastSent()
       }}
+      onTransition={onTransition}
     />
   )
 }
@@ -594,6 +636,7 @@ function LinesTab({
   lines,
   currency,
   canEdit,
+  supplierId,
   onChanged,
 }: {
   poId: string
@@ -601,23 +644,32 @@ function LinesTab({
   currency: string
   /** מאופשר רק כש-PO ב-DRAFT (Phase B''' line edit gate). */
   canEdit: boolean
+  /** Phase 4.4 — ID ספק להפניית "הזמן מחדש" */
+  supplierId: string | null
   /** קוראים ל-refetch אחרי PATCH מוצלח. */
   onChanged: () => void
 }) {
   if (lines.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
         <PackageSearch className="size-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm text-muted-foreground">
-          אין שורות בהזמנה זו (לא תקין — חובה לפחות אחת).
-        </p>
+        <p className="text-sm text-muted-foreground">אין שורות בהזמנה זו עדיין.</p>
+        {canEdit ? (
+          <PoAddLineDialog poId={poId} onChanged={onChanged} />
+        ) : null}
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <div className="max-w-full overflow-x-auto">
+    <div className="space-y-3">
+      {canEdit ? (
+        <div className="flex justify-start">
+          <PoAddLineDialog poId={poId} onChanged={onChanged} />
+        </div>
+      ) : null}
+      <div className="overflow-hidden rounded-lg border border-border">
+        <div className="max-w-full overflow-x-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-muted/40">
             <TableRow>
@@ -628,11 +680,13 @@ function LinesTab({
               <TableHead className="w-28 text-end">מחיר יחידה</TableHead>
               <TableHead className="w-20 text-end">הנחה %</TableHead>
               <TableHead className="w-28 text-end">סה&quot;כ</TableHead>
+              <TableHead className="w-28 text-end">מחר"ל</TableHead>
               <TableHead className="w-28 text-start">תאריך אספקה</TableHead>
               <TableHead className="w-24 text-start">מקור מחיר</TableHead>
               <TableHead className="w-32 text-start">יצרן</TableHead>
               <TableHead className="w-24 text-start">סעיף תקציבי</TableHead>
               <TableHead className="w-28 text-start">3% Rule</TableHead>
+              <TableHead className="w-28 text-start">הזמן מחדש</TableHead>
               {canEdit ? (
                 <TableHead className="w-12 text-center">
                   <span className="sr-only">עריכה</span>
@@ -649,11 +703,13 @@ function LinesTab({
                 index={index}
                 currency={currency}
                 canEdit={canEdit}
+                supplierId={supplierId}
                 onChanged={onChanged}
               />
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   )
@@ -665,6 +721,7 @@ function LineDataRow({
   index,
   currency,
   canEdit,
+  supplierId,
   onChanged,
 }: {
   poId: string
@@ -672,6 +729,7 @@ function LineDataRow({
   index: number
   currency: string
   canEdit: boolean
+  supplierId: string | null
   onChanged: () => void
 }) {
   const lineCurrency = line.lineCurrency ?? currency
@@ -693,7 +751,23 @@ function LineDataRow({
           {index + 1}
         </TableCell>
         <TableCell className="font-mono text-xs">
-          {line.itemNumber ?? line.itemSku ?? "—"}
+          {line.itemId ? (
+            <ItemSuppliersSheet
+              itemId={line.itemId}
+              itemName={line.description}
+              trigger={
+                <button
+                  type="button"
+                  className="cursor-pointer font-mono text-xs text-blue-700 underline underline-offset-2 hover:text-blue-900"
+                  title="לחץ לצפייה בכל ספקי המוצר"
+                >
+                  {line.itemNumber ?? line.itemSku ?? line.itemId.slice(0, 8)}
+                </button>
+              }
+            />
+          ) : (
+            <span className="text-muted-foreground">{line.itemSku ?? "—"}</span>
+          )}
         </TableCell>
         <TableCell className="max-w-[260px] truncate text-sm">
           {line.description}
@@ -709,6 +783,9 @@ function LineDataRow({
         </TableCell>
         <TableCell className="text-end font-medium tabular-nums">
           {numberFormatter.format(line.totalPrice)}
+        </TableCell>
+        <TableCell className="text-end text-xs tabular-nums text-muted-foreground">
+          {line.listPrice != null ? numberFormatter.format(line.listPrice) : "—"}
         </TableCell>
         <TableCell className="text-xs">
           {line.supplyDate ? formatDate(line.supplyDate) : "—"}
@@ -744,6 +821,28 @@ function LineDataRow({
             <BadgeCheck className="size-4 text-emerald-600" aria-hidden />
           )}
         </TableCell>
+
+        {/* Phase 4.4 — Smart Reorder indicator */}
+        <TableCell>
+          {line.itemId ? (
+            <button
+              type="button"
+              onClick={() => {
+                const url = new URL("/marker-ofek/procurement/orders/new", window.location.origin)
+                url.searchParams.set("itemId", line.itemId!)
+                if (supplierId) url.searchParams.set("supplierId", supplierId)
+                window.location.href = url.toString()
+              }}
+              className="inline-flex items-center gap-1 rounded border border-sky-300/60 bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 transition hover:bg-sky-100 dark:border-sky-700/40 dark:bg-sky-900/20 dark:text-sky-400"
+              title="צור הזמנה חדשה עם פריט זה"
+            >
+              ⚡ הזמן מחדש
+            </button>
+          ) : (
+            <span className="text-[10px] text-muted-foreground">—</span>
+          )}
+        </TableCell>
+
         {canEdit ? (
           <TableCell className="text-center">
             <PoLineEditDialog

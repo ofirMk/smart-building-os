@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { data, error } = await supabase
     .from("erp_md_supplier_contacts")
-    .select("id,company_id,supplier_id,full_name,role_title,phone,email,is_primary")
+    .select("id,company_id,supplier_id,full_name,first_name,last_name,foreign_name,role_title,phone,phone_mobile,phone_office,phone_home,fax,email,contact_status,is_primary")
     .eq("id", contactId)
     .eq("supplier_id", supplierId)
     .eq("company_id", activeCompanyId)
@@ -30,9 +30,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       companyId: data.company_id,
       supplierId: data.supplier_id,
       name: data.full_name,
+      firstName: data.first_name ?? null,
+      lastName: data.last_name ?? null,
+      foreignName: data.foreign_name ?? null,
       role: data.role_title,
       phone: data.phone,
+      phoneMobile: data.phone_mobile ?? null,
+      phoneOffice: data.phone_office ?? null,
+      phoneHome: data.phone_home ?? null,
+      fax: data.fax ?? null,
       email: data.email,
+      contactStatus: data.contact_status ?? "ACTIVE",
       isPrimary: data.is_primary,
     },
   })
@@ -44,12 +52,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!gate.ok) return gate.response
   const { supabase, activeCompanyId } = gate.ctx
 
-  const body = (await req.json().catch(() => null)) as { name?: unknown; role?: unknown; phone?: unknown; email?: unknown; isPrimary?: unknown } | null
+  const body = (await req.json().catch(() => null)) as {
+    name?: unknown; role?: unknown; phone?: unknown; phoneMobile?: unknown;
+    phoneOffice?: unknown; phoneHome?: unknown; fax?: unknown;
+    email?: unknown; isPrimary?: unknown; firstName?: unknown;
+    lastName?: unknown; foreignName?: unknown; contactStatus?: unknown
+  } | null
   const patch: Record<string, string | boolean | null> = {}
   if (body?.name !== undefined) patch.full_name = sanitizeOptionalString(body.name)
+  if (body?.firstName !== undefined) patch.first_name = sanitizeOptionalString(body.firstName)
+  if (body?.lastName !== undefined) patch.last_name = sanitizeOptionalString(body.lastName)
+  if (body?.foreignName !== undefined) patch.foreign_name = sanitizeOptionalString(body.foreignName)
   if (body?.role !== undefined) patch.role_title = sanitizeOptionalString(body.role)
   if (body?.phone !== undefined) patch.phone = sanitizeOptionalString(body.phone)
+  if (body?.phoneMobile !== undefined) patch.phone_mobile = sanitizeOptionalString(body.phoneMobile)
+  if (body?.phoneOffice !== undefined) patch.phone_office = sanitizeOptionalString(body.phoneOffice)
+  if (body?.phoneHome !== undefined) patch.phone_home = sanitizeOptionalString(body.phoneHome)
+  if (body?.fax !== undefined) patch.fax = sanitizeOptionalString(body.fax)
   if (body?.email !== undefined) patch.email = sanitizeOptionalString(body.email)
+  if (body?.contactStatus !== undefined) patch.contact_status = body.contactStatus === "INACTIVE" ? "INACTIVE" : "ACTIVE"
   if (body?.isPrimary !== undefined) patch.is_primary = body.isPrimary === true
 
   if (Object.keys(patch).length === 0) {

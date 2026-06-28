@@ -35,23 +35,192 @@ function toErpSupplierType(kind: "supplier" | "subcontractor"): ErpSupplierType 
   return kind === "subcontractor" ? "SUBCONTRACTOR" : "STANDARD"
 }
 
-function mapSupplierRow(row: {
+// DB row shape — all columns selected by SUPPLIER_SELECT below.
+type SupplierDbRow = {
   id: string
   company_id: string
   supplier_number: string
   name: string
   supplier_kind: "supplier" | "subcontractor"
+  foreign_name: string | null
+  status: string | null
   tax_vat_id: string | null
   payment_terms: string | null
-}): ErpSupplier {
+  currency_code: string | null
+  // contact & address
+  phone: string | null
+  fax: string | null
+  email: string | null
+  website: string | null
+  address: string | null
+  address_line2: string | null
+  address_line3: string | null
+  city: string | null
+  country_code: string | null
+  zip_code: string | null
+  // flags
+  for_attention: boolean | null
+  opening_date: string | null
+  // enrichment
+  industry: string | null
+  branch_code: string | null
+  founding_year: number | null
+  employee_count: number | null
+  prints_in_english: boolean | null
+  is_confidential: boolean | null
+  is_casual: boolean | null
+  // Priority additional details
+  responsible_person: string | null
+  is_foreign_supplier: boolean | null
+  authorization_level: number | null
+  default_order_type: string | null
+  subcontractor_wh: string | null
+  consignment_wh: string | null
+  supplier_type_code: string | null
+  // CoA link
+  coa_account_id: string | null
+  coa_account_code: string | null
+  // display flags
+  has_attachments: boolean | null
+  marketgeys_display: number | null
+  entry_note: string | null
+  // financial settings
+  vat_file_number: string | null
+  pays_by_bank_transfer: boolean | null
+  round_invoice_price: boolean | null
+  pay_to_order_of: string | null
+  ledger_account_code: string | null
+  purchases_account_code: string | null
+  cost_center_code: string | null
+  invoice_txn_type: string | null
+  credit_txn_type: string | null
+  // tax / withholding
+  vat_code: string | null
+  is_internal_supplier: boolean | null
+  general_discount_pct: number | null
+  income_tax_file_number: string | null
+  income_tax_file_type: number | null
+  withholding_pct: number | null
+  withholding_valid_until: string | null
+  max_withholding_pct: number | null
+  bookkeeping_cert_valid_until: string | null
+  withholding_discount: number | null
+  withholding_discount_until: string | null
+  withholds_from_supplier: boolean | null
+  income_tax_classification: string | null
+  tax_officer_code: string | null
+  is_required_to_file: boolean | null
+  withholding_from_date: string | null
+  withholding_to_date: string | null
+  max_withholding_code: string | null
+  withholding_tolerance_shekel: boolean | null
+  withholding_file_code: string | null
+  withholding_code_2: string | null
+  withholding_code_3: string | null
+  // qualification
+  qualification_status: string | null
+  qualification_notes: string | null
+  qualified_at: string | null
+}
+
+// All columns fetched in list & detail queries — single source of truth.
+export const SUPPLIER_SELECT =
+  "id,company_id,supplier_number,name,supplier_kind,foreign_name,status," +
+  "tax_vat_id,payment_terms,currency_code," +
+  "phone,fax,email,website,address,address_line2,address_line3,city,country_code,zip_code," +
+  "for_attention,opening_date," +
+  "industry,branch_code,founding_year,employee_count,prints_in_english,is_confidential,is_casual," +
+  "responsible_person,is_foreign_supplier,authorization_level,default_order_type," +
+  "subcontractor_wh,consignment_wh,supplier_type_code," +
+  "coa_account_id,coa_account_code," +
+  "has_attachments,marketgeys_display,entry_note," +
+  "vat_file_number,pays_by_bank_transfer,round_invoice_price,pay_to_order_of," +
+  "ledger_account_code,purchases_account_code,cost_center_code,invoice_txn_type,credit_txn_type," +
+  "vat_code,is_internal_supplier,general_discount_pct,income_tax_file_number,income_tax_file_type," +
+  "withholding_pct,withholding_valid_until,max_withholding_pct,bookkeeping_cert_valid_until," +
+  "withholding_discount,withholding_discount_until,withholds_from_supplier," +
+  "income_tax_classification,tax_officer_code," +
+  "is_required_to_file,withholding_from_date,withholding_to_date,max_withholding_code," +
+  "withholding_tolerance_shekel,withholding_file_code,withholding_code_2,withholding_code_3," +
+  "qualification_status,qualification_notes,qualified_at"
+
+function mapSupplierRow(row: SupplierDbRow): ErpSupplier {
   return {
     id: row.id,
     companyId: row.company_id,
     supplierNum: row.supplier_number,
     name: row.name,
-    taxId: row.tax_vat_id,
+    foreignName: row.foreign_name ?? null,
     type: toErpSupplierType(row.supplier_kind),
+    status: row.status ?? "ACTIVE",
+    taxId: row.tax_vat_id,
     paymentTerms: row.payment_terms,
+    currencyCode: row.currency_code ?? null,
+    phone: row.phone ?? null,
+    fax: row.fax ?? null,
+    email: row.email ?? null,
+    website: row.website ?? null,
+    address: row.address ?? null,
+    addressLine2: row.address_line2 ?? null,
+    addressLine3: row.address_line3 ?? null,
+    city: row.city ?? null,
+    countryCode: row.country_code ?? null,
+    zipCode: row.zip_code ?? null,
+    forAttention: row.for_attention ?? false,
+    openingDate: row.opening_date ?? null,
+    industry: row.industry ?? null,
+    branchCode: row.branch_code ?? null,
+    foundingYear: row.founding_year ?? null,
+    employeeCount: row.employee_count ?? null,
+    printsInEnglish: row.prints_in_english ?? false,
+    isConfidential: row.is_confidential ?? false,
+    isCasual: row.is_casual ?? false,
+    responsiblePerson: row.responsible_person ?? null,
+    isForeignSupplier: row.is_foreign_supplier ?? false,
+    authorizationLevel: row.authorization_level ?? null,
+    defaultOrderType: row.default_order_type ?? null,
+    subcontractorWh: row.subcontractor_wh ?? null,
+    consignmentWh: row.consignment_wh ?? null,
+    supplierTypeCode: row.supplier_type_code ?? null,
+    coaAccountId: row.coa_account_id ?? null,
+    coaAccountCode: row.coa_account_code ?? null,
+    hasAttachments: row.has_attachments ?? false,
+    marketgeysDisplay: row.marketgeys_display ?? 0,
+    entryNote: row.entry_note ?? null,
+    vatFileNumber: row.vat_file_number ?? null,
+    paysByBankTransfer: row.pays_by_bank_transfer ?? false,
+    roundInvoicePrice: row.round_invoice_price ?? false,
+    payToOrderOf: row.pay_to_order_of ?? null,
+    ledgerAccountCode: row.ledger_account_code ?? null,
+    purchasesAccountCode: row.purchases_account_code ?? null,
+    costCenterCode: row.cost_center_code ?? null,
+    invoiceTxnType: row.invoice_txn_type ?? null,
+    creditTxnType: row.credit_txn_type ?? null,
+    vatCode: row.vat_code ?? null,
+    isInternalSupplier: row.is_internal_supplier ?? false,
+    generalDiscountPct: row.general_discount_pct ?? null,
+    incomeTaxFileNumber: row.income_tax_file_number ?? null,
+    incomeTaxFileType: row.income_tax_file_type ?? null,
+    withholdingPct: row.withholding_pct ?? null,
+    withholdingValidUntil: row.withholding_valid_until ?? null,
+    maxWithholdingPct: row.max_withholding_pct ?? null,
+    bookkeeepingCertValidUntil: row.bookkeeping_cert_valid_until ?? null,
+    withholdingDiscount: row.withholding_discount ?? null,
+    withholdingDiscountUntil: row.withholding_discount_until ?? null,
+    withholdsFromSupplier: row.withholds_from_supplier ?? false,
+    incomeTaxClassification: row.income_tax_classification ?? null,
+    taxOfficerCode: row.tax_officer_code ?? null,
+    isRequiredToFile: row.is_required_to_file ?? false,
+    withholdingFromDate: row.withholding_from_date ?? null,
+    withholdingToDate: row.withholding_to_date ?? null,
+    maxWithholdingCode: row.max_withholding_code ?? null,
+    withholdingToleranceShekel: row.withholding_tolerance_shekel ?? false,
+    withholdingFileCode: row.withholding_file_code ?? null,
+    withholdingCode2: row.withholding_code_2 ?? null,
+    withholdingCode3: row.withholding_code_3 ?? null,
+    qualificationStatus: row.qualification_status ?? "APPROVED",
+    qualificationNotes: row.qualification_notes ?? null,
+    qualifiedAt: row.qualified_at ?? null,
   }
 }
 
@@ -233,7 +402,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("erp_md_suppliers")
-    .select("id,company_id,supplier_number,name,supplier_kind,tax_vat_id,payment_terms")
+    .select(SUPPLIER_SELECT)
     .eq("company_id", activeCompanyId)
     .order("name", { ascending: true })
 
@@ -249,7 +418,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const suppliers = (data ?? []).map(mapSupplierRow)
+  const suppliers = ((data ?? []) as unknown as SupplierDbRow[]).map(mapSupplierRow)
 
   if (!includeAggregates) {
     return NextResponse.json({ data: suppliers })
@@ -311,11 +480,45 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from("erp_md_suppliers")
     .insert(insertRow)
-    .select(
-      "id,company_id,supplier_number,name,supplier_kind,tax_vat_id,payment_terms",
-    )
+    .select(SUPPLIER_SELECT)
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-  return NextResponse.json({ data: mapSupplierRow(data) }, { status: 201 })
+
+  const row = data as unknown as SupplierDbRow
+
+  // Priority parity #3: פתיחת חשבון AP אוטומטית בספר החשבונות.
+  // קוד החשבון = מספר הספק (כמו Priority: "יפתח חשבון 200005 שיקושר לספק").
+  let coaCreated: { id: string; code: string } | null = null
+  try {
+    const { data: coaRow } = await supabase
+      .from("mo_chart_of_accounts")
+      .insert({
+        code: row.supplier_number,
+        name: row.name,
+        account_type: "liability",
+        company_id: activeCompanyId,
+      })
+      .select("id,code")
+      .single()
+
+    if (coaRow) {
+      coaCreated = { id: coaRow.id, code: coaRow.code }
+      // קשר בין הספק לחשבון
+      await supabase
+        .from("erp_md_suppliers")
+        .update({ coa_account_id: coaRow.id, coa_account_code: coaRow.code })
+        .eq("id", row.id)
+    }
+  } catch {
+    // לא בלוקר — הספק נוצר גם בלי חשבון CoA
+  }
+
+  return NextResponse.json(
+    {
+      data: mapSupplierRow(row),
+      coaCreated,
+    },
+    { status: 201 },
+  )
 }

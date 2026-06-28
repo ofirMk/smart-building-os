@@ -76,6 +76,8 @@ export type ProcurementOrderDetailLineDto = {
   lineStatus: string
   isClosedLine: boolean
   splitParentLineId: string | null
+  // מחר"ל — Priority parity
+  listPrice: number | null
 }
 
 export type ProcurementShippingAddress = {
@@ -132,6 +134,28 @@ export type ProcurementOrderDetailDto = {
   affectsPlanning: boolean
   closedAt: string | null
   closedBy: string | null
+  // "אישורים ומעקב ביצוע" tab — Priority parity
+  isPrinted: boolean
+  isUnlockedForChanges: boolean
+  isPartiallyClosed: boolean
+  isPurchasingOnly: boolean
+  supplierAuthLevelOverride: number | null
+  approversListCode: string | null
+  /** החותם הבא — שם המאשר הבא בתור (Priority: NEXTSIGNER) */
+  nextSignerName: string | null
+  // extended header fields — Priority parity
+  poTypeCode: string | null
+  deliveryMethodCode: string | null
+  branchCode: string | null
+  forUserName: string | null
+  centralizedDemandRef: string | null
+  quoteRef: string | null
+  blanketOrderRef: string | null
+  customerOrderRef: string | null
+  serviceCallRef: string | null
+  importExportFileType: string | null
+  importExportFileRef: string | null
+  locationTracking: string | null
   // relations
   supplier: {
     id: string
@@ -226,6 +250,27 @@ type HeaderRow = {
   affects_planning: boolean | null
   closed_at: string | null
   closed_by: string | null
+  // "אישורים ומעקב ביצוע"
+  is_printed: boolean | null
+  is_unlocked_for_changes: boolean | null
+  is_partially_closed: boolean | null
+  is_purchasing_only: boolean | null
+  supplier_auth_level_override: number | null
+  approvers_list_code: string | null
+  next_signer_name: string | null
+  // extended header fields
+  po_type_code: string | null
+  delivery_method_code: string | null
+  branch_code: string | null
+  for_user_name: string | null
+  centralized_demand_ref: string | null
+  quote_ref: string | null
+  blanket_order_ref: string | null
+  customer_order_ref: string | null
+  service_call_ref: string | null
+  import_export_file_type: string | null
+  import_export_file_ref: string | null
+  location_tracking: string | null
   supplier: SupplierJoin | SupplierJoin[]
   project: ProjectJoin | ProjectJoin[]
   company: CompanyJoin | CompanyJoin[]
@@ -270,6 +315,7 @@ type LineRow = {
   line_status: string | null
   is_closed_line: boolean | null
   split_parent_line_id: string | null
+  list_price: number | string | null
   item: ItemJoin | ItemJoin[]
   created_at: string
 }
@@ -320,6 +366,13 @@ export async function GET(
         "contact_id,receiving_warehouse_code,order_date,payment_terms_code",
         "vat_code,withholding_pct,shipping_addr_he,shipping_addr_en",
         "is_confidential,affects_planning,closed_at,closed_by",
+        // "אישורים ומעקב ביצוע"
+        "is_printed,is_unlocked_for_changes,is_partially_closed,is_purchasing_only",
+        "supplier_auth_level_override,approvers_list_code,next_signer_name",
+        // extended header fields
+        "po_type_code,delivery_method_code,branch_code,for_user_name",
+        "centralized_demand_ref,quote_ref,blanket_order_ref,customer_order_ref",
+        "service_call_ref,import_export_file_type,import_export_file_ref,location_tracking",
         "supplier:erp_md_suppliers!supplier_id(id,name,supplier_number,email,address,phone,tax_vat_id,payment_terms)",
         "project:erp_proj_projects!project_id(id,project_number,name)",
         "company:erp_companies!company_id(id,name_he,name_en)",
@@ -355,7 +408,7 @@ export async function GET(
         "line_number,uom,supplier_sku,supplier_sku_description",
         "budget_item_code,budget_utilization_date,import_cost_type",
         "demand_number,sales_order_id,sales_order_line_id",
-        "line_status,is_closed_line,split_parent_line_id",
+        "line_status,is_closed_line,split_parent_line_id,list_price",
         "created_at",
         "item:erp_md_items!item_id(id,item_number,description)",
       ].join(",")
@@ -409,6 +462,27 @@ export async function GET(
     affectsPlanning: header.affects_planning ?? true,
     closedAt: header.closed_at,
     closedBy: header.closed_by,
+    // "אישורים ומעקב ביצוע"
+    isPrinted: Boolean(header.is_printed),
+    isUnlockedForChanges: Boolean(header.is_unlocked_for_changes),
+    isPartiallyClosed: Boolean(header.is_partially_closed),
+    isPurchasingOnly: Boolean(header.is_purchasing_only),
+    supplierAuthLevelOverride: header.supplier_auth_level_override ?? null,
+    approversListCode: header.approvers_list_code ?? null,
+    nextSignerName: header.next_signer_name ?? null,
+    // extended header fields
+    poTypeCode: header.po_type_code ?? null,
+    deliveryMethodCode: header.delivery_method_code ?? null,
+    branchCode: header.branch_code ?? null,
+    forUserName: header.for_user_name ?? null,
+    centralizedDemandRef: header.centralized_demand_ref ?? null,
+    quoteRef: header.quote_ref ?? null,
+    blanketOrderRef: header.blanket_order_ref ?? null,
+    customerOrderRef: header.customer_order_ref ?? null,
+    serviceCallRef: header.service_call_ref ?? null,
+    importExportFileType: header.import_export_file_type ?? null,
+    importExportFileRef: header.import_export_file_ref ?? null,
+    locationTracking: header.location_tracking ?? null,
     supplier: supplier
       ? {
           id: supplier.id,
@@ -478,6 +552,8 @@ export async function GET(
         lineStatus: line.line_status ?? "OPEN",
         isClosedLine: Boolean(line.is_closed_line),
         splitParentLineId: line.split_parent_line_id,
+        // מחר"ל — Priority parity
+        listPrice: toNumberOrNull(line.list_price),
       }
     }),
   }
@@ -543,6 +619,26 @@ const updateOrderSchema = z
     shippingAddrEn: shippingAddrPatchSchema.nullable().optional(),
     isConfidential: z.boolean().optional(),
     affectsPlanning: z.boolean().optional(),
+    // "אישורים ומעקב ביצוע" — Priority parity
+    isPrinted: z.boolean().optional(),
+    isUnlockedForChanges: z.boolean().optional(),
+    isPartiallyClosed: z.boolean().optional(),
+    isPurchasingOnly: z.boolean().optional(),
+    supplierAuthLevelOverride: z.number().int().min(0).max(9999).nullable().optional(),
+    approversListCode: z.string().trim().min(1).max(30).nullable().optional(),
+    // extended header fields
+    poTypeCode: z.string().trim().min(1).max(20).nullable().optional(),
+    deliveryMethodCode: z.string().trim().min(1).max(30).nullable().optional(),
+    branchCode: z.string().trim().min(1).max(20).nullable().optional(),
+    forUserName: z.string().trim().min(1).max(100).nullable().optional(),
+    centralizedDemandRef: z.string().trim().min(1).max(50).nullable().optional(),
+    quoteRef: z.string().trim().min(1).max(50).nullable().optional(),
+    blanketOrderRef: z.string().trim().min(1).max(50).nullable().optional(),
+    customerOrderRef: z.string().trim().min(1).max(50).nullable().optional(),
+    serviceCallRef: z.string().trim().min(1).max(50).nullable().optional(),
+    importExportFileType: z.string().trim().min(1).max(20).nullable().optional(),
+    importExportFileRef: z.string().trim().min(1).max(50).nullable().optional(),
+    locationTracking: z.string().trim().min(1).max(100).nullable().optional(),
   })
   .strict()
 
@@ -660,6 +756,26 @@ export async function PUT(
   if (input.shippingAddrEn !== undefined) patch.shipping_addr_en = input.shippingAddrEn
   if (input.isConfidential !== undefined) patch.is_confidential = input.isConfidential
   if (input.affectsPlanning !== undefined) patch.affects_planning = input.affectsPlanning
+  // "אישורים ומעקב ביצוע"
+  if (input.isPrinted !== undefined) patch.is_printed = input.isPrinted
+  if (input.isUnlockedForChanges !== undefined) patch.is_unlocked_for_changes = input.isUnlockedForChanges
+  if (input.isPartiallyClosed !== undefined) patch.is_partially_closed = input.isPartiallyClosed
+  if (input.isPurchasingOnly !== undefined) patch.is_purchasing_only = input.isPurchasingOnly
+  if (input.supplierAuthLevelOverride !== undefined) patch.supplier_auth_level_override = input.supplierAuthLevelOverride
+  if (input.approversListCode !== undefined) patch.approvers_list_code = input.approversListCode
+  // extended header fields
+  if (input.poTypeCode !== undefined) patch.po_type_code = input.poTypeCode
+  if (input.deliveryMethodCode !== undefined) patch.delivery_method_code = input.deliveryMethodCode
+  if (input.branchCode !== undefined) patch.branch_code = input.branchCode
+  if (input.forUserName !== undefined) patch.for_user_name = input.forUserName
+  if (input.centralizedDemandRef !== undefined) patch.centralized_demand_ref = input.centralizedDemandRef
+  if (input.quoteRef !== undefined) patch.quote_ref = input.quoteRef
+  if (input.blanketOrderRef !== undefined) patch.blanket_order_ref = input.blanketOrderRef
+  if (input.customerOrderRef !== undefined) patch.customer_order_ref = input.customerOrderRef
+  if (input.serviceCallRef !== undefined) patch.service_call_ref = input.serviceCallRef
+  if (input.importExportFileType !== undefined) patch.import_export_file_type = input.importExportFileType
+  if (input.importExportFileRef !== undefined) patch.import_export_file_ref = input.importExportFileRef
+  if (input.locationTracking !== undefined) patch.location_tracking = input.locationTracking
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "אף שדה לא סופק לעדכון" }, { status: 400 })

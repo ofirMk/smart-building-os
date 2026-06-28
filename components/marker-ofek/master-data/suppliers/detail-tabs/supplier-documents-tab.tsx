@@ -101,6 +101,7 @@ type DocumentRow = {
   storageBucket: string
   uploadedAt: string
   isLocked: boolean
+  isFlagged: boolean
   signedUrl: string | null
 }
 
@@ -533,6 +534,15 @@ function DocumentRowItem({
             >
               <Lock className="size-2.5" aria-hidden />
               נעול
+            </Badge>
+          ) : null}
+          {row.isFlagged ? (
+            <Badge
+              variant="outline"
+              className="gap-1 border-rose-400/30 bg-rose-500/10 text-[10px] text-rose-700 dark:text-rose-300"
+            >
+              <AlertTriangle className="size-2.5" aria-hidden />
+              מסומן
             </Badge>
           ) : null}
         </div>

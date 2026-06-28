@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { data, error } = await supabase
     .from("erp_md_supplier_bank_accounts")
-    .select("id,company_id,supplier_id,bank_name,branch_code,account_number,iban,swift,is_primary")
+    .select("id,company_id,supplier_id,bank_name,bank_code,branch_code,branch_name,account_number,iban,swift,is_primary")
     .eq("company_id", activeCompanyId)
     .eq("supplier_id", supplierId)
     .order("is_primary", { ascending: false })
@@ -28,7 +28,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       companyId: row.company_id,
       supplierId: row.supplier_id,
       bankName: row.bank_name,
+      bankCode: row.bank_code ?? null,
       branchCode: row.branch_code,
+      branchName: row.branch_name ?? null,
       accountNumber: row.account_number,
       iban: row.iban,
       swift: row.swift,
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!gate.ok) return gate.response
   const { supabase, activeCompanyId } = gate.ctx
 
-  const body = (await req.json().catch(() => null)) as { bankName?: unknown; branchCode?: unknown; accountNumber?: unknown; iban?: unknown; swift?: unknown; isPrimary?: unknown } | null
+  const body = (await req.json().catch(() => null)) as { bankName?: unknown; bankCode?: unknown; branchCode?: unknown; branchName?: unknown; accountNumber?: unknown; iban?: unknown; swift?: unknown; isPrimary?: unknown } | null
   const accountNumber = sanitizeOptionalString(body?.accountNumber)
   if (!accountNumber) {
     return NextResponse.json({ error: "accountNumber is required" }, { status: 400 })
@@ -55,13 +57,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       company_id: activeCompanyId,
       supplier_id: supplierId,
       bank_name: sanitizeOptionalString(body?.bankName) ?? "",
+      bank_code: sanitizeOptionalString(body?.bankCode),
       branch_code: sanitizeOptionalString(body?.branchCode),
+      branch_name: sanitizeOptionalString(body?.branchName),
       account_number: accountNumber,
       iban: sanitizeOptionalString(body?.iban),
       swift: sanitizeOptionalString(body?.swift),
       is_primary: body?.isPrimary === true,
     })
-    .select("id,company_id,supplier_id,bank_name,branch_code,account_number,iban,swift,is_primary")
+    .select("id,company_id,supplier_id,bank_name,bank_code,branch_code,branch_name,account_number,iban,swift,is_primary")
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -71,7 +75,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       companyId: data.company_id,
       supplierId: data.supplier_id,
       bankName: data.bank_name,
+      bankCode: data.bank_code ?? null,
       branchCode: data.branch_code,
+      branchName: data.branch_name ?? null,
       accountNumber: data.account_number,
       iban: data.iban,
       swift: data.swift,

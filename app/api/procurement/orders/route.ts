@@ -89,21 +89,51 @@ export async function GET(req: NextRequest) {
 
   const status = req.nextUrl.searchParams.get("status")?.trim() || null
   const q = req.nextUrl.searchParams.get("q")?.trim() || null
+  // Phase 4.1 — Advanced filters
+  const statusesParam = req.nextUrl.searchParams.get("statuses")?.trim() || null
+  const statusesList = statusesParam
+    ? statusesParam.split(",").map((s) => s.trim()).filter(Boolean)
+    : null
+  const dateFrom = req.nextUrl.searchParams.get("dateFrom")?.trim() || null
+  const dateTo = req.nextUrl.searchParams.get("dateTo")?.trim() || null
+  const amountMinParam = req.nextUrl.searchParams.get("amountMin")?.trim() || null
+  const amountMaxParam = req.nextUrl.searchParams.get("amountMax")?.trim() || null
+  const amountMin = amountMinParam !== null ? Number(amountMinParam) : null
+  const amountMax = amountMaxParam !== null ? Number(amountMaxParam) : null
+  const pageParam = parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10)
+  const limitParam = Math.min(
+    200,
+    Math.max(1, parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10)),
+  )
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1
+  const limit = Number.isFinite(limitParam) ? limitParam : 50
+  const from = (page - 1) * limit
+  const to = from + limit - 1
 
   // JOIN דרך FK של `supplier_id` לטבלת `erp_md_suppliers`. ה-alias `supplier:` עוטף
   // את האובייקט המוחזר במפתח קריא בלי לחשוף את שם הטבלה הפנימי ללקוח.
   let query = supabase
     .from("erp_purchase_orders")
     .select(
-      "id,po_number,title,status,total_amount,total_amount_net,vat_amount,total_amount_gross,currency,issued_at,created_at,notes,supplier:erp_md_suppliers!supplier_id(id,name,supplier_number)"
+      "id,po_number,title,status,total_amount,total_amount_net,vat_amount,total_amount_gross,currency,issued_at,created_at,notes,supplier:erp_md_suppliers!supplier_id(id,name,supplier_number)",
+      { count: "exact" }
     )
     .eq("company_id", activeCompanyId)
     .order("created_at", { ascending: false })
+    .range(from, to)
 
   if (status) query = query.eq("status", status)
+  // Phase 4.1 — multi-status overrides single status
+  if (statusesList?.length) query = query.in("status", statusesList)
+  if (dateFrom) query = query.gte("created_at", dateFrom)
+  if (dateTo) query = query.lte("created_at", dateTo + "T23:59:59.999Z")
+  if (amountMin !== null && Number.isFinite(amountMin))
+    query = query.gte("total_amount_gross", amountMin)
+  if (amountMax !== null && Number.isFinite(amountMax))
+    query = query.lte("total_amount_gross", amountMax)
   if (q) query = query.or(`po_number.ilike.%${q}%,title.ilike.%${q}%`)
 
-  const { data, error } = await query
+  const { data, error, count } = await query
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -133,7 +163,7 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  return NextResponse.json({ data: dto })
+  return NextResponse.json({ data: dto, total: count ?? 0, page, limit })
 }
 
 // ============================================================================
@@ -208,6 +238,10 @@ const lineSchema = z.object({
   // Phase 7.5 — 3% Rule governance (optional; required only when requires_escalation computed=true)
   escalationJustification: z.string().trim().min(10).optional(),
   escalationCategory: z.enum(ESCALATION_CATEGORIES).optional(),
+  // Phase 8 — Framework contract line link + price-lock override
+  contractLineId: z.string().uuid().optional(),
+  /** Required when unitPrice ≠ contract_unit_price (Phase 8.3 price-lock enforcement). */
+  priceOverrideReason: z.string().trim().min(5).optional(),
   // Phase A — Priority parity (all optional; auto-fill בשרת היכן שאפשר)
   lineNumber: z.number().int().positive().optional(),
   uom: z.string().trim().min(1).max(32).optional(),
@@ -267,6 +301,11 @@ const createOrderSchema = z.object({
   shippingAddrEn: shippingAddrSchema.optional(),
   isConfidential: z.boolean().optional(),
   affectsPlanning: z.boolean().optional(),
+  // Phase 8 — Framework contract (Blanket / Release Order)
+  /** FK to erp_subcontractor_contracts. When set, auto-validates supplier match. */
+  contractId: z.string().uuid().optional(),
+  /** Explicit release-order flag; inferred from contractId when omitted. */
+  isReleaseOrder: z.boolean().optional(),
   lines: z.array(lineSchema).min(1, "חובה לפחות שורה אחת"),
 }).refine(
   (data) => {
@@ -310,7 +349,7 @@ function generatePoNumber(): string {
 export async function POST(req: NextRequest) {
   const ctx = await requireProcurementApiContext(req)
   if (!ctx.ok) return ctx.response
-  const { supabase, activeCompanyId } = ctx
+  const { supabase, activeCompanyId, userId } = ctx
 
   // 1) ולידציה של ה-payload.
   const body = await req.json().catch(() => null)
@@ -327,7 +366,7 @@ export async function POST(req: NextRequest) {
   //    ולצורך Tesla auto-fill של header fields בהמשך (payment terms, וכו').
   const supplierLookup = await supabase
     .from("erp_md_suppliers")
-    .select("id,name,payment_terms,address")
+    .select("id,name,payment_terms,address,status,qualification_status")
     .eq("company_id", activeCompanyId)
     .eq("id", input.supplierId)
     .maybeSingle()
@@ -343,7 +382,127 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
   }
+
+  // Phase 7.2 — Block PO creation for operationally or qualification-blocked suppliers.
+  if (
+    supplierLookup.data.status === "BLOCKED" ||
+    supplierLookup.data.qualification_status === "BLOCKED"
+  ) {
+    return NextResponse.json(
+      {
+        error: "SUPPLIER_BLOCKED",
+        message: "לא ניתן ליצור הזמנה לספק זה — הספק חסום. יש לפנות למנהל הרכש לשינוי סטטוס הספק.",
+      },
+      { status: 409 }
+    )
+  }
+
   const supplierName = supplierLookup.data.name as string
+
+  // Pre-calculate totalAmountNet early so contract balance check can use it.
+  const totalAmountNet = round2(
+    input.lines.reduce((sum: number, line: { quantity: number; unitPrice: number }) => sum + line.quantity * line.unitPrice, 0)
+  )
+
+  // ── Phase 8.1 — Framework contract validation ───────────────────────────
+  // When contractId is provided:
+  //   a) Validate the contract belongs to this company and is ACTIVE.
+  //   b) Validate the contract's subcontractor matches the PO supplier.
+  //   c) Compute remaining balance and emit a warning if this PO would
+  //      exceed it (warning only — not a hard block unless configured).
+  const contractWarnings: string[] = []
+  let contractLineMap = new Map<string, { unit_price: number; description: string; uom: string }>()
+
+  if (input.contractId) {
+    const contractLookup = await supabase
+      .from("erp_subcontractor_contracts")
+      .select("id,status,subcontractor_id,total_amount,payment_terms")
+      .eq("id", input.contractId)
+      .eq("company_id", activeCompanyId)
+      .maybeSingle()
+
+    if (contractLookup.error) {
+      return NextResponse.json({ error: contractLookup.error.message }, { status: 500 })
+    }
+    if (!contractLookup.data) {
+      return NextResponse.json(
+        { error: "חוזה לא נמצא או לא שייך לחברה הפעילה" },
+        { status: 404 }
+      )
+    }
+
+    const contract = contractLookup.data
+
+    if (contract.status !== "ACTIVE") {
+      return NextResponse.json(
+        {
+          error: "CONTRACT_NOT_ACTIVE",
+          message: `חוזה ${input.contractId} אינו במצב ACTIVE (מצב נוכחי: ${contract.status}). ניתן ליצור שיחרורים רק מחוזהות פעילות.`,
+        },
+        { status: 409 }
+      )
+    }
+
+    // Supplier must match the contract's subcontractor.
+    if (contract.subcontractor_id !== input.supplierId) {
+      return NextResponse.json(
+        {
+          error: "CONTRACT_SUPPLIER_MISMATCH",
+          message: "הספק בהזמנה אינו תואם לקבלן המשנה בחוזה. בקשה בחרו את הספק מתוך החוזה או עדכנו את החוזה.",
+        },
+        { status: 400 }
+      )
+    }
+
+    // Balance check: sum of committed POs on this contract.
+    const COMMITTED_STATUSES_LOCAL = [
+      "PENDING", "PENDING_APPROVAL", "PENDING_PRICE_APPROVAL", "PENDING_CEO_APPROVAL",
+      "APPROVED", "ISSUED", "SENT_TO_SUPPLIER", "ON_SHIP",
+      "PARTIALLY_RECEIVED", "FULLY_RECEIVED", "RECEIVED", "CLOSED",
+    ]
+    const { data: releasedRows } = await supabase
+      .from("erp_purchase_orders")
+      .select("total_amount_net")
+      .eq("company_id", activeCompanyId)
+      .eq("contract_id", input.contractId)
+      .in("status", COMMITTED_STATUSES_LOCAL)
+
+    const releasedAmount = (releasedRows ?? []).reduce(
+      (sum: number, r: { total_amount_net: number | null }) => sum + Number(r.total_amount_net ?? 0),
+      0,
+    )
+    const contractTotal = Number(contract.total_amount ?? 0)
+    const projectedTotal = releasedAmount + totalAmountNet
+    const remainingBefore = Math.max(0, contractTotal - releasedAmount)
+
+    if (projectedTotal > contractTotal) {
+      const overrun = round2(projectedTotal - contractTotal)
+      contractWarnings.push(
+        `חריגת מסגרת חוזה: סך ההזמנה הנוכחית (₪${round2(totalAmountNet).toLocaleString("he-IL")}) ייצור חריגה של ₪${overrun.toLocaleString("he-IL")} מעל היתרה הפנויה בחוזה (₪${remainingBefore.toLocaleString("he-IL")}). ההזמנה נשמרת באזהרה.`
+      )
+    }
+
+    // Phase 8.3 — Fetch contract BoQ lines for price-lock enforcement below.
+    const { data: boqLines } = await supabase
+      .from("erp_contract_boq_lines")
+      .select("id,unit_price,description,uom,discount_amount,quantity")
+      .eq("contract_id", input.contractId)
+      .eq("company_id", activeCompanyId)
+
+    for (const bl of boqLines ?? []) {
+      const qty = Number(bl.quantity ?? 0)
+      const unitPrice = Number(bl.unit_price ?? 0)
+      const discountAmount = Number(bl.discount_amount ?? 0)
+      // Effective net unit price after discount
+      const effectiveUnitPrice =
+        qty > 0 ? Math.round(((unitPrice * qty - discountAmount) / qty) * 100) / 100 : unitPrice
+      contractLineMap.set(bl.id as string, {
+        unit_price: effectiveUnitPrice,
+        description: bl.description as string,
+        uom: bl.uom as string,
+      })
+    }
+  }
   // supplier.payment_terms הוא טקסט חופשי legacy — לא משתמשים בו ב-INSERT
   // (payment_terms_code הוא FK ל-master). ה-UI יוכל לשלוף אותו בנפרד
   // דרך GET של ה-supplier ולהציג כ-hint. לא נשמר ב-local var כאן.
@@ -454,9 +613,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 5) חישוב פיננסי בצד השרת — מקור-אמת יחיד. הלקוח אינו אמין על סכומים.
-  const totalAmountNet = round2(
-    input.lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
-  )
+  // totalAmountNet already computed above for the contract balance check.
   let vatMultiplier: number
   try {
     vatMultiplier = await getVatMultiplier(activeCompanyId)
@@ -547,6 +704,32 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // ── Phase 8.3 — Price-lock enforcement ──────────────────────────────────
+  // For each line that references a contract BoQ line, compare the submitted
+  // unit_price against the contract's locked (effective) unit price.
+  // A deviation requires a priceOverrideReason of at least 5 characters.
+  const priceLockErrors: string[] = []
+  for (const [idx, line] of input.lines.entries()) {
+    if (!line.contractLineId) continue
+    const contractLine = contractLineMap.get(line.contractLineId)
+    if (!contractLine) continue
+    const delta = Math.abs(line.unitPrice - contractLine.unit_price)
+    const threshold = 0.01 // ₪0.01 tolerance for FP rounding
+    if (delta > threshold) {
+      if (!line.priceOverrideReason || line.priceOverrideReason.trim().length < 5) {
+        priceLockErrors.push(
+          `שורה ${idx + 1} (פריט סוג ${contractLine.description}): מחיר היחידה (\u20aa${line.unitPrice}) שונה ממחיר החוזה הנעול (\u20aa${contractLine.unit_price}). יש לספק priceOverrideReason (5+ תווים).`
+        )
+      }
+    }
+  }
+  if (priceLockErrors.length > 0) {
+    return NextResponse.json(
+      { error: "PRICE_LOCK_VIOLATION", details: priceLockErrors },
+      { status: 400 }
+    )
+  }
+
   // חישוב PO-total deviation על בסיס סכום ההיפרשי של כל השורות
   //   deviation משוקלל לפי שווי שורה (qty * unit_price).
   let weightedSum = 0
@@ -622,6 +805,11 @@ export async function POST(req: NextRequest) {
       shipping_addr_en: input.shippingAddrEn ?? null,
       is_confidential: input.isConfidential ?? false,
       affects_planning: input.affectsPlanning ?? true,
+      // Phase 6.2 — SoD audit trail: record who created this PO.
+      created_by: userId,
+      // Phase 8 — Framework contract bridge
+      contract_id: input.contractId ?? null,
+      is_release_order: input.isReleaseOrder ?? (input.contractId != null ? true : false),
     })
     .select("id,po_number,title,status,currency,total_amount_net,vat_amount,total_amount_gross,notes,created_at,urgency_level,requires_po_escalation,po_total_deviation_pct,ai_negotiation_status,contact_id,receiving_warehouse_code,order_date,payment_terms_code,is_confidential,affects_planning")
     .single()
@@ -683,6 +871,12 @@ export async function POST(req: NextRequest) {
       alternative_unit_price: enrichment?.alternativeUnitPrice ?? null,
       alternative_lead_time_days: enrichment?.alternativeLeadTimeDays ?? null,
       price_source: line.priceSource ?? ("MANUAL" as const),
+      // Phase 8 — Contract BoQ line link + price lock
+      contract_line_id: line.contractLineId ?? null,
+      contract_unit_price: line.contractLineId
+        ? (contractLineMap.get(line.contractLineId)?.unit_price ?? null)
+        : null,
+      price_override_reason: line.priceOverrideReason ?? null,
       // Phase A — Priority parity (Tesla auto-fill של line_number; שאר השדות
       //          nullable ומקבלים את הערך מהקליינט אם סופק).
       line_number: line.lineNumber ?? idx + 1,
@@ -752,6 +946,11 @@ export async function POST(req: NextRequest) {
         notes: finalHeader.data?.notes ?? input.notes ?? null,
         createdAt: finalHeader.data?.created_at ?? new Date().toISOString(),
         linesCount: linesInsert.data?.length ?? input.lines.length,
+        // Phase 8 — contract release metadata
+        contractId: input.contractId ?? null,
+        isReleaseOrder: input.isReleaseOrder ?? (input.contractId != null),
+        // Non-blocking warnings (e.g. balance exceeded, commitment ops failed)
+        warnings: contractWarnings.length > 0 ? contractWarnings : undefined,
       },
     },
     { status: 201 }

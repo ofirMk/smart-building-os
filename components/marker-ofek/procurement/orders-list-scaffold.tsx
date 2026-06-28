@@ -23,18 +23,26 @@
  */
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
+  AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   FileCheck,
   FileText,
+  Filter,
   Loader2,
   Package,
   Plus,
   Receipt,
+  RefreshCw,
   Search,
   ShoppingCart,
+  SlidersHorizontal,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -42,7 +50,23 @@ import {
   BentoSmartList,
   type BentoSmartListColumn,
 } from "@/components/ui/bento-smart-list"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { MasterDetailShell } from "@/components/infrastructure/master-detail/master-detail-shell"
@@ -54,6 +78,11 @@ import { PoStatusBadge } from "@/components/marker-ofek/procurement/po-status-ba
 import { PoSubmitButton } from "@/components/marker-ofek/procurement/po-submit-button"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { usePoStatusTypes } from "@/lib/hooks/use-po-status-types"
+import {
+  getAvailableTransitions,
+  isTransitionAllowed,
+  type POStatus,
+} from "@/lib/procurement/po-state-machine"
 import { cn } from "@/lib/utils"
 
 // ----------------------------------------------------------------------------
@@ -143,52 +172,184 @@ function formatMoneyCompact(value: number, currency: string | null): string {
 }
 
 // ----------------------------------------------------------------------------
+// Helpers — URL state sync (no useSearchParams to avoid Suspense boundary)
+// ----------------------------------------------------------------------------
+
+function readUrlFilters() {
+  if (typeof window === "undefined") return {}
+  const p = new URLSearchParams(window.location.search)
+  return {
+    searchTerm: p.get("q") ?? "",
+    statusFilter: p.get("status") ?? "",
+    selectedStatuses: p.get("statuses") ? p.get("statuses")!.split(",").filter(Boolean) : [],
+    dateFrom: p.get("dateFrom") ?? "",
+    dateTo: p.get("dateTo") ?? "",
+    amountMin: p.get("amountMin") ?? "",
+    amountMax: p.get("amountMax") ?? "",
+    supplierSearch: p.get("supplier") ?? "",
+  }
+}
+
+// ----------------------------------------------------------------------------
 // Component
 // ----------------------------------------------------------------------------
 
 export function OrdersListScaffold() {
   const router = useRouter()
+  const pathname = usePathname()
   const [rows, setRows] = React.useState<PoRow[]>([])
   const [loading, setLoading] = React.useState(true)
-  const [searchTerm, setSearchTerm] = React.useState("")
+  const [loadError, setLoadError] = React.useState<string | null>(null)
   const [activePoId, setActivePoId] = React.useState<string | null>(null)
+  const [page, setPage] = React.useState(1)
+  const [totalRows, setTotalRows] = React.useState(0)
+  const PAGE_SIZE = 50
 
-  // Phase B' — טעינת מטא-דאטה של כל סטטוסי ה-PO מ-erp_po_status_types.
-  //           משמש ל-<PoStatusBadge /> (הוא קורא ל-hook פנימית) ול-KPI classifiers.
+  // ── Phase 4.1: Advanced filter state (initialised from URL) ──────────────
+  const initFilters = React.useMemo(() => readUrlFilters(), [])
+  const [searchTerm, setSearchTerm] = React.useState(initFilters.searchTerm ?? "")
+  const [statusFilter, setStatusFilter] = React.useState(initFilters.statusFilter ?? "")
+  const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>(
+    initFilters.selectedStatuses ?? [],
+  )
+  const [dateFrom, setDateFrom] = React.useState(initFilters.dateFrom ?? "")
+  const [dateTo, setDateTo] = React.useState(initFilters.dateTo ?? "")
+  const [amountMin, setAmountMin] = React.useState(initFilters.amountMin ?? "")
+  const [amountMax, setAmountMax] = React.useState(initFilters.amountMax ?? "")
+  const [supplierSearch, setSupplierSearch] = React.useState(initFilters.supplierSearch ?? "")
+  const [advancedOpen, setAdvancedOpen] = React.useState(false)
+
+  // ── Phase 4.2: Bulk selection ─────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+  const [bulkLoading, setBulkLoading] = React.useState(false)
+
+  // Phase B' — status meta from DB
   const { statusMap } = usePoStatusTypes()
 
+  // ── Sync URL on filter changes ────────────────────────────────────────────
+  const syncUrl = React.useCallback(
+    (overrides: Partial<{
+      q: string; status: string; statuses: string[]; dateFrom: string; dateTo: string;
+      amountMin: string; amountMax: string; supplier: string
+    }>) => {
+      const p = new URLSearchParams()
+      const q = overrides.q ?? searchTerm
+      const st = overrides.status ?? statusFilter
+      const sts = overrides.statuses ?? selectedStatuses
+      const df = overrides.dateFrom ?? dateFrom
+      const dt = overrides.dateTo ?? dateTo
+      const aMin = overrides.amountMin ?? amountMin
+      const aMax = overrides.amountMax ?? amountMax
+      const sup = overrides.supplier ?? supplierSearch
+      if (q) p.set("q", q)
+      if (st) p.set("status", st)
+      if (sts.length) p.set("statuses", sts.join(","))
+      if (df) p.set("dateFrom", df)
+      if (dt) p.set("dateTo", dt)
+      if (aMin) p.set("amountMin", aMin)
+      if (aMax) p.set("amountMax", aMax)
+      if (sup) p.set("supplier", sup)
+      const qs = p.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    },
+    [router, pathname, searchTerm, statusFilter, selectedStatuses, dateFrom, dateTo, amountMin, amountMax, supplierSearch],
+  )
+
   // ── Load (callback כדי שנוכל לרענן אחרי quick-actions כגון submit) ──
-  const loadOrders = React.useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await masterDataFetch<PoRow[]>("/api/procurement/orders")
-      setRows(data)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "טעינת הזמנות הרכש נכשלה",
-      )
-      setRows([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const loadOrders = React.useCallback(
+    async (
+      targetPage = 1,
+      opts?: {
+        status?: string
+        statuses?: string[]
+        dateFrom?: string
+        dateTo?: string
+        amountMin?: string
+        amountMax?: string
+      },
+    ) => {
+      setLoading(true)
+      setLoadError(null)
+      try {
+        const url = new URL("/api/procurement/orders", window.location.origin)
+        url.searchParams.set("page", String(targetPage))
+        url.searchParams.set("limit", String(PAGE_SIZE))
+        const st = opts?.status ?? statusFilter
+        const sts = opts?.statuses ?? selectedStatuses
+        const df = opts?.dateFrom ?? dateFrom
+        const dt = opts?.dateTo ?? dateTo
+        const aMin = opts?.amountMin ?? amountMin
+        const aMax = opts?.amountMax ?? amountMax
+        if (st) url.searchParams.set("status", st)
+        if (sts.length) url.searchParams.set("statuses", sts.join(","))
+        if (df) url.searchParams.set("dateFrom", df)
+        if (dt) url.searchParams.set("dateTo", dt)
+        if (aMin) url.searchParams.set("amountMin", aMin)
+        if (aMax) url.searchParams.set("amountMax", aMax)
+
+        const h = new Headers()
+        if (typeof document !== "undefined") {
+          const m = document.cookie.match(/active_company_id=([^;]+)/)
+          if (m) {
+            h.set("x-company-id", m[1])
+            h.set("x-active-company-id", m[1])
+          }
+        }
+
+        const res = await fetch(url.toString(), {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: h,
+        })
+        const payload = (await res.json()) as {
+          data?: PoRow[]
+          error?: string
+          total?: number
+          page?: number
+        }
+        if (!res.ok) throw new Error(payload.error ?? `שגיאת שרת ${res.status}`)
+        setRows(payload.data ?? [])
+        setTotalRows(payload.total ?? 0)
+        setPage(targetPage)
+        setSelectedIds(new Set()) // clear selection on reload
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "טעינת הזמנות הרכש נכשלה"
+        toast.error(message)
+        setLoadError(message)
+        setRows([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [PAGE_SIZE, statusFilter, selectedStatuses, dateFrom, dateTo, amountMin, amountMax],
+  )
 
   // ── Load on mount ────────────────────────────────────────────────────
   React.useEffect(() => {
     void loadOrders()
   }, [loadOrders])
 
-  // ── Filter (client-side) ─────────────────────────────────────────────
+  // ── Filter (client-side: text search + supplier) ─────────────────────
   const filteredRows = React.useMemo(() => {
+    let result = rows
     const trimmed = searchTerm.trim().toLowerCase()
-    if (!trimmed) return rows
-    return rows.filter(
-      (row) =>
-        row.poNumber.toLowerCase().includes(trimmed) ||
-        row.title.toLowerCase().includes(trimmed) ||
-        (row.supplier?.name ?? "").toLowerCase().includes(trimmed),
-    )
-  }, [rows, searchTerm])
+    if (trimmed) {
+      result = result.filter(
+        (row) =>
+          row.poNumber.toLowerCase().includes(trimmed) ||
+          row.title.toLowerCase().includes(trimmed) ||
+          (row.supplier?.name ?? "").toLowerCase().includes(trimmed),
+      )
+    }
+    const sup = supplierSearch.trim().toLowerCase()
+    if (sup) {
+      result = result.filter((row) =>
+        (row.supplier?.name ?? "").toLowerCase().includes(sup),
+      )
+    }
+    return result
+  }, [rows, searchTerm, supplierSearch])
 
   // ── KPI classifier helpers — dynamic from statusMap + legacy fallback ───
   const classifyStatus = React.useCallback(
@@ -263,6 +424,55 @@ export function OrdersListScaffold() {
     }
   }, [rows, classifyStatus])
 
+  // ── Phase 4.2: Bulk action helpers ───────────────────────────────────
+  const selectedRows = React.useMemo(
+    () => rows.filter((r) => selectedIds.has(r.id)),
+    [rows, selectedIds],
+  )
+
+  // Determine which bulk transitions are valid for ALL selected rows
+  const canBulkApprove =
+    selectedRows.length > 0 &&
+    selectedRows.every((r) => isTransitionAllowed(r.status as POStatus, "APPROVE"))
+  const canBulkCancel =
+    selectedRows.length > 0 &&
+    selectedRows.every((r) => isTransitionAllowed(r.status as POStatus, "CANCEL"))
+  const canBulkSend =
+    selectedRows.length > 0 &&
+    selectedRows.every((r) => isTransitionAllowed(r.status as POStatus, "SEND"))
+
+  async function executeBulkTransition(transition: "APPROVE" | "CANCEL" | "SEND") {
+    if (bulkLoading) return
+    setBulkLoading(true)
+    const ids = [...selectedIds]
+    const h = new Headers({ "content-type": "application/json" })
+    if (typeof document !== "undefined") {
+      const m = document.cookie.match(/active_company_id=([^;]+)/)
+      if (m) {
+        h.set("x-company-id", m[1])
+        h.set("x-active-company-id", m[1])
+      }
+    }
+    let success = 0
+    let fail = 0
+    await Promise.allSettled(
+      ids.map(async (id) => {
+        const res = await fetch("/api/procurement/po-transition", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: h,
+          body: JSON.stringify({ poId: id, transition }),
+        })
+        if (res.ok) success++
+        else fail++
+      }),
+    )
+    setBulkLoading(false)
+    if (fail > 0) toast.error(`${fail} הזמנות נכשלו; ${success} הצליחו`)
+    else toast.success(`${success} הזמנות עודכנו בהצלחה`)
+    void loadOrders()
+  }
+
   // ── Columns ───────────────────────────────────────────────────────────
   const columns = React.useMemo<BentoSmartListColumn<PoRow>[]>(
     () => [
@@ -335,6 +545,24 @@ export function OrdersListScaffold() {
   // ── Master content ────────────────────────────────────────────────────
   const masterContent = (
     <>
+      {loadError ? (
+        <Alert variant="destructive" className="mb-3">
+          <AlertTriangle className="size-4" aria-hidden />
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span>{loadError}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void loadOrders()}
+              className="shrink-0 gap-1.5"
+            >
+              <RefreshCw className="size-3.5" aria-hidden />
+              נסה שוב
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <header className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -345,9 +573,9 @@ export function OrdersListScaffold() {
             <p className="mt-1 text-xs text-muted-foreground">
               {loading
                 ? "טוען רשימת הזמנות…"
-                : `${filteredRows.length.toLocaleString("he-IL")} מתוך ${rows.length.toLocaleString(
-                    "he-IL",
-                  )} הזמנות`}
+                : totalRows > PAGE_SIZE
+                  ? `עמוד ${page} — ${rows.length.toLocaleString("he-IL")} מתוך ${totalRows.toLocaleString("he-IL")} הזמנות`
+                  : `${rows.length.toLocaleString("he-IL")} הזמנות`}
             </p>
           </div>
         </div>
@@ -367,6 +595,44 @@ export function OrdersListScaffold() {
               disabled={rows.length === 0 && !loading}
             />
           </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => {
+              const v = val ?? ""
+              setStatusFilter(v)
+              syncUrl({ status: v ?? undefined })
+              void loadOrders(1, { status: v ?? undefined })
+            }}
+          >
+            <SelectTrigger className="h-9 w-40 text-xs" aria-label="סנן לפי סטטוס">
+              <SelectValue placeholder="כל הסטטוסים" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">כל הסטטוסים</SelectItem>
+              {Object.entries(statusMap).map(([key, meta]) => (
+                <SelectItem key={key} value={key} className="text-xs">
+                  {meta.nameHe ?? key}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Phase 4.1 — Advanced filters toggle */}
+          <Button
+            type="button"
+            variant={advancedOpen ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="gap-1.5"
+            aria-expanded={advancedOpen}
+          >
+            <SlidersHorizontal className="size-3.5" aria-hidden />
+            פילטרים
+            {(selectedStatuses.length || dateFrom || dateTo || amountMin || amountMax) ? (
+              <Badge variant="default" className="ml-1 h-4 px-1 text-[10px]">
+                {[selectedStatuses.length ? "✓" : null, dateFrom || dateTo ? "📅" : null, amountMin || amountMax ? "₪" : null].filter(Boolean).length}
+              </Badge>
+            ) : null}
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -378,6 +644,160 @@ export function OrdersListScaffold() {
           </Button>
         </div>
       </header>
+
+      {/* Phase 4.1 — Advanced filter panel */}
+      {advancedOpen ? (
+        <div className="rounded-lg border border-border bg-muted/40 p-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-4">
+            {/* Date range */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium">מתאריך</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value)
+                  syncUrl({ dateFrom: e.target.value })
+                }}
+                className="h-8 text-xs"
+                aria-label="מתאריך"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium">עד תאריך</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value)
+                  syncUrl({ dateTo: e.target.value })
+                }}
+                className="h-8 text-xs"
+                aria-label="עד תאריך"
+              />
+            </div>
+            {/* Amount range */}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium">סכום מינימום</Label>
+              <Input
+                type="number"
+                min={0}
+                value={amountMin}
+                onChange={(e) => {
+                  setAmountMin(e.target.value)
+                  syncUrl({ amountMin: e.target.value })
+                }}
+                placeholder="0"
+                className="h-8 text-xs"
+                aria-label="סכום מינימום"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium">סכום מקסימום</Label>
+              <Input
+                type="number"
+                min={0}
+                value={amountMax}
+                onChange={(e) => {
+                  setAmountMax(e.target.value)
+                  syncUrl({ amountMax: e.target.value })
+                }}
+                placeholder="ללא הגבלה"
+                className="h-8 text-xs"
+                aria-label="סכום מקסימום"
+              />
+            </div>
+            {/* Multi-status selector */}
+            <div className="col-span-2 flex flex-col gap-1">
+              <Label className="text-xs font-medium">סטטוסים</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-full justify-between text-xs font-normal"
+                  >
+                    {selectedStatuses.length > 0
+                      ? `${selectedStatuses.length} סטטוסים נבחרו`
+                      : "כל הסטטוסים"}
+                    <ChevronDown className="size-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-56 p-1" dir="rtl">
+                  <div className="max-h-60 overflow-y-auto">
+                    {Object.entries(statusMap).map(([key, meta]) => (
+                      <label
+                        key={key}
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
+                      >
+                        <Checkbox
+                          checked={selectedStatuses.includes(key)}
+                          onCheckedChange={(chk) => {
+                            const next = chk
+                              ? [...selectedStatuses, key]
+                              : selectedStatuses.filter((s) => s !== key)
+                            setSelectedStatuses(next)
+                            syncUrl({ statuses: next })
+                          }}
+                          aria-label={meta.nameHe ?? key}
+                        />
+                        {meta.nameHe ?? key}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            {/* Supplier search */}
+            <div className="col-span-2 flex flex-col gap-1">
+              <Label className="text-xs font-medium">ספק</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute end-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Input
+                  type="search"
+                  value={supplierSearch}
+                  onChange={(e) => {
+                    setSupplierSearch(e.target.value)
+                    syncUrl({ supplier: e.target.value })
+                  }}
+                  placeholder="שם ספק…"
+                  className="h-8 pe-7 text-xs"
+                  aria-label="חיפוש ספק"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              onClick={() => {
+                setSelectedStatuses([])
+                setDateFrom("")
+                setDateTo("")
+                setAmountMin("")
+                setAmountMax("")
+                setSupplierSearch("")
+                syncUrl({ statuses: [], dateFrom: "", dateTo: "", amountMin: "", amountMax: "", supplier: "" })
+              }}
+            >
+              <X className="size-3" />
+              נקה פילטרים
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => void loadOrders(1)}
+            >
+              <Filter className="me-1 size-3" />
+              החל
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {/* KPI strip */}
       <section
@@ -435,7 +855,62 @@ export function OrdersListScaffold() {
       </section>
 
       {/* Master grid */}
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col gap-2">
+        {/* Phase 4.2 — Bulk Actions bar */}
+        {selectedIds.size > 0 ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
+            <span className="font-medium text-primary">
+              {selectedIds.size} הזמנות נבחרו
+            </span>
+            {canBulkApprove ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1.5 text-xs"
+                disabled={bulkLoading}
+                onClick={() => void executeBulkTransition("APPROVE")}
+              >
+                {bulkLoading ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <CheckCircle2 className="size-3.5" aria-hidden />
+                )}
+                אשר נבחרות
+              </Button>
+            ) : null}
+            {canBulkSend ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1.5 text-xs"
+                disabled={bulkLoading}
+                onClick={() => void executeBulkTransition("SEND")}
+              >
+                שלח לספק
+              </Button>
+            ) : null}
+            {canBulkCancel ? (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-7 gap-1.5 text-xs"
+                disabled={bulkLoading}
+                onClick={() => void executeBulkTransition("CANCEL")}
+              >
+                בטל נבחרות
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="ml-auto h-7 text-xs"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <X className="me-1 size-3" />
+              נקה בחירה
+            </Button>
+          </div>
+        ) : null}
+
         {loading ? (
           <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -460,9 +935,10 @@ export function OrdersListScaffold() {
               )
             }
             emptyState="לא נמצאו הזמנות התואמות לחיפוש."
+            selectable
+            selectedKeys={selectedIds}
+            onSelectionChange={setSelectedIds}
             rowActions={(r) =>
-              // Quick-submit רק לשורות DRAFT. הרכיב עצמו self-gates ומחזיר null
-              // אחרת (defense in depth — גם אם הסטטוס ישתנה אחרי quick actions).
               r.status === "DRAFT" ? (
                 <PoSubmitButton
                   poId={r.id}
@@ -474,6 +950,39 @@ export function OrdersListScaffold() {
           />
         )}
       </div>
+
+      {/* Pagination controls — only when total > page size */}
+      {totalRows > PAGE_SIZE ? (
+        <div className="flex items-center justify-between border-t pt-2 text-xs text-muted-foreground">
+          <span>
+            עמוד {page} מתוך {Math.ceil(totalRows / PAGE_SIZE)}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void loadOrders(page - 1)}
+              disabled={page <= 1 || loading}
+              className="h-7 w-7 p-0"
+              aria-label="עמוד קודם"
+            >
+              <ChevronRight className="size-3.5" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void loadOrders(page + 1)}
+              disabled={page >= Math.ceil(totalRows / PAGE_SIZE) || loading}
+              className="h-7 w-7 p-0"
+              aria-label="עמוד הבא"
+            >
+              <ChevronLeft className="size-3.5" aria-hidden />
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 

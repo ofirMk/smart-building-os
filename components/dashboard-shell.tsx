@@ -2,10 +2,7 @@
 
 import { usePathname } from "next/navigation"
 
-import {
-  CommandPaletteHeaderTrigger,
-  CommandPaletteProvider,
-} from "@/components/dashboard/command-palette"
+import { CommandPaletteProvider } from "@/components/dashboard/command-palette"
 import { DashboardLastVisitTracker } from "@/components/dashboard-last-visit-tracker"
 import { TopNavigation } from "@/components/layout/top-navigation"
 import { CompanyContextGate } from "@/components/layout/company-context-gate"
@@ -121,7 +118,11 @@ export function DashboardShell({
             screen. Renamed from the previous "חמ"ל משקיעים" demo copy.
           */}
           {IS_DEMO_MODE ? <GlobalPitchNavButton /> : null}
-          <CommandPaletteHeaderTrigger />
+          {/*
+            הוסר: <CommandPaletteHeaderTrigger /> — TopNavigation כבר מרנדר
+            CommandPaletteSearchTrigger גדול ומלוטש. שמירה כאן יצרה כפתור
+            חיפוש כפול בסרגל העליון (ראו צילום באג 2026-05-26).
+          */}
           {isMarkerOfekPath(pathname) ? <WorkspaceParallelSplitControl /> : null}
           {isMarkerOfekPath(pathname) ? <DiamondSidekickToggle /> : null}
           {showMirrorSelector ? (

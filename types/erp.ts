@@ -7,19 +7,105 @@ export type ErpSupplier = {
   companyId: string
   supplierNum: string
   name: string
-  taxId: string | null
+  foreignName: string | null
   type: ErpSupplierType
+  status: string          // 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING'
+  taxId: string | null
   paymentTerms: string | null
+  currencyCode: string | null
+  // ── Contact & address ────────────────────────────────────────────
+  phone: string | null
+  fax: string | null
+  email: string | null
+  website: string | null
+  address: string | null
+  addressLine2: string | null
+  addressLine3: string | null
+  city: string | null
+  countryCode: string | null
+  zipCode: string | null
+  // ── Flags ────────────────────────────────────────────────────────
+  forAttention: boolean
+  openingDate: string | null  // ISO date string
+  // ── Enrichment (לשונית פרטים נוספים) ─────────────────────────────
+  industry: string | null
+  branchCode: string | null
+  foundingYear: number | null
+  employeeCount: number | null
+  printsInEnglish: boolean
+  isConfidential: boolean
+  isCasual: boolean
+  // ── Priority פרטים נוספים ─────────────────────────────────────
+  responsiblePerson: string | null  // *** לטיפול — שם אחראי
+  isForeignSupplier: boolean
+  authorizationLevel: number | null  // 0–9 — משפיע על approval flow
+  defaultOrderType: string | null
+  subcontractorWh: string | null
+  consignmentWh: string | null
+  supplierTypeCode: string | null
+  // ── CoA AP account link (Priority #3) ─────────────────────────────
+  coaAccountId: string | null   // FK למו-chart_of_accounts
+  coaAccountCode: string | null // קוד חשבון AP (= supplier_number)
+  // ── Priority צילום #4 ────────────────────────────────────────
+  hasAttachments: boolean       // נספחים?
+  marketgeysDisplay: number     // הצגה במרקטגייס
+  entryNote: string | null      // הודעה בהקלדת ספק — מוצגת בפתיחת הכרטיס
+  // ── הגדרות כספים לספקים (Priority financial settings) ───────────
+  vatFileNumber: string | null        // מספר תיק במע"מ
+  paysByBankTransfer: boolean         // תשלום בהעברה בנקאית?
+  roundInvoicePrice: boolean          // עיגול מחיר בחשבונית?
+  payToOrderOf: string | null         // שלמו לפקודת
+  ledgerAccountCode: string | null    // חשבון לדיגי
+  purchasesAccountCode: string | null // חשבון קנות
+  costCenterCode: string | null       // פרכז רוח/עלות
+  invoiceTxnType: string | null       // סוג תנועה - חש. ספק
+  creditTxnType: string | null        // סוג תנועה - זיכוי
+  // ── פרטים כלליים וניכוי מס במקור ───────────────────────────
+  vatCode: string | null                       // קוד מע"מ (002=מלא)
+  isInternalSupplier: boolean                  // ספק פנימי?
+  generalDiscountPct: number | null            // הנחה כללית %
+  incomeTaxFileNumber: string | null           // מס.זהות/תיק מס הכנסה
+  incomeTaxFileType: number | null             // 1=עצמאי/ת.ז, 2=חברה, 3=עוסק, 5=בינלאומי, 9=תושב חוץ
+  withholdingPct: number | null                // % ניכוי מס
+  withholdingValidUntil: string | null         // בתוקף עד (ISO date)
+  maxWithholdingPct: number | null             // % ניכוי מקסימלי
+  bookkeeepingCertValidUntil: string | null    // אישור ספרים עד (ISO date)
+  withholdingDiscount: number | null           // הנחה על ניכוי מס
+  withholdingDiscountUntil: string | null      // הנחה בתוקף עד (ISO date)
+  withholdsFromSupplier: boolean               // ניכוי מס ממקור מספקים
+  incomeTaxClassification: string | null       // דיהי למס הכנסה (קוד סיווג)
+  taxOfficerCode: string | null                // קוד פקיד שומה
+  isRequiredToFile: boolean                    // ח"ב בדווח?
+  withholdingFromDate: string | null           // תחל מתאריך (ISO date)
+  withholdingToDate: string | null             // עד תאריך (ISO date)
+  maxWithholdingCode: string | null            // קוד ניכוי מקסימלי
+  withholdingToleranceShekel: boolean          // סבלות ניכוי בשקל?
+  withholdingFileCode: string | null           // סוג ניכוי מס בקובץ מערכת 1000
+  withholdingCode2: string | null              // קוד ניכוי מס 2
+  withholdingCode3: string | null              // קוד ניכוי מס 3
+  // ── Phase 7.2 — Vendor qualification ────────────────────────────
+  /** APPROVED | PREFERRED | PROBATION | BLOCKED */
+  qualificationStatus: string
+  qualificationNotes: string | null
+  qualifiedAt: string | null  // ISO timestamp
 }
 
 export type ErpSupplierContact = {
   id: string
   companyId: string
   supplierId: string
-  name: string
+  name: string          // full_name
+  firstName: string | null
+  lastName: string | null
+  foreignName: string | null
   role: string | null
-  phone: string | null
+  phone: string | null  // טלפון ראשי
+  phoneMobile: string | null
+  phoneOffice: string | null
+  phoneHome: string | null
+  fax: string | null
   email: string | null
+  contactStatus: string // 'ACTIVE' | 'INACTIVE'
   isPrimary: boolean
 }
 
@@ -28,7 +114,9 @@ export type ErpSupplierBankAccount = {
   companyId: string
   supplierId: string
   bankName: string
-  branchCode: string | null
+  bankCode: string | null    // קוד הבנק (10=לאומי, 12=הפועלים)
+  branchCode: string | null  // מספר סניף
+  branchName: string | null  // שם הסניף
   accountNumber: string
   iban: string | null
   swift: string | null
@@ -38,6 +126,51 @@ export type ErpSupplierBankAccount = {
 export type ErpSupplierMasterDetail = ErpSupplier & {
   contacts?: ErpSupplierContact[]
   bankAccounts?: ErpSupplierBankAccount[]
+}
+
+// ── Supplier Price Lists ──────────────────────────────────────────────────
+export type ErpSupplierPriceList = {
+  id: string
+  companyId: string
+  supplierId: string
+  priceListCode: string         // קוד מחירון ספק
+  description: string | null
+  validFrom: string             // ISO date
+  currencyCode: string | null
+  isCancelled: boolean
+  quoteValidUntil: string | null
+  manufacturerName: string | null
+  manufacturerShort: string | null
+  priceMultiplier: number | null
+  items?: ErpSupplierPriceListItem[]
+}
+
+export type ErpSupplierPriceListItem = {
+  id: string
+  companyId: string
+  priceListId: string
+  supplierPartCode: string      // פק"ס ספק/צרן
+  description: string | null
+  itemId: string | null
+  quantity: number
+  unitOfMeasure: string | null
+  unitPrice: number
+  discountPct: number
+  priceAfterDiscount: number    // calculated: unitPrice * (1 - discountPct/100)
+  customerPrice: number | null
+  sortOrder: number | null
+}
+
+// ── Supplier Tasks ────────────────────────────────────────────────────────
+export type ErpSupplierTask = {
+  id: string
+  companyId: string
+  supplierId: string
+  taskDate: string              // ISO date
+  assignedTo: string | null
+  summary: string | null
+  status: "OPEN" | "DONE" | "CANCELLED"
+  isCompleted: boolean
 }
 
 export type ErpProductFamily = {

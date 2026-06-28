@@ -28,14 +28,18 @@ import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   AlertTriangle,
+  BarChart2,
   Building2,
+  CheckSquare,
   CreditCard,
   FileText,
   Loader2,
+  Package,
   Plus,
   Receipt,
   Search,
   ShoppingCart,
+  Tag,
   User,
   Users,
 } from "lucide-react"
@@ -56,6 +60,10 @@ import { SupplierOpenPosTab } from "@/components/marker-ofek/master-data/supplie
 import { SupplierInvoicesTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-invoices-tab"
 import { SupplierPriceListTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-price-list-tab"
 import { SupplierDocumentsTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-documents-tab"
+import { SupplierProductsTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-products-tab"
+import { SupplierPriceListsTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-price-lists-tab"
+import { SupplierTasksTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-tasks-tab"
+import { SupplierPerformanceTab } from "@/components/marker-ofek/master-data/suppliers/detail-tabs/supplier-performance-tab"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
 import { cn } from "@/lib/utils"
 
@@ -464,16 +472,40 @@ export function SuppliersListScaffold() {
           render: (id) => <SupplierInvoicesTab supplierId={id} />,
         },
         {
+          id: "products",
+          label: "מוצרים",
+          icon: Package,
+          render: (id) => <SupplierProductsTab supplierId={id} />,
+        },
+        {
           id: "price-list",
           label: "מחירון",
           icon: CreditCard,
           render: (id) => <SupplierPriceListTab supplierId={id} />,
         },
         {
+          id: "supplier-price-lists",
+          label: "מחירוני ספק",
+          icon: Tag,
+          render: (id) => <SupplierPriceListsTab supplierId={id} />,
+        },
+        {
+          id: "tasks",
+          label: "משימות",
+          icon: CheckSquare,
+          render: (id) => <SupplierTasksTab supplierId={id} />,
+        },
+        {
           id: "documents",
           label: "מסמכים",
           icon: FileText,
           render: (id) => <SupplierDocumentsTab supplierId={id} />,
+        },
+        {
+          id: "performance",
+          label: "ביצועים",
+          icon: BarChart2,
+          render: (id) => <SupplierPerformanceTab supplierId={id} />,
         },
       ]}
       initialTabId="details"

@@ -30,6 +30,29 @@ import { requireProcurementApiContext } from "@/lib/erp/procurement-api"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+// ── GET — list goods receipts for this company ───────────────────────────────
+export async function GET(req: NextRequest) {
+  const ctx = await requireProcurementApiContext(req)
+  if (!ctx.ok) return ctx.response
+  const { supabase, activeCompanyId } = ctx
+
+  const { data, error } = await supabase
+    .from("erp_goods_receipts")
+    .select(
+      "id,gr_number,status,receipt_date,vendor_delivery_note,notes,created_at," +
+        "purchase_order:erp_purchase_orders!purchase_order_id(id,po_number,supplier:erp_md_suppliers!supplier_id(id,name))",
+    )
+    .eq("company_id", activeCompanyId)
+    .order("created_at", { ascending: false })
+    .limit(200)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json(data ?? [])
+}
+
 const lineSchema = z.object({
   purchaseOrderLineId: z.string().uuid(),
   receivedQty: z.number().finite().min(0),

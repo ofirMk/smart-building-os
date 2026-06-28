@@ -87,9 +87,15 @@ export function SupplierContactsTab({
       },
       {
         key: "phone",
-        title: "טלפון",
+        title: "טלפון ראשי",
         className: "w-[9rem] font-mono text-[11px]",
         render: (r) => r.phone ?? "—",
+      },
+      {
+        key: "phoneMobile",
+        title: "נייד",
+        className: "w-[9rem] font-mono text-[11px]",
+        render: (r) => r.phoneMobile ?? "—",
       },
       {
         key: "email",

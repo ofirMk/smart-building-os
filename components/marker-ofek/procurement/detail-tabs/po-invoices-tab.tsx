@@ -12,12 +12,14 @@
  */
 
 import * as React from "react"
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Play } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   BentoSmartList,
   type BentoSmartListColumn,
 } from "@/components/ui/bento-smart-list"
+import { Button } from "@/components/ui/button"
 import {
   MasterDetailTabEmpty,
   MasterDetailTabError,
@@ -81,8 +83,9 @@ export function PoInvoicesTab({ poId }: { poId: string | null }) {
   const [rows, setRows] = React.useState<InvoiceRow[]>([])
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [runningMatchId, setRunningMatchId] = React.useState<string | null>(null)
 
-  React.useEffect(() => {
+  const reload = React.useCallback(() => {
     if (!poId) return
     let cancelled = false
     setLoading(true)
@@ -107,6 +110,36 @@ export function PoInvoicesTab({ poId }: { poId: string | null }) {
       cancelled = true
     }
   }, [poId])
+
+  React.useEffect(() => {
+    const cleanup = reload()
+    return cleanup
+  }, [reload])
+
+  const runMatch = React.useCallback(
+    async (invoiceId: string) => {
+      if (!poId || runningMatchId) return
+      setRunningMatchId(invoiceId)
+      try {
+        await fetch(
+          `/api/procurement/orders/${encodeURIComponent(poId)}/invoices/${encodeURIComponent(invoiceId)}/match`,
+          { method: "POST" },
+        ).then(async (res) => {
+          if (!res.ok) {
+            const body = (await res.json().catch(() => ({}))) as { error?: string }
+            throw new Error(body.error ?? `שגיאת שרת ${res.status}`)
+          }
+        })
+        toast.success("3-Way Match הושלם בהצלחה")
+        reload()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "הרצת 3-Way Match נכשלה")
+      } finally {
+        setRunningMatchId(null)
+      }
+    },
+    [poId, runningMatchId, reload],
+  )
 
   const columns = React.useMemo<BentoSmartListColumn<InvoiceRow>[]>(
     () => [
@@ -155,10 +188,20 @@ export function PoInvoicesTab({ poId }: { poId: string | null }) {
         render: (r) => {
           if (r.needsFirstMatch) {
             return (
-              <span className="inline-flex items-center gap-1 rounded bg-slate-500/10 px-1.5 py-0.5 text-[10px] text-slate-600 dark:text-slate-300">
-                <Clock className="size-2.5" aria-hidden />
-                טרם רצה התאמה
-              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void runMatch(r.id)
+                }}
+                disabled={runningMatchId !== null}
+                className="h-6 gap-1 px-2 text-[10px]"
+              >
+                <Play className="size-2.5" aria-hidden />
+                {runningMatchId === r.id ? "מריץ…" : "הרץ 3-Way Match"}
+              </Button>
             )
           }
           const chips: React.ReactNode[] = []
@@ -221,7 +264,7 @@ export function PoInvoicesTab({ poId }: { poId: string | null }) {
         },
       },
     ],
-    [],
+    [runMatch, runningMatchId],
   )
 
   if (!poId) {

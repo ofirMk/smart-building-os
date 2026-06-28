@@ -46,6 +46,9 @@ const lineSchema = z.object({
   quantity: z.coerce.number().positive("כמות חייבת להיות חיובית"),
   unitPrice: z.coerce.number().min(0, "מחיר לא יכול להיות שלילי"),
   lineNotes: z.string().max(500, "הערה ארוכה מדי").optional().default(""),
+  // Phase 8 — Contract link + price-lock override
+  contractLineId: z.string().optional().default(""),
+  priceOverrideReason: z.string().optional().default(""),
 })
 
 export const purchaseOrderEngineSchema = z
@@ -54,6 +57,17 @@ export const purchaseOrderEngineSchema = z
     projectId: z.string().min(1, "נא לבחר פרויקט"),
     expectedDelivery: z.string().min(1, "תאריך אספקה נדרש"),
     lines: z.array(lineSchema).min(1, "נדרשת לפחות שורה אחת"),
+    // Phase 3 — smart enrichment fields
+    contactId: z.string().optional().default(""),
+    paymentTermsCode: z.string().optional().default(""),
+    vatCode: z.string().optional().default(""),
+    withholdingPct: z.coerce.number().min(0).max(100).nullable().optional().default(null),
+    receivingWarehouseCode: z.string().optional().default(""),
+    shippingAddrHe: z.string().max(2000).optional().default(""),
+    shippingAddrEn: z.string().max(2000).optional().default(""),
+    // Phase 8 — Framework contract (Blanket / Release Order)
+    contractId: z.string().optional().default(""),
+    isReleaseOrder: z.boolean().optional().default(false),
   })
   .transform((data) => {
     const supplier =
@@ -72,6 +86,9 @@ export const purchaseOrderEngineSchema = z
         quantity: line.quantity,
         unitPrice: line.unitPrice,
         lineNotes: line.lineNotes?.trim() ?? "",
+        // Phase 8
+        contractLineId: line.contractLineId ?? "",
+        priceOverrideReason: line.priceOverrideReason ?? "",
         lineTotal,
       }
     })
@@ -92,6 +109,17 @@ export const purchaseOrderEngineSchema = z
       vatAmount,
       grandTotal,
       exceedsBudget: grandTotal > PROJECT_BUDGET_LIMIT_NIS,
+      // Phase 3 enrichment
+      contactId: data.contactId ?? "",
+      paymentTermsCode: data.paymentTermsCode ?? "",
+      vatCode: data.vatCode ?? "",
+      withholdingPct: data.withholdingPct ?? null,
+      receivingWarehouseCode: data.receivingWarehouseCode ?? "",
+      shippingAddrHe: data.shippingAddrHe ?? "",
+      shippingAddrEn: data.shippingAddrEn ?? "",
+      // Phase 8 — contract
+      contractId: data.contractId ?? "",
+      isReleaseOrder: data.isReleaseOrder ?? false,
     }
   })
 
@@ -111,5 +139,16 @@ export function defaultPurchaseOrderEngineValues(): PurchaseOrderEngineInput {
         lineNotes: "",
       },
     ],
+    // Phase 3 enrichment
+    contactId: "",
+    paymentTermsCode: "",
+    vatCode: "",
+    withholdingPct: null,
+    receivingWarehouseCode: "",
+    shippingAddrHe: "",
+    shippingAddrEn: "",
+    // Phase 8
+    contractId: "",
+    isReleaseOrder: false,
   }
 }

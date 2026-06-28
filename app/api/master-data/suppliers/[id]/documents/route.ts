@@ -69,6 +69,7 @@ export type SupplierDocumentDto = {
   storageBucket: string
   uploadedAt: string
   isLocked: boolean
+  isFlagged: boolean
   signedUrl: string | null
 }
 
@@ -83,6 +84,7 @@ type Row = {
   storage_bucket: string
   uploaded_at: string
   is_locked: boolean
+  is_flagged: boolean
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -115,7 +117,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("erp_supplier_attachments")
     .select(
-      "id,file_name,document_type,description,mime_type,size_bytes,storage_path,storage_bucket,uploaded_at,is_locked",
+      "id,file_name,document_type,description,mime_type,size_bytes,storage_path,storage_bucket,uploaded_at,is_locked,is_flagged",
     )
     .eq("company_id", activeCompanyId)
     .eq("supplier_id", supplierId)
@@ -157,6 +159,7 @@ export async function GET(
         storageBucket: r.storage_bucket,
         uploadedAt: r.uploaded_at,
         isLocked: r.is_locked,
+        isFlagged: r.is_flagged ?? false,
         signedUrl,
       }
     }),
