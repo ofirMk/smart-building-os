@@ -219,6 +219,40 @@ export async function DELETE(
   if (!ctx.ok) return ctx.response
   const { supabase, activeCompanyId } = ctx
 
+  // P0 #7 — check received_qty and PO status before deleting
+  const lineQ = await supabase
+    .from("erp_purchase_order_lines")
+    .select("id, received_qty")
+    .eq("id", lineId)
+    .eq("purchase_order_id", purchaseOrderId)
+    .eq("company_id", activeCompanyId)
+    .maybeSingle()
+  if (lineQ.error) return NextResponse.json({ error: lineQ.error.message }, { status: 500 })
+  if (!lineQ.data) return NextResponse.json({ error: "Line not found" }, { status: 404 })
+
+  const received = Number((lineQ.data as { received_qty: number | null }).received_qty ?? 0)
+  if (received > 0) {
+    return NextResponse.json(
+      { error: `Cannot delete line with received goods (received qty: ${received})`, code: "LINE_HAS_RECEIPTS" },
+      { status: 422 }
+    )
+  }
+
+  const poQ = await supabase
+    .from("erp_purchase_orders")
+    .select("status")
+    .eq("id", purchaseOrderId)
+    .eq("company_id", activeCompanyId)
+    .maybeSingle()
+  if (poQ.error) return NextResponse.json({ error: poQ.error.message }, { status: 500 })
+  const status = (poQ.data as { status: string } | null)?.status
+  if (status !== "DRAFT") {
+    return NextResponse.json(
+      { error: `Lines can only be deleted on DRAFT purchase orders (current: ${status})`, code: "STATUS_LOCKED" },
+      { status: 409 }
+    )
+  }
+
   const { data, error } = await supabase
     .from("erp_purchase_order_lines")
     .delete()

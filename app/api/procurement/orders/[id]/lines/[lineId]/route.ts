@@ -203,3 +203,83 @@ export async function PATCH(
     },
   })
 }
+
+// ── DELETE — מחיקת שורת PO ───────────────────────────────────────────────────
+// P0 #7 — שורה שכבר נקלטה ממנה סחורה (received_qty > 0) לא ניתנת למחיקה.
+// הגנה כפולה: (1) בדיקת API לפני DB, (2) FK constraints ב-DB.
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<RouteParams> | RouteParams }
+) {
+  const { id: poId, lineId } = await normalizeParams(params)
+
+  const ctx = await requireProcurementApiContext(req)
+  if (!ctx.ok) return ctx.response
+  const { supabase, activeCompanyId } = ctx
+
+  // 1) שלוף שורה + סטטוס PO + received_qty בקריאה אחת
+  const lineQ = await supabase
+    .from("erp_purchase_order_lines")
+    .select("id, received_qty, purchase_order_id")
+    .eq("company_id", activeCompanyId)
+    .eq("purchase_order_id", poId)
+    .eq("id", lineId)
+    .maybeSingle()
+
+  if (lineQ.error) {
+    return NextResponse.json({ error: lineQ.error.message }, { status: 500 })
+  }
+  if (!lineQ.data) {
+    return NextResponse.json({ error: "שורת ההזמנה לא נמצאה" }, { status: 404 })
+  }
+
+  // 2) P0 #7 — חסום מחיקה אם כבר נקלטה סחורה
+  const receivedQty = Number((lineQ.data as { received_qty: number | null }).received_qty ?? 0)
+  if (receivedQty > 0) {
+    return NextResponse.json(
+      {
+        error: `לא ניתן למחוק שורה שכבר נקלטה ממנה סחורה (כמות שנקלטה: ${receivedQty}). ניתן לסגור את השורה בלבד.`,
+        code: "LINE_HAS_RECEIPTS",
+        receivedQty,
+      },
+      { status: 422 }
+    )
+  }
+
+  // 3) חסום מחיקה אם PO לא במצב DRAFT
+  const poQ = await supabase
+    .from("erp_purchase_orders")
+    .select("status")
+    .eq("company_id", activeCompanyId)
+    .eq("id", poId)
+    .maybeSingle()
+
+  if (poQ.error) {
+    return NextResponse.json({ error: poQ.error.message }, { status: 500 })
+  }
+  const poStatus = (poQ.data as { status: string } | null)?.status
+  if (poStatus !== "DRAFT") {
+    return NextResponse.json(
+      {
+        error: `שורות ניתנות למחיקה רק כשהזמנה במצב טיוטה (סטטוס נוכחי: ${poStatus}).`,
+        code: "STATUS_LOCKED",
+      },
+      { status: 409 }
+    )
+  }
+
+  // 4) מחק
+  const deleteRes = await supabase
+    .from("erp_purchase_order_lines")
+    .delete()
+    .eq("company_id", activeCompanyId)
+    .eq("purchase_order_id", poId)
+    .eq("id", lineId)
+
+  if (deleteRes.error) {
+    return NextResponse.json({ error: deleteRes.error.message }, { status: 400 })
+  }
+
+  return NextResponse.json({ ok: true })
+}

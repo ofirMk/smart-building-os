@@ -175,12 +175,51 @@ export async function POST(req: NextRequest) {
   const transitionWarnings: string[] = []
 
   if (transition === "SUBMIT") {
+    // P0 #1 — Block SUBMIT if PO has no lines (empty PO is a classic ERP error)
+    const lineCountQ = await supabase
+      .from("erp_purchase_order_lines")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", activeCompanyId)
+      .eq("purchase_order_id", poId)
+    if ((lineCountQ.count ?? 0) === 0) {
+      return apiErrorResponse(
+        422,
+        "PO_NO_LINES",
+        "לא ניתן להגיש הזמנה ריקה. יש להוסיף לפחות שורה אחת לפני הגשה.",
+      )
+    }
+
     // Fiscal period check: PO submission date must fall in an OPEN GL period.
     const periodCheck = await checkFiscalPeriodOpen({ companyId: activeCompanyId })
     if (!periodCheck.ok) {
       return apiErrorResponse(422, periodCheck.code, periodCheck.message)
     }
     transitionWarnings.push(...periodCheck.warnings)
+  }
+
+  if (transition === "CANCEL") {
+    // P0 #5 — Block CANCEL if there are open (non-closed) goods receipts linked
+    // to this PO. Cancelling a PO with open deliveries would create orphaned GR
+    // records and break inventory integrity.
+    const openGrQ = await supabase
+      .from("erp_goods_receipts")
+      .select("id, gr_number")
+      .eq("company_id", activeCompanyId)
+      .eq("purchase_order_id", poId)
+      .not("status", "in", '("CLOSED","CANCELLED")')
+    if (openGrQ.error) {
+      return apiErrorResponse(500, "GR_CHECK_ERROR", openGrQ.error.message)
+    }
+    if ((openGrQ.data?.length ?? 0) > 0) {
+      const grList = (openGrQ.data ?? [])
+        .map((r: { gr_number: string }) => r.gr_number)
+        .join(", ")
+      return apiErrorResponse(
+        422,
+        "PO_HAS_OPEN_GR",
+        `לא ניתן לבטל הזמנה עם תעודות משלוח פתוחות: ${grList}. סגור את תעודות המשלוח תחילה.`,
+      )
+    }
   }
 
   if (transition === "APPROVE") {
