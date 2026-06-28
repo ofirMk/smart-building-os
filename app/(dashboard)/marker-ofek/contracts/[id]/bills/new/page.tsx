@@ -44,7 +44,7 @@ async function loadWizardData(contractId: string): Promise<{
     .maybeSingle()
 
   if (contractErr || !contractRow) return null
-  if (contractRow.status === "CANCELLED") return null
+  if ((contractRow as Record<string, unknown>)["status"] === "CANCELLED") return null
 
   // Load BOQ lines
   const { data: boqRows, error: boqErr } = await supabase
