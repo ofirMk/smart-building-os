@@ -66,19 +66,15 @@ export function ItemLogisticsTab({
   return (
     <div className="space-y-4">
       {/* ── ניהול מלאי ── */}
-      <Card className="border-border/70 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700">
-              <Warehouse className="size-5" aria-hidden />
-            </div>
-            <div>
-              <CardTitle>ניהול מלאי</CardTitle>
-              <CardDescription>
-                קובע אם הפריט נכנס לתנועות מלאי ולהערכת שווי.
-              </CardDescription>
-            </div>
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Warehouse className="size-4 text-muted-foreground" aria-hidden />
+            <CardTitle>ניהול מלאי</CardTitle>
           </div>
+          <CardDescription>
+            קובע אם הפריט נכנס לתנועות מלאי ולהערכת שווי.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <Controller
@@ -112,19 +108,15 @@ export function ItemLogisticsTab({
       </Card>
 
       {/* ── יחידת קניה + המרה ── */}
-      <Card className="border-border/70 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-700">
-              <Boxes className="size-5" aria-hidden />
-            </div>
-            <div>
-              <CardTitle>יחידת קניה</CardTitle>
-              <CardDescription>
-                יחידת הקניה מהספק ושעור ההמרה ליחידת הבסיס של הפריט.
-              </CardDescription>
-            </div>
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Boxes className="size-4 text-muted-foreground" aria-hidden />
+            <CardTitle>יחידת קניה</CardTitle>
           </div>
+          <CardDescription>
+            יחידת הקניה מהספק ושעור ההמרה ליחידת הבסיס של הפריט.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">

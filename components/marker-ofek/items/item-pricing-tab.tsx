@@ -94,19 +94,15 @@ export function ItemPricingTab({ legacySuppliers = [] }: ItemPricingTabProps) {
   return (
     <div className="space-y-4">
       {/* ── Cost inputs ── */}
-      <Card className="border-border/70 shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700">
-              <Banknote className="size-5" aria-hidden />
-            </div>
-            <div>
-              <CardTitle>עלויות ומחירים</CardTitle>
-              <CardDescription>
-                עלות תקן להערכת שווי מלאי + מחיר מחירון יעד לרכש.
-              </CardDescription>
-            </div>
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Banknote className="size-4 text-muted-foreground" aria-hidden />
+            <CardTitle>עלויות ומחירים</CardTitle>
           </div>
+          <CardDescription>
+            עלות תקן להערכת שווי מלאי + מחיר מחירון יעד לרכש.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -171,29 +167,25 @@ export function ItemPricingTab({ legacySuppliers = [] }: ItemPricingTabProps) {
       </Card>
 
       {/* ── Legacy supplier prices table ── */}
-      <Card className="border-border/70 shadow-sm">
-        <CardHeader className="border-b border-border/60 pb-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700">
-              <Warehouse className="size-5" aria-hidden />
-            </div>
-            <div className="space-y-1">
-              <CardTitle>מחירי ספקים (legacy)</CardTitle>
-              <CardDescription>
-                מקור: <code>erp_md_supplier_items</code> ההיסטורי. ה-Master ↔
-                Supplier mappings המודרניים חיים בטאב &quot;מיפויי ספקים&quot;.
-              </CardDescription>
-            </div>
+      <Card className="border-border">
+        <CardHeader className="border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <Warehouse className="size-4 text-muted-foreground" aria-hidden />
+            <CardTitle>מחירי ספקים (legacy)</CardTitle>
           </div>
+          <CardDescription>
+            מקור: <code>erp_md_supplier_items</code> ההיסטורי. ה-Master ↔
+            Supplier mappings המודרניים חיים בטאב &quot;מיפויי ספקים&quot;.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           {legacySuppliers.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               אין רשומות ספק מקושרות לפריט זה. ניתן להוסיף דרך טאב &quot;מיפויי
               ספקים&quot; או תהליך הרכש.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/60">
+            <div className="overflow-x-auto rounded-lg border border-border">
               <Table>
                 <TableHeader>
                   <TableRow>

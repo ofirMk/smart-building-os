@@ -155,12 +155,12 @@ function ResolvedPricingSummary({
   return (
     <section
       className={cn(
-        "rounded-lg border bg-card/50 p-4 shadow-sm",
+        "rounded-lg border bg-card p-4",
         isPremium
           ? "border-amber-500/40 bg-amber-500/5"
           : noPrice
-            ? "border-dashed border-border/70"
-            : "border-border/70"
+            ? "border-dashed border-border"
+            : "border-border"
       )}
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -349,7 +349,7 @@ export function ItemSupplierMappingsTab({
   return (
     <div className="space-y-4">
       {/* ├─ Phase 7.14.1: סקציית ספק מועדף ──────────────────────────────────*/}
-      <section className="rounded-lg border border-border/70 bg-card/50 p-4 shadow-sm">
+      <section className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-center gap-2">

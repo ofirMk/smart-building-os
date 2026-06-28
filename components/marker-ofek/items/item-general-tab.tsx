@@ -45,8 +45,8 @@ export function ItemGeneralTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/70 shadow-sm">
-        <CardHeader className="pb-4">
+      <Card className="border-border">
+        <CardHeader className="pb-3">
           <CardTitle>זיהוי ותיאור</CardTitle>
           <CardDescription>
             תיאורים בעברית/אנגלית, ברקוד, סטטוס וכמות מינימום להזמנה.
