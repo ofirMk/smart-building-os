@@ -257,7 +257,7 @@ export function OrdersDashboard() {
   }, [selectedPoId])
 
   const poCtxNav = [
-    { label: "קטלוג פריטים", href: "/marker-ofek/procurement/catalog" },
+    { label: "קטלוג פריטים", href: "/marker-ofek/items" },
     { label: "קליטת חשבונית", href: "/marker-ofek/procurement/ai-import" },
     { label: "התאמות", href: "/marker-ofek/procurement/reconciliation" },
   ]

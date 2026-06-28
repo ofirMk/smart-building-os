@@ -12,6 +12,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 import { requireProcurementApiContext } from "@/lib/erp/procurement-api"
+import { getInstanceStatus } from "@/lib/procurement/approval-matrix-engine"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -176,5 +177,8 @@ export async function GET(
     approvals,
   }
 
-  return NextResponse.json({ data: dto })
+  // Phase 14 — also load the dynamic matrix approval instance (if any)
+  const matrixInstance = await getInstanceStatus(supabase, activeCompanyId, id)
+
+  return NextResponse.json({ data: { ...dto, matrixInstance: matrixInstance ?? null } })
 }

@@ -5,7 +5,7 @@ export type ModuleHelpBlock = {
 
 const PREFIX_HELP: { prefix: string; block: ModuleHelpBlock }[] = [
   {
-    prefix: "/marker-ofek/procurement/catalog",
+    prefix: "/marker-ofek/items",
     block: {
       title: "קטלוג פריטים",
       paragraphs: [

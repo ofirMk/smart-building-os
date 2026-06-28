@@ -31,6 +31,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { apiFetch, parseApiData } from "@/lib/utils/api-client"
 import { cn } from "@/lib/utils"
+import { ApprovalTrackPanel } from "@/components/erp/procurement/approval-track-panel"
+import { LandedCostWizardDialog } from "@/components/erp/procurement/landed-cost-wizard"
+import { SupplierSearchCombobox } from "@/components/erp/procurement/supplier-search-combobox"
 import type {
   ErpGoodsReceipt,
   ErpGoodsReceiptLine,
@@ -244,6 +247,9 @@ export function ProcurementWorkspaceClient() {
   const lastPriceWarningRef = React.useRef<string | null>(null)
   const [ordersDensity, setOrdersDensity] = React.useState<Density>("compact")
   const [exportingRowId, setExportingRowId] = React.useState<string | null>(null)
+  const [newPoDialogOpen, setNewPoDialogOpen] = React.useState(false)
+  const [newPoSupplierId, setNewPoSupplierId] = React.useState("")
+  const [newPoProjectId, setNewPoProjectId] = React.useState("")
 
   const selectedOrder = React.useMemo(
     () => orders.find((row) => row.id === selectedOrderId) ?? null,
@@ -1013,7 +1019,15 @@ export function ProcurementWorkspaceClient() {
         className="bg-[#F8FAFC]"
         headerActions={
           <div className="flex items-center gap-1.5">
-            <Button size="sm" onClick={() => void createEntityDraft()} disabled={working}>
+            <Button size="sm" onClick={() => {
+              if (mode === "orders") {
+                setNewPoSupplierId(suppliers[0]?.id ?? "")
+                setNewPoProjectId(projects[0]?.id ?? "")
+                setNewPoDialogOpen(true)
+              } else {
+                void createEntityDraft()
+              }
+            }} disabled={working}>
               <Plus className="ms-1 size-3.5" />
               חדש
             </Button>
@@ -1033,11 +1047,13 @@ export function ProcurementWorkspaceClient() {
         }
         sidebar={masterTable}
         main={
+          <>
           <Tabs defaultValue="general" className="space-y-2">
             <TabsList className="h-9 rounded-xl bg-card" variant="line">
               <TabsTrigger value="general">General Info</TabsTrigger>
               <TabsTrigger value="lines">Lines Detail</TabsTrigger>
               <TabsTrigger value="links">Linked Documents</TabsTrigger>
+              {mode === "orders" && <TabsTrigger value="approvals">אישורים</TabsTrigger>}
               <TabsTrigger value="audit">Audit Log</TabsTrigger>
             </TabsList>
 
@@ -1098,7 +1114,14 @@ export function ProcurementWorkspaceClient() {
                     <FormField control={grForm.control} name="notes" render={({ field }) => (
                       <FormItem><FormLabel className={ERP_DENSE_LABEL_CLASS}>Notes</FormLabel><FormControl><Input {...field} className={ERP_DENSE_INPUT_CLASS} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <div className="md:col-span-3 flex justify-end"><Button type="submit" size="sm" disabled={working}>{working ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />} שמירה</Button></div>
+                    <div className="md:col-span-3 flex justify-end gap-2">
+                      <LandedCostWizardDialog
+                        grId={selectedReceipt.id}
+                        grNumber={selectedReceipt.grNumber}
+                        trigger={<Button size="sm" variant="outline" type="button">עלויות נחיתה</Button>}
+                      />
+                      <Button type="submit" size="sm" disabled={working}>{working ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />} שמירה</Button>
+                    </div>
                   </form>
                 </Form>
               ) : mode === "invoices" && selectedInvoice ? (
@@ -1230,7 +1253,83 @@ export function ProcurementWorkspaceClient() {
                 </Table>
               </div>
             </TabsContent>
+
+            {/* Phase 14 — Approval Track */}
+            {mode === "orders" && (
+              <TabsContent value="approvals" className="rounded-2xl border border-slate-200 bg-card p-4">
+                {selectedOrder ? (
+                  <ApprovalTrackPanel poId={selectedOrder.id} />
+                ) : (
+                  <p className="text-sm text-slate-500">בחר הזמנה לצפייה בתהליך האישור.</p>
+                )}
+              </TabsContent>
+            )}
           </Tabs>
+
+          {/* Phase 14 — New PO Dialog with Supplier Combobox (P1 #8) */}
+          <Dialog open={newPoDialogOpen} onOpenChange={setNewPoDialogOpen}>
+            <DialogContent dir="rtl" className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>הזמנת רכש חדשה</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-1">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">ספק *</label>
+                  <SupplierSearchCombobox
+                    value={newPoSupplierId}
+                    onChange={(id) => setNewPoSupplierId(id)}
+                    placeholder="חפש ספק..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">פרויקט *</label>
+                  <Select value={newPoProjectId} onValueChange={(v) => setNewPoProjectId(v ?? "")}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="בחר פרויקט" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.projectNumber} · {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setNewPoDialogOpen(false)}>ביטול</Button>
+                <Button
+                  disabled={!newPoSupplierId || !newPoProjectId || working}
+                  onClick={async () => {
+                    if (!newPoSupplierId || !newPoProjectId) return
+                    setWorking(true)
+                    try {
+                      await requestJson("/api/erp/procurement/purchase-orders", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          projectId: newPoProjectId,
+                          supplierId: newPoSupplierId,
+                          poNumber: `PO-${Date.now().toString().slice(-6)}`,
+                          title: "New Purchase Order",
+                        }),
+                      })
+                      setNewPoDialogOpen(false)
+                      await loadWorkspace()
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "שגיאה ביצירת הזמנה")
+                    } finally {
+                      setWorking(false)
+                    }
+                  }}
+                >
+                  {working ? <Loader2 className="size-4 animate-spin" /> : null}
+                  צור הזמנה
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          </>
         }
       />
 

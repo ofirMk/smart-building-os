@@ -61,7 +61,7 @@ export const DIAMOND_NAVIGATOR_STEPS: Record<DiamondTrackId, NavigatorStep[]> = 
       deepDive:
         "PO נספר בעלות פרויקט רק כשהוא עובר את שער האישורים (כולל מנכ״ל כשנדרש). טיוטה ו־«ממתין» לא נכנסים לעלות מחויבת — כדי להגן על התקציב.",
       spotlightAnchor: "cc-modules",
-      ctaHref: "/marker-ofek/procurement/catalog",
+      ctaHref: "/marker-ofek/items",
       ctaLabel: "לקטלוג",
     },
     {

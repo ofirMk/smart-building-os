@@ -27,7 +27,7 @@ export function buildHrProvisionWorkspaceTabs(args: {
       openTabs: [
         tab(ganttHref, "גאנט", true),
         tab("/marker-ofek/execution/daily-logs", "יומני עבודה", false),
-        tab("/marker-ofek/procurement/catalog", "קטלוג פריטים", false),
+        tab("/marker-ofek/items", "קטלוג פריטים", false),
       ],
       splitView: false,
       secondaryTabHref: null,
@@ -68,7 +68,7 @@ export function defaultBrowserBookmarksForPersona(
   if (persona === "field") {
     return [
       { label: "מפות", href: "https://www.google.com/maps" },
-      { label: "קטלוג פריטים", href: "/marker-ofek/procurement/catalog" },
+      { label: "קטלוג פריטים", href: "/marker-ofek/items" },
       { label: "גיליון פריטים", href: "/marker-ofek/items" },
     ]
   }

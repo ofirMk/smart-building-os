@@ -182,7 +182,7 @@ export const MARKER_OFEK_SIDEBAR_SECTIONS: MarkerOfekSidebarNavSection[] = [
       },
       {
         title: "מחירוני ספקים",
-        href: "/marker-ofek/procurement/catalog",
+        href: "/marker-ofek/items",
         icon: FileStack,
       },
       {

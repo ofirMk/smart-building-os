@@ -22,7 +22,7 @@ function tabLabelForPath(pathname: string): string {
   if (pathname.startsWith("/marker-ofek/procurement/orders")) return "הזמנות"
   if (pathname.startsWith("/marker-ofek/procurement/suppliers")) return "ספקים"
   if (pathname.startsWith("/marker-ofek/procurement/inventory")) return "ניהול מלאי"
-  if (pathname.startsWith("/marker-ofek/procurement/catalog")) return "קטלוג פריטים"
+  if (pathname.startsWith("/marker-ofek/items")) return "קטלוג פריטים"
   if (pathname.startsWith("/marker-ofek/procurement/assets")) return "נכסי חברה"
   if (pathname.startsWith("/marker-ofek/procurement/") && pathname !== "/marker-ofek/procurement")
     return "הזמנת רכש"

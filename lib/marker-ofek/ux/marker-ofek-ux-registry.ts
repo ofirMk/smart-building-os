@@ -25,7 +25,6 @@ export const MARKER_OFEK_UX_REGISTRY = {
     tableSurfaces: [
       "components/marker-ofek/tenders/tenders-boq-client.tsx",
       "components/marker-ofek/tenders/tenders-wbs-client.tsx",
-      "app/(dashboard)/marker-ofek/procurement/catalog/page.tsx",
       "components/marker-ofek/procurement/orders-dashboard.tsx",
       "app/(dashboard)/marker-ofek/finance/contracts/[id]/contract-billing-center-client.tsx",
       "app/(dashboard)/marker-ofek/finance/contracts/billing/[partialId]/partial-account-detail-client.tsx",

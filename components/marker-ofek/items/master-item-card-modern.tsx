@@ -46,9 +46,10 @@ import { ItemPurchaseHistoryTab } from "@/components/marker-ofek/items/item-purc
 import { ItemSupplierMappingsTab } from "@/components/marker-ofek/items/item-supplier-mappings-tab"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MasterDetailShell } from "@/components/infrastructure/master-detail/master-detail-shell"
 import { masterDataFetch } from "@/lib/erp/master-data-browser"
-import { formatError } from "@/lib/utils"
+import { cn, formatError } from "@/lib/utils"
 
 // ============================================================================
 // DTO types — matches /api/master-data/items/[id] GET response (Phase 7.13.4).
@@ -373,168 +374,295 @@ export function MasterItemCardModern({
     <FormProvider {...form}>
       <form
         onSubmit={onSubmit}
-        className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-12"
+        className="flex h-full min-h-0 flex-col"
       >
-        {topSlot}
-        {!hideBackLink ? (
-          <Link
-            href="/marker-ofek/items"
-            className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowRight className="size-4 rotate-180" aria-hidden />
-            חזרה לקטלוג פריטים
-          </Link>
-        ) : null}
-
-        {/* Header */}
-        <header className="rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="flex items-start gap-4">
-              <ItemImageHeader
-                value={imageUrl}
-                onChange={(next) =>
-                  setValue("imageUrl", next, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                  })
-                }
-                sku={item.sku}
-              />
-              <div className="min-w-0 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  מאסטר SKU
-                </p>
-                <h1 className="font-mono text-2xl font-bold tracking-tight md:text-3xl">
-                  {item.sku}
-                </h1>
-                <p className="text-base leading-relaxed text-foreground">
-                  {item.description}
-                </p>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {item.status ? (
-                    <Badge variant="secondary">
-                      {labelForStatus(item.status)}
-                    </Badge>
+        <MasterDetailShell
+          activeMasterId={id}
+          onActiveMasterIdChange={() => {}}
+          masterContent={
+            <div dir="rtl" className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
+              {topSlot}
+              {/* Page header — same style as items-catalog-scaffold */}
+              <header className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+                <div className="flex flex-col gap-2">
+                  {!hideBackLink ? (
+                    <Link
+                      href="/marker-ofek/items"
+                      className="inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <ArrowRight className="size-3 rotate-180" aria-hidden />
+                      קטלוג פריטים
+                    </Link>
                   ) : null}
-                  {item.uomDescription ? (
-                    <Badge variant="outline" className="gap-1">
-                      <Warehouse className="size-3" aria-hidden />
-                      {item.uomDescription}
-                    </Badge>
-                  ) : null}
-                  {item.barcode ? (
-                    <Badge variant="outline" className="font-mono">
-                      {item.barcode}
-                    </Badge>
-                  ) : null}
+                  <div className="flex items-start gap-4">
+                    <ItemImageHeader
+                      value={imageUrl}
+                      onChange={(next) =>
+                        setValue("imageUrl", next, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        })
+                      }
+                      sku={item.sku}
+                    />
+                    <div className="min-w-0 space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        מאסטר SKU
+                      </p>
+                      <h1 className="font-mono text-2xl font-bold tracking-tight">
+                        {item.sku}
+                      </h1>
+                      <p className="text-sm leading-relaxed text-foreground">
+                        {item.description}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {item.status ? (
+                          <Badge variant="secondary">
+                            {labelForStatus(item.status)}
+                          </Badge>
+                        ) : null}
+                        {item.uomDescription ? (
+                          <Badge variant="outline" className="gap-1">
+                            <Warehouse className="size-3" aria-hidden />
+                            {item.uomDescription}
+                          </Badge>
+                        ) : null}
+                        {item.barcode ? (
+                          <Badge variant="outline" className="font-mono">
+                            {item.barcode}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 self-start">
-              <Button
-                type="submit"
-                disabled={!isDirty || saving}
-                className="gap-2"
+                <div className="flex items-center gap-2 self-start">
+                  <Button
+                    type="submit"
+                    disabled={!isDirty || saving}
+                    className="gap-2"
+                  >
+                    {saving ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Save className="size-4" aria-hidden />
+                    )}
+                    שמור שינויים
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={!isDirty || saving}
+                    onClick={() => reset(toFormDefaults(item))}
+                  >
+                    איפוס
+                  </Button>
+                </div>
+              </header>
+
+              {/* KPI strip — item-specific stats, mirrors list page pattern */}
+              <section
+                aria-label="נתוני פריט"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
               >
-                {saving ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <Save className="size-4" aria-hidden />
-                )}
-                שמור שינויים
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={!isDirty || saving}
-                onClick={() => reset(toFormDefaults(item))}
-              >
-                איפוס
-              </Button>
+                <ItemKpiCard
+                  title="סטטוס"
+                  value={labelForStatus(item.status)}
+                  tone={
+                    item.status === "ACTIVE"
+                      ? "success"
+                      : item.status === "OBSOLETE"
+                        ? "warning"
+                        : "neutral"
+                  }
+                />
+                <ItemKpiCard
+                  title="מחיר נגזר"
+                  value={
+                    item.resolvedPriceSource !== "none" &&
+                    item.resolvedUnitPrice != null
+                      ? formatItemPrice(
+                          item.resolvedUnitPrice,
+                          item.resolvedCurrency,
+                        )
+                      : "—"
+                  }
+                  hint={
+                    item.resolvedPriceSource === "preferred"
+                      ? "ספק מועדף"
+                      : item.resolvedPriceSource === "cheapest"
+                        ? "ספק זול ביותר"
+                        : "אין מיפוי ספק"
+                  }
+                  tone={
+                    item.resolvedPriceSource !== "none" ? "success" : "warning"
+                  }
+                />
+                <ItemKpiCard
+                  title="ספקים פעילים"
+                  value={`${item.activeSupplierCount}`}
+                  hint={
+                    item.activeSupplierCount === 0
+                      ? "אין ספקים פעילים"
+                      : `${item.activeSupplierCount} ספק${item.activeSupplierCount !== 1 ? "ים" : ""}`
+                  }
+                  tone={item.activeSupplierCount === 0 ? "warning" : "success"}
+                />
+                <ItemKpiCard
+                  title="יח׳ מידה"
+                  value={item.uomDescription ?? item.uom ?? "—"}
+                  hint={
+                    item.uom &&
+                    item.uomDescription &&
+                    item.uomDescription !== item.uom
+                      ? item.uom
+                      : undefined
+                  }
+                />
+                <ItemKpiCard
+                  title="כמות מינ׳"
+                  value={`${item.minOrderQuantity ?? 1}`}
+                  hint="מינימום לרכש"
+                />
+                <ItemKpiCard
+                  title="ניהול מלאי"
+                  value={item.isInventoryManaged ? "כן" : "לא"}
+                  tone={item.isInventoryManaged ? "success" : "neutral"}
+                />
+              </section>
             </div>
-          </div>
-        </header>
-
-        {/* Tabs */}
-        <Tabs defaultValue="general" className="flex flex-col gap-4">
-          <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="general" className="gap-2">
-              <Package className="size-4" aria-hidden />
-              כללי
-            </TabsTrigger>
-            <TabsTrigger value="logistics" className="gap-2">
-              <Warehouse className="size-4" aria-hidden />
-              לוגיסטיקה ומלאי
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="gap-2">
-              <Banknote className="size-4" aria-hidden />
-              מחירים
-            </TabsTrigger>
-            <TabsTrigger value="assets" className="gap-2">
-              <FileStack className="size-4" aria-hidden />
-              נכסים וקבצים
-            </TabsTrigger>
-            <TabsTrigger value="mappings" className="gap-2">
-              <ShoppingBag className="size-4" aria-hidden />
-              מיפויי ספקים
-            </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2">
-              <History className="size-4" aria-hidden />
-              היסטוריית רכש
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general">
-            <ItemGeneralTab />
-          </TabsContent>
-
-          <TabsContent value="logistics">
-            <ItemLogisticsTab
-              uoms={uoms}
-              baseUom={item.unitOfMeasure}
-              uomsLoading={uomsLoading}
-            />
-          </TabsContent>
-
-          <TabsContent value="pricing">
-            <ItemPricingTab legacySuppliers={legacySuppliers} />
-          </TabsContent>
-
-          <TabsContent value="assets">
-            <ItemAssetsTab itemId={id} />
-          </TabsContent>
-
-          <TabsContent value="mappings">
-            <ItemSupplierMappingsTab
-              itemId={id}
-              suppliers={suppliers}
-              suppliersLoading={suppliersLoading}
-              pricing={
-                item
-                  ? {
-                      preferredUnitPrice: item.preferredUnitPrice,
-                      preferredCurrency: item.preferredCurrency,
-                      cheapestSupplierId: item.cheapestSupplierId,
-                      cheapestUnitPrice: item.cheapestUnitPrice,
-                      cheapestCurrency: item.cheapestCurrency,
-                      resolvedUnitPrice: item.resolvedUnitPrice,
-                      resolvedPriceSource: item.resolvedPriceSource,
-                      resolvedSupplierId: item.resolvedSupplierId,
-                      resolvedCurrency: item.resolvedCurrency,
-                      preferredIsOptimal: item.preferredIsOptimal,
-                      preferredPremium: item.preferredPremium,
-                      activeSupplierCount: item.activeSupplierCount,
-                    }
-                  : null
-              }
-            />
-          </TabsContent>
-
-          <TabsContent value="history">
-            <ItemPurchaseHistoryTab itemId={id} />
-          </TabsContent>
-        </Tabs>
+          }
+          detailTabs={[
+            {
+              id: "general",
+              label: "כללי",
+              icon: Package,
+              render: () => <ItemGeneralTab />,
+            },
+            {
+              id: "logistics",
+              label: "לוגיסטיקה ומלאי",
+              icon: Warehouse,
+              render: () => (
+                <ItemLogisticsTab
+                  uoms={uoms}
+                  baseUom={item.unitOfMeasure}
+                  uomsLoading={uomsLoading}
+                />
+              ),
+            },
+            {
+              id: "pricing",
+              label: "מחירים",
+              icon: Banknote,
+              render: () => (
+                <ItemPricingTab legacySuppliers={legacySuppliers} />
+              ),
+            },
+            {
+              id: "assets",
+              label: "נכסים וקבצים",
+              icon: FileStack,
+              render: () => <ItemAssetsTab itemId={id} />,
+            },
+            {
+              id: "mappings",
+              label: "מיפויי ספקים",
+              icon: ShoppingBag,
+              render: () => (
+                <ItemSupplierMappingsTab
+                  itemId={id}
+                  suppliers={suppliers}
+                  suppliersLoading={suppliersLoading}
+                  pricing={
+                    item
+                      ? {
+                          preferredUnitPrice: item.preferredUnitPrice,
+                          preferredCurrency: item.preferredCurrency,
+                          cheapestSupplierId: item.cheapestSupplierId,
+                          cheapestUnitPrice: item.cheapestUnitPrice,
+                          cheapestCurrency: item.cheapestCurrency,
+                          resolvedUnitPrice: item.resolvedUnitPrice,
+                          resolvedPriceSource: item.resolvedPriceSource,
+                          resolvedSupplierId: item.resolvedSupplierId,
+                          resolvedCurrency: item.resolvedCurrency,
+                          preferredIsOptimal: item.preferredIsOptimal,
+                          preferredPremium: item.preferredPremium,
+                          activeSupplierCount: item.activeSupplierCount,
+                        }
+                      : null
+                  }
+                />
+              ),
+            },
+            {
+              id: "history",
+              label: "היסטוריית רכש",
+              icon: History,
+              render: () => <ItemPurchaseHistoryTab itemId={id} />,
+            },
+          ]}
+          initialTabId="general"
+          defaultMasterSize={38}
+        />
       </form>
     </FormProvider>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Local helpers (mirrors items-catalog-scaffold.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function formatItemPrice(value: number | null, currency: string | null): string {
+  if (value == null) return "—"
+  const cur = currency ?? "ILS"
+  try {
+    return new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: cur,
+      maximumFractionDigits: 2,
+    }).format(value)
+  } catch {
+    return `${value.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${cur}`
+  }
+}
+
+function ItemKpiCard({
+  title,
+  value,
+  hint,
+  tone = "neutral",
+}: {
+  title: string
+  value: string
+  hint?: string
+  tone?: "neutral" | "success" | "warning"
+}) {
+  const valueTone =
+    tone === "success"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : tone === "warning"
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-foreground"
+
+  return (
+    <Card className="border-border">
+      <CardHeader className="px-3 pb-1 pt-2">
+        <CardTitle className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-0.5 px-3 pb-2">
+        <p className={cn("text-lg font-semibold tracking-tight", valueTone)}>
+          {value}
+        </p>
+        {hint ? (
+          <p className="line-clamp-1 text-[10px] leading-tight text-muted-foreground">
+            {hint}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
   )
 }

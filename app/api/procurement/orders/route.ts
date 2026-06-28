@@ -306,6 +306,10 @@ const createOrderSchema = z.object({
   contractId: z.string().uuid().optional(),
   /** Explicit release-order flag; inferred from contractId when omitted. */
   isReleaseOrder: z.boolean().optional(),
+  // P1 #11 — requested delivery date is required (helps logistics + approval matrix)
+  requestedDeliveryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "requestedDeliveryDate חייב להיות בפורמט YYYY-MM-DD"),
   lines: z.array(lineSchema).min(1, "חובה לפחות שורה אחת"),
 }).refine(
   (data) => {
@@ -805,6 +809,8 @@ export async function POST(req: NextRequest) {
       shipping_addr_en: input.shippingAddrEn ?? null,
       is_confidential: input.isConfidential ?? false,
       affects_planning: input.affectsPlanning ?? true,
+      // P1 #11 — required delivery date
+      requested_delivery_date: input.requestedDeliveryDate,
       // Phase 6.2 — SoD audit trail: record who created this PO.
       created_by: userId,
       // Phase 8 — Framework contract bridge

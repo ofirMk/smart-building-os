@@ -77,7 +77,7 @@ export function titleForPath(pathname: string): string {
   if (pathname.startsWith("/marker-ofek/procurement/inventory")) {
     return "ניהול מלאי"
   }
-  if (pathname.startsWith("/marker-ofek/procurement/catalog")) {
+  if (pathname.startsWith("/marker-ofek/items")) {
     return "קטלוג פריטים"
   }
   if (pathname.startsWith("/marker-ofek/procurement/assets")) {

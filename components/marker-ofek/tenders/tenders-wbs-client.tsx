@@ -139,7 +139,7 @@ export function TendersWbsClient({ projectId }: { projectId: string | null }) {
         id: "catalog",
         label: "קישור לקטלוג",
         icon: contextMenuIcons.catalog,
-        onSelect: () => router.push("/marker-ofek/procurement/catalog"),
+        onSelect: () => router.push("/marker-ofek/items"),
       },
       {
         id: "ai",
@@ -179,7 +179,7 @@ export function TendersWbsClient({ projectId }: { projectId: string | null }) {
     ? [
         { label: "כתבי כמויות", href: `${TENDERS_ROUTES.boq}?projectId=${encodeURIComponent(projectId)}` },
         { label: "מרכז מכרזים", href: TENDERS_ROUTES.hub },
-        { label: "קטלוג", href: "/marker-ofek/procurement/catalog" },
+        { label: "קטלוג", href: "/marker-ofek/items" },
       ]
     : undefined
 
