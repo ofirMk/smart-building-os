@@ -11,6 +11,31 @@ import { createSupabaseServerAuthClient } from "@/lib/supabase/server-auth"
 import { COMPANY_COOKIE_KEY, resolveCompanyContext } from "@/lib/company-context"
 import { cookies } from "next/headers"
 
+// ─── Local query-row shapes (avoids dependency on stale generated types) ─────
+
+interface ContractQueryRow {
+  id: string
+  contract_number: string
+  retention_pct: number | null
+  insurance_pct: number | null
+  advance_payment_amount: number | null
+  advance_recovery_method: string | null
+  advance_recovery_pct: number | null
+  raw_material_offset_commission_pct: number | null
+  status: string
+}
+
+interface BoqQueryRow {
+  id: string
+  line_no: number | null
+  section_code: string | null
+  description: string | null
+  uom: string | null
+  quantity: number | null
+  unit_price: number | null
+  total_line_price: number | null
+}
+
 // ─── Data loader ─────────────────────────────────────────────────────────────
 
 async function loadWizardData(contractId: string): Promise<{
@@ -44,7 +69,9 @@ async function loadWizardData(contractId: string): Promise<{
     .maybeSingle()
 
   if (contractErr || !contractRow) return null
-  if ((contractRow as Record<string, unknown>)["status"] === "CANCELLED") return null
+  // Cast through unknown to bypass stale generated types (status added in Phase 10.1 migration)
+  const crow = contractRow as unknown as ContractQueryRow
+  if (crow.status === "CANCELLED") return null
 
   // Load BOQ lines
   const { data: boqRows, error: boqErr } = await supabase
@@ -59,29 +86,32 @@ async function loadWizardData(contractId: string): Promise<{
   if (boqErr) return null
 
   const contract: ContractForWizard = {
-    id: contractRow.id as string,
-    contractNumber: contractRow.contract_number as string,
-    retentionPct: Number(contractRow.retention_pct ?? 0),
-    insurancePct: Number(contractRow.insurance_pct ?? 0),
-    advancePaymentAmount: Number(contractRow.advance_payment_amount ?? 0),
-    advanceRecoveryMethod: (contractRow.advance_recovery_method as string | null) ?? null,
-    advanceRecoveryPct: Number(contractRow.advance_recovery_pct ?? 0),
+    id: crow.id,
+    contractNumber: crow.contract_number,
+    retentionPct: Number(crow.retention_pct ?? 0),
+    insurancePct: Number(crow.insurance_pct ?? 0),
+    advancePaymentAmount: Number(crow.advance_payment_amount ?? 0),
+    advanceRecoveryMethod: crow.advance_recovery_method ?? null,
+    advanceRecoveryPct: Number(crow.advance_recovery_pct ?? 0),
     rawMaterialOffsetCommissionPct: Number(
-      contractRow.raw_material_offset_commission_pct ?? 0
+      crow.raw_material_offset_commission_pct ?? 0
     ),
     vatPct: 17,
   }
 
-  const boqLines: BoqLineForWizard[] = (boqRows ?? []).map((r) => ({
-    id: r.id as string,
-    lineNo: Number(r.line_no),
-    sectionCode: r.section_code as string,
-    description: r.description as string,
-    uom: r.uom as string,
-    quantity: Number(r.quantity ?? 0),
-    unitPrice: Number(r.unit_price ?? 0),
-    totalLinePrice: Number(r.total_line_price ?? 0),
-  }))
+  const boqLines: BoqLineForWizard[] = (boqRows ?? []).map((r) => {
+    const br = r as unknown as BoqQueryRow
+    return {
+      id: br.id,
+      lineNo: Number(br.line_no),
+      sectionCode: br.section_code ?? "",
+      description: br.description ?? "",
+      uom: br.uom ?? "",
+      quantity: Number(br.quantity ?? 0),
+      unitPrice: Number(br.unit_price ?? 0),
+      totalLinePrice: Number(br.total_line_price ?? 0),
+    }
+  })
 
   return { contract, boqLines }
 }
