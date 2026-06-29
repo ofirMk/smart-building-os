@@ -65,10 +65,10 @@ export function DashboardKpiCards({ p }: { p: DashboardKpiData }) {
   }
 
   const cardClassName = cn(
-    "relative flex min-h-[220px] w-full flex-col overflow-hidden rounded-2xl border border-gray-800 bg-[#111111] p-6 shadow-lg",
+    "relative flex min-h-[220px] w-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm",
     "cursor-pointer transition-[border-color,box-shadow] duration-300 ease-out",
     "hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
   )
 
   return (
@@ -94,9 +94,9 @@ export function DashboardKpiCards({ p }: { p: DashboardKpiData }) {
         }}
       >
         <div className="absolute end-0 top-0 h-full w-1 bg-green-500" />
-        <h3 className="mb-2 text-sm font-medium text-gray-400">סטטוס מתקנים</h3>
-        <div className="mb-2 text-3xl font-bold text-white">{p.facilitiesValue}</div>
-        <p className="text-xs text-gray-500">{p.facilitiesSub}</p>
+        <h3 className="mb-2 text-sm font-medium text-muted-foreground">סטטוס מתקנים</h3>
+        <div className="mb-2 text-3xl font-bold text-foreground">{p.facilitiesValue}</div>
+        <p className="text-xs text-muted-foreground">{p.facilitiesSub}</p>
       </motion.div>
 
       <motion.div
@@ -115,9 +115,9 @@ export function DashboardKpiCards({ p }: { p: DashboardKpiData }) {
         }}
       >
         <div className="absolute end-0 top-0 h-full w-1 bg-red-500" />
-        <h3 className="mb-2 text-sm font-medium text-gray-400">קריאות שירות פתוחות</h3>
-        <div className="mb-2 text-3xl font-bold text-white">{p.openTicketsValue}</div>
-        <p className="text-xs text-gray-500">{p.openTicketsSub}</p>
+        <h3 className="mb-2 text-sm font-medium text-muted-foreground">קריאות שירות פתוחות</h3>
+        <div className="mb-2 text-3xl font-bold text-foreground">{p.openTicketsValue}</div>
+        <p className="text-xs text-muted-foreground">{p.openTicketsSub}</p>
       </motion.div>
 
       <motion.div
@@ -136,9 +136,9 @@ export function DashboardKpiCards({ p }: { p: DashboardKpiData }) {
         }}
       >
         <div className="absolute end-0 top-0 h-full w-1 bg-yellow-500" />
-        <h3 className="mb-2 text-sm font-medium text-gray-400">צריכת אנרגיה (החודש)</h3>
-        <div className="mb-2 text-3xl font-bold text-white">{p.energyValue}</div>
-        <p className="text-xs text-gray-500">{p.energySub}</p>
+        <h3 className="mb-2 text-sm font-medium text-muted-foreground">צריכת אנרגיה (החודש)</h3>
+        <div className="mb-2 text-3xl font-bold text-foreground">{p.energyValue}</div>
+        <p className="text-xs text-muted-foreground">{p.energySub}</p>
       </motion.div>
 
       <motion.div
@@ -157,9 +157,9 @@ export function DashboardKpiCards({ p }: { p: DashboardKpiData }) {
         }}
       >
         <div className="absolute end-0 top-0 h-full w-1 bg-blue-500" />
-        <h3 className="mb-2 text-sm font-medium text-gray-400">מדד יעילות SLA</h3>
-        <div className="mb-2 text-3xl font-bold text-white">{p.slaValue}</div>
-        <p className="text-xs text-gray-500">{p.slaSub}</p>
+        <h3 className="mb-2 text-sm font-medium text-muted-foreground">מדד יעילות SLA</h3>
+        <div className="mb-2 text-3xl font-bold text-foreground">{p.slaValue}</div>
+        <p className="text-xs text-muted-foreground">{p.slaSub}</p>
       </motion.div>
     </motion.div>
   )

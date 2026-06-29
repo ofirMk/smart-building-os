@@ -19,14 +19,14 @@ const chartsEase = [0.22, 1, 0.36, 1] as const
 export function DashboardClient({ data }: { data: DashboardClientData }) {
   return (
     <div
-      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-[#0a0a0a] px-4 py-6 font-sans text-gray-100 md:-mx-6 md:px-6 md:py-10"
+      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-background px-4 py-6 font-sans text-foreground md:-mx-6 md:px-6 md:py-10"
       dir="rtl"
     >
-      <header className="mb-10 border-b border-gray-800 pb-6">
+      <header className="mb-10 border-b border-border pb-6">
         <h1 className="mb-2 bg-gradient-to-l from-cyan-400 to-blue-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
           מרכז פיקוד נכסים
         </h1>
-        <p className="text-gray-400">
+        <p className="text-muted-foreground">
           פרויקט אשקלון | 4 בנייני מגורים, 16 קומות | מבט על בזמן אמת
         </p>
       </header>
@@ -54,7 +54,7 @@ export function DashboardClient({ data }: { data: DashboardClientData }) {
           ease: chartsEase,
         }}
       >
-        <div className="rounded-2xl border border-gray-800 bg-[#111111] p-6 shadow-lg">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold">
             <span className="inline-block h-6 w-2 rounded-full bg-cyan-500" />
             צריכת חשמל (7 ימים אחרונים)
@@ -62,7 +62,7 @@ export function DashboardClient({ data }: { data: DashboardClientData }) {
           <PowerChart heightsPct={data.powerHeightsPct} labels={data.powerLabels} />
         </div>
 
-        <div className="rounded-2xl border border-gray-800 bg-[#111111] p-6 shadow-lg">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold">
             <span className="inline-block h-6 w-2 rounded-full bg-blue-500" />
             פילוח קריאות לפי בניין
@@ -94,11 +94,11 @@ function ProgressBar({
 }) {
   return (
     <div>
-      <div className="mb-1 flex justify-between text-sm text-gray-400">
+      <div className="mb-1 flex justify-between text-sm text-muted-foreground">
         <span>{label}</span>
         <span>{percentage}%</span>
       </div>
-      <div className="h-2.5 w-full rounded-full bg-gray-800">
+      <div className="h-2.5 w-full rounded-full bg-muted">
         <div
           className={`h-2.5 rounded-full ${color}`}
           style={{ width: `${percentage}%` }}

@@ -14,18 +14,18 @@ import { cn } from "@/lib/utils"
 const ACTIVE_COMPANY_BADGE_THEME = {
   marker_ofek: {
     icon: Layers3,
-    chipClassName: "bg-slate-900/50 border-slate-800 text-slate-200",
-    iconClassName: "bg-slate-800 text-slate-200",
+    chipClassName: "bg-card border-border text-foreground",
+    iconClassName: "bg-muted text-muted-foreground",
   },
   holden_group: {
     icon: Building2,
-    chipClassName: "bg-slate-900/50 border-slate-800 text-slate-200",
-    iconClassName: "bg-slate-800 text-slate-200",
+    chipClassName: "bg-card border-border text-foreground",
+    iconClassName: "bg-muted text-muted-foreground",
   },
   building_management_co: {
     icon: Building,
-    chipClassName: "bg-slate-900/50 border-slate-800 text-slate-200",
-    iconClassName: "bg-slate-800 text-slate-200",
+    chipClassName: "bg-card border-border text-foreground",
+    iconClassName: "bg-muted text-muted-foreground",
   },
 } satisfies Record<
   CompanyContextId,
@@ -94,8 +94,8 @@ export function ActiveCompanyBadge({ companyId, className }: ActiveCompanyBadgeP
       >
         <Icon className="size-3.5" aria-hidden />
       </span>
-      <span className="text-[10px] font-semibold tracking-wide text-slate-300">חברה פעילה</span>
-      <span className="max-w-[11rem] truncate text-xs font-semibold text-slate-100">
+        <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">חברה פעילה</span>
+        <span className="max-w-[11rem] truncate text-xs font-semibold text-foreground">
         {displayName}
       </span>
     </div>
