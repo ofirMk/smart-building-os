@@ -25,16 +25,16 @@ const STATUS_LABEL: Record<TicketStatusUi, string> = {
 }
 
 const URGENCY_BADGE_CLASS: Record<TicketUrgency, string> = {
-  high: "border-red-500/40 bg-red-500/15 text-red-300",
-  medium: "border-amber-500/40 bg-amber-500/15 text-amber-200",
-  low: "border-emerald-500/35 bg-emerald-500/10 text-emerald-300",
+  high: "border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300",
+  medium: "border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-200",
+  low: "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 }
 
 const STATUS_BADGE_CLASS: Record<TicketStatusUi, string> = {
-  open: "border-sky-500/40 bg-sky-500/15 text-sky-200",
-  in_progress: "border-amber-500/45 bg-amber-500/15 text-amber-200",
-  resolved: "border-emerald-500/35 bg-emerald-500/15 text-emerald-300",
-  closed: "border-gray-600 bg-gray-800/80 text-gray-400",
+  open: "border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-200",
+  in_progress: "border-amber-500/45 bg-amber-500/15 text-amber-700 dark:text-amber-200",
+  resolved: "border-emerald-500/35 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  closed: "border-border bg-muted/80 text-muted-foreground",
 }
 
 function Badge({
@@ -80,15 +80,15 @@ export function TicketsManagementView({
 
   return (
     <div
-      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-[#0a0a0a] px-4 py-6 font-sans text-gray-100 md:-mx-6 md:px-6 md:py-10"
+      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-background px-4 py-6 font-sans text-foreground md:-mx-6 md:px-6 md:py-10"
       dir="rtl"
     >
-      <header className="mb-8 flex flex-col gap-6 border-b border-gray-800 pb-8 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-8 flex flex-col gap-6 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2 text-start">
           <h1 className="bg-gradient-to-l from-cyan-400 to-blue-600 bg-clip-text text-2xl font-bold text-transparent md:text-3xl">
             ניהול קריאות שירות
           </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-gray-400">
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             מעקב אחר כל הקריאות בפרויקט המגורים — סטטוס, דחיפות ומיקום בזמן אמת.
             מומלץ לעדכן חברה אחראית וסטטוס לאחר ביקור בשטח.
           </p>
@@ -126,16 +126,16 @@ export function TicketsManagementView({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-800 bg-[#111111] shadow-lg">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {showEmptyState ? (
           <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-            <div className="rounded-full border border-gray-700 bg-[#161616] p-4">
-              <span className="block size-10 rounded-full border-2 border-dashed border-gray-600" />
+            <div className="rounded-full border border-border bg-muted p-4">
+              <span className="block size-10 rounded-full border-2 border-dashed border-border/60" />
             </div>
-            <p className="text-lg font-medium text-gray-200">
+            <p className="text-lg font-medium text-foreground">
               אין קריאות שירות להצגה כרגע
             </p>
-            <p className="max-w-md text-sm text-gray-500">
+            <p className="max-w-md text-sm text-muted-foreground">
               טרם נרשמו קריאות במערכת, או שאין תוצאות התואמות את הסינון. ניתן
               לפתוח קריאה חדשה באמצעות הכפתור למעלה.
             </p>
@@ -144,15 +144,15 @@ export function TicketsManagementView({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-start text-sm">
               <thead>
-                <tr className="border-b border-gray-800 bg-[#141414]">
-                  <th className="px-4 py-3.5 font-medium text-gray-400">מזהה</th>
-                  <th className="px-4 py-3.5 font-medium text-gray-400">מיקום</th>
-                  <th className="px-4 py-3.5 font-medium text-gray-400">
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">מזהה</th>
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">מיקום</th>
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">
                     קטגוריה
                   </th>
-                  <th className="px-4 py-3.5 font-medium text-gray-400">דחיפות</th>
-                  <th className="px-4 py-3.5 font-medium text-gray-400">סטטוס</th>
-                  <th className="px-4 py-3.5 font-medium text-gray-400">
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">דחיפות</th>
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">סטטוס</th>
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">
                     תאריך פתיחה
                   </th>
                 </tr>
@@ -172,12 +172,12 @@ export function TicketsManagementView({
 
 function TicketRow({ row }: { row: TicketManagementTableRow }) {
   return (
-    <tr className="border-b border-gray-800/80 transition-colors hover:bg-[#161616]">
-      <td className="px-4 py-3.5 font-mono text-xs text-gray-200 tabular-nums">
+    <tr className="border-b border-border/80 transition-colors hover:bg-muted/30">
+      <td className="px-4 py-3.5 font-mono text-xs text-foreground tabular-nums">
         {row.id}
       </td>
-      <td className="px-4 py-3.5 text-gray-200">{row.location}</td>
-      <td className="px-4 py-3.5 text-gray-300">{row.categoryHe}</td>
+      <td className="px-4 py-3.5 text-foreground">{row.location}</td>
+      <td className="px-4 py-3.5 text-muted-foreground">{row.categoryHe}</td>
       <td className="px-4 py-3.5">
         <Badge pillClass={URGENCY_BADGE_CLASS[row.urgency]}>
           {URGENCY_LABEL[row.urgency]}
@@ -188,7 +188,7 @@ function TicketRow({ row }: { row: TicketManagementTableRow }) {
           {STATUS_LABEL[row.status]}
         </Badge>
       </td>
-      <td className="px-4 py-3.5 text-gray-400 tabular-nums">
+      <td className="px-4 py-3.5 text-muted-foreground tabular-nums">
         {row.openedAtLabel}
       </td>
     </tr>
