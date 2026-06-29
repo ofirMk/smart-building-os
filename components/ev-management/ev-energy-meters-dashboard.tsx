@@ -46,19 +46,19 @@ const STATUS_META: Record<
     label: "מקוון",
     dotClass: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]",
     badgeClass:
-      "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
+      "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   },
   charging: {
     label: "בטעינה",
     dotClass:
       "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)] animate-pulse",
     badgeClass:
-      "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
+      "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   },
   offline: {
     label: "לא מקוון",
-    dotClass: "bg-gray-500",
-    badgeClass: "border-gray-600/60 bg-gray-900/60 text-gray-400",
+    dotClass: "bg-muted-foreground/60",
+    badgeClass: "border-border bg-muted text-muted-foreground",
   },
 }
 
@@ -219,15 +219,15 @@ export function EvEnergyMetersDashboard({
 
   return (
     <div
-      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-[#0a0a0a] px-4 py-6 font-sans text-gray-100 md:-mx-6 md:px-6 md:py-10"
+      className="-mx-4 flex-1 min-h-0 overflow-y-auto bg-background px-4 py-6 font-sans text-foreground md:-mx-6 md:px-6 md:py-10"
       dir="rtl"
     >
-      <header className="mb-8 flex flex-col gap-6 border-b border-gray-800 pb-8 md:flex-row md:items-start md:justify-between">
+      <header className="mb-8 flex flex-col gap-6 border-b border-border pb-8 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="bg-gradient-to-l from-cyan-400 to-blue-600 bg-clip-text text-2xl font-bold text-transparent md:text-3xl">
             ניהול אנרגיה וטעינת רכבים
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             מנוע חיוב ומדידה — פרויקט מגורים מרקר אופק: מונים חכמים, צריכה
             מצטברת והפרדת הכנסות מחשמל לפי עמדות.
           </p>
@@ -246,7 +246,7 @@ export function EvEnergyMetersDashboard({
             type="button"
             size="lg"
             onClick={() => setTariffOpen(true)}
-            className="h-12 shrink-0 gap-2 border border-gray-600 bg-[#141414] px-6 text-base font-semibold text-gray-100 hover:bg-[#1a1a1a]"
+            className="h-12 shrink-0 gap-2 border border-border bg-card px-6 text-base font-semibold text-foreground hover:bg-accent"
           >
             <Settings2 className="size-5" aria-hidden />
             הגדרת תעריף קוט״ש
@@ -275,35 +275,35 @@ export function EvEnergyMetersDashboard({
         />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-800 bg-[#111111] shadow-lg">
-        <div className="border-b border-gray-800 px-4 py-4 md:px-6">
-          <h2 className="text-lg font-semibold text-gray-100">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+        <div className="border-b border-border px-4 py-4 md:px-6">
+          <h2 className="text-lg font-semibold text-foreground">
             מונים חכמים ועמדות טעינה
           </h2>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             נתוני דמו — פרויקט אשקלון, 4 בניינים
           </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] border-collapse text-start text-sm">
             <thead>
-              <tr className="border-b border-gray-800 bg-[#141414]">
-                <th className="px-3 py-3.5 font-medium text-gray-400 md:px-4">
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-3 py-3.5 font-medium text-muted-foreground md:px-4">
                   זיהוי עמדה / מונה
                 </th>
-                <th className="px-3 py-3.5 font-medium text-gray-400 md:px-4">
+                <th className="px-3 py-3.5 font-medium text-muted-foreground md:px-4">
                   שיוך
                 </th>
-                <th className="px-3 py-3.5 font-medium text-gray-400 md:px-4">
+                <th className="px-3 py-3.5 font-medium text-muted-foreground md:px-4">
                   סטטוס
                 </th>
-                <th className="px-3 py-3.5 font-medium text-gray-400 md:px-4">
+                <th className="px-3 py-3.5 font-medium text-muted-foreground md:px-4">
                   צריכה מצטברת
                 </th>
-                <th className="px-3 py-3.5 font-medium text-gray-400 md:px-4">
+                <th className="px-3 py-3.5 font-medium text-muted-foreground md:px-4">
                   חיוב נוכחי
                 </th>
-                <th className="px-3 py-3.5 font-medium text-gray-400 md:px-4">
+                <th className="px-3 py-3.5 font-medium text-muted-foreground md:px-4">
                   פעולות
                 </th>
               </tr>
@@ -317,22 +317,22 @@ export function EvEnergyMetersDashboard({
                 return (
                   <tr
                     key={row.id}
-                    className="border-b border-gray-800/80 transition-colors hover:bg-[#161616]"
+                    className="border-b border-border/80 transition-colors hover:bg-muted/30"
                   >
-                    <td className="px-3 py-3.5 font-mono text-xs text-cyan-100/95 md:px-4">
+                    <td className="px-3 py-3.5 font-mono text-xs text-cyan-700 dark:text-cyan-300 md:px-4">
                       {row.meterId}
                     </td>
-                    <td className="max-w-[260px] px-3 py-3.5 text-gray-200 md:px-4">
+                    <td className="max-w-[260px] px-3 py-3.5 text-foreground md:px-4">
                       {row.isAssigned ? (
                         <>
                           <span className="font-medium">{row.tenantLabel}</span>
-                          <span className="text-gray-500"> · </span>
-                          <span className="text-gray-400">
+                          <span className="text-muted-foreground"> · </span>
+                          <span className="text-muted-foreground">
                             {row.buildingLabel}
                           </span>
                         </>
                       ) : (
-                        <span className="text-gray-500">לא משויך</span>
+                        <span className="text-muted-foreground">לא משויך</span>
                       )}
                     </td>
                     <td className="px-3 py-3.5 md:px-4">
@@ -352,10 +352,10 @@ export function EvEnergyMetersDashboard({
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-3 py-3.5 tabular-nums text-gray-100 md:px-4">
+                    <td className="px-3 py-3.5 tabular-nums text-foreground md:px-4">
                       {formatKwhHe(row.accumulatedKwh)}
                     </td>
-                    <td className="px-3 py-3.5 font-medium tabular-nums text-gray-100 md:px-4">
+                    <td className="px-3 py-3.5 font-medium tabular-nums text-foreground md:px-4">
                       {formatNisHe(row.currentChargeNis)}
                     </td>
                     <td className="px-3 py-3.5 md:px-4">
@@ -366,7 +366,7 @@ export function EvEnergyMetersDashboard({
                             size="sm"
                             variant="outline"
                             disabled={busy}
-                            className="border-rose-600/45 bg-transparent text-rose-200 hover:bg-rose-950/35"
+                            className="border-rose-500/50 bg-transparent text-rose-600 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-950/40"
                             onClick={() => handleUnassign(row.id)}
                           >
                             הסר שיוך
@@ -377,7 +377,7 @@ export function EvEnergyMetersDashboard({
                           size="sm"
                           variant="outline"
                           disabled={busy || row.status === "offline"}
-                          className="border-amber-600/50 bg-transparent text-amber-100 hover:bg-amber-950/40 disabled:opacity-50"
+                          className="border-amber-500/50 bg-transparent text-amber-700 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
                           onClick={() =>
                             handleMeterAction(row.id, "disconnect")
                           }
@@ -389,7 +389,7 @@ export function EvEnergyMetersDashboard({
                           size="sm"
                           variant="outline"
                           disabled={busy}
-                          className="border-cyan-600/50 bg-transparent text-cyan-100 hover:bg-cyan-950/35"
+                          className="border-cyan-500/50 bg-transparent text-cyan-700 hover:bg-cyan-100 dark:text-cyan-200 dark:hover:bg-cyan-950/40"
                           onClick={() =>
                             handleMeterAction(row.id, "manualBill")
                           }
@@ -408,16 +408,16 @@ export function EvEnergyMetersDashboard({
 
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent
-          className="border-gray-800 bg-[#111111] text-gray-100 sm:max-w-md"
+          className="border-border bg-background text-foreground sm:max-w-md"
           dir="rtl"
           showCloseButton
         >
           <form onSubmit={handleAssignmentSave}>
             <DialogHeader>
-              <DialogTitle className="text-gray-100">
+              <DialogTitle>
                 שיוך מונה לדייר
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription>
                 בחרו מונה פנוי או עמדה ללא שיוך, ואז דייר — השמירה מדמה רישום
                 במערכת הניהול.
               </DialogDescription>
@@ -425,7 +425,7 @@ export function EvEnergyMetersDashboard({
 
             <div className="grid gap-5 py-2">
               <div className="grid gap-2">
-                <Label htmlFor="assign-meter" className="text-gray-300">
+                <Label htmlFor="assign-meter">
                   מונה / עמדה
                 </Label>
                 <Select
@@ -436,11 +436,11 @@ export function EvEnergyMetersDashboard({
                   <SelectTrigger
                     id="assign-meter"
                     size="default"
-                    className="h-11 w-full min-w-0 border-gray-700 bg-[#0a0a0a] text-gray-100"
+                    className="h-11 w-full min-w-0"
                   >
                     <SelectValue placeholder="בחרו מונה זמין" />
                   </SelectTrigger>
-                  <SelectContent className="border-gray-800 bg-[#141414] text-gray-100">
+                  <SelectContent>
                     {assignableMeterOptions.map((o) => (
                       <SelectItem key={`${o.kind}-${o.meterId}`} value={o.meterId}>
                         {o.label}
@@ -456,7 +456,7 @@ export function EvEnergyMetersDashboard({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="assign-tenant" className="text-gray-300">
+                <Label htmlFor="assign-tenant">
                   דייר
                 </Label>
                 <Select
@@ -467,11 +467,11 @@ export function EvEnergyMetersDashboard({
                   <SelectTrigger
                     id="assign-tenant"
                     size="default"
-                    className="h-11 w-full min-w-0 border-gray-700 bg-[#0a0a0a] text-gray-100"
+                    className="h-11 w-full min-w-0"
                   >
                     <SelectValue placeholder="בחרו דייר" />
                   </SelectTrigger>
-                  <SelectContent className="border-gray-800 bg-[#141414] text-gray-100">
+                  <SelectContent>
                     {tenantAssignOptions.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.displayLabel}
@@ -482,11 +482,10 @@ export function EvEnergyMetersDashboard({
               </div>
             </div>
 
-            <DialogFooter className="border-gray-800 bg-transparent sm:justify-start">
+            <DialogFooter className="bg-transparent sm:justify-start">
               <Button
                 type="button"
                 variant="outline"
-                className="border-gray-600 text-gray-200"
                 onClick={() => setAssignOpen(false)}
               >
                 ביטול
@@ -505,22 +504,22 @@ export function EvEnergyMetersDashboard({
 
       <Dialog open={tariffOpen} onOpenChange={setTariffOpen}>
         <DialogContent
-          className="border-gray-800 bg-[#111111] text-gray-100 sm:max-w-md"
+          className="border-border bg-background text-foreground sm:max-w-md"
           dir="rtl"
           showCloseButton
         >
           <form onSubmit={handleTariffSave}>
             <DialogHeader>
-              <DialogTitle className="text-gray-100">
+              <DialogTitle>
                 הגדרת תעריף קוט״ש
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription>
                 תעריף לחישוב חיוב דיירים (שקלים לקוט״ש). בפריסה לייצור הערך
                 יישמר במסד הנתונים.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-2 py-2">
-              <Label htmlFor="tariff-kwh" className="text-gray-300">
+              <Label htmlFor="tariff-kwh">
                 תעריף (₪ לקוט״ש)
               </Label>
               <Input
@@ -529,15 +528,13 @@ export function EvEnergyMetersDashboard({
                 inputMode="decimal"
                 value={tariffPerKwh}
                 onChange={(e) => setTariffPerKwh(e.target.value)}
-                className="border-gray-700 bg-[#0a0a0a] text-gray-100"
                 autoComplete="off"
               />
             </div>
-            <DialogFooter className="border-gray-800 bg-transparent sm:justify-start">
+            <DialogFooter className="bg-transparent sm:justify-start">
               <Button
                 type="button"
                 variant="outline"
-                className="border-gray-600 text-gray-200"
                 onClick={() => setTariffOpen(false)}
               >
                 ביטול
@@ -568,13 +565,13 @@ function SummaryCard({
   accent: string
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-[#111111] p-6 shadow-lg transition-colors hover:border-gray-700">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
       <div className={`absolute end-0 top-0 h-full w-1 ${accent}`} />
-      <h3 className="mb-2 text-sm font-medium text-gray-400">{title}</h3>
-      <div className="mb-2 text-2xl font-bold tabular-nums text-white md:text-3xl">
+      <h3 className="mb-2 text-sm font-medium text-muted-foreground">{title}</h3>
+      <div className="mb-2 text-2xl font-bold tabular-nums text-foreground md:text-3xl">
         {value}
       </div>
-      <p className="text-xs text-gray-500">{subtitle}</p>
+      <p className="text-xs text-muted-foreground">{subtitle}</p>
     </div>
   )
 }
