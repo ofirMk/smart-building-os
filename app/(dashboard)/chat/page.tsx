@@ -194,7 +194,7 @@ export default function EnterpriseChatPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-card" dir="rtl">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mb-4 rounded-2xl border border-slate-800 bg-gradient-to-l from-slate-900 to-slate-950 p-4 shadow-2xl shadow-slate-950/30">
+        <div className="mb-4 rounded-2xl border border-border bg-gradient-to-l from-slate-900 to-slate-950 p-4 shadow-2xl shadow-slate-950/30">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="inline-flex items-center gap-1.5 rounded-full border border-cyan-700/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-300">
@@ -204,24 +204,24 @@ export default function EnterpriseChatPage() {
               <h1 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
                 עוזר חכם ארגוני
               </h1>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-slate-300">
                 שאלות תפעול, פיננסים, אוטומציה וניתוח מהיר בזמן אמת.
               </p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-[11px] text-slate-400">
+            <div className="rounded-xl border border-border bg-muted/80 px-3 py-2 text-[11px] text-muted-foreground">
               התחיל ב-{formatTime(startedAt)}
             </div>
           </div>
         </div>
 
-        <div className="flex min-h-[65vh] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-black/20">
+        <div className="flex min-h-[65vh] flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           <div
             ref={viewportRef}
             className="flex-1 space-y-3 overflow-y-auto p-4 sm:p-5"
           >
             {messages.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/70 p-6 text-center">
-                <p className="text-sm text-slate-400">
+              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-6 text-center">
+                <p className="text-sm text-muted-foreground">
                   כתבו הודעה כדי להתחיל צ׳אט עם מודל OpenAI דרך ה-API החדש.
                 </p>
               </div>
@@ -240,11 +240,11 @@ export default function EnterpriseChatPage() {
                     "max-w-[min(100%,720px)] rounded-2xl border px-4 py-3 text-sm leading-relaxed",
                     message.role === "user"
                       ? "border-cyan-800/60 bg-cyan-500/10 text-cyan-50"
-                      : "border-slate-700 bg-slate-800/70 text-slate-100"
+                      : "border-border bg-muted text-foreground"
                   )}
                 >
                   <div className="mb-1 flex items-center justify-between gap-2">
-                    <div className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                    <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                       {message.role === "user" ? (
                         <User2 className="size-3.5" aria-hidden />
                       ) : (
@@ -255,7 +255,7 @@ export default function EnterpriseChatPage() {
                     {message.role === "assistant" ? (
                       <button
                         type="button"
-                        className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700 hover:text-slate-200"
+                        className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
                         onClick={() => {
                           const text = message.parts
                             .filter((part) => part.type === "text")
@@ -291,9 +291,9 @@ export default function EnterpriseChatPage() {
                     ) : part.type === "file" ? (
                       <div
                         key={`${message.id}-${index}`}
-                        className="mt-2 rounded-lg border border-slate-600/70 bg-slate-900/40 p-2"
+                        className="mt-2 rounded-lg border border-border/60 bg-muted/40 p-2"
                       >
-                        <p className="text-[11px] text-slate-300">קובץ מצורף</p>
+                        <p className="text-[11px] text-muted-foreground">קובץ מצורף</p>
                       </div>
                     ) : null
                   )}
@@ -303,7 +303,7 @@ export default function EnterpriseChatPage() {
 
             {busy ? (
               <div className="flex justify-end">
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/70 px-3 py-2 text-xs text-slate-300">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
                   <Loader2 className="size-3.5 animate-spin" aria-hidden />
                   AI מייצר תשובה...
                 </div>
@@ -326,7 +326,7 @@ export default function EnterpriseChatPage() {
 
           <form
             onSubmit={submit}
-            className="border-t border-slate-800 bg-slate-950/90 p-3 sm:p-4"
+            className="border-t border-border bg-background/95 p-3 sm:p-4"
           >
             {fileError ? (
               <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
@@ -341,28 +341,28 @@ export default function EnterpriseChatPage() {
                   return (
                     <div
                       key={`${file.name}-${index}`}
-                      className="group relative flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/80 px-2 py-1.5"
+                      className="group relative flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5"
                     >
                       {previewUrl ? (
                         <img
                           src={previewUrl}
                           alt={file.name}
-                          className="size-10 rounded-md border border-slate-700 object-cover"
+                          className="size-10 rounded-md border border-border object-cover"
                         />
                       ) : (
-                        <span className="inline-flex size-10 items-center justify-center rounded-md border border-slate-700 bg-slate-800 text-slate-300">
+                        <span className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">
                           <FileText className="size-4" aria-hidden />
                         </span>
                       )}
                       <div className="max-w-[180px]">
-                        <p className="truncate text-[11px] font-medium text-slate-200">{file.name}</p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="truncate text-[11px] font-medium text-foreground">{file.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
                       <button
                         type="button"
-                        className="ms-1 inline-flex size-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+                        className="ms-1 inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
                         onClick={() => removeAttachment(index)}
                         aria-label={`הסרת קובץ ${file.name}`}
                       >
@@ -388,7 +388,7 @@ export default function EnterpriseChatPage() {
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={busy}
-                className="h-11 border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white"
+                className="h-11 border-border bg-card text-foreground hover:bg-accent"
                 aria-label="צירוף קובץ"
               >
                 <Paperclip className="size-4" aria-hidden />
@@ -399,7 +399,7 @@ export default function EnterpriseChatPage() {
                 placeholder="הקלידו הודעה..."
                 disabled={busy}
                 autoComplete="off"
-                className="h-11 border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500"
+                className="h-11 border-border bg-background text-foreground placeholder:text-muted-foreground"
               />
               <Button
                 type="submit"

@@ -235,14 +235,14 @@ export function InventorySheetWorkspaceClient() {
   )
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-background">
       <DenseMasterDetailTemplate
         dir="rtl"
         eyebrow="Inventory Control"
         title="Inventory Sheet Workspace"
         description="מעקב מלאי חי עם תנועות, ברמת פרויקט/מחסן, בתבנית Master-Detail."
         leading={<Boxes />}
-        className="bg-[#F8FAFC]"
+        className="bg-background"
         headerActions={
           <div className="flex items-center gap-1.5">
             <Button size="sm" variant="outline" onClick={() => void loadScopes()}>

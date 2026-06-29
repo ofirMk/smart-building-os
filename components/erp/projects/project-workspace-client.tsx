@@ -372,7 +372,7 @@ export function ProjectWorkspaceClient({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC] px-2 py-2 md:px-3">
+    <div dir="rtl" className="flex-1 min-h-0 overflow-y-auto bg-background px-2 py-2 md:px-3">
       <div className="flex w-full max-w-none flex-col gap-2">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           {loadingProject ? (

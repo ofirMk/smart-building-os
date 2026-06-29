@@ -81,9 +81,9 @@ export function HoldenContractWorkspaceClient({
         .join(" · ")}
       rightPane={
         <div className="flex flex-col gap-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
-            <h2 className="text-sm font-medium text-slate-200">כותרת חוזה</h2>
-            <dl className="mt-3 grid gap-2 text-sm text-slate-400">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <h2 className="text-sm font-medium text-foreground">כותרת חוזה</h2>
+            <dl className="mt-3 grid gap-2 text-sm text-muted-foreground">
               <div className="flex justify-between gap-4">
                 <dt>סטטוס</dt>
                 <dd className="text-emerald-400/90">{c.status}</dd>
@@ -103,31 +103,31 @@ export function HoldenContractWorkspaceClient({
             </dl>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-2 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-2 shadow-sm">
             <div className="flex items-center justify-between px-2 py-2">
-              <h2 className="text-sm font-medium text-slate-200">כתב כמויות</h2>
-              <span className="text-xs text-slate-500">{rows.length} שורות</span>
+              <h2 className="text-sm font-medium text-foreground">כתב כמויות</h2>
+              <span className="text-xs text-muted-foreground">{rows.length} שורות</span>
             </div>
-            <div className="overflow-x-auto rounded-lg border border-slate-800/80">
+            <div className="overflow-x-auto rounded-lg border border-border/80">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-800 hover:bg-transparent">
-                    <TableHead className="text-slate-400">סעיף</TableHead>
-                    <TableHead className="text-slate-400">תיאור</TableHead>
-                    <TableHead className="text-slate-400">יח׳</TableHead>
-                    <TableHead className="text-slate-400">כמות</TableHead>
-                    <TableHead className="text-slate-400">מחיר</TableHead>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground">סעיף</TableHead>
+                    <TableHead className="text-muted-foreground">תיאור</TableHead>
+                    <TableHead className="text-muted-foreground">יח׳</TableHead>
+                    <TableHead className="text-muted-foreground">כמות</TableHead>
+                    <TableHead className="text-muted-foreground">מחיר</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.map((row) => (
                     <TableRow
                       key={row.id}
-                      className="border-slate-800/90 hover:bg-slate-900/40"
+                      className="border-border/80 hover:bg-muted/30"
                     >
                       <TableCell className="p-1">
                         <Input
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.section_number}
                           onChange={(e) =>
                             updateRow(row.id, { section_number: e.target.value })
@@ -137,7 +137,7 @@ export function HoldenContractWorkspaceClient({
                       </TableCell>
                       <TableCell className="p-1">
                         <Input
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.description}
                           onChange={(e) =>
                             updateRow(row.id, { description: e.target.value })
@@ -147,7 +147,7 @@ export function HoldenContractWorkspaceClient({
                       </TableCell>
                       <TableCell className="p-1">
                         <Input
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.unit ?? ""}
                           onChange={(e) => updateRow(row.id, { unit: e.target.value })}
                           onBlur={() => void persist(row.id, row)}
@@ -156,7 +156,7 @@ export function HoldenContractWorkspaceClient({
                       <TableCell className="p-1">
                         <Input
                           type="number"
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.quantity ?? ""}
                           onChange={(e) =>
                             updateRow(row.id, {
@@ -169,7 +169,7 @@ export function HoldenContractWorkspaceClient({
                       <TableCell className="p-1">
                         <Input
                           type="number"
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.unit_price ?? ""}
                           onChange={(e) =>
                             updateRow(row.id, {
@@ -184,7 +184,7 @@ export function HoldenContractWorkspaceClient({
                 </TableBody>
               </Table>
             </div>
-            <p className="px-2 py-2 text-xs text-slate-500">
+            <p className="px-2 py-2 text-xs text-muted-foreground">
               {savingId ? "שומר שורה…" : "שינויים נשמרים ביציאה משדה"}
             </p>
           </div>

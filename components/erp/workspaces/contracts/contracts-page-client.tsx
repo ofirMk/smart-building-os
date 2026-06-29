@@ -260,13 +260,13 @@ export function ContractsPageClient() {
   }, [selectedContractId])
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-background">
       <DenseMasterDetailTemplate
         dir="rtl"
         eyebrow="Contracts & Billing"
         title="חוזים - מסך אב"
         description="תצוגת חוזים ארגונית עם סינון לפי פרויקט, ספק וסטטוס."
-        className="bg-[#F8FAFC]"
+        className="bg-background"
         master={
           <div className="space-y-2">
             <div className="grid gap-2 lg:grid-cols-[1fr_160px_220px_220px_auto]">

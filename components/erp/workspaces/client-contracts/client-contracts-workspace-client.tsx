@@ -1619,7 +1619,7 @@ export function ClientContractsWorkspaceClient({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]" dir="rtl">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-background" dir="rtl">
       <MasterDetailWorkspace
         title="Client Contracts Workspace"
         description="ניהול חוזי לקוח, פקודות שינוי וחשבונות התקדמות (Submitted מול Approved)."
@@ -1634,7 +1634,7 @@ export function ClientContractsWorkspaceClient({
           en: "Contract Operations",
           he: "תפעול חוזה",
         }}
-        className="bg-[#F8FAFC]"
+        className="bg-background"
         headerActions={
           <div className="flex items-center gap-1.5">
             <Button

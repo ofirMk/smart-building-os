@@ -202,11 +202,11 @@ export function ItemsWorkspaceClient() {
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC]">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-background">
       <EntityWorkspace
         title="פריטים - Workspace"
         description="Master Grid צפוף עם אזור Detail טאבס מוטמע."
-        className="bg-[#F8FAFC]"
+        className="bg-background"
         headerActions={
           <div className="flex items-center gap-1.5">
             <Button size="sm" variant="outline" onClick={() => void loadItems()}>

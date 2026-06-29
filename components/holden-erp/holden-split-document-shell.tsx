@@ -25,19 +25,19 @@ export function HoldenSplitDocumentShell({
       dir="rtl"
       lang="he"
       className={cn(
-        "flex-1 min-h-0 bg-slate-950 text-slate-100",
+        "flex-1 min-h-0 bg-background text-foreground",
         className
       )}
     >
-      <header className="border-b border-slate-800/80 px-4 py-4 md:px-8">
+      <header className="border-b border-border/80 px-4 py-4 md:px-8">
         <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-500/90">
           Holden ERP
         </p>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-50 md:text-2xl">
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground md:text-2xl">
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
         ) : null}
       </header>
 
@@ -61,7 +61,7 @@ export function HoldenA4Paper({
   return (
     <div
       className={cn(
-        "w-full max-w-[210mm] rounded-sm border border-slate-800 bg-slate-950 p-4 shadow-[0_0_0_1px_rgba(15,23,42,0.8),0_25px_50px_-12px_rgba(0,0,0,0.65)] md:p-8",
+        "w-full max-w-[210mm] rounded-sm border border-border bg-card p-4 shadow-[0_0_0_1px_rgba(15,23,42,0.8),0_25px_50px_-12px_rgba(0,0,0,0.65)] md:p-8",
         className
       )}
     >

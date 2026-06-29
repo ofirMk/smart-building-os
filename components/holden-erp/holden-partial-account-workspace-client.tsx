@@ -119,14 +119,14 @@ export function HoldenPartialAccountWorkspaceClient({
       subtitle={[c.project?.name, c.entity?.name].filter(Boolean).join(" · ")}
       rightPane={
         <div className="flex flex-col gap-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
-            <h2 className="text-sm font-medium text-slate-200">סטטוס BPM</h2>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <h2 className="text-sm font-medium text-foreground">סטטוס BPM</h2>
             <p className="mt-2 text-lg font-semibold text-emerald-400/90">{header.status}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                className="border-slate-700 bg-slate-900/40 text-slate-100"
+                className="border-border bg-background text-foreground"
                 disabled={!!busy}
                 onClick={() =>
                   run("submit", () => holdenSubmitPartialAccountForApproval(pa.id))
@@ -147,7 +147,7 @@ export function HoldenPartialAccountWorkspaceClient({
               <Button
                 size="sm"
                 variant="outline"
-                className="border-slate-700 bg-slate-900/40 text-slate-100"
+                className="border-border bg-background text-foreground"
                 disabled={!!busy}
                 onClick={() => run("sent", () => holdenMarkPartialAccountSent(pa.id))}
               >
@@ -156,7 +156,7 @@ export function HoldenPartialAccountWorkspaceClient({
               <Button
                 size="sm"
                 variant="outline"
-                className="border-slate-700 bg-slate-900/40 text-slate-100"
+                className="border-border bg-background text-foreground"
                 disabled={!!busy}
                 onClick={() => run("paid", () => holdenMarkPartialAccountPaid(pa.id))}
               >
@@ -165,7 +165,7 @@ export function HoldenPartialAccountWorkspaceClient({
               <Button
                 size="sm"
                 variant="secondary"
-                className="bg-slate-800 text-slate-100"
+                className="bg-muted text-foreground"
                 disabled={!!busy}
                 onClick={() =>
                   run("ret", () =>
@@ -178,12 +178,12 @@ export function HoldenPartialAccountWorkspaceClient({
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
-            <h2 className="text-sm font-medium text-slate-200">סיכומים</h2>
-            <dl className="mt-3 grid gap-2 text-sm text-slate-400">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <h2 className="text-sm font-medium text-foreground">סיכומים</h2>
+            <dl className="mt-3 grid gap-2 text-sm text-muted-foreground">
               <div className="flex justify-between gap-4">
                 <dt>עיכבון</dt>
-                <dd className="tabular-nums text-slate-200">
+                <dd className="tabular-nums text-foreground">
                   ₪{roundMoney(header.retention).toLocaleString("he-IL")}
                 </dd>
               </div>
@@ -195,42 +195,42 @@ export function HoldenPartialAccountWorkspaceClient({
               </div>
               <div className="flex justify-between gap-4">
                 <dt>מצטבר מאושר</dt>
-                <dd className="tabular-nums text-slate-200">
+                <dd className="tabular-nums text-foreground">
                   ₪{roundMoney(header.cumulative).toLocaleString("he-IL")}
                 </dd>
               </div>
             </dl>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-2 shadow-sm">
-            <h2 className="px-2 py-2 text-sm font-medium text-slate-200">שורות ביצוע</h2>
-            <div className="overflow-x-auto rounded-lg border border-slate-800/80">
+          <div className="rounded-xl border border-border bg-card p-2 shadow-sm">
+            <h2 className="px-2 py-2 text-sm font-medium text-foreground">שורות ביצוע</h2>
+            <div className="overflow-x-auto rounded-lg border border-border/80">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-800 hover:bg-transparent">
-                    <TableHead className="text-slate-400">סעיף</TableHead>
-                    <TableHead className="text-slate-400">תיאור</TableHead>
-                    <TableHead className="text-slate-400">% קודם</TableHead>
-                    <TableHead className="text-slate-400">% נוכחי</TableHead>
-                    <TableHead className="text-slate-400">תקופה ₪</TableHead>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground">סעיף</TableHead>
+                    <TableHead className="text-muted-foreground">תיאור</TableHead>
+                    <TableHead className="text-muted-foreground">% קודם</TableHead>
+                    <TableHead className="text-muted-foreground">% נוכחי</TableHead>
+                    <TableHead className="text-muted-foreground">תקופה ₪</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lines.map((row) => (
                     <TableRow
                       key={row.id}
-                      className="border-slate-800/90 hover:bg-slate-900/40"
+                      className="border-border/80 hover:bg-muted/30"
                     >
-                      <TableCell className="font-mono text-xs text-slate-300">
+                      <TableCell className="font-mono text-xs text-muted-foreground">
                         {row.section_number}
                       </TableCell>
-                      <TableCell className="max-w-[140px] truncate text-xs text-slate-300">
+                      <TableCell className="max-w-[140px] truncate text-xs text-foreground">
                         {row.description}
                       </TableCell>
                       <TableCell className="p-1">
                         <Input
                           type="number"
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.quantity_previous}
                           onChange={(e) =>
                             updateLine(
@@ -248,7 +248,7 @@ export function HoldenPartialAccountWorkspaceClient({
                       <TableCell className="p-1">
                         <Input
                           type="number"
-                          className="h-8 border-slate-800 bg-slate-900/50 text-xs"
+                          className="h-8 border-border bg-background text-xs"
                           value={row.quantity_current}
                           onChange={(e) =>
                             updateLine(
@@ -263,7 +263,7 @@ export function HoldenPartialAccountWorkspaceClient({
                           onBlur={() => onBlurLine(row.id)}
                         />
                       </TableCell>
-                      <TableCell className="tabular-nums text-xs text-slate-400">
+                      <TableCell className="tabular-nums text-xs text-muted-foreground">
                         {row.line_total_price != null
                           ? `₪${roundMoney(row.line_total_price).toLocaleString("he-IL")}`
                           : "—"}
@@ -273,7 +273,7 @@ export function HoldenPartialAccountWorkspaceClient({
                 </TableBody>
               </Table>
             </div>
-            <p className="px-2 py-2 text-xs text-slate-500">
+            <p className="px-2 py-2 text-xs text-muted-foreground">
               {busy === "calc" ? "מחשב…" : "אחוזים מצטברים לשורה; עריכה מעדכנת מסמך בזמן אמת"}
             </p>
           </div>

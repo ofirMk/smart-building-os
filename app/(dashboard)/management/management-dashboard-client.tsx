@@ -161,7 +161,7 @@ function ActualVsPlannedBar({
         role="img"
         aria-label={`התקדמות בפועל ${a} אחוז; מתוכנן ${p} אחוז`}
       >
-        <Progress value={a} className="h-2.5 bg-slate-200/90 dark:bg-slate-700" />
+        <Progress value={a} className="h-2.5 bg-muted" />
         <div
           className="pointer-events-none absolute top-0 z-[2] h-2.5 w-px bg-amber-500 shadow-sm"
           style={{ left: `${p}%`, transform: "translateX(-50%)" }}
@@ -196,20 +196,20 @@ export function ManagementDashboardClient() {
 
       {/* 1. The Pulse */}
       <motion.section variants={motionItem} className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           הדופק
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {KPI_PULSE.map((k) => (
             <Card
               key={k.label}
-              className="h-full border-slate-100 bg-card shadow-sm dark:border-slate-800 dark:bg-slate-950"
+              className="h-full border-border bg-card shadow-sm"
             >
                 <CardHeader className="pb-2">
-                  <CardDescription className="text-xs font-medium text-slate-500">
+                  <CardDescription className="text-xs font-medium text-muted-foreground">
                     {k.label}
                   </CardDescription>
-                  <CardTitle className="font-currency-mono text-2xl font-semibold tabular-nums text-indigo-950 dark:text-slate-50">
+                  <CardTitle className="font-currency-mono text-2xl font-semibold tabular-nums text-foreground">
                     {k.value}
                   </CardTitle>
                 </CardHeader>
@@ -236,26 +236,26 @@ export function ManagementDashboardClient() {
           variants={motionItem}
           className="space-y-3 lg:col-span-2"
         >
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             מטריצת בריאות פרויקטים
           </h2>
-          <Card className="overflow-hidden border-slate-100 shadow-sm dark:border-slate-800">
-            <CardHeader className="border-b border-slate-100 bg-background/50 dark:border-slate-800 dark:bg-slate-900/50">
-              <CardTitle className="text-base text-indigo-950 dark:text-slate-50">
+          <Card className="overflow-hidden border-border shadow-sm">
+            <CardHeader className="border-b border-border bg-muted/50">
+              <CardTitle className="text-base text-foreground">
                 פרויקטים פעילים
               </CardTitle>
               <CardDescription>
                 השוואת התקדמות בפועל מול תכנון — לפי אחוז השלמה
               </CardDescription>
             </CardHeader>
-            <CardContent className="divide-y divide-slate-100 p-0 dark:divide-slate-800">
+            <CardContent className="divide-y divide-border p-0">
               {PROJECTS.map((proj) => (
                 <div
                   key={proj.name}
                   className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
-                    <p className="font-medium text-indigo-950 dark:text-slate-50">
+                    <p className="font-medium text-foreground">
                       {proj.name}
                     </p>
                     <div className="max-w-md">
@@ -275,14 +275,14 @@ export function ManagementDashboardClient() {
         </motion.section>
 
         <motion.section variants={motionItem} className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             מרכז פיקוד
           </h2>
           <Card className="flex h-full min-h-[280px] flex-col border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/30 dark:to-slate-950">
             <CardHeader className="flex flex-row items-center gap-2 border-b border-indigo-100/80 pb-3 dark:border-indigo-900/60">
               <Sparkles className="size-5 text-indigo-600 dark:text-indigo-400" aria-hidden />
               <div>
-                <CardTitle className="text-base text-indigo-950 dark:text-slate-50">
+                  <CardTitle className="text-base text-foreground">
                   התראות סוכן AI
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -294,9 +294,9 @@ export function ManagementDashboardClient() {
               {AI_ALERTS.map((a, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-indigo-100/80 bg-card/80 p-3 shadow-sm dark:border-indigo-900/60 dark:bg-slate-900/60"
+                  className="rounded-lg border border-indigo-100/80 bg-card/80 p-3 shadow-sm dark:border-indigo-900/60"
                 >
-                  <p className="text-sm leading-relaxed text-indigo-950 dark:text-slate-100">
+                  <p className="text-sm leading-relaxed text-foreground">
                     {a.text}
                   </p>
                   <div className="mt-3 flex justify-end">
@@ -313,12 +313,12 @@ export function ManagementDashboardClient() {
 
       {/* 3. Cashflow chart */}
       <motion.section variants={motionItem} className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           תזרים והכרה
         </h2>
-        <Card className="overflow-hidden border-slate-100 shadow-sm dark:border-slate-800">
-          <CardHeader className="border-b border-slate-100 pb-3 dark:border-slate-800">
-            <CardTitle className="text-base font-semibold text-indigo-950 dark:text-slate-50">
+        <Card className="overflow-hidden border-border shadow-sm">
+          <CardHeader className="border-b border-border pb-3">
+            <CardTitle className="text-base font-semibold text-foreground">
               תזרים והכרה בהכנסה (6 חודשים קדימה)
             </CardTitle>
             <CardDescription>
