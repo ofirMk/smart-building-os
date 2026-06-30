@@ -45,88 +45,98 @@ type NavItem = {
 const DEMO_PROJECT_ID = "8599ee46-50a7-4a5e-b219-e853ff093cc6"
 
 /* ─────────────────────────────────────────────────────────────────
- * מקור-אמת יחיד למבנה התפריט — ניתן לעדכון פשוט בעתיד.
+ * מקור-אמת יחיד למבנה התפריט — מבנה מחזור חיים של בנייה.
+ * 7 עמודות ראשיות: פורטפוליו → תכנון → רכש → בנייה → חוזים/כספים → מבנים → משרד
  * ───────────────────────────────────────────────────────────────── */
 const NAV_ITEMS: NavItem[] = [
   {
-    // Sprint T10 — Executive Portfolio Command Center. Pinned as the very
-    // first nav item so CEOs / investors land on the God-View immediately.
+    // 1. מרכז שליטה — CEO entry point
     key: "portfolio",
-    label: "פורטפוליו",
-    href: "/marker-ofek/portfolio",
-  },
-  { key: "entrepreneurship", label: "יזמות",
+    label: "פורטפוליו ופיקוד",
     columns: [
       {
-        title: "קדם ביצוע",
-        href: "/marker-ofek/pre-construction",
+        title: "מרכז שליטה",
         links: [
-          { label: "קליטת חומרי מכרז (AI)", href: "/marker-ofek/pre-construction/tender-intake" },
-          { label: "כתב כמויות ותמחור", href: "/marker-ofek/pre-construction/tender-pricing" },
-          { label: "מרכז מכרזים", href: "/marker-ofek/tenders" },
-          { label: "תמחור פרויקטים", href: "/marker-ofek/tenders/pricing" },
-          { label: "כתבי כמויות", href: "/marker-ofek/tenders/boq" },
-          { label: "השוואת הצעות", href: "/marker-ofek/tenders/comparison" },
+          { label: "מרכז פיקוד (CEO)", href: "/marker-ofek/command-center" },
+          { label: "פורטפוליו פרויקטים", href: "/marker-ofek/portfolio" },
+          { label: "🎯 דשבורד כספים", href: "/marker-ofek/finance/dashboard" },
+          { label: "אנליטיקס", href: "/marker-ofek/analytics" },
         ],
       },
       {
-        title: "ניהול שותפים",
+        title: "שותפות ואחזקות",
         links: [
-          { label: "פורטפוליו פרויקטים", href: "/marker-ofek/portfolio" },
           { label: "כספים שותפים", href: "/marker-ofek/partner-finance" },
           { label: "ניהול ישויות", href: "/marker-ofek/entities" },
         ],
       },
     ],
   },
-  { key: "planning", label: "תכנון",
+  {
+    // 2. תכנון וקדם ביצוע — Projects, Tenders/BOQ, Budget
+    key: "planning",
+    label: "תכנון וקדם ביצוע",
     columns: [
       {
-        title: "תכנון פרויקטים",
+        title: "פרויקטים",
         href: "/marker-ofek/projects",
         links: [
           { label: "כל הפרויקטים", href: "/marker-ofek/projects" },
           { label: "פרויקט חדש", href: "/marker-ofek/projects/new" },
-          { label: "לו\"ז וביצוע (גאנט)", href: "/marker-ofek/execution/gantt" },
-          { label: "יומני עבודה", href: "/marker-ofek/execution/daily-logs" },
-          { label: "תוכניות ו-Takeoff", href: "/marker-ofek/execution/plans" },
-          { label: "לו\"ז ומשאבים", href: "/marker-ofek/execution/resources" },
+          { label: "תכנון WBS", href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/planning` },
+          { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
+          { label: "לוח שנה ותזמון", href: "/marker-ofek/schedule" },
         ],
       },
       {
-        title: "בקרת תקציב",
+        title: "מכרזים ו-BOQ",
+        href: "/marker-ofek/tenders",
+        links: [
+          { label: "מרכז מכרזים", href: "/marker-ofek/tenders" },
+          { label: "קליטת חומרי מכרז (AI)", href: "/marker-ofek/pre-construction/tender-intake" },
+          { label: "כתב כמויות ותמחור", href: "/marker-ofek/pre-construction/tender-pricing" },
+          { label: "כתבי כמויות (BOQ)", href: "/marker-ofek/tenders/boq" },
+          { label: "תמחור פרויקטים", href: "/marker-ofek/tenders/pricing" },
+          { label: "השוואת הצעות (Bid Leveling)", href: "/marker-ofek/procurement/tenders/compare" },
+          { label: "מבנה WBS", href: "/marker-ofek/tenders/wbs" },
+        ],
+      },
+      {
+        title: "בקרה תקציבית",
         href: "/marker-ofek/finance/budget-control",
         links: [
           { label: "בקרה תקציבית", href: "/marker-ofek/finance/budget-control" },
-          { label: "דשבורד תקציב", href: "/marker-ofek/budget" },
+          { label: "קוקפיט פרויקט", href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control` },
           { label: "בקרת תקציב פרויקטים", href: "/marker-ofek/projects-budget-control" },
-          { label: "WBS מבנה", href: "/marker-ofek/tenders/wbs" },
-        ],
-      },
-      {
-        title: "ניהול מסמכים",
-        href: "/marker-ofek/dms",
-        links: [
-          { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
-          { label: "לוח שנה ותזמון", href: "/marker-ofek/schedule" },
+          { label: "דשבורד תקציב", href: "/marker-ofek/budget" },
         ],
       },
     ],
   },
   {
-    key: "construction",
-    label: "בנייה",
+    // 3. רכש ומכרזים — Items Master, Suppliers, Procurement chain, Reports
+    key: "procurement",
+    label: "רכש ומכרזים",
     columns: [
       {
-        title: "שרשרת רכש",
+        title: "קטלוג נתוני אב",
         links: [
-          { label: "כרטיס פריט", href: "/marker-ofek/items" },
-          { label: "הזמנות רכש", href: "/marker-ofek/procurement/orders" },
+          { label: "קטלוג פריטים", href: "/marker-ofek/items" },
           { label: "ספקים", href: "/marker-ofek/procurement/suppliers" },
+        ],
+      },
+      {
+        title: "שרשרת רכש",
+        href: "/marker-ofek/procurement",
+        links: [
+          { label: "מרכז רכש אחוד", href: "/marker-ofek/procurement" },
+          { label: "הזמנות רכש", href: "/marker-ofek/procurement/orders" },
           { label: "תיבת אישורים", href: "/marker-ofek/procurement/approvals" },
           { label: "קבלת סחורה", href: "/marker-ofek/procurement/goods-receipt/new" },
           { label: "חשבוניות ספק (AP)", href: "/marker-ofek/procurement/invoices/new" },
+          { label: "AI ייבוא חשבוניות", href: "/marker-ofek/procurement/ai-import" },
           { label: "מהנדס רכש AI 🤖", href: "/marker-ofek/procurement/autonomous-po/new" },
+          { label: "ספרי חנות / יוצא", href: "/marker-ofek/procurement/warehouse-outgoing" },
         ],
       },
       {
@@ -135,185 +145,173 @@ const NAV_ITEMS: NavItem[] = [
         links: [
           { label: "לוח מדדי KPI", href: "/marker-ofek/procurement/reports/kpi" },
           { label: "ניתוח הוצאות", href: "/marker-ofek/procurement/reports/spend" },
-          { label: "גיל הזמנות", href: "/marker-ofek/procurement/reports/aging" },
+          { label: "גיל הזמנות פתוחות", href: "/marker-ofek/procurement/reports/aging" },
           { label: "סטיות מחיר", href: "/marker-ofek/procurement/reports/variance" },
-        ],
-      },
-      {
-        title: "מכרזים",
-        href: "/marker-ofek/procurement/tenders/compare",
-        links: [
-          {
-            // Sprint T12 — Tender Bid Leveling & Award Matrix.
-            label: "השוואת הצעות (Bid Leveling)",
-            href: "/marker-ofek/procurement/tenders/compare",
-          },
-        ],
-      },
-      {
-        title: "חוזים וחשבונות",
-        href: "/marker-ofek/contracts-engine",
-        links: [
-          { label: "מנוע חוזים וחשבונות (Smart Billing)", href: "/marker-ofek/contracts-engine" },
-          { label: "מאגר חוזים", href: "/marker-ofek/contracts" },
-          { label: "חוזה חדש", href: "/marker-ofek/contracts/new" },
-        ],
-      },
-      {
-        title: "פרויקטים",
-        href: "/marker-ofek/projects",
-        links: [
-          { label: "כל הפרויקטים", href: "/marker-ofek/projects" },
-          {
-            label: "תכנון WBS",
-            href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/planning`,
-          },
-          { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
-        ],
-      },
-      {
-        title: "בקרה תקציבית",
-        href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control`,
-        links: [
-          {
-            label: "קוקפיט פרויקט",
-            href: `/marker-ofek/projects/${DEMO_PROJECT_ID}/cost-control`,
-          },
-          { label: "בקרת תקציב כללית", href: "/marker-ofek/finance/budget-control" },
-        ],
-      },
-      { title: "שינויי דיירים", links: [] },
-      { title: "בדק", links: [] },
-    ],
-  },
-  { key: "building-management", label: "ניהול מבנים",
-    columns: [
-      {
-        title: "נכסים ומבנים",
-        links: [
-          { label: "ניהול אנרגיה (EV)", href: "/ev-management" },
-          { label: "דיירים", href: "/tenants" },
-          { label: "תחזוקה", href: "/maintenance" },
-          { label: "תקריות", href: "/tickets" },
-          { label: "Holden ERP", href: "/marker-ofek/holden-erp" },
-        ],
-      },
-      {
-        title: "ביצוע שטח",
-        links: [
-          { label: "ביצוע שטח", href: "/marker-ofek/field-execution" },
-          { label: "מסירת קומות", href: `/marker-ofek/execution/field/floor-handover/${DEMO_PROJECT_ID}` },
-          { label: "ביקורת ליקויים", href: `/marker-ofek/execution/field/snags/${DEMO_PROJECT_ID}` },
-          { label: "בדיקות QA", href: "/marker-ofek/execution/defects" },
-          { label: "מסירה (Handover)", href: "/marker-ofek/handover" },
-        ],
-      },
-    ],
-  },
-  { key: "trade", label: "סחר",
-    columns: [
-      {
-        title: "שרשרת אספקה",
-        links: [
-          { label: "ספקים (Supply Chain)", href: "/marker-ofek/supply-chain/suppliers" },
-          { label: "AI ייבוא חשבוניות", href: "/marker-ofek/procurement/ai-import" },
-          { label: "הקצאה ממתינה", href: "/marker-ofek/procurement/ai-import/pending-allocation" },
-          { label: "ספרי חנות", href: "/marker-ofek/procurement/warehouse-outgoing" },
-        ],
-      },
-      {
-        title: "פיקוח ועמידות",
-        links: [
-          { label: "בדיקות וצ'קליסטים", href: "/marker-ofek/execution/checklists" },
-          { label: "ניהול נוכחות", href: "/marker-ofek/execution/attendance" },
-          { label: "דיווחי התקדמות", href: "/marker-ofek/execution/progress-reports" },
         ],
       },
     ],
   },
   {
-    key: "finance",
-    label: "כספים",
+    // 4. בנייה וביצוע — Scheduling, Field Execution, QA
+    key: "construction",
+    label: "בנייה וביצוע",
     columns: [
       {
-        title: "תשלומים",
+        title: "תזמון ומשאבים",
+        links: [
+          { label: "לו\"ז וביצוע (גאנט)", href: "/marker-ofek/execution/gantt" },
+          { label: "יומני עבודה", href: "/marker-ofek/execution/daily-logs" },
+          { label: "תוכניות ו-Takeoff", href: "/marker-ofek/execution/plans" },
+          { label: "משאבים ולוח שנה", href: "/marker-ofek/execution/resources" },
+        ],
+      },
+      {
+        title: "ביצוע שטח",
+        href: "/marker-ofek/field-execution",
+        links: [
+          { label: "ביצוע שטח", href: "/marker-ofek/field-execution" },
+          { label: "מסירת קומות", href: `/marker-ofek/execution/field/floor-handover/${DEMO_PROJECT_ID}` },
+          { label: "ביקורת ליקויים (Snags)", href: `/marker-ofek/execution/field/snags/${DEMO_PROJECT_ID}` },
+        ],
+      },
+      {
+        title: "פיקוח ואיכות",
+        links: [
+          { label: "בדיקות וצ'קליסטים", href: "/marker-ofek/execution/checklists" },
+          { label: "ניהול נוכחות", href: "/marker-ofek/execution/attendance" },
+          { label: "דיווחי התקדמות", href: "/marker-ofek/execution/progress-reports" },
+          { label: "בדיקות QA / ליקויים", href: "/marker-ofek/execution/defects" },
+          { label: "מסירה (Handover)", href: "/marker-ofek/handover" },
+        ],
+      },
+    ],
+  },
+  {
+    // 5. חוזים וכספים — Contracts, AR/AP, Accounting, Reports
+    key: "contracts-finance",
+    label: "חוזים וכספים",
+    columns: [
+      {
+        title: "חוזים",
+        href: "/marker-ofek/contracts-engine",
+        links: [
+          { label: "מנוע חוזים (Smart Billing)", href: "/marker-ofek/contracts-engine" },
+          { label: "מאגר חוזים", href: "/marker-ofek/contracts" },
+          { label: "חוזה קבלן משנה חדש", href: "/marker-ofek/contracts/create-subcontractor" },
+          { label: "כספת מסמכי חוזה", href: "/marker-ofek/finance/contract-vault" },
+          { label: "הצמדות ומדדים", href: "/marker-ofek/finance/indexation" },
+          { label: "עכבון וערבויות", href: "/marker-ofek/finance/retention" },
+          { label: "הוראות שינוי", href: "/marker-ofek/finance/variations" },
+          { label: "חשבונות חלקיים", href: "/marker-ofek/finance/partials" },
+          { label: "חשבונות קבלני משנה", href: "/marker-ofek/finance/subcontractor-accounts" },
+        ],
+      },
+      {
+        title: "גבייה ו-AR",
+        href: "/marker-ofek/finance/billing",
+        links: [
+          { label: "מרכז חיוב ותזרים", href: "/marker-ofek/finance/billing" },
+          { label: "חשבוניות מס", href: "/marker-ofek/finance/tax-invoices" },
+          { label: "חשבונית מרכזת", href: "/marker-ofek/finance/centralized" },
+          { label: "תקבולים", href: "/marker-ofek/finance/receipts" },
+          { label: "לקוחות (AR)", href: "/marker-ofek/finance/customers" },
+        ],
+      },
+      {
+        title: "תשלומים ו-AP",
         href: "/marker-ofek/finance/payments",
         links: [
           { label: "ריצת תשלומים (AP)", href: "/marker-ofek/finance/payments/runs" },
           { label: 'מס"ב (MASAV)', href: "/marker-ofek/finance/payments/masav" },
           { label: "דרישות תשלום", href: "/marker-ofek/finance/payment-demands" },
-          { label: "סקירת תשלומים", href: "/marker-ofek/finance/payments" },
+          { label: "התאמת חשבוניות (3-Way)", href: "/marker-ofek/finance/reconciliation" },
         ],
       },
       {
-        title: "התאמות בנקאיות",
-        href: "/marker-ofek/finance/bank-reconciliation",
+        title: "הנהלת חשבונות",
         links: [
+          { label: "כרטסות (GL)", href: "/marker-ofek/finance/gl-accounts" },
           { label: "Bank Reconciliation", href: "/marker-ofek/finance/bank-reconciliation" },
           { label: "קליטת דפי בנק", href: "/marker-ofek/finance/bank-statements/new" },
-          { label: "התאמות (legacy)", href: "/marker-ofek/finance/reconciliations" },
-        ],
-      },
-      {
-        title: "חיובים ולקוחות",
-        href: "/marker-ofek/finance/billing",
-        links: [
-          { label: "חיובי לקוחות", href: "/marker-ofek/finance/billing" },
-          { label: "חשבונות חלקיים", href: "/marker-ofek/finance/partials" },
-          { label: "מאגר לקוחות", href: "/marker-ofek/finance/customers" },
+          { label: "עודפי עסקה ופינוי", href: "/marker-ofek/finance/clearance" },
         ],
       },
       {
         title: "דוחות פיננסיים",
         href: "/marker-ofek/finance/dashboard",
         links: [
-          { label: "🎯 דשבורד כספים (T8)", href: "/marker-ofek/finance/dashboard" },
+          { label: "🎯 דשבורד כספים", href: "/marker-ofek/finance/dashboard" },
           { label: "תזרים מזומנים", href: "/marker-ofek/finance/cash-flow" },
           { label: "רווח והפסד", href: "/marker-ofek/finance/pnl" },
           { label: 'דוח מע"מ', href: "/marker-ofek/finance/vat-report" },
-          { label: "Aging", href: "/marker-ofek/finance/reports/aging" },
-        ],
-      },
-      {
-        // Sprint T7b/T7c/T9a — חשבוניות מס, תקבולים, הגדרות והזרקת דמו.
-        title: "ניהול AR והגדרות",
-        href: "/marker-ofek/finance/tax-invoices",
-        links: [
-          { label: "חשבוניות מס", href: "/marker-ofek/finance/tax-invoices" },
-          { label: "חשבונית מס חדשה", href: "/marker-ofek/finance/tax-invoices/new" },
-          { label: "תקבולים", href: "/marker-ofek/finance/receipts" },
-          { label: "הגדרות כספים (Admin)", href: "/marker-ofek/admin/finance-settings" },
+          { label: 'מוכנות מע"מ', href: "/marker-ofek/finance/vat-readiness" },
+          { label: "Aging (חשבונות)", href: "/marker-ofek/finance/reports/aging" },
+          { label: "הגדרות כספים", href: "/marker-ofek/admin/finance-settings" },
         ],
       },
     ],
   },
   {
-    key: "office",
-    label: "משרד",
+    // 6. ניהול מבנים — Facilities post-construction
+    key: "facilities",
+    label: "ניהול מבנים",
     columns: [
+      {
+        title: "נכסים ודיירים",
+        links: [
+          { label: "בניינים", href: "/buildings" },
+          { label: "דיירים", href: "/tenants" },
+          { label: "Holden מרכז פיקוד", href: "/holden" },
+        ],
+      },
+      {
+        title: "תפעול שוטף",
+        links: [
+          { label: "קריאות שירות", href: "/tickets" },
+          { label: "תחזוקה מונעת", href: "/maintenance" },
+          { label: "ניהול אנרגיה (EV)", href: "/ev-management" },
+        ],
+      },
+      {
+        title: "Holden ERP",
+        href: "/marker-ofek/holden-erp",
+        links: [
+          { label: "Holden ERP", href: "/marker-ofek/holden-erp" },
+        ],
+      },
+    ],
+  },
+  {
+    // 7. משרד ומערכת — Personal workspace, settings, admin
+    key: "office",
+    label: "משרד ומערכת",
+    columns: [
+      {
+        title: "עבודה אישית",
+        links: [
+          { label: "My Day ☀️", href: "/marker-ofek/my-day" },
+          { label: "צ'אט בינה מלאכותית", href: "/chat" },
+        ],
+      },
       {
         title: "ניהול",
         href: "/marker-ofek/settings",
         links: [
           { label: "הגדרות חברה", href: "/marker-ofek/settings" },
-          { label: "פרמטרים גלובליים (System Parameters)", href: "/marker-ofek/settings/system-parameters" },
-          { label: "כללי מערכת (legacy)", href: "/marker-ofek/settings/system-rules" },
-        ],
-      },
-      {
-        title: "ניהול מסמכים",
-        href: "/marker-ofek/dms",
-        links: [
+          { label: "פרמטרים גלובליים", href: "/marker-ofek/settings/system-parameters" },
+          { label: "ניהול ישויות", href: "/marker-ofek/entities" },
+          { label: "משאבי אנוש", href: "/marker-ofek/hr/timesheets" },
+          { label: "רכבים וציוד", href: "/marker-ofek/logistics/asset-tracking" },
           { label: "כספת מסמכים (DMS)", href: "/marker-ofek/dms" },
         ],
       },
       {
-        title: "Admin",
+        title: "Admin & Dev",
         links: [
-          { label: "Demo (Investor Pitch)", href: "/marker-ofek/pitch" },
-          { label: "מרכז פיקוד", href: "/marker-ofek/command-center" },
-          { label: "פורטפוליו פרויקטים (CEO View)", href: "/marker-ofek/portfolio" },
-          { label: "הגדרות כספים", href: "/marker-ofek/admin/finance-settings" },
+          { label: "מפת מערכת", href: "/marker-ofek/system-map" },
+          { label: "מפת דרכים", href: "/marker-ofek/roadmap" },
+          { label: "מערכת בריאות", href: "/marker-ofek/system/health" },
+          { label: "Demo / Pitch", href: "/marker-ofek/pitch" },
         ],
       },
     ],
