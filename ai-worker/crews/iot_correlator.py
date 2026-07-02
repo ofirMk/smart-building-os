@@ -73,6 +73,7 @@ import httpx
 import redis.asyncio as aioredis
 
 from config import settings
+from crews.adapters import get_adapter
 
 log = logging.getLogger(__name__)
 
@@ -256,24 +257,38 @@ class RuleEvaluator:
     # ── Private helpers ──────────────────────────────────────────────────────
 
     def _has_multi_person_event(self, events: list[dict[str, Any]]) -> bool:
-        """True if any event raw_payload indicates >= 2 people on one pass."""
+        """True if any event indicates >= 2 people on one pass or a confirmed breach."""
         for event in events:
+            normalized = event.get('normalized')
+            if normalized is not None:
+                # Prefer vendor-normalised data: 2+ people OR hardware-confirmed breach
+                if normalized['person_count'] >= 2 or normalized['is_security_breach']:
+                    return True
+                continue  # Normalised data available — skip raw fallback for this event
+
+            # Fallback: raw_payload inspection for events not yet normalised
             raw: dict = event.get('raw_payload') or {}
-            # Verkada camera reports person_count per frame
             person_count = raw.get('person_count', 0)
             if isinstance(person_count, (int, float)) and person_count >= 2:
                 return True
-            # Explicit tailgate event type is also a match
             if event.get('event_type') in ('tailgate_detected', 'LPE_TAILGATE'):
                 return True
-            # Salto/ButterflyMX may embed anomaly_type directly in raw_payload
             if raw.get('anomaly_type') == 'tailgate':
                 return True
         return False
 
     def _has_explicit_tailgate_anomaly(self, events: list[dict[str, Any]]) -> bool:
-        """True if hardware explicitly set anomaly_type='tailgate'."""
+        """True if hardware explicitly flagged a tailgate or forced-entry breach."""
         for event in events:
+            normalized = event.get('normalized')
+            if normalized is not None:
+                if normalized['is_security_breach'] or normalized['specific_type'] in (
+                    'tailgate', 'door_forced', 'alarm',
+                ):
+                    return True
+                continue
+
+            # Fallback: raw_payload inspection
             raw: dict = event.get('raw_payload') or {}
             if raw.get('anomaly_type') == 'tailgate':
                 return True
@@ -282,10 +297,21 @@ class RuleEvaluator:
         return False
 
     def _has_door_held_too_long(self, events: list[dict[str, Any]]) -> bool:
-        """True if any door_held_open event exceeds the 45-second threshold."""
+        """True if any event indicates a door held beyond the 45-second threshold."""
         for event in events:
-            if event.get('event_type') not in ('door_held_open', 'DOOR_HELD_OPEN',
-                                                'DOOR_LEFT_OPEN', 'door.held_open'):
+            normalized = event.get('normalized')
+            if normalized is not None:
+                if (
+                    normalized['specific_type'] == 'door_held'
+                    and normalized['door_held_seconds'] > DOOR_HELD_OPEN_THRESHOLD_SECONDS
+                ):
+                    return True
+                continue
+
+            # Fallback: raw_payload inspection
+            if event.get('event_type') not in (
+                'door_held_open', 'DOOR_HELD_OPEN', 'DOOR_LEFT_OPEN', 'door.held_open',
+            ):
                 continue
             raw: dict = event.get('raw_payload') or {}
             seconds = raw.get('door_held_seconds') or raw.get('door_open_seconds', 0)
@@ -652,6 +678,20 @@ class IotCorrelator:
         # Enrich with full DB rows (raw_payload needed for deep inspection)
         event_ids = [e['id'] for e in buffered]
         full_events = await self._fetch_events(event_ids)
+
+        # Normalize raw vendor payloads via the adapter layer.
+        # Each event gets an 'normalized' key so RuleEvaluator can use
+        # vendor-agnostic fields instead of peeking at proprietary JSON.
+        for evt in full_events:
+            raw = evt.get('raw_payload') or {}
+            # asyncpg returns JSONB as dict; guard against the string case
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except json.JSONDecodeError:
+                    raw = {}
+            adapter = get_adapter(evt.get('provider', ''))
+            evt['normalized'] = adapter.normalize(raw)
 
         # Resolve zone type for risk classification
         zone_id = await self._resolve_zone_id(envelope.asset_id)
