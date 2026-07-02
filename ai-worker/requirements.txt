@@ -15,3 +15,7 @@ google-generativeai==0.8.3
 
 # T12 — Variations AI Booklet (PDF merging)
 PyMuPDF==1.24.14
+
+# IoT Correlator — async DB LISTEN + Redis sliding-window buffer
+asyncpg>=0.29.0
+redis[asyncio]>=5.0.0
