@@ -165,9 +165,9 @@ function normaliseCustom(body: CustomWebhookPayload): NormalisationResult | null
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { provider: string } }
+  { params }: { params: Promise<{ provider: string }> }
 ): Promise<NextResponse> {
-  const { provider: rawProvider } = params
+  const { provider: rawProvider } = await params
 
   // 1. Validate provider
   if (!(rawProvider in SUPPORTED_PROVIDERS)) {
