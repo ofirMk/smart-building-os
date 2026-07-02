@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-import { completeOnboarding, computeReadiness } from "@/app/actions/onboarding"
+import { completeOnboarding } from "@/app/actions/onboarding"
+import { computeReadiness } from "@/lib/onboarding-utils"
 import {
   PHASE_LABELS,
   TASK_STATUS_LABELS,
