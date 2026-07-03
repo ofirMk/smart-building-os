@@ -92,7 +92,7 @@ async function fetchWorkOrder(
 ) {
   const { data, error } = await supabase
     .from("erp_work_orders")
-    .select("id, status, verification_method, company_id")
+    .select("id, status, verification_method, company_id, after_photo_url")
     .eq("id", workOrderId)
     .eq("company_id", companyId)
     .single()
@@ -263,6 +263,26 @@ export async function submitWorkOrderVerification(
     .eq("company_id", ctx.companyId)
 
   if (error) return apiErrorPayload("DB_ERROR", error.message)
+
+  // Fire-and-forget AI photo verification (non-blocking — UI gets response immediately)
+  // Triggered when the WO moves to pending_verification and an after-photo is available
+  if (!autoClose && wo.after_photo_url) {
+    const workerUrl = process.env.AI_WORKER_URL
+    const workerBearer = process.env.AI_WORKER_BEARER
+    if (workerUrl && workerBearer) {
+      fetch(`${workerUrl}/api/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${workerBearer}`,
+        },
+        body: JSON.stringify({ wo_id: workOrderId }),
+        signal: AbortSignal.timeout(5_000),
+      }).catch((err: unknown) => {
+        console.error("[field] AI verify trigger failed:", err)
+      })
+    }
+  }
 
   revalidatePath(`/erp/field/work-orders/${workOrderId}`)
   revalidatePath("/erp/field")

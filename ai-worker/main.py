@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 
 from config import settings
 from hmac_utils import sign_payload, verify_bearer
+from pydantic import BaseModel
 from models import (
     DispatchJobRequest,
     JobResultDone,
@@ -277,7 +278,42 @@ async def dispatch_job(
     return {"status": "accepted", "job_id": job_id}
 
 
-# ── Global Exception Handler ──────────────────────────────────
+# ── Photo Verification Endpoint ───────────────────────────────
+
+class VerifyRequest(BaseModel):
+    wo_id: str
+
+
+@app.post(
+    "/api/verify",
+    status_code=status.HTTP_202_ACCEPTED,
+    tags=["verification"],
+    dependencies=[Depends(require_bearer)],
+)
+async def trigger_verification(
+    payload: VerifyRequest,
+    background_tasks: BackgroundTasks,
+) -> dict[str, str]:
+    """
+    Triggers autonomous AI photo verification for a Work Order.
+    Returns 202 immediately — the Gemini Vision crew runs in the background
+    and writes the decision (approved/rejected) directly to Supabase.
+    """
+    log.info("[verify] Received verification request for wo_id=%s", payload.wo_id)
+    try:
+        from crews.verification_crew import run_verification
+    except ImportError as exc:
+        log.exception("VerificationCrew deps missing: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Verification crew unavailable — ensure dependencies are installed.",
+        ) from exc
+
+    background_tasks.add_task(run_verification, payload.wo_id)
+    return {"status": "accepted", "wo_id": payload.wo_id}
+
+
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
