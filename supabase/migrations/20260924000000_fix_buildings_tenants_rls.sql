@@ -9,6 +9,30 @@
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
+-- 0. Schema-drift guard: ensure address columns exist on buildings.
+--    Some production DBs were set up before address_line1 was added to
+--    the initial migration file; these add-if-not-exist calls are no-ops
+--    on databases that already have the columns.
+-- ---------------------------------------------------------------------------
+alter table public.buildings
+  add column if not exists address_line1 text null;
+
+alter table public.buildings
+  add column if not exists address_line2 text null;
+
+alter table public.buildings
+  add column if not exists city text null;
+
+alter table public.buildings
+  add column if not exists region text null;
+
+alter table public.buildings
+  add column if not exists postal_code text null;
+
+alter table public.buildings
+  add column if not exists country text null default 'IL';
+
+-- ---------------------------------------------------------------------------
 -- 1. get_buildings_with_counts()
 --    Returns all buildings with apartment + parking counts.
 -- ---------------------------------------------------------------------------
