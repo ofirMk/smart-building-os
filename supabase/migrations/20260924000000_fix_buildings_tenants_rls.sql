@@ -32,6 +32,12 @@ alter table public.buildings
 alter table public.buildings
   add column if not exists country text null default 'IL';
 
+alter table public.buildings
+  add column if not exists created_at timestamptz null default now();
+
+alter table public.buildings
+  add column if not exists updated_at timestamptz null default now();
+
 -- ---------------------------------------------------------------------------
 -- 1. get_buildings_with_counts()
 --    Returns all buildings with apartment + parking counts.
