@@ -53,9 +53,10 @@ function isSensitiveInternalApiPath(pathname: string): boolean {
 /** נתיבים הדורשים משתמש מחובר (או API פנימי רגיש). */
 function isProtectedPath(pathname: string): boolean {
   if (isSensitiveInternalApiPath(pathname)) return true
-  if (pathname === "/" || pathname === "/dashboard") return true
+  if (pathname === "/dashboard") return true
   if (pathname === "/facility" || pathname.startsWith("/facility/")) return true
   if (pathname.startsWith("/tenant")) return true
+  if (pathname === "/pitch" || pathname.startsWith("/pitch/")) return true
 
   const prefixes = [
     "/tickets",
@@ -80,6 +81,7 @@ function isProtectedPath(pathname: string): boolean {
 
 function isLoginPath(pathname: string): boolean {
   return (
+    pathname === "/" ||
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/admin" ||
@@ -109,10 +111,8 @@ function isMarkerOfekDedicatedHost(request: NextRequest): boolean {
   })
 }
 
-function defaultLoginPathForRequest(request: NextRequest): string {
-  return isMarkerOfekDedicatedHost(request)
-    ? "/auth/marker-ofek/login"
-    : "/login"
+function defaultLoginPathForRequest(_request: NextRequest): string {
+  return "/"
 }
 
 function markerOfekPostAuthHome(
