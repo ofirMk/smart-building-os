@@ -321,7 +321,7 @@ export function OrdersListScaffold() {
         setLoading(false)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [PAGE_SIZE, statusFilter, selectedStatuses, dateFrom, dateTo, amountMin, amountMax],
   )
 

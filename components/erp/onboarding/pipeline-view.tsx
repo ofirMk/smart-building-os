@@ -224,7 +224,7 @@ function TaskRow({
             )}
             {task.work_order_id && (
               <span className="text-xs text-muted-foreground self-center mr-auto">
-                פ"ע: {task.work_order_id.slice(0, 8)}...
+                פ&quot;ע: {task.work_order_id.slice(0, 8)}...
               </span>
             )}
           </div>

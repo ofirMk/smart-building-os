@@ -850,14 +850,14 @@ export function SupplierWorkspaceClient({ activations }: SupplierWorkspaceClient
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="min-w-[7rem]">מק"ט</TableHead>
+                          <TableHead className="min-w-[7rem]">מק&quot;ט</TableHead>
                           <TableHead className="min-w-[14rem]">תאור</TableHead>
-                          <TableHead className="min-w-[7rem]">מק"ט ספק</TableHead>
+                          <TableHead className="min-w-[7rem]">מק&quot;ט ספק</TableHead>
                           <TableHead className="min-w-[6rem] text-end">מחיר בסיס</TableHead>
                           <TableHead className="min-w-[5rem] text-end">הנחה %</TableHead>
                           <TableHead className="min-w-[6rem] text-end">מחיר נטו</TableHead>
                           <TableHead className="min-w-[4rem]">מטבע</TableHead>
-                          <TableHead className="min-w-[4rem]">י"מ</TableHead>
+                          <TableHead className="min-w-[4rem]">י&quot;מ</TableHead>
                           <TableHead className="min-w-[6rem]">תוקף מ-</TableHead>
                           <TableHead className="min-w-[6rem]">תוקף עד</TableHead>
                           <TableHead className="w-[7rem] text-center">מועדף</TableHead>
@@ -1120,7 +1120,7 @@ export function SupplierWorkspaceClient({ activations }: SupplierWorkspaceClient
 
                 {/* Supplier SKU */}
                 <div className="grid gap-1">
-                  <label className={ERP_DENSE_LABEL_CLASS}>מק"ט ספק (אופציונלי)</label>
+                  <label className={ERP_DENSE_LABEL_CLASS}>מק&quot;ט ספק (אופציונלי)</label>
                   <Input
                     value={addValues.supplierSku}
                     onChange={(e) => setAddValues((v) => ({ ...v, supplierSku: e.target.value }))}

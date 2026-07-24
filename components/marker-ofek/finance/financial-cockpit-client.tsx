@@ -17,6 +17,7 @@
  */
 
 import * as React from "react"
+import Link from "next/link"
 import {
   AlertTriangle,
   Download,
@@ -370,7 +371,7 @@ export function FinancialCockpitClient({
               variant="outline"
               size="sm"
               render={
-                <a href="/marker-ofek/finance/tax-invoices">חשבוניות מס</a>
+                <Link href="/marker-ofek/finance/tax-invoices">חשבוניות מס</Link>
               }
             />
             <Button
@@ -400,9 +401,9 @@ export function FinancialCockpitClient({
             <Button
               size="sm"
               render={
-                <a href="/marker-ofek/finance/tax-invoices/new">
+                <Link href="/marker-ofek/finance/tax-invoices/new">
                   הפק חשבונית מס חדשה
-                </a>
+                </Link>
               }
             />
           </div>

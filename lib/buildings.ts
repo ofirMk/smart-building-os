@@ -25,6 +25,9 @@ export type BuildingDetail = {
   region: string | null
   postal_code: string | null
   country: string | null
+  total_floors: number | null
+  planned_units: number | null
+  year_built: number | null
   created_at: string
   updated_at: string
   apartments: ApartmentRow[]
@@ -119,7 +122,7 @@ export async function getBuildingDetail(id: string): Promise<{
 
     const { data: bldg, error: bldgErr } = await supabase
       .from("buildings")
-      .select("id, name, address_line1, address_line2, city, region, postal_code, country, created_at, updated_at")
+      .select("id, name, address_line1, address_line2, city, region, postal_code, country, total_floors, planned_units, year_built, created_at, updated_at")
       .eq("id", id)
       .single()
 
@@ -139,7 +142,7 @@ export async function getBuildingDetail(id: string): Promise<{
     }>
 
     const tenantIds = aptRows.map((a) => a.tenant_id).filter(Boolean) as string[]
-    let tenantMap: Record<string, { full_name: string | null; email: string | null }> = {}
+    const tenantMap: Record<string, { full_name: string | null; email: string | null }> = {}
     if (tenantIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
@@ -176,6 +179,9 @@ export async function getBuildingDetail(id: string): Promise<{
         region: b.region ? String(b.region) : null,
         postal_code: b.postal_code ? String(b.postal_code) : null,
         country: b.country ? String(b.country) : null,
+        total_floors: b.total_floors != null ? Number(b.total_floors) : null,
+        planned_units: b.planned_units != null ? Number(b.planned_units) : null,
+        year_built: b.year_built != null ? Number(b.year_built) : null,
         created_at: String(b.created_at ?? ""),
         updated_at: String(b.updated_at ?? ""),
         apartments,

@@ -176,11 +176,11 @@ function PriceListRow({
           ) : (
             <div className="px-4 pt-1">
               <div className="grid grid-cols-[8rem_1fr_5rem_5rem_7rem_5rem_7rem] gap-x-3 border-b border-border pb-1 text-[10px] font-semibold text-muted-foreground">
-                <span>פק"ס ספק/צרן</span>
+                <span>פק&quot;ס ספק/צרן</span>
                 <span>תאור</span>
                 <span>כמות</span>
-                <span>יח'</span>
-                <span>מחיר ליח'</span>
+                <span>יח&apos;</span>
+                <span>מחיר ליח&apos;</span>
                 <span>הנחה %</span>
                 <span>אחרי הנחה</span>
               </div>

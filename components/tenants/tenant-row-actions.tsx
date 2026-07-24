@@ -1,6 +1,7 @@
 "use client"
 
-import { MoreHorizontal, Pencil, UserX } from "lucide-react"
+import { MoreHorizontal, Pencil, UserX, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -8,14 +9,31 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
 type TenantRowActionsProps = {
   tenantId: string
+  tenantName: string | null
 }
 
-export function TenantRowActions({ tenantId }: TenantRowActionsProps) {
+export function TenantRowActions({ tenantId, tenantName }: TenantRowActionsProps) {
+  const displayName = tenantName ?? tenantId.slice(0, 8)
+
+  function handleSuspend() {
+    if (!confirm(`האם לבצע השעיה זמנית עבור ${displayName}?`)) return
+    toast.promise(
+      fetch(`/api/tenants/${tenantId}/suspend`, { method: "POST" })
+        .then((r) => { if (!r.ok) throw new Error("שגיאה בשרת") }),
+      {
+        loading: "מבצע השעיה...",
+        success: "הדייר הושעה זמנית. ניתן להחזיר גישה בכל עת.",
+        error: "לא הצליח להשעות — פנה למנהל המערכת.",
+      }
+    )
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -31,26 +49,18 @@ export function TenantRowActions({ tenantId }: TenantRowActionsProps) {
         }
       />
       <DropdownMenuContent align="end" className="min-w-44" dir="rtl">
-        <DropdownMenuItem
-          onClick={() =>
-            toast.message("בקרוב", {
-              description: `עריכת פרטי דייר (${tenantId.slice(0, 8)}…) תתווסף בגרסה הבאה.`,
-            })
-          }
-        >
+        <DropdownMenuItem render={<Link href={`/tenants/${tenantId}`} />}>
+          <ExternalLink className="size-4" aria-hidden />
+          פרופיל מלא
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href={`/tenants/${tenantId}/edit`} />}>
           <Pencil className="size-4" aria-hidden />
           ערוך פרטים
         </DropdownMenuItem>
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() =>
-            toast.message("בקרוב", {
-              description: "השעיית דייר תתווסף בגרסה הבאה.",
-            })
-          }
-        >
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={handleSuspend}>
           <UserX className="size-4" aria-hidden />
-          השעה דייר
+          השעה זמנית
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

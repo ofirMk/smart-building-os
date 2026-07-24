@@ -17,4 +17,8 @@ export type TicketManagementTableRow = {
   urgency: TicketUrgency
   status: TicketStatusUi
   openedAtLabel: string
+  /** ISO string or null — null אם לא הוגדר SLA */
+  slaDueAt: string | null
+  /** true אם SLA עבר ועדיין לא טופל */
+  slaBreached: boolean
 }

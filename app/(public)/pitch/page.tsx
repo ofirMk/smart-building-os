@@ -407,7 +407,7 @@ export default function PitchPage() {
                     <span className="font-bold tabular-nums text-foreground">{fmt(data.smartUnits)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">סה"כ ביחד</span>
+                    <span className="text-muted-foreground">סה&quot;כ ביחד</span>
                     <span className="font-bold tabular-nums text-foreground">{fmt(data.totalUnits)}</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-2.5">

@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Building2, Home, PlugZap, MapPin, ArrowRight, User, Mail } from "lucide-react"
+import { Building2, Home, PlugZap, MapPin, ArrowRight, User, Mail, Pencil, Layers } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { getBuildingDetail } from "@/lib/buildings"
 import { cn } from "@/lib/utils"
 import type { ApartmentRow } from "@/lib/buildings"
@@ -57,7 +58,31 @@ export default async function BuildingDetailPage({ params }: Props) {
             )}
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 shrink-0"
+          render={<Link href={`/buildings/${data.id}/edit`} />}
+        >
+          <Pencil className="size-3.5" aria-hidden />
+          ערוך פרטים
+        </Button>
       </div>
+
+      {/* Building meta: floors / planned units / year built */}
+      {(data.total_floors || data.planned_units || data.year_built) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {data.total_floors && (
+            <MetaPill icon={Layers} label={`${data.total_floors} קומות`} />
+          )}
+          {data.planned_units && (
+            <MetaPill icon={Home} label={`${data.planned_units} יחידות מתוכנן`} />
+          )}
+          {data.year_built && (
+            <MetaPill icon={Building2} label={`נבנה ${data.year_built}`} />
+          )}
+        </div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -185,6 +210,15 @@ function ApartmentRow({ apt }: { apt: ApartmentRow }) {
         </Badge>
       </td>
     </tr>
+  )
+}
+
+function MetaPill({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+      <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+      {label}
+    </div>
   )
 }
 

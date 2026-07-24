@@ -117,7 +117,7 @@ export async function sendPoToSupplierEmail(
   if (!hasProviderConfigured()) {
     const pdfSizeKb = Math.round((input.pdfBase64.length * 0.75) / 1024)
     // כותבים ל-console כדי שמפתחים יראו בדיוק מה "היה נשלח".
-    // eslint-disable-next-line no-console
+     
     console.warn(
       [
         "═══════════════════════════════════════════════════════════",

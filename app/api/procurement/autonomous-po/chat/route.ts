@@ -131,7 +131,7 @@ export async function POST(req: Request) {
   // 1) Tenant gate. ה-`requireProcurementApiContext` קורא ל-supabase auth +
   //    מאמת `x-active-company-id`. נשים לב שזה דורש NextRequest, אבל POST
   //    מקבל Request רגיל; ה-helper תומך בשניהם דרך `req.headers` standard.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const ctx = await requireProcurementApiContext(req as any)
   if (!ctx.ok) return ctx.response
   const { supabase, activeCompanyId, userId } = ctx
@@ -222,7 +222,7 @@ export async function POST(req: Request) {
     foreignName: r.foreign_name ?? null,
   }))
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const recentPoRow = (recentPoRes.data ?? [])[0] as any | undefined
   const recentPo: RecentPoCtx | null = recentPoRow
     ? {

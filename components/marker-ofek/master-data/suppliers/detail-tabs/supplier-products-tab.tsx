@@ -353,17 +353,17 @@ export function SupplierProductsTab({ supplierId }: { supplierId: string | null 
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead className="w-8" />
-                <TableHead className="min-w-[6rem]">מק"ט</TableHead>
+                <TableHead className="min-w-[6rem]">מק&quot;ט</TableHead>
                 <TableHead className="min-w-[14rem]">תאור</TableHead>
-                <TableHead className="min-w-[7rem]">מק"ט ספק</TableHead>
-                <TableHead className="min-w-[7rem]">מק"ט יצרן</TableHead>
+                <TableHead className="min-w-[7rem]">מק&quot;ט ספק</TableHead>
+                <TableHead className="min-w-[7rem]">מק&quot;ט יצרן</TableHead>
                 <TableHead className="min-w-[8rem]">יצרן</TableHead>
-                <TableHead className="min-w-[5rem] text-center">א"ס (יום)</TableHead>
+                <TableHead className="min-w-[5rem] text-center">א&quot;ס (יום)</TableHead>
                 <TableHead className="min-w-[6rem] text-end">מחיר בסיס</TableHead>
                 <TableHead className="min-w-[5rem] text-end">הנחה %</TableHead>
                 <TableHead className="min-w-[6rem] text-end">מחיר נטו</TableHead>
                 <TableHead className="min-w-[4rem]">מטבע</TableHead>
-                <TableHead className="min-w-[4rem]">י"מ</TableHead>
+                <TableHead className="min-w-[4rem]">י&quot;מ</TableHead>
                 <TableHead className="min-w-[6rem]">מ-</TableHead>
                 <TableHead className="min-w-[6rem]">עד</TableHead>
                 <TableHead className="w-[6rem] text-center">פעולות</TableHead>
@@ -644,7 +644,7 @@ export function SupplierProductsTab({ supplierId }: { supplierId: string | null 
 
             {/* Supplier SKU */}
             <div className="grid gap-1">
-              <label className="text-[11px] font-medium text-muted-foreground">מק"ט ספק (אופציונלי)</label>
+              <label className="text-[11px] font-medium text-muted-foreground">מק&quot;ט ספק (אופציונלי)</label>
               <Input
                 value={addValues.supplierSku}
                 onChange={(e) => setAddValues((v) => ({ ...v, supplierSku: e.target.value }))}

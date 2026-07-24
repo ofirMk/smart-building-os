@@ -85,7 +85,7 @@ export async function GET(
 
   // Fetch items for all price lists in one query
   const listIds = (data ?? []).map((r) => r.id)
-  let itemMap: Record<string, ErpSupplierPriceListItem[]> = {}
+  const itemMap: Record<string, ErpSupplierPriceListItem[]> = {}
 
   if (listIds.length > 0) {
     const { data: itemRows, error: itemsError } = await supabase

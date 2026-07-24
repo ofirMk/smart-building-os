@@ -452,7 +452,7 @@ function EmptyState({
       </div>
       <div className="space-y-1">
         <p className="text-sm font-semibold">אין תעודות קבלת סחורה</p>
-        <p className="text-xs text-muted-foreground">לחץ "קליטת סחורה חדשה" כדי לתעד את הקבלה הראשונה.</p>
+        <p className="text-xs text-muted-foreground">לחץ &quot;קליטת סחורה חדשה&quot; כדי לתעד את הקבלה הראשונה.</p>
       </div>
       <Button type="button" size="sm" onClick={onNew} className="gap-1.5">
         <Plus className="size-3.5" aria-hidden />

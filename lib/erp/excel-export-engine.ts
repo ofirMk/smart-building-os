@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import ExcelJS from "exceljs"
 
 import type { ErpClientProgressBill } from "@/types/erp"

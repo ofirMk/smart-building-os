@@ -376,10 +376,11 @@ export function VendorBidPortal({
 // ---------------------------------------------------------------------------
 
 function Header({ envelope }: { envelope: VendorRfqEnvelope }) {
+  const [now] = React.useState(() => Date.now())
   const deadline = new Date(envelope.submissionDeadline)
   const daysLeft = Math.max(
     0,
-    Math.ceil((deadline.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
+    Math.ceil((deadline.getTime() - now) / (24 * 60 * 60 * 1000)),
   )
   const closing = daysLeft <= 3
 

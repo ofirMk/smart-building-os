@@ -274,7 +274,7 @@ export function AgreementConfigurator({ buildingId, existingConfig, onSuccess }:
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="committeeContactName">שם יו"ר הועד</Label>
+            <Label htmlFor="committeeContactName">שם יו&quot;ר הועד</Label>
             <Input
               id="committeeContactName"
               value={state.committeeContactName}
@@ -294,7 +294,7 @@ export function AgreementConfigurator({ buildingId, existingConfig, onSuccess }:
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="committeeContactEmail">דוא"ל</Label>
+            <Label htmlFor="committeeContactEmail">דוא&quot;ל</Label>
             <Input
               id="committeeContactEmail"
               type="email"

@@ -11,6 +11,7 @@ type TicketListFields = Pick<
   | "building_id"
   | "apartment_id"
   | "created_at"
+  | "sla_due_at"
 >
 
 function mapPriorityToUrgency(p: TicketPriority): TicketUrgency {
@@ -70,7 +71,7 @@ export async function getTicketsManagementViewModel(): Promise<{
     const { data: ticketsRaw, error: ticketsError } = await supabase
       .from("tickets")
       .select(
-        "id, title, priority, status, building_id, apartment_id, created_at"
+        "id, title, priority, status, building_id, apartment_id, created_at, sla_due_at"
       )
       .order("created_at", { ascending: false })
 
@@ -136,6 +137,12 @@ export async function getTicketsManagementViewModel(): Promise<{
         urgency: mapPriorityToUrgency(t.priority as TicketPriority),
         status: mapStatusToUi(t.status as TicketStatus),
         openedAtLabel: formatOpenedAt(t.created_at),
+        slaDueAt: t.sla_due_at ?? null,
+        slaBreached:
+          t.sla_due_at != null &&
+          new Date(t.sla_due_at) < new Date() &&
+          t.status !== "resolved" &&
+          t.status !== "closed",
       }
     })
 

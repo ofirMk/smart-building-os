@@ -415,7 +415,7 @@ export async function POST(req: NextRequest) {
   //   c) Compute remaining balance and emit a warning if this PO would
   //      exceed it (warning only — not a hard block unless configured).
   const contractWarnings: string[] = []
-  let contractLineMap = new Map<string, { unit_price: number; description: string; uom: string }>()
+  const contractLineMap = new Map<string, { unit_price: number; description: string; uom: string }>()
 
   if (input.contractId) {
     const contractLookup = await supabase

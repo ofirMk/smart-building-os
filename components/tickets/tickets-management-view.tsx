@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { AlertCircle } from "lucide-react"
 
 import { CreateTicketDialog } from "@/components/tickets/create-ticket-dialog"
 import { cn } from "@/lib/utils"
@@ -106,23 +107,13 @@ export function TicketsManagementView({
 
       {usedMockFallback ? (
         <div
-          role="status"
-          className="mb-4 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-start text-sm text-amber-100/95"
+          role="alert"
+          className="mb-4 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-start text-sm text-amber-800 dark:text-amber-100/95"
         >
-          <p className="font-medium">מוצגים נתוני הדגמה</p>
-          <p className="mt-1 text-xs text-amber-200/85">
-            לא ניתן לטעון קריאות מהמסד כרגע
-            {fetchErrorMessage ? (
-              <>
-                :{" "}
-                <span className="font-mono text-[0.8rem] text-amber-100/90">
-                  {fetchErrorMessage}
-                </span>
-              </>
-            ) : (
-              "."
-            )}
-          </p>
+          <p className="font-semibold">מוצגים נתוני הדגמה — אין חיבור למסד הנתונים</p>
+          {fetchErrorMessage && (
+            <p className="mt-1 text-xs opacity-80">{fetchErrorMessage}</p>
+          )}
         </div>
       ) : null}
 
@@ -155,6 +146,7 @@ export function TicketsManagementView({
                   <th className="px-4 py-3.5 font-medium text-muted-foreground">
                     תאריך פתיחה
                   </th>
+                  <th className="px-4 py-3.5 font-medium text-muted-foreground">SLA</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,6 +182,21 @@ function TicketRow({ row }: { row: TicketManagementTableRow }) {
       </td>
       <td className="px-4 py-3.5 text-muted-foreground tabular-nums">
         {row.openedAtLabel}
+      </td>
+      <td className="px-4 py-3.5">
+        {row.slaDueAt ? (
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+            row.slaBreached
+              ? "bg-red-500/15 text-red-700 dark:text-red-300"
+              : "bg-muted text-muted-foreground"
+          )}>
+            {row.slaBreached && <AlertCircle className="size-2.5" aria-hidden />}
+            {new Intl.DateTimeFormat("he-IL", { dateStyle: "short" }).format(new Date(row.slaDueAt))}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/40">—</span>
+        )}
       </td>
     </tr>
   )

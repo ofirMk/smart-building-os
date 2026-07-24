@@ -51,14 +51,14 @@ export async function recordAdminAction(input: {
         details: input.details ?? {},
       })
     if (error) {
-      // eslint-disable-next-line no-console
+       
       console.error("[admin-audit-log] insert failed:", error.message, {
         companyId: input.companyId,
         action: input.action,
       })
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
+     
     console.error("[admin-audit-log] threw:", e)
   }
 }
@@ -81,7 +81,7 @@ export async function listAdminAuditEntries(
     .order("created_at", { ascending: false })
     .limit(limit)
   if (error) {
-    // eslint-disable-next-line no-console
+     
     console.error("[admin-audit-log] list failed:", error.message)
     return []
   }

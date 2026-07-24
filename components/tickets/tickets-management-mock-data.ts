@@ -10,6 +10,8 @@ export const MOCK_TICKETS: TicketManagementTableRow[] = [
     urgency: "high",
     status: "open",
     openedAtLabel: "18.3.2025, 09:12",
+    slaDueAt: null,
+    slaBreached: false,
   },
   {
     sourceId: "mock-2",
@@ -19,6 +21,8 @@ export const MOCK_TICKETS: TicketManagementTableRow[] = [
     urgency: "medium",
     status: "in_progress",
     openedAtLabel: "17.3.2025, 14:40",
+    slaDueAt: null,
+    slaBreached: false,
   },
   {
     sourceId: "mock-3",
@@ -28,6 +32,8 @@ export const MOCK_TICKETS: TicketManagementTableRow[] = [
     urgency: "low",
     status: "open",
     openedAtLabel: "16.3.2025, 11:05",
+    slaDueAt: null,
+    slaBreached: false,
   },
   {
     sourceId: "mock-4",
@@ -37,6 +43,8 @@ export const MOCK_TICKETS: TicketManagementTableRow[] = [
     urgency: "medium",
     status: "resolved",
     openedAtLabel: "15.3.2025, 08:22",
+    slaDueAt: null,
+    slaBreached: false,
   },
   {
     sourceId: "mock-5",
@@ -46,6 +54,8 @@ export const MOCK_TICKETS: TicketManagementTableRow[] = [
     urgency: "low",
     status: "open",
     openedAtLabel: "14.3.2025, 19:50",
+    slaDueAt: null,
+    slaBreached: false,
   },
   {
     sourceId: "mock-6",
@@ -55,5 +65,7 @@ export const MOCK_TICKETS: TicketManagementTableRow[] = [
     urgency: "high",
     status: "in_progress",
     openedAtLabel: "14.3.2025, 07:15",
+    slaDueAt: null,
+    slaBreached: false,
   },
 ]

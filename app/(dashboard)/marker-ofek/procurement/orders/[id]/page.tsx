@@ -680,7 +680,7 @@ function LinesTab({
               <TableHead className="w-28 text-end">מחיר יחידה</TableHead>
               <TableHead className="w-20 text-end">הנחה %</TableHead>
               <TableHead className="w-28 text-end">סה&quot;כ</TableHead>
-              <TableHead className="w-28 text-end">מחר"ל</TableHead>
+              <TableHead className="w-28 text-end">מחר&quot;ל</TableHead>
               <TableHead className="w-28 text-start">תאריך אספקה</TableHead>
               <TableHead className="w-24 text-start">מקור מחיר</TableHead>
               <TableHead className="w-32 text-start">יצרן</TableHead>

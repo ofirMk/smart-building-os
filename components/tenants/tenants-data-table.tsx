@@ -1,5 +1,7 @@
 "use client"
 
+import { Phone } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -60,6 +62,9 @@ export function TenantsDataTable({ tenants }: TenantsDataTableProps) {
             <TableHead className="min-w-[200px] text-start font-semibold">
               אימייל
             </TableHead>
+            <TableHead className="min-w-[130px] text-start font-semibold">
+              טלפון
+            </TableHead>
             <TableHead className="min-w-[160px] text-start font-semibold">
               בניין
             </TableHead>
@@ -87,6 +92,20 @@ export function TenantsDataTable({ tenants }: TenantsDataTableProps) {
                   {t.email ?? "—"}
                 </span>
               </TableCell>
+              <TableCell className="align-middle">
+                {t.phone ? (
+                  <a
+                    href={`tel:${t.phone}`}
+                    className="flex items-center gap-1.5 text-sm text-foreground/80 hover:text-primary transition-colors"
+                    dir="ltr"
+                  >
+                    <Phone className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                    {t.phone}
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
               <TableCell className="align-middle text-muted-foreground">
                 {t.building_name ?? "—"}
               </TableCell>
@@ -105,7 +124,7 @@ export function TenantsDataTable({ tenants }: TenantsDataTableProps) {
                 </Badge>
               </TableCell>
               <TableCell className="p-2 pe-4 text-end align-middle">
-                <TenantRowActions tenantId={t.id} />
+                <TenantRowActions tenantId={t.id} tenantName={t.full_name} />
               </TableCell>
             </TableRow>
           ))}
