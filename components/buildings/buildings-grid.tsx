@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Building2, Home, PlugZap, type LucideIcon } from "lucide-react"
 
 import {
@@ -50,34 +51,36 @@ export function BuildingsGrid({ buildings }: BuildingsGridProps) {
             key={b.id}
             className="overflow-hidden border-border/70 shadow-sm transition-shadow hover:shadow-md"
           >
-            <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-border/50 pb-4">
-              <div className="min-w-0 flex-1">
-                <CardTitle className="text-start text-lg font-semibold leading-snug tracking-tight">
-                  {b.name}
-                </CardTitle>
-              </div>
-              <div
-                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20"
-                aria-hidden
-              >
-                <Building2 className="size-5" />
-              </div>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <p className="text-start text-sm leading-relaxed text-muted-foreground">
-                {addressMain}
-              </p>
-              {b.address_line2 ? (
-                <p className="mt-1 text-start text-xs text-muted-foreground/90">
-                  {b.address_line2}
+            <Link href={`/buildings/${b.id}`} className="block">
+              <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-border/50 pb-4">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-start text-lg font-semibold leading-snug tracking-tight">
+                    {b.name}
+                  </CardTitle>
+                </div>
+                <div
+                  className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20"
+                  aria-hidden
+                >
+                  <Building2 className="size-5" />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <p className="text-start text-sm leading-relaxed text-muted-foreground">
+                  {addressMain}
                 </p>
-              ) : null}
-              {b.region || b.postal_code ? (
-                <p className="mt-2 text-start text-xs text-muted-foreground">
-                  {[b.region, b.postal_code].filter(Boolean).join(" · ")}
-                </p>
-              ) : null}
-            </CardContent>
+                {b.address_line2 ? (
+                  <p className="mt-1 text-start text-xs text-muted-foreground/90">
+                    {b.address_line2}
+                  </p>
+                ) : null}
+                {b.region || b.postal_code ? (
+                  <p className="mt-2 text-start text-xs text-muted-foreground">
+                    {[b.region, b.postal_code].filter(Boolean).join(" · ")}
+                  </p>
+                ) : null}
+              </CardContent>
+            </Link>
             <CardFooter className="flex flex-col gap-3 border-t bg-muted/35 p-4 sm:flex-row">
               <StatBlock
                 icon={Home}
